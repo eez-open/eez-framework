@@ -3,11 +3,10 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include <map>
-
 #ifndef __EMSCRIPTEN__
 #include <chrono>
 #include <thread>
+#include <vector>
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -18,20 +17,16 @@ struct Thread {
 	osThreadFunc_t func;
 };
 
-static Thread g_threads[MAX_THREADS];
-Thread *g_currentThread;
+static std::vector<Thread *> g_threads;
+static Thread *g_currentThread;
 #endif
 
 osThreadId_t osThreadNew(osThreadFunc_t func, void *, const osThreadAttr_t *attr) {
 #if defined(__EMSCRIPTEN__)
-    for (int i = 0; i < MAX_THREADS; ++i) {
-        if (!g_threads[i].func) {
-            g_threads[i].func = func;
-            return &g_threads[i];
-        }
-    }
-    assert(false);
-    return nullptr;
+    Thread *thread = new Thread;
+    thread->func = func;
+    g_threads.push_back(thread);
+    return thread;
 #else
     auto t = new std::thread(func, nullptr);
     return t->get_id();
@@ -40,6 +35,11 @@ osThreadId_t osThreadNew(osThreadFunc_t func, void *, const osThreadAttr_t *attr
 
 osStatus osThreadTerminate(osThreadId_t thread_id) {
 #if defined(__EMSCRIPTEN__)
+    auto it = find(g_threads.begin(), g_threads.end(), (Thread *)thread_id);
+    if (it == g_threads.end()) {
+        return osError;
+    }
+    g_threads.erase(it);
 	return osOK;
 #else
     // TODO
@@ -55,18 +55,32 @@ osThreadId_t osThreadGetId() {
 #endif    
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
 #ifdef __EMSCRIPTEN__
-void eez_system_tick() {
-    for (int i = 0; i < MAX_THREADS; ++i) {
-        if (g_threads[i].func) {
-            g_currentThread = &g_threads[i];
-            g_threads[i].func(nullptr);
-        }
+extern bool g_enabledDisplayUpdate;
+
+static void oneIter() {
+    for(Thread *thread: g_threads) {
+        g_currentThread = thread;
+        thread->func(nullptr);
     }
 }
+
+void eez_system_tick() {
+    uint32_t startTime = osKernelGetTickCount();
+
+    oneIter();
+
+    g_enabledDisplayUpdate = false;
+
+    while (osKernelGetTickCount() - startTime < 5) {
+        oneIter();
+    }
+    
+    g_enabledDisplayUpdate = true;
+}
 #endif
+
+////////////////////////////////////////////////////////////////////////////////
 
 osStatus osKernelInitialize(void) {
 	return osOK;
@@ -121,9 +135,8 @@ osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size, cons
 }
 
 osStatus osMessageQueueGet(osMessageQueueId_t queue, void *msg_ptr, uint8_t *, uint32_t timeout) {
-    if (timeout == 0) timeout = 1;
-
 #ifndef __EMSCRIPTEN__
+    if (timeout == 0) timeout = 1;
     queue->mutex.lock();
 #endif
 
