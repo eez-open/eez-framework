@@ -91,7 +91,7 @@ void processGuiQueue(uint32_t timeout) {
     if (type == GUI_QUEUE_MESSAGE_TYPE_DISPLAY_VSYNC) {
 #ifdef __EMSCRIPTEN__        
         if (g_enabledDisplayUpdate) {
-        display::update();
+            display::update();
         } else {
             sendMessageToGuiThread(GUI_QUEUE_MESSAGE_TYPE_DISPLAY_VSYNC);
         }
