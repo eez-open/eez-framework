@@ -49,10 +49,6 @@ void guiInit() {
     loadMainAssets(assets, sizeof(assets));
 
     display::init();
-
-    if (g_mainAssets->flowDefinition) {
-        flow::start(g_mainAssets);
-    }
 }
 
 void guiTick() {

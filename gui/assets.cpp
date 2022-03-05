@@ -97,7 +97,7 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 		compressedSize,
 		decompressedSize
 	);
-	
+
 	if (decompressResult != (int)decompressedSize) {
 		if (err) {
 			*err = SCPI_ERROR_INVALID_BLOCK_DATA;
@@ -113,10 +113,16 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 }
 
 void loadMainAssets(const uint8_t *assets, uint32_t assetsSize) {
+    flow::stop();
+
 	g_mainAssets->external = false;
 	auto decompressedSize = decompressAssetsData(assets, assetsSize, g_mainAssets, MAX_DECOMPRESSED_ASSETS_SIZE, nullptr);
 	assert(decompressedSize);
 	g_isMainAssetsLoaded = true;
+
+    if (g_mainAssets->flowDefinition) {
+        flow::start(g_mainAssets);
+    }
 }
 
 void unloadExternalAssets() {
