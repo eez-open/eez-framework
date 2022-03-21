@@ -200,7 +200,7 @@ struct Value {
 	Value(double value, ValueType type)
 		: type(type), unit(UNIT_UNKNOWN), options(0), doubleValue(value) {
 	}
-	
+
 	Value(const char *value, ValueType type, uint16_t options)
         : type(type), unit(UNIT_UNKNOWN), options(options), strValue(value)
     {
@@ -292,7 +292,7 @@ struct Value {
 	bool isFloat() const {
         return type == VALUE_TYPE_FLOAT;
     }
-    
+
 	bool isDouble() const {
 		return type == VALUE_TYPE_DOUBLE;
 	}
@@ -332,11 +332,11 @@ struct Value {
 	uint16_t getUInt16() const {
         return uint16Value;
     }
-	
+
 	int32_t getInt32() const {
 		return int32Value;
 	}
-	
+
 	uint32_t getUInt32() const {
         return uint32Value;
     }
@@ -379,7 +379,7 @@ struct Value {
     uint8_t *getPUint8() const {
         return puint8Value;
     }
-    
+
     StepValues *getStepValues() const {
         return (StepValues *)pVoidValue;
     }
@@ -489,7 +489,7 @@ struct Value {
 
 struct ArrayValue {
 	uint32_t arraySize;
-    uint32_t reserved;
+    uint32_t arrayType;
 	Value values[1];
 };
 

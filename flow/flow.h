@@ -44,5 +44,26 @@ void onDebuggerClientDisconnected();
 void executeScpi();
 void flushToDebuggerMessage();
 
+#if defined(__EMSCRIPTEN__)
+struct DashboardComponentContext {
+    FlowState *flowState;
+    unsigned componentIndex;
+
+    const char *getStringParam(int offset);
+
+    void *getExpressionListParam(int offset);
+    void freeExpressionListParam(void *ptr);
+
+    void propagateIntValue(unsigned outputIndex, int value);
+    void propagateDoubleValue(unsigned outputIndex, double value);
+    void propagateBooleanValue(unsigned outputIndex, bool value);
+    void propagateStringValue(unsigned outputIndex, const char *value);
+
+    void propagateValueThroughSeqout();
+
+    void throwError(const char *errorMessage);
+};
+#endif // __EMSCRIPTEN__
+
 } // flow
 } // eez

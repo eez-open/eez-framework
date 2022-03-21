@@ -21,9 +21,11 @@
 
 #include <eez/core/os.h>
 
+#include <eez/flow/flow.h>
 #include <eez/flow/components.h>
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/queue.h>
+#include <eez/flow/hooks.h>
 
 using namespace eez::gui;
 
@@ -34,6 +36,7 @@ void executeStartComponent(FlowState *flowState, unsigned componentIndex);
 void executeEndComponent(FlowState *flowState, unsigned componentIndex);
 void executeInputComponent(FlowState *flowState, unsigned componentIndex);
 void executeOutputComponent(FlowState *flowState, unsigned componentIndex);
+void executeWatchVariableComponent(FlowState *flowState, unsigned componentIndex);
 void executeEvalExprComponent(FlowState *flowState, unsigned componentIndex);
 void executeSetVariableComponent(FlowState *flowState, unsigned componentIndex);
 void executeSwitchComponent(FlowState *flowState, unsigned componentIndex);
@@ -59,7 +62,7 @@ static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
 	executeEndComponent,
 	executeInputComponent,
 	executeOutputComponent,
-	nullptr, // COMPONENT_TYPE_WATCH_VARIABLE_ACTION
+	executeWatchVariableComponent,
 	executeEvalExprComponent,
 	executeSetVariableComponent,
 	executeSwitchComponent,
@@ -78,7 +81,7 @@ static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
 	executeShowMessageBoxComponent,
 	executeShowKeyboardComponent,
 	executeShowKeypadComponent,
-	nullptr, // COMPONENT_TYPE_STOP_ACTION
+	nullptr, // COMPONENT_TYPE_NOOP_ACTION
 	nullptr, // COMPONENT_TYPE_COMMENT_ACTION
 };
 
@@ -91,7 +94,19 @@ void registerComponent(ComponentTypes componentType, ExecuteComponentFunctionTyp
 void executeComponent(FlowState *flowState, unsigned componentIndex) {
 	auto component = flowState->flow->components[componentIndex];
 
-	if (component->type >= defs_v3::COMPONENT_TYPE_START_ACTION) {
+#if defined(__EMSCRIPTEN__)
+	if (component->type >= defs_v3::FIRST_DASHBOARD_COMPONENT_TYPE) {
+        if (executeDashboardComponentHook) {
+            DashboardComponentContext context = {
+                flowState,
+                componentIndex
+            };
+            executeDashboardComponentHook(component->type, &context);
+            return;
+        }
+    } else
+#endif // __EMSCRIPTEN__
+    if (component->type >= defs_v3::COMPONENT_TYPE_START_ACTION) {
 		auto executeComponentFunction = g_executeComponentFunctions[component->type - defs_v3::COMPONENT_TYPE_START_ACTION];
 		if (executeComponentFunction != nullptr) {
 			executeComponentFunction(flowState, componentIndex);
