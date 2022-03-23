@@ -139,30 +139,10 @@ FlowState *getFlowState(Assets *assets, int16_t pageId, const WidgetCursor &widg
 	if (widgetCursor.widget && widgetCursor.widget->type == WIDGET_TYPE_LAYOUT_VIEW) {
 		if (widgetCursor.flowState) {
 			auto layoutViewWidget = (LayoutViewWidget *)widgetCursor.widget;
-
 			auto flowState = widgetCursor.flowState;
-
-			struct LayoutViewWidgetExecutionState : public ComponenentExecutionState {
-				FlowState *flowState;
-
-				~LayoutViewWidgetExecutionState() {
-					freeFlowState(flowState);
-				}
-			};
-
 			auto layoutViewWidgetComponentIndex = layoutViewWidget->componentIndex;
 
-			auto layoutViewWidgetExecutionState = (LayoutViewWidgetExecutionState *)flowState->componenentExecutionStates[layoutViewWidgetComponentIndex];
-			if (!layoutViewWidgetExecutionState) {
-				layoutViewWidgetExecutionState =  ObjectAllocator<LayoutViewWidgetExecutionState>::allocate(0xa570ccad);
-				flowState->componenentExecutionStates[layoutViewWidgetComponentIndex] = layoutViewWidgetExecutionState;
-
-				auto layoutViewFlowState = initPageFlowState(flowState->assets, pageId, flowState, layoutViewWidgetComponentIndex);
-
-				layoutViewWidgetExecutionState->flowState = layoutViewFlowState;
-			}
-
-			return layoutViewWidgetExecutionState->flowState;
+			return getLayoutViewFlowState(flowState, layoutViewWidgetComponentIndex, pageId);
 		}
 	} else {
 		auto pageIndex = pageId;
@@ -235,8 +215,8 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const gui::Widge
 		} else if (operation == DATA_OPERATION_COUNT) {
 			Value arrayValue;
 			getValue(flowDataId, operation, widgetCursor, arrayValue);
-			if (arrayValue.getType() == VALUE_TYPE_ARRAY) {
-				value = arrayValue.arrayValue->arraySize;
+			if (arrayValue.getType() == VALUE_TYPE_ARRAY || arrayValue.getType() == VALUE_TYPE_ARRAY_REF) {
+				value = arrayValue.getArray()->arraySize;
 			} else {
 				value = 0;
 			}

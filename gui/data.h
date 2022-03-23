@@ -100,6 +100,7 @@ struct PairOfInt16Value {
 
 struct Ref {
 	uint32_t refCounter;
+    virtual ~Ref() {}
 };
 
 struct ArrayValue;
@@ -359,6 +360,9 @@ struct Value {
 
 	const char *getString() const;
 
+    const ArrayValue *getArray() const;
+    ArrayValue *getArray();
+
     //////////
 
 	int getInt() const {
@@ -449,6 +453,8 @@ struct Value {
 	static Value makeStringRef(const char *str, int len, uint32_t id);
 	static Value concatenateString(const Value &str1, const Value &str2);
 
+    static Value makeArrayRef(int arraySize, int arrayType, uint32_t id);
+
 	//////////
 
   public:
@@ -487,14 +493,28 @@ struct Value {
 	};
 };
 
+struct StringRef : public Ref {
+    ~StringRef() {
+        if (str) {
+            free(str);
+        }
+    }
+	char *str;
+};
+
 struct ArrayValue {
 	uint32_t arraySize;
     uint32_t arrayType;
 	Value values[1];
 };
 
-struct StringRef : public Ref {
-	char str[4];
+struct ArrayValueRef : public Ref {
+    ~ArrayValueRef() {
+        for (int i = 1; i < arrayValue.arraySize; i++) {
+            (arrayValue.values + i)->~Value();
+        }
+    }
+	ArrayValue arrayValue;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

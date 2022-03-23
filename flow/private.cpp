@@ -190,7 +190,7 @@ void propagateValue(FlowState *flowState, unsigned componentIndex, unsigned outp
 
 	for (unsigned connectionIndex = 0; connectionIndex < componentOutput->connections.count; connectionIndex++) {
 		auto connection = componentOutput->connections[connectionIndex];
-		
+
 		auto pValue = &flowState->values[connection->targetInputIndex];
 
 		if (*pValue != value) {
@@ -200,7 +200,7 @@ void propagateValue(FlowState *flowState, unsigned componentIndex, unsigned outp
 				onValueChanged(pValue);
 			}
 		}
-		
+
 		pingComponent(flowState, connection->targetComponentIndex, componentIndex, outputIndex, connection->targetInputIndex);
 	}
 }
@@ -275,7 +275,7 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
 		} else {
 			char errorMessage[100];
 			snprintf(errorMessage, sizeof(errorMessage), "Can not assign %s to %s\n",
-				g_valueTypeNames[pDstValue->type](*pDstValue), g_valueTypeNames[srcValue.type](srcValue)
+				g_valueTypeNames[pDstValue->type](srcValue), g_valueTypeNames[srcValue.type](*pDstValue)
 			);
 			throwError(flowState, componentIndex, errorMessage);
 		}

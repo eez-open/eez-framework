@@ -62,6 +62,11 @@ void executeWatchVariableComponent(FlowState *flowState, unsigned componentIndex
             watchVariableComponentExecutionState->value = value;
 			propagateValue(flowState, componentIndex, 1, value);
 		}
+
+		if (!addToQueue(flowState, componentIndex, -1, -1, -1, true)) {
+			throwError(flowState, componentIndex, "Execution queue is full\n");
+			return;
+		}
 	}
 }
 

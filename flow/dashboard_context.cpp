@@ -90,8 +90,8 @@ void DashboardComponentContext::propagateDoubleValue(unsigned outputIndex, doubl
 }
 
 void DashboardComponentContext::propagateBooleanValue(unsigned outputIndex, bool value) {
-    Value doubleValue(value, VALUE_TYPE_BOOLEAN);
-	eez::flow::propagateValue(flowState, componentIndex, outputIndex, doubleValue);
+    Value booleanValue(value, VALUE_TYPE_BOOLEAN);
+	eez::flow::propagateValue(flowState, componentIndex, outputIndex, booleanValue);
 }
 
 void DashboardComponentContext::propagateStringValue(unsigned outputIndex, const char *value) {
@@ -146,6 +146,71 @@ EM_PORT_API(void) DashboardContext_propagateValueThroughSeqout(DashboardComponen
 
 EM_PORT_API(void) DashboardContext_throwError(DashboardComponentContext *context, const char *errorMessage) {
     context->throwError(errorMessage);
+}
+
+EM_PORT_API(Value *) arrayValueAlloc(int arraySize, int arrayType) {
+    using namespace eez;
+    using namespace eez::gui;
+    Value value = Value::makeArrayRef(arraySize, arrayType, 0xeabb7edc);
+    auto pValue = ObjectAllocator<Value>::allocate(0xbab14c6a);
+    if (pValue) {
+        *pValue = value;
+    }
+    return pValue;
+}
+
+EM_PORT_API(void) arrayValueSetElementValue(Value *arrayValuePtr, int elementIndex, Value *valuePtr) {
+    auto array = arrayValuePtr->getArray();
+    array->values[elementIndex] = *valuePtr;
+}
+
+EM_PORT_API(void) arrayValueSetElementInt(Value *arrayValuePtr, int elementIndex, int value) {
+    auto array = arrayValuePtr->getArray();
+    array->values[elementIndex] = value;
+}
+
+EM_PORT_API(void) arrayValueSetElementDouble(Value *arrayValuePtr, int elementIndex, double value) {
+    using namespace eez;
+    using namespace eez::gui;
+    Value doubleValue(value, VALUE_TYPE_DOUBLE);
+    auto array = arrayValuePtr->getArray();
+    array->values[elementIndex] = doubleValue;
+}
+
+EM_PORT_API(void) arrayValueSetElementBool(Value *arrayValuePtr, int elementIndex, bool value) {
+    using namespace eez;
+    using namespace eez::gui;
+    Value booleanValue(value, VALUE_TYPE_BOOLEAN);
+    auto array = arrayValuePtr->getArray();
+    array->values[elementIndex] = booleanValue;
+}
+
+EM_PORT_API(void) arrayValueSetElementString(Value *arrayValuePtr, int elementIndex, const char *value) {
+    using namespace eez;
+    using namespace eez::gui;
+    Value stringValue = Value::makeStringRef(value, strlen(value), 0x78dea30d);
+    auto array = arrayValuePtr->getArray();
+    array->values[elementIndex] = stringValue;
+}
+
+EM_PORT_API(void) arrayValueSetElementNull(Value *arrayValuePtr, int elementIndex) {
+    using namespace eez;
+    using namespace eez::gui;
+    Value nullValue = Value(VALUE_TYPE_NULL);
+    auto array = arrayValuePtr->getArray();
+    array->values[elementIndex] = nullValue;
+}
+
+EM_PORT_API(void) valueFree(Value *valuePtr) {
+    using namespace eez;
+    ObjectAllocator<Value>::deallocate(valuePtr);
+}
+
+EM_PORT_API(void) setGlobalVariable(int globalVariableIndex, Value *valuePtr) {
+    using namespace eez::gui;
+    auto flowDefinition = static_cast<FlowDefinition *>(g_mainAssets->flowDefinition);
+    Value *globalVariableValuePtr = flowDefinition->globalVariables[globalVariableIndex];
+    *globalVariableValuePtr = *valuePtr;
 }
 
 #endif // __EMSCRIPTEN__

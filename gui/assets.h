@@ -360,8 +360,7 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void setCompressedMainAssets(const uint8_t *assets, uint32_t assetsSize);
-void loadMainAssets();
+void loadMainAssets(const uint8_t *assets, uint32_t assetsSize);
 bool loadExternalAssets(const char *filePath, int *err);
 void unloadExternalAssets();
 

@@ -80,28 +80,34 @@ static bool evalExpression(FlowState *flowState, const uint8_t *instructions, in
 				elementIndexValue = get(g_widgetCursor, elementIndexValue.getInt());
 			}
 
-			if (arrayValue.type != VALUE_TYPE_ARRAY) {
-				throwError(flowState, g_stack.componentIndex, "Array value expected\n");
-				return false;
-			}
+            if (arrayValue.getType() == VALUE_TYPE_UNDEFINED || arrayValue.getType() == VALUE_TYPE_NULL) {
+                if (!g_stack.push(Value(VALUE_TYPE_UNDEFINED))) {
+				    return false;
+			    }
+            } else {
+                if (arrayValue.type != VALUE_TYPE_ARRAY && arrayValue.type != VALUE_TYPE_ARRAY_REF) {
+                    throwError(flowState, g_stack.componentIndex, "Array value expected\n");
+                    return false;
+                }
 
-			auto array = arrayValue.arrayValue;
+                auto array = arrayValue.getArray();
 
-			int err;
-			auto elementIndex = elementIndexValue.toInt32(&err);
-			if (err) {
-				throwError(flowState, g_stack.componentIndex, "Integer value expected for array element index\n");
-				return false;
-			}
-		
-			if (elementIndex < 0 || elementIndex >= (int)array->arraySize) {
-				throwError(flowState, g_stack.componentIndex, "Array element index out of bounds\n");
-				return false;
-			}
+                int err;
+                auto elementIndex = elementIndexValue.toInt32(&err);
+                if (err) {
+                    throwError(flowState, g_stack.componentIndex, "Integer value expected for array element index\n");
+                    return false;
+                }
 
-			if (!g_stack.push(&array->values[elementIndex])) {
-				return false;
-			}
+                if (elementIndex < 0 || elementIndex >= (int)array->arraySize) {
+                    throwError(flowState, g_stack.componentIndex, "Array element index out of bounds\n");
+                    return false;
+                }
+
+                if (!g_stack.push(&array->values[elementIndex])) {
+                    return false;
+                }
+            }
 		} else if (instructionType == EXPR_EVAL_INSTRUCTION_TYPE_OPERATION) {
 			if (!g_evalOperations[instructionArg](g_stack)) {
 				return false;

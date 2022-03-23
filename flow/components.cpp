@@ -53,6 +53,8 @@ void executeShowPageComponent(FlowState *flowState, unsigned componentIndex);
 void executeShowMessageBoxComponent(FlowState *flowState, unsigned componentIndex);
 void executeShowKeyboardComponent(FlowState *flowState, unsigned componentIndex);
 void executeShowKeypadComponent(FlowState *flowState, unsigned componentIndex);
+
+void executeLayoutViewWidgetComponent(FlowState *flowState, unsigned componentIndex);
 void executeRollerWidgetComponent(FlowState *flowState, unsigned componentIndex);
 
 typedef void (*ExecuteComponentFunctionType)(FlowState *flowState, unsigned componentIndex);
@@ -113,7 +115,9 @@ void executeComponent(FlowState *flowState, unsigned componentIndex) {
 			return;
 		}
 	} else if (component->type < 1000) {
-		if (component->type == defs_v3::COMPONENT_TYPE_ROLLER_WIDGET) {
+		if (component->type == defs_v3::COMPONENT_TYPE_LAYOUT_VIEW_WIDGET) {
+            executeLayoutViewWidgetComponent(flowState, componentIndex);
+        } else if (component->type == defs_v3::COMPONENT_TYPE_ROLLER_WIDGET) {
 			executeRollerWidgetComponent(flowState, componentIndex);
 		}
 		return;
