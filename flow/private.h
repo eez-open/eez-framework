@@ -50,7 +50,7 @@ struct FlowState {
 	uint16_t flowIndex;
 	bool isAction;
 	uint16_t error;
-	uint32_t numActiveComponents;
+	uint32_t numAsyncComponents;
 	FlowState *parentFlowState;
 	Component *parentComponent;
 	int parentComponentIndex;
@@ -65,6 +65,7 @@ extern uint32_t g_lastFlowStateIndex;
 FlowState *initActionFlowState(int flowIndex, FlowState *parentFlowState, int parentComponentIndex);
 FlowState *initPageFlowState(Assets *assets, int flowIndex, FlowState *parentFlowState, int parentComponentIndex);
 
+bool canFreeFlowState(FlowState *flowState);
 void freeFlowState(FlowState *flowState);
 
 void propagateValue(FlowState *flowState, unsigned componentIndex, unsigned outputIndex, const gui::Value &value);

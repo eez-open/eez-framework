@@ -68,8 +68,6 @@ bool addToQueue(FlowState *flowState, unsigned componentIndex, int sourceCompone
 		g_queueIsFull = true;
 	}
 
-	flowState->numActiveComponents++;
-
     if (!continuousTask) {
 	    onAddToQueue(flowState, sourceComponentIndex, sourceOutputIndex, componentIndex, targetInputIndex);
     }
@@ -100,31 +98,62 @@ void removeNextTaskFromQueue() {
     }
 }
 
+bool isThereAnyTaskInQueueForFlowState(FlowState *flowState) {
+	if (g_queueHead == g_queueTail && !g_queueIsFull) {
+		return false;
+	}
+
+    unsigned int it = g_queueHead;
+    while (true) {
+		if (g_queue[it].flowState == flowState) {
+			return true;
+		}
+
+        it = (it + 1) % QUEUE_SIZE;
+        if (it == g_queueTail) {
+            break;
+        }
+	}
+
+    return false;
+}
+
 void removeQueueTasksForFlowState(FlowState *flowState) {
 	if (g_queueHead == g_queueTail && !g_queueIsFull) {
 		return;
 	}
 
 	unsigned int it = g_queueHead;
-	while (it < g_queueTail) {
+	while (true) {
 		auto itNext = (it + 1) % QUEUE_SIZE;
 
 		if (g_queue[it].flowState == flowState) {
 			if (it == g_queueHead) {
 				g_queueHead = (g_queueHead + 1) % QUEUE_SIZE;
-			} else {
+			} else if (itNext == g_queueTail) {
+                g_queueTail = it;
+                break;
+            } else {
 				unsigned int itMovePrev = it;
 				unsigned int itMove = itNext;
-				while (itMove < g_queueTail) {
+
+                while (true) {
 					g_queue[itMovePrev] = g_queue[itMove];
 					itMovePrev = itMove;
 					itMove = (itMove + 1) % QUEUE_SIZE;
+                    if (it == g_queueTail) {
+                        break;
+                    }
 				}
-				g_queueTail = itMovePrev;
+
+                g_queueTail = itMovePrev;
 			}
 		}
 
 		it = itNext;
+        if (it == g_queueTail) {
+            break;
+        }
 	}
 }
 

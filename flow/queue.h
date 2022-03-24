@@ -30,6 +30,8 @@ bool addToQueue(FlowState *flowState, unsigned componentIndex,
     bool continuousTask = false);
 bool peekNextTaskFromQueue(FlowState *&flowState, unsigned &componentIndex, bool &continuousTask);
 void removeNextTaskFromQueue();
+
+bool isThereAnyTaskInQueueForFlowState(FlowState *flowState);
 void removeQueueTasksForFlowState(FlowState *flowState);
 
 } // flow

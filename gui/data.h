@@ -510,7 +510,7 @@ struct ArrayValue {
 
 struct ArrayValueRef : public Ref {
     ~ArrayValueRef() {
-        for (int i = 1; i < arrayValue.arraySize; i++) {
+        for (uint32_t i = 1; i < arrayValue.arraySize; i++) {
             (arrayValue.values + i)->~Value();
         }
     }

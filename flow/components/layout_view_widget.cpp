@@ -39,17 +39,18 @@ struct LayoutViewWidgetExecutionState : public ComponenentExecutionState {
     }
 };
 
-static void createLayoutViewFlowState(FlowState *flowState, uint16_t layoutViewWidgetComponentIndex, int16_t pageId) {
+static LayoutViewWidgetExecutionState *createLayoutViewFlowState(FlowState *flowState, uint16_t layoutViewWidgetComponentIndex, int16_t pageId) {
     auto layoutViewWidgetExecutionState =  ObjectAllocator<LayoutViewWidgetExecutionState>::allocate(0xa570ccad);
     flowState->componenentExecutionStates[layoutViewWidgetComponentIndex] = layoutViewWidgetExecutionState;
     auto layoutViewFlowState = initPageFlowState(flowState->assets, pageId, flowState, layoutViewWidgetComponentIndex);
     layoutViewWidgetExecutionState->flowState = layoutViewFlowState;
+    return layoutViewWidgetExecutionState;
 }
 
 FlowState *getLayoutViewFlowState(FlowState *flowState, uint16_t layoutViewWidgetComponentIndex, int16_t pageId) {
     auto layoutViewWidgetExecutionState = (LayoutViewWidgetExecutionState *)flowState->componenentExecutionStates[layoutViewWidgetComponentIndex];
     if (!layoutViewWidgetExecutionState) {
-        createLayoutViewFlowState(flowState, layoutViewWidgetComponentIndex, pageId);
+        layoutViewWidgetExecutionState = createLayoutViewFlowState(flowState, layoutViewWidgetComponentIndex, pageId);
     }
 
     return layoutViewWidgetExecutionState->flowState;

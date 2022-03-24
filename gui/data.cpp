@@ -1042,16 +1042,16 @@ Value Value::toString(uint32_t id) const {
 }
 
 Value Value::makeStringRef(const char *str, int len, uint32_t id) {
-	if (len == -1) {
-		len = strlen(str);
-	}
-
     auto stringRef = ObjectAllocator<StringRef>::allocate(id);
 	if (stringRef == nullptr) {
 		return Value(VALUE_TYPE_NULL);
 	}
 
-    stringRef->str = (char *)alloc(len, 0xe45b0259);
+	if (len == -1) {
+		len = strlen(str);
+	}
+
+    stringRef->str = (char *)alloc(len + 1, 0xe45b0259);
     if (stringRef->str == nullptr) {
         ObjectAllocator<StringRef>::deallocate(stringRef);
         return Value(VALUE_TYPE_NULL);
@@ -1103,7 +1103,7 @@ Value Value::concatenateString(const Value &str1, const Value &str2) {
 }
 
 Value Value::makeArrayRef(int arraySize, int arrayType, uint32_t id) {
-    auto ptr = alloc(sizeof(ArrayValueRef) + (arraySize - 1) * sizeof(Value), id);
+    auto ptr = alloc(sizeof(ArrayValueRef) + (arraySize > 0 ? arraySize - 1 : 0) * sizeof(Value), id);
 	if (ptr == nullptr) {
 		return Value(VALUE_TYPE_NULL);
 	}

@@ -107,7 +107,7 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
 	flowState->flow = flowDefinition->flows[flowIndex];
 	flowState->flowIndex = flowIndex;
 	flowState->error = false;
-	flowState->numActiveComponents = 0;
+	flowState->numAsyncComponents = 0;
 	flowState->parentFlowState = parentFlowState;
 	if (parentFlowState) {
 		flowState->parentComponentIndex = parentComponentIndex;
@@ -162,7 +162,32 @@ FlowState *initPageFlowState(Assets *assets, int flowIndex, FlowState *parentFlo
 	return flowState;
 }
 
+bool canFreeFlowState(FlowState *flowState) {
+    if (!flowState->isAction) {
+        return false;
+    }
+
+    if (flowState->numAsyncComponents > 0) {
+        return false;
+    }
+
+    if (isThereAnyTaskInQueueForFlowState(flowState)) {
+        return false;
+    }
+
+    return true;
+}
+
 void freeFlowState(FlowState *flowState) {
+    if (flowState->parentFlowState) {
+        auto componentExecutionState = flowState->parentFlowState->componenentExecutionStates[flowState->parentComponentIndex];
+        if (componentExecutionState) {
+            flowState->parentFlowState->componenentExecutionStates[flowState->parentComponentIndex] = nullptr;
+            ObjectAllocator<ComponenentExecutionState>::deallocate(componentExecutionState);
+            return;
+        }
+    }
+
 	auto flow = flowState->flow;
 
 	auto valuesCount = flow->componentInputs.count + flow->localVariables.count;
@@ -285,20 +310,14 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
 ////////////////////////////////////////////////////////////////////////////////
 
 void startAsyncExecution(FlowState *flowState, int componentIndex) {
-	flowState->numActiveComponents++;
+	flowState->numAsyncComponents++;
 }
 
 void endAsyncExecution(FlowState *flowState, int componentIndex) {
-	if (--flowState->numActiveComponents == 0 && flowState->isAction) {
-		auto componentExecutionState = flowState->parentFlowState->componenentExecutionStates[flowState->parentComponentIndex];
-		if (componentExecutionState) {
-			flowState->parentFlowState->componenentExecutionStates[flowState->parentComponentIndex] = nullptr;
-			ObjectAllocator<ComponenentExecutionState>::deallocate(componentExecutionState);
-		} else {
-			throwError(flowState, componentIndex, "Unexpected: no CallAction component state\n");
-			return;
-		}
-	}
+    flowState->numAsyncComponents--;
+    if (canFreeFlowState(flowState)) {
+        freeFlowState(flowState);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

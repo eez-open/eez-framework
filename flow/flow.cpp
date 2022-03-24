@@ -102,16 +102,9 @@ void tick() {
 			}
 		}
 
-		if (--flowState->numActiveComponents == 0 && flowState->isAction) {
-			auto componentExecutionState = flowState->parentFlowState->componenentExecutionStates[flowState->parentComponentIndex];
-			if (componentExecutionState) {
-				flowState->parentFlowState->componenentExecutionStates[flowState->parentComponentIndex] = nullptr;
-				ObjectAllocator<ComponenentExecutionState>::deallocate(componentExecutionState);
-			} else {
-				throwError(flowState, componentIndex, "Unexpected: no CallAction component state\n");
-				return;
-			}
-		}
+        if (canFreeFlowState(flowState)) {
+            freeFlowState(flowState);
+        }
 
 		if (millis() - startTickCount >= FLOW_TICK_MAX_DURATION_MS) {
 			break;

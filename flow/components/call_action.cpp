@@ -60,12 +60,10 @@ void executeCallActionComponent(FlowState *flowState, unsigned componentIndex) {
 
 	FlowState *actionFlowState = initActionFlowState(flowIndex, flowState, componentIndex);
 
-	if (actionFlowState->numActiveComponents == 0) {
+	if (canFreeFlowState(actionFlowState)) {
 		freeFlowState(actionFlowState);
 		propagateValueThroughSeqout(flowState, componentIndex);
 	} else {
-		flowState->numActiveComponents++;
-
 		callActionComponenentExecutionState = ObjectAllocator<CallActionComponenentExecutionState>::allocate(0x4c669d4b);
 		callActionComponenentExecutionState->flowState = actionFlowState;
 		flowState->componenentExecutionStates[componentIndex] = callActionComponenentExecutionState;
