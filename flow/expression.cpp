@@ -172,6 +172,12 @@ bool evalAssignableExpression(FlowState *flowState, int componentIndex, const ui
 	return false;
 }
 
+bool evalProperty(FlowState *flowState, int componentIndex, int propertyIndex, Value &result, int *numInstructionBytes, const int32_t *iterators, DataOperationEnum operation) {
+    auto component = flowState->flow->components[componentIndex];
+    return evalExpression(flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, result, numInstructionBytes, iterators, operation);
+}
+
+
 int16_t getNativeVariableId(const WidgetCursor &widgetCursor) {
 	if (widgetCursor.flowState) {
 		FlowState *flowState = widgetCursor.flowState;
@@ -180,14 +186,14 @@ int16_t getNativeVariableId(const WidgetCursor &widgetCursor) {
 		WidgetDataItem *widgetDataItem = flow->widgetDataItems[-(widgetCursor.widget->data + 1)];
 		if (widgetDataItem && widgetDataItem->componentIndex != -1 && widgetDataItem->propertyValueIndex != -1) {
 			auto component = flow->components[widgetDataItem->componentIndex];
-			auto propertyValue = component->propertyValues[widgetDataItem->propertyValueIndex];
+			auto property = component->properties[widgetDataItem->propertyValueIndex];
 
 			g_stack.sp = 0;
 			g_stack.flowState = flowState;
 			g_stack.componentIndex = widgetDataItem->componentIndex;
 			g_stack.iterators = widgetCursor.iterators;
 
-			if (evalExpression(flowState, propertyValue->evalInstructions, nullptr)) {
+			if (evalExpression(flowState, property->evalInstructions, nullptr)) {
 				if (g_stack.sp == 1) {
 					auto finalResult = g_stack.pop();
 

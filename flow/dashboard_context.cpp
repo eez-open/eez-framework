@@ -39,6 +39,22 @@ struct ExpressionList {
     Value values[1];
 };
 
+Value *DashboardComponentContext::evalProperty(int propertyIndex) {
+    auto pValue = ObjectAllocator<Value>::allocate(0x0de3a60d);
+    if (!pValue) {
+        eez::flow::throwError(flowState, componentIndex, "Out of memory\n");
+        return nullptr;
+    }
+
+    if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, *pValue)) {
+        ObjectAllocator<Value>::deallocate(pValue);
+        eez::flow::throwError(flowState, componentIndex, "Failed to evaluate Milliseconds in Delay\n");
+        return nullptr;
+    }
+
+    return pValue;
+}
+
 void *DashboardComponentContext::getExpressionListParam(int offset) {
     auto component = flowState->flow->components[componentIndex];
 
@@ -111,6 +127,10 @@ void DashboardComponentContext::throwError(const char *errorMessage) {
 } // eez
 
 using namespace eez::flow;
+
+EM_PORT_API(Value *) DashboardContext_evalProperty(DashboardComponentContext *context, int propertyIndex) {
+    return context->evalProperty(propertyIndex);
+}
 
 EM_PORT_API(const char *) DashboardContext_getStringParam(DashboardComponentContext *context, int offset) {
     return context->getStringParam(offset);
@@ -196,7 +216,7 @@ EM_PORT_API(void) arrayValueSetElementString(Value *arrayValuePtr, int elementIn
 EM_PORT_API(void) arrayValueSetElementNull(Value *arrayValuePtr, int elementIndex) {
     using namespace eez;
     using namespace eez::gui;
-    Value nullValue = Value(VALUE_TYPE_NULL);
+    Value nullValue = Value(0, VALUE_TYPE_NULL);
     auto array = arrayValuePtr->getArray();
     array->values[elementIndex] = nullValue;
 }

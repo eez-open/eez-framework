@@ -256,10 +256,7 @@ void getValue(uint16_t dataId, DataOperationEnum operation, const WidgetCursor &
 
 		WidgetDataItem *widgetDataItem = flow->widgetDataItems[dataId];
 		if (widgetDataItem && widgetDataItem->componentIndex != -1 && widgetDataItem->propertyValueIndex != -1) {
-			auto component = flow->components[widgetDataItem->componentIndex];
-			auto propertyValue = component->propertyValues[widgetDataItem->propertyValueIndex];
-
-			if (!evalExpression(flowState, widgetDataItem->componentIndex, propertyValue->evalInstructions, value, nullptr, widgetCursor.iterators, operation)) {
+			if (!evalProperty(flowState, widgetDataItem->componentIndex, widgetDataItem->propertyValueIndex, value, nullptr, widgetCursor.iterators, operation)) {
 				throwError(flowState, widgetDataItem->componentIndex, "doGetFlowValue failed\n");
 			}
 		}
@@ -274,10 +271,9 @@ void setValue(uint16_t dataId, const WidgetCursor &widgetCursor, const Value& va
 		WidgetDataItem *widgetDataItem = flow->widgetDataItems[dataId];
 		if (widgetDataItem && widgetDataItem->componentIndex != -1 && widgetDataItem->propertyValueIndex != -1) {
 			auto component = flow->components[widgetDataItem->componentIndex];
-			auto propertyValue = component->propertyValues[widgetDataItem->propertyValueIndex];
-
+			auto property = component->properties[widgetDataItem->propertyValueIndex];
 			Value dstValue;
-			if (evalAssignableExpression(flowState, widgetDataItem->componentIndex, propertyValue->evalInstructions, dstValue, nullptr, widgetCursor.iterators)) {
+			if (evalAssignableExpression(flowState, widgetDataItem->componentIndex, property->evalInstructions, dstValue, nullptr, widgetCursor.iterators)) {
 				assignValue(flowState, widgetDataItem->componentIndex, dstValue, value);
 			} else {
 				throwError(flowState, widgetDataItem->componentIndex, "doSetFlowValue failed\n");

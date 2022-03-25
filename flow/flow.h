@@ -51,6 +51,8 @@ struct DashboardComponentContext {
     FlowState *flowState;
     unsigned componentIndex;
 
+    Value *evalProperty(int propertyIndex);
+
     const char *getStringParam(int offset);
 
     void *getExpressionListParam(int offset);

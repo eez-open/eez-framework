@@ -34,14 +34,10 @@ struct WatchVariableComponenentExecutionState : public ComponenentExecutionState
 };
 
 void executeWatchVariableComponent(FlowState *flowState, unsigned componentIndex) {
-	auto component = flowState->flow->components[componentIndex];
-
 	auto watchVariableComponentExecutionState = (WatchVariableComponenentExecutionState *)flowState->componenentExecutionStates[componentIndex];
 
-    auto propertyValue = component->propertyValues[defs_v3::WATCH_VARIABLE_ACTION_COMPONENT_PROPERTY_VARIABLE];
-
     Value value;
-    if (!evalExpression(flowState, componentIndex, propertyValue->evalInstructions, value)) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::WATCH_VARIABLE_ACTION_COMPONENT_PROPERTY_VARIABLE, value)) {
         throwError(flowState, componentIndex, "Failed to evaluate Variable in WatchVariable\n");
         return;
     }
