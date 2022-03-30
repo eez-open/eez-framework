@@ -31,8 +31,11 @@ unsigned start(eez::gui::Assets *assets);
 void tick();
 void stop();
 
+FlowState *getFlowState(Assets *assets, int flowStateIndex);
+
 FlowState *getFlowState(Assets *assets, int16_t pageId, const WidgetCursor &widgetCursor);
 int getPageIndex(FlowState *flowState);
+
 
 FlowState *getLayoutViewFlowState(FlowState *flowState, uint16_t layoutViewWidgetComponentIndex, int16_t pageId);
 
@@ -51,6 +54,12 @@ struct DashboardComponentContext {
     FlowState *flowState;
     unsigned componentIndex;
 
+    int getFlowIndex();
+    int getComponentIndex();
+
+    DashboardComponentContext *startAsyncExecution();
+    void endAsyncExecution();
+
     Value *evalProperty(int propertyIndex);
 
     const char *getStringParam(int offset);
@@ -58,10 +67,13 @@ struct DashboardComponentContext {
     void *getExpressionListParam(int offset);
     void freeExpressionListParam(void *ptr);
 
+    void propagateValue(unsigned outputIndex, Value *valuePtr);
     void propagateIntValue(unsigned outputIndex, int value);
     void propagateDoubleValue(unsigned outputIndex, double value);
     void propagateBooleanValue(unsigned outputIndex, bool value);
     void propagateStringValue(unsigned outputIndex, const char *value);
+    void propagateUndefinedValue(unsigned outputIndex);
+    void propagateNullValue(unsigned outputIndex);
 
     void propagateValueThroughSeqout();
 

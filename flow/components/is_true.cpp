@@ -42,6 +42,7 @@ void executeIsTrueComponent(FlowState *flowState, unsigned componentIndex) {
         }
     } else {
         throwError(flowState, componentIndex, "Failed to convert Value to boolean in IsTrue\n");
+        return;
     }
 
 	propagateValueThroughSeqout(flowState, componentIndex);

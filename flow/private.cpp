@@ -34,8 +34,6 @@ using namespace eez::gui;
 namespace eez {
 namespace flow {
 
-uint32_t g_lastFlowStateIndex = 0;
-
 bool isComponentReadyToRun(FlowState *flowState, unsigned componentIndex) {
 	auto component = flowState->flow->components[componentIndex];
 
@@ -101,7 +99,7 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
 		0x4c3b6ef5
 	);
 
-	flowState->flowStateIndex = ++g_lastFlowStateIndex;
+	flowState->flowStateIndex = (int)((uint8_t *)flowState - ALLOC_BUFFER);
 	flowState->assets = assets;
 	flowState->flowDefinition = static_cast<FlowDefinition *>(assets->flowDefinition);
 	flowState->flow = flowDefinition->flows[flowIndex];

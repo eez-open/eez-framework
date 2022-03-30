@@ -54,8 +54,6 @@ unsigned start(Assets *assets) {
 		return 0;
 	}
 
-	g_lastFlowStateIndex = 0;
-
 	queueReset();
 
 	scpiComponentInitHook();
@@ -122,6 +120,10 @@ void stop() {
 		g_mainPageFlowState = nullptr;
 	}
 	queueReset();
+}
+
+FlowState *getFlowState(Assets *assets, int flowStateIndex) {
+    return (FlowState *)(ALLOC_BUFFER + flowStateIndex);
 }
 
 FlowState *getFlowState(Assets *assets, int16_t pageId, const WidgetCursor &widgetCursor) {

@@ -280,9 +280,9 @@ void writeArray(const ArrayValue *arrayValue) {
 	WRITE_TO_OUTPUT_BUFFER('\n');
 	FLUSH_OUTPUT_BUFFER();
 
-	for (uint32_t i = 0; i < arrayValue->arraySize; i++) {
-		onValueChanged(&arrayValue->values[i]);
-	}
+    for (uint32_t i = 0; i < arrayValue->arraySize; i++) {
+        onValueChanged(&arrayValue->values[i]);
+    }
 }
 
 void writeValue(const Value &value) {

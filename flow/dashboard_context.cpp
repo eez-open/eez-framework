@@ -28,16 +28,26 @@
 namespace eez {
 namespace flow {
 
-const char *DashboardComponentContext::getStringParam(int offset) {
-    auto component = flowState->flow->components[componentIndex];
-    auto ptr = (const uint32_t *)((const uint8_t *)component + sizeof(Component) + offset);
-    return (const char *)(MEMORY_BEGIN + 4 + *ptr);
+int DashboardComponentContext::getFlowIndex() {
+    return flowState->flowIndex;
 }
 
-struct ExpressionList {
-    uint32_t count;
-    Value values[1];
-};
+int DashboardComponentContext::getComponentIndex() {
+    return componentIndex;
+}
+
+DashboardComponentContext *DashboardComponentContext::startAsyncExecution() {
+    DashboardComponentContext *dashboardComponentContext = ObjectAllocator<DashboardComponentContext>::allocate(0xe0b815d6);
+    dashboardComponentContext->flowState = flowState;
+    dashboardComponentContext->componentIndex = componentIndex;
+    eez::flow::startAsyncExecution(flowState, componentIndex);
+    return dashboardComponentContext;
+}
+
+void DashboardComponentContext::endAsyncExecution() {
+    eez::flow::endAsyncExecution(flowState, componentIndex);
+    ObjectAllocator<DashboardComponentContext>::deallocate(this);
+}
 
 Value *DashboardComponentContext::evalProperty(int propertyIndex) {
     auto pValue = ObjectAllocator<Value>::allocate(0x0de3a60d);
@@ -55,6 +65,16 @@ Value *DashboardComponentContext::evalProperty(int propertyIndex) {
     return pValue;
 }
 
+const char *DashboardComponentContext::getStringParam(int offset) {
+    auto component = flowState->flow->components[componentIndex];
+    auto ptr = (const uint32_t *)((const uint8_t *)component + sizeof(Component) + offset);
+    return (const char *)(MEMORY_BEGIN + 4 + *ptr);
+}
+
+struct ExpressionList {
+    uint32_t count;
+    Value values[1];
+};
 void *DashboardComponentContext::getExpressionListParam(int offset) {
     auto component = flowState->flow->components[componentIndex];
 
@@ -95,6 +115,10 @@ void DashboardComponentContext::freeExpressionListParam(void *ptr) {
     ::free(ptr);
 }
 
+void DashboardComponentContext::propagateValue(unsigned outputIndex, Value *valuePtr) {
+	eez::flow::propagateValue(flowState, componentIndex, outputIndex, *valuePtr);
+}
+
 void DashboardComponentContext::propagateIntValue(unsigned outputIndex, int value) {
     Value intValue = value;
 	eez::flow::propagateValue(flowState, componentIndex, outputIndex, intValue);
@@ -115,6 +139,16 @@ void DashboardComponentContext::propagateStringValue(unsigned outputIndex, const
 	eez::flow::propagateValue(flowState, componentIndex, outputIndex, stringValue);
 }
 
+void DashboardComponentContext::propagateUndefinedValue(unsigned outputIndex) {
+    Value value(0, VALUE_TYPE_UNDEFINED);
+	eez::flow::propagateValue(flowState, componentIndex, outputIndex, value);
+}
+
+void DashboardComponentContext::propagateNullValue(unsigned outputIndex) {
+    Value value(0, VALUE_TYPE_NULL);
+	eez::flow::propagateValue(flowState, componentIndex, outputIndex, value);
+}
+
 void DashboardComponentContext::propagateValueThroughSeqout() {
 	eez::flow::propagateValueThroughSeqout(flowState, componentIndex);
 }
@@ -127,6 +161,22 @@ void DashboardComponentContext::throwError(const char *errorMessage) {
 } // eez
 
 using namespace eez::flow;
+
+EM_PORT_API(int) DashboardContext_getFlowIndex(DashboardComponentContext *context) {
+    return context->getFlowIndex();
+}
+
+EM_PORT_API(int) DashboardContext_getComponentIndex(DashboardComponentContext *context) {
+    return context->getComponentIndex();
+}
+
+EM_PORT_API(DashboardComponentContext *) DashboardContext_startAsyncExecution(DashboardComponentContext *context) {
+    return context->startAsyncExecution();
+}
+
+EM_PORT_API(void) DashboardContext_endAsyncExecution(DashboardComponentContext *context) {
+    context->endAsyncExecution();
+}
 
 EM_PORT_API(Value *) DashboardContext_evalProperty(DashboardComponentContext *context, int propertyIndex) {
     return context->evalProperty(propertyIndex);
@@ -144,6 +194,10 @@ EM_PORT_API(void) DashboardContext_freeExpressionListParam(DashboardComponentCon
     return context->freeExpressionListParam(ptr);
 }
 
+EM_PORT_API(void) DashboardContext_propagateValue(DashboardComponentContext *context, unsigned outputIndex, Value *value) {
+    context->propagateValue(outputIndex, value);
+}
+
 EM_PORT_API(void) DashboardContext_propagateIntValue(DashboardComponentContext *context, unsigned outputIndex, int value) {
     context->propagateIntValue(outputIndex, value);
 }
@@ -158,6 +212,14 @@ EM_PORT_API(void) DashboardContext_propagateBooleanValue(DashboardComponentConte
 
 EM_PORT_API(void) DashboardContext_propagateStringValue(DashboardComponentContext *context, unsigned outputIndex, const char *value) {
     context->propagateStringValue(outputIndex, value);
+}
+
+EM_PORT_API(void) DashboardContext_propagateUndefinedValue(DashboardComponentContext *context, unsigned outputIndex) {
+    context->propagateUndefinedValue(outputIndex);
+}
+
+EM_PORT_API(void) DashboardContext_propagateNullValue(DashboardComponentContext *context, unsigned outputIndex) {
+    context->propagateNullValue(outputIndex);
 }
 
 EM_PORT_API(void) DashboardContext_propagateValueThroughSeqout(DashboardComponentContext *context) {
@@ -219,6 +281,26 @@ EM_PORT_API(void) arrayValueSetElementNull(Value *arrayValuePtr, int elementInde
     Value nullValue = Value(0, VALUE_TYPE_NULL);
     auto array = arrayValuePtr->getArray();
     array->values[elementIndex] = nullValue;
+}
+
+EM_PORT_API(Value *) evalProperty(int flowStateIndex, int componentIndex, int propertyIndex, int32_t *iterators) {
+    using namespace eez;
+    using namespace eez::gui;
+    using namespace eez::flow;
+
+    auto pValue = ObjectAllocator<Value>::allocate(0xb7e697b8);
+    if (!pValue) {
+        return nullptr;
+    }
+
+    auto flowState = getFlowState(g_mainAssets, flowStateIndex);
+
+    if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, *pValue, nullptr, iterators)) {
+        ObjectAllocator<Value>::deallocate(pValue);
+        return nullptr;
+    }
+
+    return pValue;
 }
 
 EM_PORT_API(void) valueFree(Value *valuePtr) {

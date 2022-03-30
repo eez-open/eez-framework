@@ -984,6 +984,11 @@ bool Value::toBool(int *err) const {
 		return str && *str;
 	}
 
+	if (type == VALUE_TYPE_ARRAY || type == VALUE_TYPE_ARRAY_REF) {
+		auto arrayValue = getArray();
+        return arrayValue->arraySize != 0;
+	}
+
     if (err) {
         *err = 1;
     }

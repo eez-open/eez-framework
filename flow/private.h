@@ -60,8 +60,6 @@ struct FlowState {
 
 extern FlowState *g_mainPageFlowState;
 
-extern uint32_t g_lastFlowStateIndex;
-
 FlowState *initActionFlowState(int flowIndex, FlowState *parentFlowState, int parentComponentIndex);
 FlowState *initPageFlowState(Assets *assets, int flowIndex, FlowState *parentFlowState, int parentComponentIndex);
 
