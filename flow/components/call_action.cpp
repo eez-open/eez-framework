@@ -29,23 +29,11 @@ using namespace eez::gui;
 namespace eez {
 namespace flow {
 
-struct CallActionComponenentExecutionState : public ComponenentExecutionState {
-	FlowState *flowState;
+CallActionComponenentExecutionState::~CallActionComponenentExecutionState() {
+    freeFlowState(flowState);
+}
 
-	~CallActionComponenentExecutionState() {
-		freeFlowState(flowState);
-	}
-};
-
-void executeCallActionComponent(FlowState *flowState, unsigned componentIndex) {
-	auto component = (CallActionActionComponent *)flowState->flow->components[componentIndex];
-
-	auto flowIndex = component->flowIndex;
-	if (flowIndex < 0) {
-		throwError(flowState, componentIndex, "Invalid action flow index in CallAction\n");
-		return;
-	}
-
+void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIndex) {
 	if (flowIndex >= (int)flowState->flowDefinition->flows.count) {
 		executeActionFunction(flowIndex - flowState->flowDefinition->flows.count);
 		propagateValueThroughSeqout(flowState, componentIndex);
@@ -54,8 +42,12 @@ void executeCallActionComponent(FlowState *flowState, unsigned componentIndex) {
 
 	auto callActionComponenentExecutionState = (CallActionComponenentExecutionState *)flowState->componenentExecutionStates[componentIndex];
 	if (callActionComponenentExecutionState) {
-		throwError(flowState, componentIndex, "CallAction is already running\n");
-		return;
+        if (canFreeFlowState(callActionComponenentExecutionState->flowState)) {
+            freeFlowState(callActionComponenentExecutionState->flowState);
+        } else {
+		    throwError(flowState, componentIndex, "CallAction is already running\n");
+		    return;
+        }
 	}
 
 	FlowState *actionFlowState = initActionFlowState(flowIndex, flowState, componentIndex);
@@ -68,6 +60,18 @@ void executeCallActionComponent(FlowState *flowState, unsigned componentIndex) {
 		callActionComponenentExecutionState->flowState = actionFlowState;
 		flowState->componenentExecutionStates[componentIndex] = callActionComponenentExecutionState;
 	}
+}
+
+void executeCallActionComponent(FlowState *flowState, unsigned componentIndex) {
+	auto component = (CallActionActionComponent *)flowState->flow->components[componentIndex];
+
+	auto flowIndex = component->flowIndex;
+	if (flowIndex < 0) {
+		throwError(flowState, componentIndex, "Invalid action flow index in CallAction\n");
+		return;
+	}
+
+    executeCallAction(flowState, componentIndex, flowIndex);
 }
 
 } // namespace flow

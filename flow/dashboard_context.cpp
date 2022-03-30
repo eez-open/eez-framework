@@ -20,6 +20,7 @@
 #if defined(__EMSCRIPTEN__)
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <eez/flow/flow.h>
 #include <eez/flow/private.h>
@@ -153,6 +154,10 @@ void DashboardComponentContext::propagateValueThroughSeqout() {
 	eez::flow::propagateValueThroughSeqout(flowState, componentIndex);
 }
 
+void DashboardComponentContext::executeCallAction(int flowIndex) {
+    eez::flow::executeCallAction(flowState, componentIndex, flowIndex);
+}
+
 void DashboardComponentContext::throwError(const char *errorMessage) {
 	eez::flow::throwError(flowState, componentIndex, errorMessage);
 }
@@ -224,6 +229,10 @@ EM_PORT_API(void) DashboardContext_propagateNullValue(DashboardComponentContext 
 
 EM_PORT_API(void) DashboardContext_propagateValueThroughSeqout(DashboardComponentContext *context) {
     context->propagateValueThroughSeqout();
+}
+
+EM_PORT_API(void) DashboardContext_executeCallAction(DashboardComponentContext *context, int flowIndex) {
+    context->executeCallAction(flowIndex);
 }
 
 EM_PORT_API(void) DashboardContext_throwError(DashboardComponentContext *context, const char *errorMessage) {
@@ -301,6 +310,16 @@ EM_PORT_API(Value *) evalProperty(int flowStateIndex, int componentIndex, int pr
     }
 
     return pValue;
+}
+
+EM_PORT_API(void) propagateValue(int flowStateIndex, int componentIndex, int outputIndex, Value *valuePtr) {
+    using namespace eez;
+    using namespace eez::gui;
+    using namespace eez::flow;
+
+    auto flowState = getFlowState(g_mainAssets, flowStateIndex);
+
+    eez::flow::propagateValue(flowState, componentIndex, outputIndex, *valuePtr);
 }
 
 EM_PORT_API(void) valueFree(Value *valuePtr) {

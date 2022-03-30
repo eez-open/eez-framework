@@ -46,6 +46,7 @@ void executeLoopComponent(FlowState *flowState, unsigned componentIndex) {
     auto startInputIndex = component->inputs[START_INPUT_INDEX];
     if (flowState->values[startInputIndex].type != VALUE_TYPE_UNDEFINED) {
         if (loopComponentExecutionState) {
+            flowState->componenentExecutionStates[componentIndex] = nullptr;
             ObjectAllocator<LoopComponenentExecutionState>::deallocate(loopComponentExecutionState);
             loopComponentExecutionState = nullptr;
         }
@@ -88,8 +89,8 @@ void executeLoopComponent(FlowState *flowState, unsigned componentIndex) {
     } else {
         auto value = op_add(loopComponentExecutionState->dstValue, loopComponentExecutionState->stepValue);
         if (op_great(value, loopComponentExecutionState->toValue).toBool()) {
-			ObjectAllocator<LoopComponenentExecutionState>::deallocate(loopComponentExecutionState);
 			flowState->componenentExecutionStates[componentIndex] = nullptr;
+			ObjectAllocator<LoopComponenentExecutionState>::deallocate(loopComponentExecutionState);
 
 		    propagateValue(flowState, componentIndex, 1);
 		} else {

@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdio.h>
+
 #include <eez/flow/private.h>
 #include <eez/flow/operations.h>
 
@@ -173,7 +175,19 @@ bool evalAssignableExpression(FlowState *flowState, int componentIndex, const ui
 }
 
 bool evalProperty(FlowState *flowState, int componentIndex, int propertyIndex, Value &result, int *numInstructionBytes, const int32_t *iterators, DataOperationEnum operation) {
+    if (componentIndex < 0 || componentIndex >= flowState->flow->components.count) {
+        char message[256];
+        snprintf(message, sizeof(message), "invalid component index %d in flow at index %d", componentIndex, flowState->flowIndex);
+        throwError(flowState, componentIndex, message);
+        return false;
+    }
     auto component = flowState->flow->components[componentIndex];
+    if (propertyIndex < 0 || propertyIndex >= component->properties.count) {
+        char message[256];
+        snprintf(message, sizeof(message), "invalid property index %d (max: %d) in component at index %d in flow at index %d", propertyIndex, component->properties.count, componentIndex, flowState->flowIndex);
+        throwError(flowState, componentIndex, message);
+        return false;
+    }
     return evalExpression(flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, result, numInstructionBytes, iterators, operation);
 }
 

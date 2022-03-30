@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdio.h>
+
 #include <eez/core/alloc.h>
 #include <eez/core/os.h>
 
@@ -59,10 +61,15 @@ void executeWatchVariableComponent(FlowState *flowState, unsigned componentIndex
 			propagateValue(flowState, componentIndex, 1, value);
 		}
 
-		if (!addToQueue(flowState, componentIndex, -1, -1, -1, true)) {
-			throwError(flowState, componentIndex, "Execution queue is full\n");
-			return;
-		}
+        if (canFreeFlowState(flowState, false)) {
+            flowState->componenentExecutionStates[componentIndex] = nullptr;
+            ObjectAllocator<WatchVariableComponenentExecutionState>::deallocate(watchVariableComponentExecutionState);
+        } else {
+            if (!addToQueue(flowState, componentIndex, -1, -1, -1, true)) {
+                throwError(flowState, componentIndex, "Execution queue is full\n");
+                return;
+            }
+        }
 	}
 }
 

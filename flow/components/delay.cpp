@@ -59,8 +59,8 @@ void executeDelayComponent(FlowState *flowState, unsigned componentIndex) {
 		}
 	} else {
 		if (millis() >= delayComponentExecutionState->waitUntil) {
-			ObjectAllocator<DelayComponenentExecutionState>::deallocate(delayComponentExecutionState);
 			flowState->componenentExecutionStates[componentIndex] = nullptr;
+			ObjectAllocator<DelayComponenentExecutionState>::deallocate(delayComponentExecutionState);
 			propagateValueThroughSeqout(flowState, componentIndex);
 		} else {
 			if (!addToQueue(flowState, componentIndex, -1, -1, -1, true)) {

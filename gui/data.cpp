@@ -1036,6 +1036,8 @@ Value Value::toString(uint32_t id) const {
         snprintf(tempStr, sizeof(tempStr), "%" PRId64 "", int64Value);
     } else if (type == VALUE_TYPE_UINT64) {
         snprintf(tempStr, sizeof(tempStr), "%" PRIu64 "", uint64Value);
+    } else {
+        toText(tempStr, sizeof(tempStr));
     }
 
 #ifdef _MSC_VER

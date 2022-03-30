@@ -77,6 +77,8 @@ struct DashboardComponentContext {
 
     void propagateValueThroughSeqout();
 
+    void executeCallAction(int flowIndex);
+
     void throwError(const char *errorMessage);
 };
 #endif // __EMSCRIPTEN__

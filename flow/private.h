@@ -63,7 +63,7 @@ extern FlowState *g_mainPageFlowState;
 FlowState *initActionFlowState(int flowIndex, FlowState *parentFlowState, int parentComponentIndex);
 FlowState *initPageFlowState(Assets *assets, int flowIndex, FlowState *parentFlowState, int parentComponentIndex);
 
-bool canFreeFlowState(FlowState *flowState);
+bool canFreeFlowState(FlowState *flowState, bool includingWatchVariable = true);
 void freeFlowState(FlowState *flowState);
 
 void propagateValue(FlowState *flowState, unsigned componentIndex, unsigned outputIndex, const gui::Value &value);
@@ -77,6 +77,8 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
 
 void startAsyncExecution(FlowState *flowState, int componentIndex);
 void endAsyncExecution(FlowState *flowState, int componentIndex);
+
+void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIndex);
 
 void throwError(FlowState *flowState, int componentIndex, const char *errorMessage);
 

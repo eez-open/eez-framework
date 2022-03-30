@@ -16,8 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdio.h>
+
 #include <eez/flow/components/input.h>
 #include <eez/flow/components/call_action.h>
+#include <eez/flow/flow_defs_v3.h>
 
 using namespace eez::gui;
 
@@ -40,6 +43,11 @@ bool getCallActionValue(FlowState *flowState, unsigned componentIndex, Value &va
     auto callActionComponent = (CallActionActionComponent *)flowState->parentComponent;
 
     uint8_t parentComponentInputIndex = callActionComponent->inputsStartIndex + component->inputIndex;
+    if (component->type == defs_v3::COMPONENT_TYPE_INPUT_ACTION) {
+        parentComponentInputIndex = callActionComponent->inputsStartIndex + component->inputIndex;
+    } else {
+        parentComponentInputIndex = 0;
+    }
 
     if (parentComponentInputIndex >= flowState->parentComponent->inputs.count) {
         throwError(flowState, componentIndex, "Invalid input index in Input\n");

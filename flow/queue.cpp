@@ -18,11 +18,12 @@
 
 #include <eez/flow/queue.h>
 #include <eez/flow/debugger.h>
+#include <eez/flow/flow_defs_v3.h>
 
 namespace eez {
 namespace flow {
 
-static const unsigned QUEUE_SIZE = 200;
+static const unsigned QUEUE_SIZE = 1000;
 static struct {
 	FlowState *flowState;
 	unsigned componentIndex;
@@ -98,7 +99,7 @@ void removeNextTaskFromQueue() {
     }
 }
 
-bool isThereAnyTaskInQueueForFlowState(FlowState *flowState) {
+bool isThereAnyTaskInQueueForFlowState(FlowState *flowState, bool includingWatchVariable) {
 	if (g_queueHead == g_queueTail && !g_queueIsFull) {
 		return false;
 	}
@@ -106,7 +107,10 @@ bool isThereAnyTaskInQueueForFlowState(FlowState *flowState) {
     unsigned int it = g_queueHead;
     while (true) {
 		if (g_queue[it].flowState == flowState) {
-			return true;
+            auto component = flowState->flow->components[g_queue[it].componentIndex];
+            if (includingWatchVariable || component->type != defs_v3::COMPONENT_TYPE_WATCH_VARIABLE_ACTION) {
+			    return true;
+            }
 		}
 
         it = (it + 1) % QUEUE_SIZE;
@@ -116,45 +120,6 @@ bool isThereAnyTaskInQueueForFlowState(FlowState *flowState) {
 	}
 
     return false;
-}
-
-void removeQueueTasksForFlowState(FlowState *flowState) {
-	if (g_queueHead == g_queueTail && !g_queueIsFull) {
-		return;
-	}
-
-	unsigned int it = g_queueHead;
-	while (true) {
-		auto itNext = (it + 1) % QUEUE_SIZE;
-
-		if (g_queue[it].flowState == flowState) {
-			if (it == g_queueHead) {
-				g_queueHead = (g_queueHead + 1) % QUEUE_SIZE;
-			} else if (itNext == g_queueTail) {
-                g_queueTail = it;
-                break;
-            } else {
-				unsigned int itMovePrev = it;
-				unsigned int itMove = itNext;
-
-                while (true) {
-					g_queue[itMovePrev] = g_queue[itMove];
-					itMovePrev = itMove;
-					itMove = (itMove + 1) % QUEUE_SIZE;
-                    if (it == g_queueTail) {
-                        break;
-                    }
-				}
-
-                g_queueTail = itMovePrev;
-			}
-		}
-
-		it = itNext;
-        if (it == g_queueTail) {
-            break;
-        }
-	}
 }
 
 } // namespace flow

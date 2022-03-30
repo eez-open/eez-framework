@@ -83,6 +83,15 @@ void executeLayoutViewWidgetComponent(FlowState *flowState, unsigned componentIn
                         return;
                     }
                 }
+            } else if (layoutViewComponent->type == defs_v3::COMPONENT_TYPE_START_ACTION) {
+                Value value;
+                if (getCallActionValue(layoutViewFlowState, layoutViewComponentIndex, value)) {
+                    if (value.getType() != VALUE_TYPE_UNDEFINED) {
+                        addToQueue(layoutViewWidgetExecutionState->flowState, layoutViewComponentIndex);
+                    }
+                } else {
+                    return;
+                }
             }
         }
     }

@@ -31,5 +31,11 @@ struct CallActionActionComponent : public Component {
 
 typedef CallActionActionComponent LayoutViewWidgetComponent;
 
+struct CallActionComponenentExecutionState : public ComponenentExecutionState {
+	FlowState *flowState;
+
+	~CallActionComponenentExecutionState();
+};
+
 } // flow
 } // eez
