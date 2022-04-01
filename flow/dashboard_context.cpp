@@ -249,6 +249,55 @@ EM_PORT_API(void) DashboardContext_throwError(DashboardComponentContext *context
     context->throwError(errorMessage);
 }
 
+EM_PORT_API(Value *) createUndefinedValue() {
+    using namespace eez;
+    using namespace eez::gui;
+    auto pValue = ObjectAllocator<Value>::allocate(0x2e821285);
+    *pValue = Value(0, VALUE_TYPE_UNDEFINED);
+    return pValue;
+}
+
+EM_PORT_API(Value *) createNullValue() {
+    using namespace eez;
+    using namespace eez::gui;
+    auto pValue = ObjectAllocator<Value>::allocate(0x69debded);
+    *pValue = Value(0, VALUE_TYPE_NULL);
+    return pValue;
+}
+
+EM_PORT_API(Value *) createIntValue(int value) {
+    using namespace eez;
+    using namespace eez::gui;
+    auto pValue = ObjectAllocator<Value>::allocate(0x20ea356c);
+    *pValue = Value(value, VALUE_TYPE_INT32);
+    return pValue;
+}
+
+EM_PORT_API(Value *) createDoubleValue(double value) {
+    using namespace eez;
+    using namespace eez::gui;
+    auto pValue = ObjectAllocator<Value>::allocate(0xecfb69a9);
+    *pValue = Value(value, VALUE_TYPE_DOUBLE);
+    return pValue;
+}
+
+EM_PORT_API(Value *) createBooleanValue(int value) {
+    using namespace eez;
+    using namespace eez::gui;
+    auto pValue = ObjectAllocator<Value>::allocate(0x76071378);
+    *pValue = Value(value, VALUE_TYPE_BOOLEAN);
+    return pValue;
+}
+
+EM_PORT_API(Value *) createStringValue(const char *value) {
+    using namespace eez;
+    using namespace eez::gui;
+    auto pValue = ObjectAllocator<Value>::allocate(0x0a8a7ed1);
+    Value stringValue = Value::makeStringRef(value, strlen(value), 0x5b1e51d7);
+    *pValue = stringValue;
+    return pValue;
+}
+
 EM_PORT_API(Value *) arrayValueAlloc(int arraySize, int arrayType) {
     using namespace eez;
     using namespace eez::gui;
@@ -320,6 +369,19 @@ EM_PORT_API(Value *) evalProperty(int flowStateIndex, int componentIndex, int pr
     }
 
     return pValue;
+}
+
+EM_PORT_API(void) assignProperty(int flowStateIndex, int componentIndex, int propertyIndex, int32_t *iterators, Value *srcValuePtr) {
+    using namespace eez;
+    using namespace eez::gui;
+    using namespace eez::flow;
+
+    auto flowState = getFlowState(g_mainAssets, flowStateIndex);
+
+    Value dstValue;
+    if (eez::flow::evalAssignableProperty(flowState, componentIndex, propertyIndex, dstValue, nullptr, iterators)) {
+        assignValue(flowState, componentIndex, dstValue, *srcValuePtr);
+    }
 }
 
 EM_PORT_API(void) propagateValue(int flowStateIndex, int componentIndex, int outputIndex, Value *valuePtr) {
