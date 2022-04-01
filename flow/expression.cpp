@@ -83,7 +83,7 @@ static bool evalExpression(FlowState *flowState, const uint8_t *instructions, in
 			}
 
             if (arrayValue.getType() == VALUE_TYPE_UNDEFINED || arrayValue.getType() == VALUE_TYPE_NULL) {
-                if (!g_stack.push(Value(VALUE_TYPE_UNDEFINED))) {
+                if (!g_stack.push(Value(0, VALUE_TYPE_UNDEFINED))) {
 				    return false;
 			    }
             } else {
@@ -191,6 +191,22 @@ bool evalProperty(FlowState *flowState, int componentIndex, int propertyIndex, V
     return evalExpression(flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, result, numInstructionBytes, iterators, operation);
 }
 
+bool evalAssignableProperty(FlowState *flowState, int componentIndex, int propertyIndex, Value &result, int *numInstructionBytes, const int32_t *iterators) {
+    if (componentIndex < 0 || componentIndex >= flowState->flow->components.count) {
+        char message[256];
+        snprintf(message, sizeof(message), "invalid component index %d in flow at index %d", componentIndex, flowState->flowIndex);
+        throwError(flowState, componentIndex, message);
+        return false;
+    }
+    auto component = flowState->flow->components[componentIndex];
+    if (propertyIndex < 0 || propertyIndex >= component->properties.count) {
+        char message[256];
+        snprintf(message, sizeof(message), "invalid property index %d (max: %d) in component at index %d in flow at index %d", propertyIndex, component->properties.count, componentIndex, flowState->flowIndex);
+        throwError(flowState, componentIndex, message);
+        return false;
+    }
+    return evalAssignableExpression(flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, result, numInstructionBytes, iterators);
+}
 
 int16_t getNativeVariableId(const WidgetCursor &widgetCursor) {
 	if (widgetCursor.flowState) {

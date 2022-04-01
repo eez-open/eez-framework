@@ -162,6 +162,16 @@ void DashboardComponentContext::throwError(const char *errorMessage) {
 	eez::flow::throwError(flowState, componentIndex, errorMessage);
 }
 
+void updateArrayValue(ArrayValue *arrayValue1, ArrayValue *arrayValue2) {
+    for (uint32_t i = 0; i < arrayValue1->arraySize; i++) {
+        if (arrayValue1->values[i].getType() == VALUE_TYPE_ARRAY || arrayValue1->values[i].getType() == VALUE_TYPE_ARRAY_REF) {
+            updateArrayValue(arrayValue1->values[i].getArray(), arrayValue2->values[i].getArray());
+        } else {
+            arrayValue1->values[i] = arrayValue2->values[i];
+        }
+    }
+}
+
 } // flow
 } // eez
 
@@ -332,6 +342,13 @@ EM_PORT_API(void) setGlobalVariable(int globalVariableIndex, Value *valuePtr) {
     auto flowDefinition = static_cast<FlowDefinition *>(g_mainAssets->flowDefinition);
     Value *globalVariableValuePtr = flowDefinition->globalVariables[globalVariableIndex];
     *globalVariableValuePtr = *valuePtr;
+}
+
+EM_PORT_API(void) updateGlobalVariable(int globalVariableIndex, Value *valuePtr) {
+    using namespace eez::gui;
+    auto flowDefinition = static_cast<FlowDefinition *>(g_mainAssets->flowDefinition);
+    Value *globalVariableValuePtr = flowDefinition->globalVariables[globalVariableIndex];
+    updateArrayValue(globalVariableValuePtr->getArray(), valuePtr->getArray());
 }
 
 #endif // __EMSCRIPTEN__

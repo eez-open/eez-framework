@@ -1051,7 +1051,7 @@ Value Value::toString(uint32_t id) const {
 Value Value::makeStringRef(const char *str, int len, uint32_t id) {
     auto stringRef = ObjectAllocator<StringRef>::allocate(id);
 	if (stringRef == nullptr) {
-		return Value(VALUE_TYPE_NULL);
+		return Value(0, VALUE_TYPE_NULL);
 	}
 
 	if (len == -1) {
@@ -1061,7 +1061,7 @@ Value Value::makeStringRef(const char *str, int len, uint32_t id) {
     stringRef->str = (char *)alloc(len + 1, 0xe45b0259);
     if (stringRef->str == nullptr) {
         ObjectAllocator<StringRef>::deallocate(stringRef);
-        return Value(VALUE_TYPE_NULL);
+        return Value(0, VALUE_TYPE_NULL);
     }
 
     stringCopyLength(stringRef->str, len + 1, str, len);
@@ -1083,14 +1083,14 @@ Value Value::makeStringRef(const char *str, int len, uint32_t id) {
 Value Value::concatenateString(const Value &str1, const Value &str2) {
     auto stringRef = ObjectAllocator<StringRef>::allocate(0xbab14c6a);;
 	if (stringRef == nullptr) {
-		return Value(VALUE_TYPE_NULL);
+		return Value(0, VALUE_TYPE_NULL);
 	}
 
     auto newStrLen = strlen(str1.getString()) + strlen(str2.getString()) + 1;
     stringRef->str = (char *)alloc(newStrLen, 0xb5320162);
     if (stringRef->str == nullptr) {
         ObjectAllocator<StringRef>::deallocate(stringRef);
-        return Value(VALUE_TYPE_NULL);
+        return Value(0, VALUE_TYPE_NULL);
     }
 
     stringCopy(stringRef->str, newStrLen, str1.getString());
@@ -1112,7 +1112,7 @@ Value Value::concatenateString(const Value &str1, const Value &str2) {
 Value Value::makeArrayRef(int arraySize, int arrayType, uint32_t id) {
     auto ptr = alloc(sizeof(ArrayValueRef) + (arraySize > 0 ? arraySize - 1 : 0) * sizeof(Value), id);
 	if (ptr == nullptr) {
-		return Value(VALUE_TYPE_NULL);
+		return Value(0, VALUE_TYPE_NULL);
 	}
 
     ArrayValueRef *arrayRef = new (ptr) ArrayValueRef;

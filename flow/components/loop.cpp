@@ -26,10 +26,6 @@ using namespace eez::gui;
 namespace eez {
 namespace flow {
 
-struct LoopActionComponent : public Component {
-    uint8_t assignableExpressionEvalInstructions[1];
-};
-
 struct LoopComponenentExecutionState : public ComponenentExecutionState {
     Value dstValue;
     Value toValue;
@@ -37,7 +33,7 @@ struct LoopComponenentExecutionState : public ComponenentExecutionState {
 };
 
 void executeLoopComponent(FlowState *flowState, unsigned componentIndex) {
-    auto component = (LoopActionComponent *)flowState->flow->components[componentIndex];
+    auto component = flowState->flow->components[componentIndex];
 
     auto loopComponentExecutionState = (LoopComponenentExecutionState *)flowState->componenentExecutionStates[componentIndex];
 
@@ -54,8 +50,8 @@ void executeLoopComponent(FlowState *flowState, unsigned componentIndex) {
 
     if (!loopComponentExecutionState) {
         Value dstValue;
-        if (!evalAssignableExpression(flowState, componentIndex, component->assignableExpressionEvalInstructions, dstValue)) {
-            throwError(flowState, componentIndex, "Failed to evaluate Variable in Lop\n");
+        if (!evalAssignableProperty(flowState, componentIndex, defs_v3::LOOP_ACTION_COMPONENT_PROPERTY_VARIABLE, dstValue)) {
+            throwError(flowState, componentIndex, "Failed to evaluate Variable in Loop\n");
             return;
         }
 
