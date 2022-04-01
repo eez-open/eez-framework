@@ -35,7 +35,7 @@ namespace flow {
 enum MessagesToDebugger {
     MESSAGE_TO_DEBUGGER_STATE_CHANGED, // STATE
 
-    MESSAGE_TO_DEBUGGER_ADD_TO_QUEUE, // FLOW_STATE_INDEX, SOURCE_COMPONENT_INDEX, SOURCE_OUTPUT_INDEX, TARGET_COMPONENT_INDEX, TARGET_INPUT_INDEX
+    MESSAGE_TO_DEBUGGER_ADD_TO_QUEUE, // FLOW_STATE_INDEX, SOURCE_COMPONENT_INDEX, SOURCE_OUTPUT_INDEX, TARGET_COMPONENT_INDEX, TARGET_INPUT_INDEX, FREE_MEMORT, ALLOC_MEMORY
     MESSAGE_TO_DEBUGGER_REMOVE_FROM_QUEUE, // no params
 
     MESSAGE_TO_DEBUGGER_GLOBAL_VARIABLE_INIT, // GLOBAL_VARIABLE_INDEX, VALUE_ADDR, VALUE
@@ -398,14 +398,20 @@ void onAddToQueue(FlowState *flowState, int sourceComponentIndex, int sourceOutp
     if (g_debuggerIsConnected) {
 		startToDebuggerMessageHook();
 
+        uint32_t free;
+        uint32_t alloc;
+        getAllocInfo(free, alloc);
+
         char buffer[100];
-		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%d\t%d\t%d\n",
+		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
 			MESSAGE_TO_DEBUGGER_ADD_TO_QUEUE,
 			(int)flowState->flowStateIndex,
 			sourceComponentIndex,
 			sourceOutputIndex,
 			targetComponentIndex,
-			targetInputIndex
+			targetInputIndex,
+            (int)free,
+            (int)ALLOC_BUFFER_SIZE
 		);
         writeDebuggerBufferHook(buffer, strlen(buffer));
     }

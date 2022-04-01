@@ -53,6 +53,7 @@ struct DashboardComponentContext {
     FlowState *flowState;
     unsigned componentIndex;
 
+    int getFlowStateIndex();
     int getFlowIndex();
     int getComponentIndex();
 

@@ -29,6 +29,10 @@
 namespace eez {
 namespace flow {
 
+int DashboardComponentContext::getFlowStateIndex() {
+    return (int)((uint8_t *)flowState - ALLOC_BUFFER);
+}
+
 int DashboardComponentContext::getFlowIndex() {
     return flowState->flowIndex;
 }
@@ -51,17 +55,19 @@ void DashboardComponentContext::endAsyncExecution() {
 }
 
 Value *DashboardComponentContext::evalProperty(int propertyIndex) {
+    Value result;
+    if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, result)) {
+        eez::flow::throwError(flowState, componentIndex, "Failed to evaluate Milliseconds in Delay\n");
+        return nullptr;
+    }
+
     auto pValue = ObjectAllocator<Value>::allocate(0x0de3a60d);
     if (!pValue) {
         eez::flow::throwError(flowState, componentIndex, "Out of memory\n");
         return nullptr;
     }
 
-    if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, *pValue)) {
-        ObjectAllocator<Value>::deallocate(pValue);
-        eez::flow::throwError(flowState, componentIndex, "Failed to evaluate Milliseconds in Delay\n");
-        return nullptr;
-    }
+    *pValue = result;
 
     return pValue;
 }
@@ -176,6 +182,10 @@ void updateArrayValue(ArrayValue *arrayValue1, ArrayValue *arrayValue2) {
 } // eez
 
 using namespace eez::flow;
+
+EM_PORT_API(int) DashboardContext_getFlowStateIndex(DashboardComponentContext *context) {
+    return context->getFlowStateIndex();
+}
 
 EM_PORT_API(int) DashboardContext_getFlowIndex(DashboardComponentContext *context) {
     return context->getFlowIndex();
@@ -356,17 +366,19 @@ EM_PORT_API(Value *) evalProperty(int flowStateIndex, int componentIndex, int pr
     using namespace eez::gui;
     using namespace eez::flow;
 
+    auto flowState = getFlowState(g_mainAssets, flowStateIndex);
+
+    Value result;
+    if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, result, nullptr, iterators)) {
+        return nullptr;
+    }
+
     auto pValue = ObjectAllocator<Value>::allocate(0xb7e697b8);
     if (!pValue) {
         return nullptr;
     }
 
-    auto flowState = getFlowState(g_mainAssets, flowStateIndex);
-
-    if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, *pValue, nullptr, iterators)) {
-        ObjectAllocator<Value>::deallocate(pValue);
-        return nullptr;
-    }
+    *pValue = result;
 
     return pValue;
 }

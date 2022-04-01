@@ -421,6 +421,18 @@ const char *STRING_REF_value_type_name(const Value &value) {
     return "string";
 }
 
+bool compare_BLOB_REF_value(const Value &a, const Value &b) {
+    return a.refValue == b.refValue;
+}
+
+void BLOB_REF_value_to_text(const Value &value, char *text, int count) {
+    text[0] = 0;
+}
+
+const char *BLOB_REF_value_type_name(const Value &value) {
+    return "blob";
+}
+
 bool compare_VERSIONED_STRING_value(const Value &a, const Value &b) {
     return a.unit == b.unit; // here unit is used as string version
 }
@@ -1058,7 +1070,7 @@ Value Value::makeStringRef(const char *str, int len, uint32_t id) {
 		len = strlen(str);
 	}
 
-    stringRef->str = (char *)alloc(len + 1, 0xe45b0259);
+    stringRef->str = (char *)alloc(len + 1, id + 1);
     if (stringRef->str == nullptr) {
         ObjectAllocator<StringRef>::deallocate(stringRef);
         return Value(0, VALUE_TYPE_NULL);
@@ -1131,6 +1143,34 @@ Value Value::makeArrayRef(int arraySize, int arrayType, uint32_t id) {
     value.options = VALUE_OPTIONS_REF;
     value.reserved = 0;
     value.refValue = arrayRef;
+
+	return value;
+}
+
+Value Value::makeBlobRef(const uint8_t *blob, uint32_t len, uint32_t id) {
+    auto blobRef = ObjectAllocator<BlobRef>::allocate(id);
+	if (blobRef == nullptr) {
+		return Value(0, VALUE_TYPE_NULL);
+	}
+
+	blobRef->blob = (uint8_t *)alloc(len, id + 1);
+    if (blobRef->blob == nullptr) {
+        ObjectAllocator<BlobRef>::deallocate(blobRef);
+        return Value(0, VALUE_TYPE_NULL);
+    }
+    blobRef->len = len;
+
+    memcpy(blobRef->blob, blob, len);
+
+    blobRef->refCounter = 1;
+
+    Value value;
+
+    value.type = VALUE_TYPE_BLOB_REF;
+    value.unit = 0;
+    value.options = VALUE_OPTIONS_REF;
+    value.reserved = 0;
+    value.refValue = blobRef;
 
 	return value;
 }
