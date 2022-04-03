@@ -356,6 +356,10 @@ void writeValue(const Value &value) {
 		writeArray(value.getArray());
 		return;
 
+	case VALUE_TYPE_BLOB_REF:
+		snprintf(tempStr, sizeof(tempStr) - 1, "@%d", (int)((BlobRef *)value.refValue)->len);
+		break;
+
 	default:
 		tempStr[0] = 0;
 		break;

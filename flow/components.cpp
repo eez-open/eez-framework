@@ -27,6 +27,10 @@
 #include <eez/flow/queue.h>
 #include <eez/flow/hooks.h>
 
+#if defined(__EMSCRIPTEN__)
+#include <eez/flow/dashboard_api.h>
+#endif
+
 using namespace eez::gui;
 
 namespace eez {
@@ -103,11 +107,7 @@ void executeComponent(FlowState *flowState, unsigned componentIndex) {
 #if defined(__EMSCRIPTEN__)
 	if (component->type >= defs_v3::FIRST_DASHBOARD_COMPONENT_TYPE) {
         if (executeDashboardComponentHook) {
-            DashboardComponentContext context = {
-                flowState,
-                componentIndex
-            };
-            executeDashboardComponentHook(component->type, &context);
+            executeDashboardComponentHook(component->type, getFlowStateIndex(flowState), componentIndex);
             return;
         }
     } else

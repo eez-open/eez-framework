@@ -1,0 +1,306 @@
+
+/*
+ * EEZ Modular Firmware
+ * Copyright (C) 2021-present, Envox d.o.o.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#if defined(__EMSCRIPTEN__)
+
+#include <stdlib.h>
+#include <stdio.h>
+
+#include <eez/flow/flow.h>
+#include <eez/flow/expression.h>
+#include <eez/flow/dashboard_api.h>
+
+using namespace eez;
+using namespace eez::gui;
+using namespace eez::flow;
+
+namespace eez {
+namespace flow {
+
+int getFlowStateIndex(FlowState *flowState) {
+    return (int)((uint8_t *)flowState - ALLOC_BUFFER);
+}
+
+} // flow
+} // eez
+
+static inline FlowState *getFlowState(int flowStateIndex) {
+    return (FlowState *)(ALLOC_BUFFER + flowStateIndex);
+}
+
+static void updateArrayValue(ArrayValue *arrayValue1, ArrayValue *arrayValue2) {
+    for (uint32_t i = 0; i < arrayValue1->arraySize; i++) {
+        if (arrayValue1->values[i].getType() == VALUE_TYPE_ARRAY || arrayValue1->values[i].getType() == VALUE_TYPE_ARRAY_REF) {
+            updateArrayValue(arrayValue1->values[i].getArray(), arrayValue2->values[i].getArray());
+        } else {
+            arrayValue1->values[i] = arrayValue2->values[i];
+        }
+    }
+}
+
+EM_PORT_API(Value *) createUndefinedValue() {
+    auto pValue = ObjectAllocator<Value>::allocate(0x2e821285);
+    *pValue = Value(0, VALUE_TYPE_UNDEFINED);
+    return pValue;
+}
+
+EM_PORT_API(Value *) createNullValue() {
+    auto pValue = ObjectAllocator<Value>::allocate(0x69debded);
+    *pValue = Value(0, VALUE_TYPE_NULL);
+    return pValue;
+}
+
+EM_PORT_API(Value *) createIntValue(int value) {
+    auto pValue = ObjectAllocator<Value>::allocate(0x20ea356c);
+    *pValue = Value(value, VALUE_TYPE_INT32);
+    return pValue;
+}
+
+EM_PORT_API(Value *) createDoubleValue(double value) {
+    auto pValue = ObjectAllocator<Value>::allocate(0xecfb69a9);
+    *pValue = Value(value, VALUE_TYPE_DOUBLE);
+    return pValue;
+}
+
+EM_PORT_API(Value *) createBooleanValue(int value) {
+    auto pValue = ObjectAllocator<Value>::allocate(0x76071378);
+    *pValue = Value(value, VALUE_TYPE_BOOLEAN);
+    return pValue;
+}
+
+EM_PORT_API(Value *) createStringValue(const char *value) {
+    auto pValue = ObjectAllocator<Value>::allocate(0x0a8a7ed1);
+    Value stringValue = Value::makeStringRef(value, strlen(value), 0x5b1e51d7);
+    *pValue = stringValue;
+    return pValue;
+}
+
+EM_PORT_API(Value *) createArrayValue(int arraySize, int arrayType) {
+    Value value = Value::makeArrayRef(arraySize, arrayType, 0xeabb7edc);
+    auto pValue = ObjectAllocator<Value>::allocate(0xbab14c6a);
+    if (pValue) {
+        *pValue = value;
+    }
+    return pValue;
+}
+
+EM_PORT_API(void) arrayValueSetElementValue(Value *arrayValuePtr, int elementIndex, Value *valuePtr) {
+    auto array = arrayValuePtr->getArray();
+    array->values[elementIndex] = *valuePtr;
+}
+
+EM_PORT_API(void) arrayValueSetElementInt(Value *arrayValuePtr, int elementIndex, int value) {
+    auto array = arrayValuePtr->getArray();
+    array->values[elementIndex] = value;
+}
+
+EM_PORT_API(void) arrayValueSetElementDouble(Value *arrayValuePtr, int elementIndex, double value) {
+    Value doubleValue(value, VALUE_TYPE_DOUBLE);
+    auto array = arrayValuePtr->getArray();
+    array->values[elementIndex] = doubleValue;
+}
+
+EM_PORT_API(void) arrayValueSetElementBool(Value *arrayValuePtr, int elementIndex, bool value) {
+    Value booleanValue(value, VALUE_TYPE_BOOLEAN);
+    auto array = arrayValuePtr->getArray();
+    array->values[elementIndex] = booleanValue;
+}
+
+EM_PORT_API(void) arrayValueSetElementString(Value *arrayValuePtr, int elementIndex, const char *value) {
+    Value stringValue = Value::makeStringRef(value, strlen(value), 0x78dea30d);
+    auto array = arrayValuePtr->getArray();
+    array->values[elementIndex] = stringValue;
+}
+
+EM_PORT_API(void) arrayValueSetElementNull(Value *arrayValuePtr, int elementIndex) {
+    Value nullValue = Value(0, VALUE_TYPE_NULL);
+    auto array = arrayValuePtr->getArray();
+    array->values[elementIndex] = nullValue;
+}
+
+EM_PORT_API(void) valueFree(Value *valuePtr) {
+    ObjectAllocator<Value>::deallocate(valuePtr);
+}
+
+EM_PORT_API(void) setGlobalVariable(int globalVariableIndex, Value *valuePtr) {
+    auto flowDefinition = static_cast<FlowDefinition *>(g_mainAssets->flowDefinition);
+    Value *globalVariableValuePtr = flowDefinition->globalVariables[globalVariableIndex];
+    *globalVariableValuePtr = *valuePtr;
+}
+
+EM_PORT_API(void) updateGlobalVariable(int globalVariableIndex, Value *valuePtr) {
+    auto flowDefinition = static_cast<FlowDefinition *>(g_mainAssets->flowDefinition);
+    Value *globalVariableValuePtr = flowDefinition->globalVariables[globalVariableIndex];
+    updateArrayValue(globalVariableValuePtr->getArray(), valuePtr->getArray());
+}
+
+EM_PORT_API(int) getFlowIndex(int flowStateIndex) {
+    auto flowState = getFlowState(flowStateIndex);
+    return flowState->flowIndex;
+}
+
+EM_PORT_API(const char *) getStringParam(int flowStateIndex, int componentIndex, int offset) {
+    auto flowState = getFlowState(flowStateIndex);
+    auto component = flowState->flow->components[componentIndex];
+    auto ptr = (const uint32_t *)((const uint8_t *)component + sizeof(Component) + offset);
+    return (const char *)(MEMORY_BEGIN + 4 + *ptr);
+}
+
+struct ExpressionList {
+    uint32_t count;
+    Value values[1];
+};
+
+EM_PORT_API(void *) getExpressionListParam(int flowStateIndex, int componentIndex, int offset) {
+    auto flowState = getFlowState(flowStateIndex);
+    auto component = flowState->flow->components[componentIndex];
+
+    struct List {
+        uint32_t count;
+        uint32_t items;
+    };
+    auto list = (const List *)((const uint8_t *)component + sizeof(Component) + offset);
+
+    auto expressionList = (ExpressionList *)::malloc((list->count + 1) * sizeof(Value));
+
+    expressionList->count = list->count;
+
+    auto items = (const uint32_t *)(MEMORY_BEGIN + 4 + list->items);
+
+    for (uint32_t i = 0; i < list->count; i++) {
+        // call Value constructor
+        new (expressionList->values + i) Value();
+
+        auto valueExpression = (const uint8_t *)(MEMORY_BEGIN + 4 + items[i]);
+        if (!evalExpression(flowState, componentIndex, valueExpression, expressionList->values[i])) {
+            throwError(flowState, componentIndex, "Failed to evaluate expression");
+            return nullptr;
+        }
+    }
+
+    return expressionList;
+}
+
+EM_PORT_API(void) freeExpressionListParam(void *ptr) {
+    auto expressionList = (ExpressionList*)ptr;
+
+    for (uint32_t i = 0; i < expressionList->count; i++) {
+        // call Value desctructor
+        (expressionList->values + i)->~Value();
+    }
+
+    ::free(ptr);
+}
+
+EM_PORT_API(Value *) evalProperty(int flowStateIndex, int componentIndex, int propertyIndex, int32_t *iterators) {
+    auto flowState = getFlowState(g_mainAssets, flowStateIndex);
+
+    Value result;
+    if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, result, nullptr, iterators)) {
+        throwError(flowState, componentIndex, "Failed to evaluate property\n");
+        return nullptr;
+    }
+
+    auto pValue = ObjectAllocator<Value>::allocate(0xb7e697b8);
+    if (!pValue) {
+        throwError(flowState, componentIndex, "Out of memory\n");
+        return nullptr;
+    }
+
+    *pValue = result;
+
+    return pValue;
+}
+
+EM_PORT_API(void) assignProperty(int flowStateIndex, int componentIndex, int propertyIndex, int32_t *iterators, Value *srcValuePtr) {
+    auto flowState = getFlowState(g_mainAssets, flowStateIndex);
+
+    Value dstValue;
+    if (evalAssignableProperty(flowState, componentIndex, propertyIndex, dstValue, nullptr, iterators)) {
+        assignValue(flowState, componentIndex, dstValue, *srcValuePtr);
+    }
+}
+
+EM_PORT_API(void) propagateValue(int flowStateIndex, int componentIndex, int outputIndex, Value *valuePtr) {
+    auto flowState = getFlowState(g_mainAssets, flowStateIndex);
+    eez::flow::propagateValue(flowState, componentIndex, outputIndex, *valuePtr);
+}
+
+EM_PORT_API(void) propagateIntValue(int flowStateIndex, int componentIndex, unsigned outputIndex, int value) {
+    auto flowState = getFlowState(flowStateIndex);
+    Value intValue = value;
+	eez::flow::propagateValue(flowState, componentIndex, outputIndex, intValue);
+}
+
+EM_PORT_API(void) propagateDoubleValue(int flowStateIndex, int componentIndex, unsigned outputIndex, double value) {
+    auto flowState = getFlowState(flowStateIndex);
+    Value doubleValue(value, VALUE_TYPE_DOUBLE);
+	eez::flow::propagateValue(flowState, componentIndex, outputIndex, doubleValue);
+}
+
+EM_PORT_API(void) propagateBooleanValue(int flowStateIndex, int componentIndex, unsigned outputIndex, bool value) {
+    auto flowState = getFlowState(flowStateIndex);
+    Value booleanValue(value, VALUE_TYPE_BOOLEAN);
+	eez::flow::propagateValue(flowState, componentIndex, outputIndex, booleanValue);
+}
+
+EM_PORT_API(void) propagateStringValue(int flowStateIndex, int componentIndex, unsigned outputIndex, const char *value) {
+    auto flowState = getFlowState(flowStateIndex);
+    Value stringValue = Value::makeStringRef(value, strlen(value), 0x4d05952a);
+	eez::flow::propagateValue(flowState, componentIndex, outputIndex, stringValue);
+}
+
+EM_PORT_API(void) propagateUndefinedValue(int flowStateIndex, int componentIndex, unsigned outputIndex) {
+    auto flowState = getFlowState(flowStateIndex);
+    Value value(0, VALUE_TYPE_UNDEFINED);
+	eez::flow::propagateValue(flowState, componentIndex, outputIndex, value);
+}
+
+EM_PORT_API(void) propagateNullValue(int flowStateIndex, int componentIndex, unsigned outputIndex) {
+    auto flowState = getFlowState(flowStateIndex);
+    Value value(0, VALUE_TYPE_NULL);
+	eez::flow::propagateValue(flowState, componentIndex, outputIndex, value);
+}
+
+EM_PORT_API(void) propagateValueThroughSeqout(int flowStateIndex, int componentIndex) {
+    auto flowState = getFlowState(flowStateIndex);
+	propagateValueThroughSeqout(flowState, componentIndex);
+}
+
+EM_PORT_API(void) startAsyncExecution(int flowStateIndex, int componentIndex) {
+    auto flowState = getFlowState(flowStateIndex);
+    startAsyncExecution(flowState, componentIndex);
+}
+
+EM_PORT_API(void) endAsyncExecution(int flowStateIndex, int componentIndex) {
+    auto flowState = getFlowState(flowStateIndex);
+    endAsyncExecution(flowState, componentIndex);
+}
+
+EM_PORT_API(void) executeCallAction(int flowStateIndex, int componentIndex, int flowIndex) {
+    auto flowState = getFlowState(flowStateIndex);
+    executeCallAction(flowState, componentIndex, flowIndex);
+}
+
+EM_PORT_API(void) throwError(int flowStateIndex, int componentIndex, const char *errorMessage) {
+    auto flowState = getFlowState(flowStateIndex);
+	throwError(flowState, componentIndex, errorMessage);
+}
+
+#endif // __EMSCRIPTEN__
