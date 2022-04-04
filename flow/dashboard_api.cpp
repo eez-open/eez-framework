@@ -173,6 +173,13 @@ EM_PORT_API(void) setComponentExecutionState(int flowStateIndex, int componentIn
     }
 }
 
+EM_PORT_API(const char *) getStringParam(int flowStateIndex, int componentIndex, int offset) {
+    auto flowState = getFlowState(flowStateIndex);
+    auto component = flowState->flow->components[componentIndex];
+    auto ptr = (const uint32_t *)((const uint8_t *)component + sizeof(Component) + offset);
+    return (const char *)(MEMORY_BEGIN + 4 + *ptr);
+}
+
 struct ExpressionList {
     uint32_t count;
     Value values[1];
