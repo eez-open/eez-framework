@@ -19,6 +19,8 @@
 
 #if defined(__EMSCRIPTEN__)
 
+#include <emscripten.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -36,6 +38,15 @@ namespace flow {
 int getFlowStateIndex(FlowState *flowState) {
     return (int)((uint8_t *)flowState - ALLOC_BUFFER);
 }
+
+struct DashboardComponentExecutionState : public ComponenentExecutionState {
+    ~DashboardComponentExecutionState() {
+		EM_ASM({
+            freeComponentExecutionState($0);
+        }, state);
+    }
+	int32_t state;
+};
 
 } // flow
 } // eez
@@ -100,38 +111,15 @@ EM_PORT_API(Value *) createArrayValue(int arraySize, int arrayType) {
     return pValue;
 }
 
+EM_PORT_API(Value *) createStreamValue(int value) {
+    auto pValue = ObjectAllocator<Value>::allocate(0x53a2e660);
+    *pValue = Value(value, VALUE_TYPE_STREAM);
+    return pValue;
+}
+
 EM_PORT_API(void) arrayValueSetElementValue(Value *arrayValuePtr, int elementIndex, Value *valuePtr) {
     auto array = arrayValuePtr->getArray();
     array->values[elementIndex] = *valuePtr;
-}
-
-EM_PORT_API(void) arrayValueSetElementInt(Value *arrayValuePtr, int elementIndex, int value) {
-    auto array = arrayValuePtr->getArray();
-    array->values[elementIndex] = value;
-}
-
-EM_PORT_API(void) arrayValueSetElementDouble(Value *arrayValuePtr, int elementIndex, double value) {
-    Value doubleValue(value, VALUE_TYPE_DOUBLE);
-    auto array = arrayValuePtr->getArray();
-    array->values[elementIndex] = doubleValue;
-}
-
-EM_PORT_API(void) arrayValueSetElementBool(Value *arrayValuePtr, int elementIndex, bool value) {
-    Value booleanValue(value, VALUE_TYPE_BOOLEAN);
-    auto array = arrayValuePtr->getArray();
-    array->values[elementIndex] = booleanValue;
-}
-
-EM_PORT_API(void) arrayValueSetElementString(Value *arrayValuePtr, int elementIndex, const char *value) {
-    Value stringValue = Value::makeStringRef(value, strlen(value), 0x78dea30d);
-    auto array = arrayValuePtr->getArray();
-    array->values[elementIndex] = stringValue;
-}
-
-EM_PORT_API(void) arrayValueSetElementNull(Value *arrayValuePtr, int elementIndex) {
-    Value nullValue = Value(0, VALUE_TYPE_NULL);
-    auto array = arrayValuePtr->getArray();
-    array->values[elementIndex] = nullValue;
 }
 
 EM_PORT_API(void) valueFree(Value *valuePtr) {
@@ -155,11 +143,34 @@ EM_PORT_API(int) getFlowIndex(int flowStateIndex) {
     return flowState->flowIndex;
 }
 
-EM_PORT_API(const char *) getStringParam(int flowStateIndex, int componentIndex, int offset) {
+EM_PORT_API(int) getComponentExecutionState(int flowStateIndex, int componentIndex) {
     auto flowState = getFlowState(flowStateIndex);
     auto component = flowState->flow->components[componentIndex];
-    auto ptr = (const uint32_t *)((const uint8_t *)component + sizeof(Component) + offset);
-    return (const char *)(MEMORY_BEGIN + 4 + *ptr);
+    auto executionState = (DashboardComponentExecutionState *)flowState->componenentExecutionStates[componentIndex];
+    if (executionState) {
+        return executionState->state;
+    }
+    return -1;
+}
+
+EM_PORT_API(void) setComponentExecutionState(int flowStateIndex, int componentIndex, int state) {
+    auto flowState = getFlowState(flowStateIndex);
+    auto component = flowState->flow->components[componentIndex];
+    auto executionState = (DashboardComponentExecutionState *)flowState->componenentExecutionStates[componentIndex];
+    if (executionState) {
+        if (state != -1) {
+            executionState->state = state;
+        } else {
+			flowState->componenentExecutionStates[componentIndex] = nullptr;
+			ObjectAllocator<DashboardComponentExecutionState>::deallocate(executionState);
+        }
+    } else {
+        if (state != -1) {
+            executionState = ObjectAllocator<DashboardComponentExecutionState>::allocate(0x72dc3bf4);
+            flowState->componenentExecutionStates[componentIndex] = executionState;
+            executionState->state = state;
+        }
+    }
 }
 
 struct ExpressionList {
@@ -240,42 +251,6 @@ EM_PORT_API(void) assignProperty(int flowStateIndex, int componentIndex, int pro
 EM_PORT_API(void) propagateValue(int flowStateIndex, int componentIndex, int outputIndex, Value *valuePtr) {
     auto flowState = getFlowState(g_mainAssets, flowStateIndex);
     eez::flow::propagateValue(flowState, componentIndex, outputIndex, *valuePtr);
-}
-
-EM_PORT_API(void) propagateIntValue(int flowStateIndex, int componentIndex, unsigned outputIndex, int value) {
-    auto flowState = getFlowState(flowStateIndex);
-    Value intValue = value;
-	eez::flow::propagateValue(flowState, componentIndex, outputIndex, intValue);
-}
-
-EM_PORT_API(void) propagateDoubleValue(int flowStateIndex, int componentIndex, unsigned outputIndex, double value) {
-    auto flowState = getFlowState(flowStateIndex);
-    Value doubleValue(value, VALUE_TYPE_DOUBLE);
-	eez::flow::propagateValue(flowState, componentIndex, outputIndex, doubleValue);
-}
-
-EM_PORT_API(void) propagateBooleanValue(int flowStateIndex, int componentIndex, unsigned outputIndex, bool value) {
-    auto flowState = getFlowState(flowStateIndex);
-    Value booleanValue(value, VALUE_TYPE_BOOLEAN);
-	eez::flow::propagateValue(flowState, componentIndex, outputIndex, booleanValue);
-}
-
-EM_PORT_API(void) propagateStringValue(int flowStateIndex, int componentIndex, unsigned outputIndex, const char *value) {
-    auto flowState = getFlowState(flowStateIndex);
-    Value stringValue = Value::makeStringRef(value, strlen(value), 0x4d05952a);
-	eez::flow::propagateValue(flowState, componentIndex, outputIndex, stringValue);
-}
-
-EM_PORT_API(void) propagateUndefinedValue(int flowStateIndex, int componentIndex, unsigned outputIndex) {
-    auto flowState = getFlowState(flowStateIndex);
-    Value value(0, VALUE_TYPE_UNDEFINED);
-	eez::flow::propagateValue(flowState, componentIndex, outputIndex, value);
-}
-
-EM_PORT_API(void) propagateNullValue(int flowStateIndex, int componentIndex, unsigned outputIndex) {
-    auto flowState = getFlowState(flowStateIndex);
-    Value value(0, VALUE_TYPE_NULL);
-	eez::flow::propagateValue(flowState, componentIndex, outputIndex, value);
 }
 
 EM_PORT_API(void) propagateValueThroughSeqout(int flowStateIndex, int componentIndex) {

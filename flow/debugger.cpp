@@ -360,6 +360,10 @@ void writeValue(const Value &value) {
 		snprintf(tempStr, sizeof(tempStr) - 1, "@%d", (int)((BlobRef *)value.refValue)->len);
 		break;
 
+	case VALUE_TYPE_STREAM:
+		snprintf(tempStr, sizeof(tempStr) - 1, ">%d", (int)(value.int32Value));
+		break;
+
 	default:
 		tempStr[0] = 0;
 		break;

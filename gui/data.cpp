@@ -433,6 +433,18 @@ const char *BLOB_REF_value_type_name(const Value &value) {
     return "blob";
 }
 
+bool compare_STREAM_value(const Value &a, const Value &b) {
+    return a.int32Value == b.int32Value;
+}
+
+void STREAM_value_to_text(const Value &value, char *text, int count) {
+    text[0] = 0;
+}
+
+const char *STREAM_value_type_name(const Value &value) {
+    return "stream";
+}
+
 bool compare_VERSIONED_STRING_value(const Value &a, const Value &b) {
     return a.unit == b.unit; // here unit is used as string version
 }

@@ -499,7 +499,7 @@ struct Value {
 struct StringRef : public Ref {
     ~StringRef() {
         if (str) {
-            free(str);
+            eez::free(str);
         }
     }
 	char *str;
@@ -523,7 +523,7 @@ struct ArrayValueRef : public Ref {
 struct BlobRef : public Ref {
     ~BlobRef() {
         if (blob) {
-            free(blob);
+            eez::free(blob);
         }
     }
 	uint8_t *blob;

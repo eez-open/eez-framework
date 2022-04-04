@@ -764,7 +764,7 @@ bool do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE(EvalStack &stack) {
     auto arraySizeValue = stack.pop();
 
     int arrayType = arrayTypeValue.getInt();
-    int arraySize = arrayTypeValue.getInt();
+    int arraySize = arraySizeValue.getInt();
 
     auto arrayValue = Value::makeArrayRef(arraySize, arrayType, 0x837260d4);
 
