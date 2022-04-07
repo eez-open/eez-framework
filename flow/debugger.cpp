@@ -487,7 +487,7 @@ void onFlowStateCreated(FlowState *flowState) {
         }
 
 		for (uint32_t i = 0; i < flow->componentInputs.count; i++) {
-			auto &input = flow->componentInputs[i];
+			//auto &input = flow->componentInputs[i];
 			//if (!(input & COMPONENT_INPUT_FLAG_IS_SEQ_INPUT)) {
 				auto pValue = &flowState->values[i];
 

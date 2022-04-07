@@ -26,8 +26,6 @@ namespace eez {
 namespace flow {
 
 void executeSetVariableComponent(FlowState *flowState, unsigned componentIndex) {
-    auto component = flowState->flow->components[componentIndex];
-
 	Value dstValue;
 	if (!evalAssignableProperty(flowState, componentIndex, defs_v3::SET_VARIABLE_ACTION_COMPONENT_PROPERTY_VARIABLE, dstValue)) {
 		throwError(flowState, componentIndex, "Failed to evaluate Variable in SetVariable\n");

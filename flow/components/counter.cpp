@@ -31,8 +31,6 @@ struct CounterComponenentExecutionState : public ComponenentExecutionState {
 };
 
 void executeCounterComponent(FlowState *flowState, unsigned componentIndex) {
-    auto component = flowState->flow->components[componentIndex];
-
     auto counterComponenentExecutionState = (CounterComponenentExecutionState *)flowState->componenentExecutionStates[componentIndex];
 
     if (!counterComponenentExecutionState) {
