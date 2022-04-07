@@ -161,13 +161,11 @@ EM_PORT_API(void) setComponentExecutionState(int flowStateIndex, int componentIn
         if (state != -1) {
             executionState->state = state;
         } else {
-			flowState->componenentExecutionStates[componentIndex] = nullptr;
-			ObjectAllocator<DashboardComponentExecutionState>::deallocate(executionState);
+            deallocateComponentExecutionState(flowState, componentIndex);
         }
     } else {
         if (state != -1) {
-            executionState = ObjectAllocator<DashboardComponentExecutionState>::allocate(0x72dc3bf4);
-            flowState->componenentExecutionStates[componentIndex] = executionState;
+            executionState = allocateComponentExecutionState<DashboardComponentExecutionState>(flowState, componentIndex);
             executionState->state = state;
         }
     }
@@ -255,6 +253,35 @@ EM_PORT_API(void) assignProperty(int flowStateIndex, int componentIndex, int pro
     }
 }
 
+EM_PORT_API(void) setPropertyField(int flowStateIndex, int componentIndex, int propertyIndex, int fieldIndex, Value *valuePtr) {
+    auto flowState = getFlowState(g_mainAssets, flowStateIndex);
+
+    Value result;
+    if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, result)) {
+        throwError(flowState, componentIndex, "Failed to evaluate property\n");
+        return;
+    }
+
+	if (result.getType() == VALUE_TYPE_VALUE_PTR) {
+		result = *result.pValueValue;
+	}
+
+    if (result.getType() != VALUE_TYPE_ARRAY && result.getType() != VALUE_TYPE_ARRAY_REF) {
+        throwError(flowState, componentIndex, "Property is not an array");
+        return;
+    }
+
+    auto array = result.getArray();
+
+    if (fieldIndex < 0 || fieldIndex >= array->arraySize) {
+        throwError(flowState, componentIndex, "Invalid field index");
+        return;
+    }
+
+    array->values[fieldIndex] = *valuePtr;
+    onValueChanged(array->values + fieldIndex);
+}
+
 EM_PORT_API(void) propagateValue(int flowStateIndex, int componentIndex, int outputIndex, Value *valuePtr) {
     auto flowState = getFlowState(g_mainAssets, flowStateIndex);
     eez::flow::propagateValue(flowState, componentIndex, outputIndex, *valuePtr);
@@ -262,27 +289,27 @@ EM_PORT_API(void) propagateValue(int flowStateIndex, int componentIndex, int out
 
 EM_PORT_API(void) propagateValueThroughSeqout(int flowStateIndex, int componentIndex) {
     auto flowState = getFlowState(flowStateIndex);
-	propagateValueThroughSeqout(flowState, componentIndex);
+	eez::flow::propagateValueThroughSeqout(flowState, componentIndex);
 }
 
 EM_PORT_API(void) startAsyncExecution(int flowStateIndex, int componentIndex) {
     auto flowState = getFlowState(flowStateIndex);
-    startAsyncExecution(flowState, componentIndex);
+    eez::flow::startAsyncExecution(flowState, componentIndex);
 }
 
 EM_PORT_API(void) endAsyncExecution(int flowStateIndex, int componentIndex) {
     auto flowState = getFlowState(flowStateIndex);
-    endAsyncExecution(flowState, componentIndex);
+    eez::flow::endAsyncExecution(flowState, componentIndex);
 }
 
 EM_PORT_API(void) executeCallAction(int flowStateIndex, int componentIndex, int flowIndex) {
     auto flowState = getFlowState(flowStateIndex);
-    executeCallAction(flowState, componentIndex, flowIndex);
+    eez::flow::executeCallAction(flowState, componentIndex, flowIndex);
 }
 
 EM_PORT_API(void) throwError(int flowStateIndex, int componentIndex, const char *errorMessage) {
     auto flowState = getFlowState(flowStateIndex);
-	throwError(flowState, componentIndex, errorMessage);
+	eez::flow::throwError(flowState, componentIndex, errorMessage);
 }
 
 #endif // __EMSCRIPTEN__

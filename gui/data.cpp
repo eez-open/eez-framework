@@ -71,7 +71,11 @@ bool compare_BOOLEAN_value(const Value &a, const Value &b) {
 }
 
 void BOOLEAN_value_to_text(const Value &value, char *text, int count) {
-    stringAppendInt(text, count, value.getInt());
+    if (value.getInt()) {
+        stringCopy(text, count, "true");
+    } else {
+        stringCopy(text, count, "false");
+    }
 }
 
 const char *BOOLEAN_value_type_name(const Value &value) {
@@ -1052,7 +1056,7 @@ Value Value::toString(uint32_t id) const {
         snprintf(tempStr, sizeof(tempStr), "%" PRId16 "", int16Value);
     } else if (type == VALUE_TYPE_UINT16) {
         snprintf(tempStr, sizeof(tempStr), "%" PRIu16 "", uint16Value);
-    } else if (type == VALUE_TYPE_INT32 || type == VALUE_TYPE_BOOLEAN) {
+    } else if (type == VALUE_TYPE_INT32) {
         snprintf(tempStr, sizeof(tempStr), "%" PRId32 "", int32Value);
     } else if (type == VALUE_TYPE_UINT32) {
         snprintf(tempStr, sizeof(tempStr), "%" PRIu32 "", uint32Value);

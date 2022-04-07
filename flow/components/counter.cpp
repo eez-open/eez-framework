@@ -42,9 +42,8 @@ void executeCounterComponent(FlowState *flowState, unsigned componentIndex) {
             return;
         }
 
-        counterComponenentExecutionState = ObjectAllocator<CounterComponenentExecutionState>::allocate(0xd33c9288);
+        counterComponenentExecutionState = allocateComponentExecutionState<CounterComponenentExecutionState>(flowState, componentIndex);
         counterComponenentExecutionState->counter = counterValue.getInt();
-        flowState->componenentExecutionStates[componentIndex] = counterComponenentExecutionState;
     }
 
     if (counterComponenentExecutionState->counter > 0) {
@@ -52,8 +51,7 @@ void executeCounterComponent(FlowState *flowState, unsigned componentIndex) {
         propagateValueThroughSeqout(flowState, componentIndex);
     } else {
         // done
-        flowState->componenentExecutionStates[componentIndex] = nullptr;
-        ObjectAllocator<CounterComponenentExecutionState>::deallocate(counterComponenentExecutionState);
+        deallocateComponentExecutionState(flowState, componentIndex);
         propagateValue(flowState, componentIndex, 1);
     }
 }

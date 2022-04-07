@@ -42,11 +42,12 @@ void executeLoopComponent(FlowState *flowState, unsigned componentIndex) {
     auto startInputIndex = component->inputs[START_INPUT_INDEX];
     if (flowState->values[startInputIndex].type != VALUE_TYPE_UNDEFINED) {
         if (loopComponentExecutionState) {
-            flowState->componenentExecutionStates[componentIndex] = nullptr;
-            ObjectAllocator<LoopComponenentExecutionState>::deallocate(loopComponentExecutionState);
+            deallocateComponentExecutionState(flowState, componentIndex);
             loopComponentExecutionState = nullptr;
         }
     }
+
+    Value value;
 
     if (!loopComponentExecutionState) {
         Value dstValue;
@@ -73,26 +74,30 @@ void executeLoopComponent(FlowState *flowState, unsigned componentIndex) {
             return;
         }
 
-        assignValue(flowState, componentIndex, dstValue, fromValue);
-
-        loopComponentExecutionState = ObjectAllocator<LoopComponenentExecutionState>::allocate(0xd33c9288);
+        loopComponentExecutionState = allocateComponentExecutionState<LoopComponenentExecutionState>(flowState, componentIndex);
         loopComponentExecutionState->dstValue = dstValue;
         loopComponentExecutionState->toValue = toValue;
         loopComponentExecutionState->stepValue = stepValue;
-        flowState->componenentExecutionStates[componentIndex] = loopComponentExecutionState;
 
-		propagateValueThroughSeqout(flowState, componentIndex);
+		value = fromValue;
     } else {
-        auto value = op_add(loopComponentExecutionState->dstValue, loopComponentExecutionState->stepValue);
-        if (op_great(value, loopComponentExecutionState->toValue).toBool()) {
-			flowState->componenentExecutionStates[componentIndex] = nullptr;
-			ObjectAllocator<LoopComponenentExecutionState>::deallocate(loopComponentExecutionState);
+        value = op_add(loopComponentExecutionState->dstValue, loopComponentExecutionState->stepValue);
+    }
 
-		    propagateValue(flowState, componentIndex, 1);
-		} else {
-			assignValue(flowState, componentIndex, loopComponentExecutionState->dstValue, value);
-			propagateValueThroughSeqout(flowState, componentIndex);
-		}
+    bool condition;
+    if (loopComponentExecutionState->stepValue.getInt() > 0) {
+        condition = op_great(value, loopComponentExecutionState->toValue).toBool();
+    } else {
+        condition = op_less(value, loopComponentExecutionState->toValue).toBool();
+    }
+
+    if (condition) {
+        // done
+        deallocateComponentExecutionState(flowState, componentIndex);
+        propagateValue(flowState, componentIndex, 1);
+    } else {
+        assignValue(flowState, componentIndex, loopComponentExecutionState->dstValue, value);
+        propagateValueThroughSeqout(flowState, componentIndex);
     }
 }
 

@@ -698,8 +698,10 @@ bool do_OPERATION_TYPE_CONDITIONAL(EvalStack &stack) {
 }
 
 bool do_OPERATION_TYPE_SYSTEM_GET_TICK(EvalStack &stack) {
-	// TODO
-	return false;
+	if (!stack.push(Value(millis(), VALUE_TYPE_UINT32))) {
+		return false;
+	}
+	return true;
 }
 
 bool do_OPERATION_TYPE_FLOW_INDEX(EvalStack &stack) {
@@ -771,7 +773,8 @@ bool do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE(EvalStack &stack) {
     auto array = arrayValue.getArray();
 
     for (int i = 0; i < arraySize; i++) {
-        array->values[i] = stack.pop();
+        auto value = stack.pop();
+        array->values[i] = value.getType() == VALUE_TYPE_VALUE_PTR ? *value.pValueValue : value.getType() == VALUE_TYPE_NATIVE_VARIABLE ? get(g_widgetCursor, value.getInt()) : value;
     }
 
     if (!stack.push(arrayValue)) {
