@@ -342,11 +342,11 @@ void writeValue(const Value &value) {
 		break;
 
 	case VALUE_TYPE_DOUBLE:
-		snprintf(tempStr, sizeof(tempStr) - 1, "%g", value.doubleValue);
+		snprintf(tempStr, sizeof(tempStr) - 1, "%.17g", value.doubleValue);
 		break;
 
 	case VALUE_TYPE_FLOAT:
-		snprintf(tempStr, sizeof(tempStr) - 1, "%g", value.floatValue);
+		snprintf(tempStr, sizeof(tempStr) - 1, "%.9g", value.floatValue);
 		break;
 
 	case VALUE_TYPE_STRING:
