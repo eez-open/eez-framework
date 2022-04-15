@@ -34,6 +34,7 @@
 
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/components/switch.h>
+#include <eez/flow/components/set_variable.h>
 
 namespace eez {
 namespace gui {
@@ -124,6 +125,17 @@ void fixOffsets(Assets *assets) {
                 switch (component->type) {
                 case COMPONENT_TYPE_SWITCH_ACTION:
                     fixOffset(((SwitchActionComponent *)component)->tests, assets);
+                    break;
+                case COMPONENT_TYPE_SET_VARIABLE_ACTION:
+                    {
+                        auto setVariableActionComponent = (SetVariableActionComponent *)component;
+                        fixOffset(setVariableActionComponent->entries, assets);
+                        for (uint32_t entryIndex = 0; entryIndex < setVariableActionComponent->entries.count; entryIndex++) {
+                            auto entry = setVariableActionComponent->entries[entryIndex];
+                            fixOffset(entry->variable, assets);
+                            fixOffset(entry->value, assets);
+                        }
+                    }
                     break;
                 }
 

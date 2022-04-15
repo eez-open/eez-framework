@@ -209,7 +209,11 @@ bool canExecuteStep(FlowState *&flowState, unsigned &componentIndex) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#if defined(__EMSCRIPTEN__)
+char outputBuffer[1024 * 1024];
+#else
 char outputBuffer[64];
+#endif
 int outputBufferPosition = 0;
 
 #define WRITE_TO_OUTPUT_BUFFER(ch) \
