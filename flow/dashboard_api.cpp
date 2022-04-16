@@ -111,9 +111,15 @@ EM_PORT_API(Value *) createArrayValue(int arraySize, int arrayType) {
     return pValue;
 }
 
-EM_PORT_API(Value *) createStreamValue(int value) {
+EM_PORT_API(Value *) createStreamValue(double value) {
     auto pValue = ObjectAllocator<Value>::allocate(0x53a2e660);
     *pValue = Value(value, VALUE_TYPE_STREAM);
+    return pValue;
+}
+
+EM_PORT_API(Value *) createDateValue(int value) {
+    auto pValue = ObjectAllocator<Value>::allocate(0x90b7ce70);
+    *pValue = Value(value, VALUE_TYPE_DATE);
     return pValue;
 }
 

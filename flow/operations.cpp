@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <chrono>
 
 #include <eez/gui/gui.h>
 
@@ -784,6 +785,19 @@ bool do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE(EvalStack &stack) {
     return true;
 }
 
+bool do_OPERATION_TYPE_DATE_NOW(EvalStack &stack) {
+    using namespace std::chrono;
+    milliseconds ms = duration_cast<milliseconds>(
+        system_clock::now().time_since_epoch()
+    );
+
+    if (!stack.push(Value((double)ms.count(), VALUE_TYPE_DATE))) {
+        return false;
+    }
+
+	return true;
+}
+
 bool do_OPERATION_TYPE_MATH_SIN(EvalStack &stack) {
 	auto a = stack.pop();
 
@@ -1240,6 +1254,7 @@ EvalOperation g_evalOperations[] = {
 	do_OPERATION_TYPE_FLOW_IS_PAGE_ACTIVE,
     do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE,
     do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE,
+    do_OPERATION_TYPE_DATE_NOW,
 	do_OPERATION_TYPE_MATH_SIN,
 	do_OPERATION_TYPE_MATH_COS,
 	do_OPERATION_TYPE_MATH_LOG,

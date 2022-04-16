@@ -449,6 +449,18 @@ const char *STREAM_value_type_name(const Value &value) {
     return "stream";
 }
 
+bool compare_DATE_value(const Value &a, const Value &b) {
+    return a.doubleValue == b.doubleValue;
+}
+
+void DATE_value_to_text(const Value &value, char *text, int count) {
+    text[0] = 0;
+}
+
+const char *DATE_value_type_name(const Value &value) {
+    return "date";
+}
+
 bool compare_VERSIONED_STRING_value(const Value &a, const Value &b) {
     return a.unit == b.unit; // here unit is used as string version
 }
@@ -629,7 +641,6 @@ ValueTypeNameFunction g_valueTypeNames[] = {
 ////////////////////////////////////////////////////////////////////////////////
 
 bool assignValue(Value &dstValue, const Value &srcValue) {
-/*
     if (dstValue.isInt32OrLess()) {
         dstValue = srcValue.toInt32();
     } else if (dstValue.isFloat()) {
@@ -639,10 +650,8 @@ bool assignValue(Value &dstValue, const Value &srcValue) {
     } else if (dstValue.isAnyStringType()) {
         dstValue = srcValue.toString(0x30a91156);
     } else {
-        return false;
+        dstValue = srcValue;
     }
-*/
-    dstValue = srcValue;
     return true;
 }
 
