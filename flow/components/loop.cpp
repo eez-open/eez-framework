@@ -46,6 +46,10 @@ void executeLoopComponent(FlowState *flowState, unsigned componentIndex) {
             deallocateComponentExecutionState(flowState, componentIndex);
             loopComponentExecutionState = nullptr;
         }
+    } else {
+        if (!loopComponentExecutionState) {
+            return;
+        }
     }
 
     if (!loopComponentExecutionState) {
@@ -91,10 +95,9 @@ void executeLoopComponent(FlowState *flowState, unsigned componentIndex) {
     }
 
     if (condition) {
-        printf("done\n");
         // done
         deallocateComponentExecutionState(flowState, componentIndex);
-        propagateValue(flowState, componentIndex, component->outputs.count);
+        propagateValue(flowState, componentIndex, component->outputs.count - 1);
     } else {
         assignValue(flowState, componentIndex, loopComponentExecutionState->dstValue, loopComponentExecutionState->currentValue);
         propagateValueThroughSeqout(flowState, componentIndex);
