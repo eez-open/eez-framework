@@ -81,6 +81,7 @@ enum DebuggerState {
     DEBUGGER_STATE_RESUMED,
     DEBUGGER_STATE_PAUSED,
     DEBUGGER_STATE_SINGLE_STEP,
+    DEBUGGER_STATE_STOPPED,
 };
 
 bool g_debuggerIsConnected;
@@ -407,6 +408,10 @@ void onStarted(Assets *assets) {
 			writeValue(*pValue);
         }
     }
+}
+
+void onStopped() {
+    setDebuggerState(DEBUGGER_STATE_STOPPED);
 }
 
 void onAddToQueue(FlowState *flowState, int sourceComponentIndex, int sourceOutputIndex, unsigned targetComponentIndex, int targetInputIndex) {

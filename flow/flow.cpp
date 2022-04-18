@@ -122,6 +122,7 @@ void stop() {
 		g_mainPageFlowState = nullptr;
 	}
 	queueReset();
+    onStopped();
 }
 
 FlowState *getFlowState(Assets *assets, int flowStateIndex) {
@@ -183,7 +184,7 @@ void executeFlowAction(const gui::WidgetCursor &widgetCursor, int16_t actionId) 
             auto params = Value::makeArrayRef(defs_v3::SYSTEM_STRUCTURE_ACTION_PARAMS_NUM_FIELDS, defs_v3::SYSTEM_STRUCTURE_ACTION_PARAMS, 0x285940bb);
 
             ((ArrayValueRef *)params.refValue)->arrayValue.values[defs_v3::SYSTEM_STRUCTURE_ACTION_PARAMS_FIELD_INDEX] = widgetCursor.iterators[0];
-            
+
             auto indexes = Value::makeArrayRef(MAX_ITERATORS, defs_v3::ARRAY_TYPE_INTEGER, 0xb1f68ef8);
             for (size_t i = 0; i < MAX_ITERATORS; i++) {
                 ((ArrayValueRef *)indexes.refValue)->arrayValue.values[i] = (int)widgetCursor.iterators[i];
