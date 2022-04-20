@@ -230,6 +230,17 @@ EM_PORT_API(void) freeExpressionListParam(void *ptr) {
     ::free(ptr);
 }
 
+EM_PORT_API(Value*) getInputValue(int flowStateIndex, int inputIndex) {
+    auto flowState = getFlowState(g_mainAssets, flowStateIndex);
+    return flowState->values + inputIndex;
+}
+
+EM_PORT_API(void) clearInputValue(int flowStateIndex, int inputIndex) {
+    auto flowState = getFlowState(g_mainAssets, flowStateIndex);
+    flowState->values[inputIndex] = Value();
+    onValueChanged(flowState->values + inputIndex);
+}
+
 EM_PORT_API(Value *) evalProperty(int flowStateIndex, int componentIndex, int propertyIndex, int32_t *iterators) {
     auto flowState = getFlowState(g_mainAssets, flowStateIndex);
 
