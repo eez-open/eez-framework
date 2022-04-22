@@ -330,6 +330,11 @@ struct Flow {
 	ListOfAssetsPtr<WidgetActionItem> widgetActions;
 };
 
+struct Language {
+    AssetsPtr<const char> languageID;
+    ListOfAssetsPtr<const char> translations;
+};
+
 struct FlowDefinition {
 	ListOfAssetsPtr<Flow> flows;
 	ListOfAssetsPtr<Value> constants;
@@ -352,6 +357,7 @@ struct Assets {
 	ListOfAssetsPtr<const char> actionNames;
 	ListOfAssetsPtr<const char> variableNames;
 	AssetsPtr<FlowDefinition> flowDefinition;
+    ListOfAssetsPtr<Language> languages;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

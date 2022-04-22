@@ -785,6 +785,49 @@ bool do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE(EvalStack &stack) {
     return true;
 }
 
+bool do_OPERATION_TYPE_FLOW_LANGUAGES(EvalStack &stack) {
+    auto languages = stack.flowState->assets->languages;
+
+    auto arrayValue = Value::makeArrayRef(languages.count, VALUE_TYPE_STRING, 0xff4787fc);
+
+    auto array = arrayValue.getArray();
+
+    for (int i = 0; i < languages.count; i++) {
+        array->values[i] = Value((const char *)(languages[i]->languageID));
+    }
+
+    if (!stack.push(arrayValue)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool do_OPERATION_TYPE_FLOW_TRANSLATE(EvalStack &stack) {
+    auto textResourceIndexValue = stack.pop();
+
+    int textResourceIndex = textResourceIndexValue.getInt();
+
+    int languageIndex = g_selectedLanguage;
+
+    auto languages = stack.flowState->assets->languages;
+    if (languageIndex >= 0 && languageIndex < languages.count) {
+        auto translations = languages[languageIndex]->translations;
+        if (textResourceIndex >= 0 && textResourceIndex < translations.count) {
+            if (!stack.push(translations[textResourceIndex])) {
+                return false;
+            }
+            return true;
+        }
+    }
+
+    if (!stack.push("")) {
+        return false;
+    }
+
+    return true;
+}
+
 bool do_OPERATION_TYPE_DATE_NOW(EvalStack &stack) {
     using namespace std::chrono;
     milliseconds ms = duration_cast<milliseconds>(
@@ -1254,6 +1297,8 @@ EvalOperation g_evalOperations[] = {
 	do_OPERATION_TYPE_FLOW_IS_PAGE_ACTIVE,
     do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE,
     do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE,
+    do_OPERATION_TYPE_FLOW_LANGUAGES,
+    do_OPERATION_TYPE_FLOW_TRANSLATE,
     do_OPERATION_TYPE_DATE_NOW,
 	do_OPERATION_TYPE_MATH_SIN,
 	do_OPERATION_TYPE_MATH_COS,

@@ -65,6 +65,7 @@ struct FlowState {
     FlowState *nextSibling;
 };
 
+extern int g_selectedLanguage;
 extern FlowState *g_firstFlowState;
 extern FlowState *g_lastFlowState;
 

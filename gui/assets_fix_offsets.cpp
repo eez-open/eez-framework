@@ -70,6 +70,7 @@ void fixOffset(ListOfFundamentalType<T> &list, Assets *assets) {
 void fixOffsets(Assets *assets, ListOfAssetsPtr<Widget> &widgets);
 void fixOffsets(Assets *assets, Widget *widget);
 void fixOffsets(Assets *assets, ListOfAssetsPtr<Value> &values);
+void fixOffsets(Assets *assets, ListOfAssetsPtr<Language> &languages);
 void fixOffsets(Assets *assets, Value &value);
 
 void fixOffsets(Assets *assets) {
@@ -158,6 +159,8 @@ void fixOffsets(Assets *assets) {
         fixOffsets(assets, flowDefinition->constants);
         fixOffsets(assets, flowDefinition->globalVariables);
     }
+
+    fixOffsets(assets, assets->languages);
 }
 
 void fixOffsets(Assets *assets, ListOfAssetsPtr<Widget> &widgets) {
@@ -223,6 +226,16 @@ void fixOffsets(Assets *assets, ListOfAssetsPtr<Value> &values) {
     for (uint32_t i = 0; i < values.count; i++) {
         auto value = values[i];
         fixOffsets(assets, *value);
+    }
+}
+
+void fixOffsets(Assets *assets, ListOfAssetsPtr<Language> &languages) {
+    fixOffset(languages, assets);
+
+    for (uint32_t i = 0; i < languages.count; i++) {
+        auto language = languages[i];
+        fixOffset(language->languageID, assets);
+        fixOffset(language->translations, assets);
     }
 }
 

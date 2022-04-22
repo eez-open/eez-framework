@@ -689,7 +689,10 @@ const char *Value::getString() const {
 	if (type == VALUE_TYPE_STRING_REF) {
 		return ((StringRef *)refValue)->str;
 	}
-	return strValue;
+	if (type == VALUE_TYPE_STRING) {
+		return strValue;
+	}
+	return nullptr;
 }
 
 const ArrayValue *Value::getArray() const {

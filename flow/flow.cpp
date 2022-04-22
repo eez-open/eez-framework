@@ -41,6 +41,7 @@ namespace flow {
 
 static const uint32_t FLOW_TICK_MAX_DURATION_MS = 20;
 
+int g_selectedLanguage = 0;
 FlowState *g_firstFlowState;
 FlowState *g_lastFlowState;
 
