@@ -127,13 +127,39 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
 	flowState->error = false;
 	flowState->numAsyncComponents = 0;
 	flowState->parentFlowState = parentFlowState;
-	if (parentFlowState) {
+
+    if (parentFlowState) {
+        if (parentFlowState->lastChild) {
+            parentFlowState->lastChild->nextSibling = flowState;
+            flowState->previousSibling = parentFlowState->lastChild;
+            parentFlowState->lastChild = flowState;
+        } else {
+            flowState->previousSibling = nullptr;
+            parentFlowState->firstChild = flowState;
+            parentFlowState->lastChild = flowState;
+        }
+
 		flowState->parentComponentIndex = parentComponentIndex;
 		flowState->parentComponent = parentFlowState->flow->components[parentComponentIndex];
 	} else {
+        if (g_lastFlowState) {
+            g_lastFlowState->nextSibling = flowState;
+            flowState->previousSibling = g_lastFlowState;
+            g_lastFlowState = flowState;
+        } else {
+            flowState->previousSibling = nullptr;
+            g_firstFlowState = flowState;
+            g_lastFlowState = flowState;
+        }
+
 		flowState->parentComponentIndex = -1;
 		flowState->parentComponent = nullptr;
 	}
+
+    flowState->firstChild = nullptr;
+    flowState->lastChild = nullptr;
+    flowState->nextSibling = nullptr;
+
 	flowState->values = (Value *)(flowState + 1);
 	flowState->componenentExecutionStates = (ComponenentExecutionState **)(flowState->values + nValues);
     flowState->componenentAsyncStates = (bool *)(flowState->componenentExecutionStates + flow->components.count);
@@ -219,6 +245,27 @@ void freeFlowState(FlowState *flowState) {
             deallocateComponentExecutionState(flowState->parentFlowState, flowState->parentComponentIndex);
             return;
         }
+
+        if (parentFlowState->firstChild == flowState) {
+            parentFlowState->firstChild = flowState->nextSibling;
+        }
+        if (parentFlowState->lastChild == flowState) {
+            parentFlowState->lastChild = flowState->previousSibling;
+        }
+    } else {
+        if (g_firstFlowState == flowState) {
+            g_firstFlowState = flowState->nextSibling;
+        }
+        if (g_lastFlowState == flowState) {
+            g_lastFlowState = flowState->previousSibling;
+        }
+    }
+
+    if (flowState->previousSibling) {
+        flowState->previousSibling->nextSibling = flowState->nextSibling;
+    }
+    if (flowState->nextSibling) {
+        flowState->nextSibling->previousSibling = flowState->previousSibling;
     }
 
 	auto flow = flowState->flow;

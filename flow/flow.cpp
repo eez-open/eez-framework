@@ -41,10 +41,8 @@ namespace flow {
 
 static const uint32_t FLOW_TICK_MAX_DURATION_MS = 20;
 
-FlowState *g_mainPageFlowState;
-
-static const uint32_t MAX_PAGES = 100;
-FlowState *g_pagesFlowState[MAX_PAGES];
+FlowState *g_firstFlowState;
+FlowState *g_lastFlowState;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -57,10 +55,6 @@ unsigned start(Assets *assets) {
 	queueReset();
 
 	scpiComponentInitHook();
-
-	for (uint32_t i = 0; i < MAX_PAGES; i++) {
-		g_pagesFlowState[i] = nullptr;
-	}
 
 	onStarted(assets);
 
@@ -115,12 +109,13 @@ void tick() {
 }
 
 void stop() {
-	if (g_mainPageFlowState) {
-		for (unsigned i = 0; i < MAX_PAGES && g_pagesFlowState[i]; i++) {
-			freeFlowState(g_pagesFlowState[i]);
-		}
-		g_mainPageFlowState = nullptr;
-	}
+    auto flowState = g_firstFlowState;
+    while (flowState != nullptr) {
+        auto nextFlowState = flowState->nextSibling;
+        freeFlowState(flowState);
+        flowState = nextFlowState;
+    }
+
 	queueReset();
     onStopped();
 }
@@ -146,13 +141,18 @@ FlowState *getFlowState(Assets *assets, int16_t pageId, const WidgetCursor &widg
 		auto pageIndex = pageId;
 		auto page = assets->pages[pageIndex];
 		if (!(page->flags & PAGE_IS_USED_AS_CUSTOM_WIDGET)) {
-			if (!g_pagesFlowState[pageIndex]) {
-				g_pagesFlowState[pageIndex] = initPageFlowState(assets, pageIndex, nullptr, 0);
-				if (pageIndex == 0) {
-					g_mainPageFlowState = g_pagesFlowState[0];
-				}
+            FlowState *flowState;
+            for (flowState = g_firstFlowState; flowState; flowState = flowState->nextSibling) {
+                if (flowState->flowIndex == pageIndex) {
+                    break;
+                }
+            }
+
+            if (!flowState) {
+				flowState = initPageFlowState(assets, pageIndex, nullptr, 0);
 			}
-			return g_pagesFlowState[pageIndex];
+
+			return flowState;
 		}
 	}
 
@@ -160,12 +160,7 @@ FlowState *getFlowState(Assets *assets, int16_t pageId, const WidgetCursor &widg
 }
 
 int getPageIndex(FlowState *flowState) {
-	for (uint32_t pageIndex = 0; pageIndex < MAX_PAGES; pageIndex++) {
-		if (g_pagesFlowState[pageIndex] == flowState) {
-			return (int)pageIndex;
-		}
-	}
-	return -1;
+	return flowState->flowIndex;
 }
 
 void executeFlowAction(const gui::WidgetCursor &widgetCursor, int16_t actionId) {

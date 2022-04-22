@@ -329,4 +329,43 @@ EM_PORT_API(void) throwError(int flowStateIndex, int componentIndex, const char 
 	eez::flow::throwError(flowState, componentIndex, errorMessage);
 }
 
+EM_PORT_API(int) getFirstRootFlowState() {
+    if (!g_firstFlowState) {
+        return -1;
+    }
+    return getFlowStateIndex(g_firstFlowState);
+}
+
+EM_PORT_API(int) getFirstChildFlowState(int flowStateIndex) {
+    if (flowStateIndex == -1) {
+        return -1;
+    }
+    auto flowState = getFlowState(flowStateIndex);
+    auto firstChildFlowState = flowState->firstChild;
+    if (!firstChildFlowState) {
+        return -1;
+    }
+    return getFlowStateIndex(firstChildFlowState);
+}
+
+EM_PORT_API(int) getNextSiblingFlowState(int flowStateIndex) {
+    if (flowStateIndex == -1) {
+        return -1;
+    }
+    auto flowState = getFlowState(flowStateIndex);
+    auto nextSiblingFlowState = flowState->nextSibling;
+    if (!nextSiblingFlowState) {
+        return -1;
+    }
+    return getFlowStateIndex(nextSiblingFlowState);
+}
+
+EM_PORT_API(int) getFlowStateFlowIndex(int flowStateIndex) {
+    if (flowStateIndex == -1) {
+        return -1;
+    }
+    auto flowState = getFlowState(flowStateIndex);
+    return flowState->flowIndex;
+}
+
 #endif // __EMSCRIPTEN__

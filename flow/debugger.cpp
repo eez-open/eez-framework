@@ -147,7 +147,7 @@ void processDebuggerInput(char *buffer, uint32_t length) {
 				auto flowIndex = (uint32_t)strtol(g_inputFromDebugger + 2, &p, 10);
 				auto componentIndex = (uint32_t)strtol(p + 1, nullptr, 10);
 
-				auto assets = g_mainPageFlowState->assets;
+				auto assets = g_firstFlowState->assets;
 				auto flowDefinition = static_cast<FlowDefinition *>(assets->flowDefinition);
 				if (flowIndex >= 0 && flowIndex < flowDefinition->flows.count) {
 					auto flow = flowDefinition->flows[flowIndex];
