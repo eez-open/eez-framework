@@ -304,7 +304,7 @@ void propagateValue(FlowState *flowState, unsigned componentIndex, unsigned outp
 	auto component = flowState->flow->components[componentIndex];
 	auto componentOutput = component->outputs[outputIndex];
 
-    auto value2 = value.getType() == VALUE_TYPE_VALUE_PTR ? *value.pValueValue : value.getType() == VALUE_TYPE_NATIVE_VARIABLE ? get(g_widgetCursor, value.getInt()) : value;
+    auto value2 = value.getValue();
 
 	for (unsigned connectionIndex = 0; connectionIndex < componentOutput->connections.count; connectionIndex++) {
 		auto connection = componentOutput->connections[connectionIndex];
@@ -383,7 +383,15 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
 	} else if (dstValue.getType() == VALUE_TYPE_NATIVE_VARIABLE) {
 		set(g_widgetCursor, dstValue.getInt(), srcValue);
 	} else {
-		Value *pDstValue = dstValue.pValueValue;
+		Value *pDstValue;
+        if (dstValue.getType() == VALUE_TYPE_ARRAY_ELEMENT_VALUE) {
+            auto arrayElementValue = (ArrayElementValue *)dstValue.refValue;
+            auto array = arrayElementValue->arrayValue.getArray();
+            pDstValue = &array->values[arrayElementValue->elementIndex];
+        } else {
+            pDstValue = dstValue.pValueValue;
+        }
+
 		if (assignValue(*pDstValue, srcValue)) {
 			onValueChanged(pDstValue);
 		} else {

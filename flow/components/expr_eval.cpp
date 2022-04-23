@@ -32,6 +32,8 @@ void executeEvalExprComponent(FlowState *flowState, unsigned componentIndex) {
 		return;
 	}
 
+    printf("Trt: %d\n", (int)expressionValue.getType());
+
 	propagateValue(flowState, componentIndex, 1, expressionValue);
 
 	propagateValueThroughSeqout(flowState, componentIndex);

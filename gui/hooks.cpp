@@ -34,8 +34,8 @@ static float getDefaultAnimationDuration() {
     return 0;
 }
 
-static void executeExternalAction(const WidgetCursor &widgetCursor, int16_t actionId) {
-    flow::executeFlowAction(widgetCursor, actionId);
+static void executeExternalAction(const WidgetCursor &widgetCursor, int16_t actionId, void *param) {
+    flow::executeFlowAction(widgetCursor, actionId, param);
 }
 
 static void externalData(int16_t id, DataOperationEnum operation, const WidgetCursor &widgetCursor, Value &value) {
