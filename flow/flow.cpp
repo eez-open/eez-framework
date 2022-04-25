@@ -117,6 +117,9 @@ void stop() {
         flowState = nextFlowState;
     }
 
+    g_firstFlowState = nullptr;
+    g_lastFlowState = nullptr;
+
 	queueReset();
     onStopped();
 }

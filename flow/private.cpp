@@ -416,6 +416,10 @@ void startAsyncExecution(FlowState *flowState, int componentIndex) {
 }
 
 void endAsyncExecution(FlowState *flowState, int componentIndex) {
+    if (!g_firstFlowState) {
+        return;
+    }
+
     if (flowState->componenentAsyncStates[componentIndex]) {
         flowState->componenentAsyncStates[componentIndex] = false;
         onComponentAsyncStateChanged(flowState, componentIndex);
