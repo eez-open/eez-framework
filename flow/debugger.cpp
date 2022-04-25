@@ -372,6 +372,10 @@ void writeValue(const Value &value) {
 		snprintf(tempStr, sizeof(tempStr) - 1, ">%d", (int)(value.int32Value));
 		break;
 
+	case VALUE_TYPE_DATE:
+		snprintf(tempStr, sizeof(tempStr) - 1, "!%d", (int)(value.doubleValue));
+		break;
+
 	default:
 		tempStr[0] = 0;
 		break;
