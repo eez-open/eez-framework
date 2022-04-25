@@ -35,7 +35,7 @@ void executeSetVariableComponent(FlowState *flowState, unsigned componentIndex) 
         Value dstValue;
         if (!evalAssignableExpression(flowState, componentIndex, entry->variable, dstValue)) {
             char strMessage[256];
-            snprintf(strMessage, sizeof(strMessage), "Failed to evaluate Variable no. %d in SetVariable\n", (int)entryIndex);
+            snprintf(strMessage, sizeof(strMessage), "Failed to evaluate Variable no. %d in SetVariable\n", (int)(entryIndex + 1));
             throwError(flowState, componentIndex, strMessage);
             return;
         }
@@ -43,7 +43,7 @@ void executeSetVariableComponent(FlowState *flowState, unsigned componentIndex) 
         Value srcValue;
         if (!evalExpression(flowState, componentIndex, entry->value, srcValue)) {
             char strMessage[256];
-            snprintf(strMessage, sizeof(strMessage), "Failed to evaluate Value no. %d in SetVariable\n", (int)entryIndex);
+            snprintf(strMessage, sizeof(strMessage), "Failed to evaluate Value no. %d in SetVariable\n", (int)(entryIndex + 1));
             throwError(flowState, componentIndex, strMessage);
             return;
         }
