@@ -31,6 +31,8 @@ unsigned start(eez::gui::Assets *assets);
 void tick();
 void stop();
 
+bool isFlowStopped();
+
 FlowState *getFlowState(Assets *assets, int flowStateIndex);
 
 FlowState *getFlowState(Assets *assets, int16_t pageId, const WidgetCursor &widgetCursor);

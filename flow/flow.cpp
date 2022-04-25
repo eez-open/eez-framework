@@ -45,6 +45,8 @@ int g_selectedLanguage = 0;
 FlowState *g_firstFlowState;
 FlowState *g_lastFlowState;
 
+static bool g_isStopped = true;
+
 ////////////////////////////////////////////////////////////////////////////////
 
 unsigned start(Assets *assets) {
@@ -52,6 +54,8 @@ unsigned start(Assets *assets) {
 	if (flowDefinition->flows.count == 0) {
 		return 0;
 	}
+
+    g_isStopped = false;
 
 	queueReset();
 
@@ -120,8 +124,14 @@ void stop() {
     g_firstFlowState = nullptr;
     g_lastFlowState = nullptr;
 
+    g_isStopped = true;
+
 	queueReset();
     onStopped();
+}
+
+bool isFlowStopped() {
+    return g_isStopped;
 }
 
 FlowState *getFlowState(Assets *assets, int flowStateIndex) {
