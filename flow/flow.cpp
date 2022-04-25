@@ -90,6 +90,10 @@ void tick() {
 
 		executeComponent(flowState, componentIndex);
 
+        if (isFlowStopped()) {
+            break;
+        }
+
 		auto component = flowState->flow->components[componentIndex];
 
 		for (uint32_t i = 0; i < component->inputs.count; i++) {
