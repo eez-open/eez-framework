@@ -222,18 +222,27 @@ struct GlyphData {
 	uint8_t height;    // BBX height
 	int8_t x;          // BBX xoffset
 	int8_t y;          // BBX yoffset
-    int8_t reserved1;
-    int8_t reserved2;
-    int8_t reserved3;
+    uint8_t reserved1;
+    uint8_t reserved2;
+    uint8_t reserved3;
 	uint8_t pixels[1];
+};
+
+struct GlyphsGroup {
+    uint32_t encoding;
+    uint32_t glyphIndex;
+    uint32_t length;
 };
 
 struct FontData {
 	uint8_t ascent;
 	uint8_t descent;
-	uint8_t encodingStart;
-	uint8_t encodingEnd;
-	AssetsPtr<const GlyphData> glyphs[1];
+    uint8_t reserved1;
+    uint8_t reserved2;
+	uint32_t encodingStart;
+	uint32_t encodingEnd;
+    ListOfAssetsPtr<GlyphsGroup> groups;
+    ListOfAssetsPtr<GlyphData> glyphs;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

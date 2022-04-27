@@ -84,9 +84,8 @@ void fixOffsets(Assets *assets) {
 	fixOffset(assets->fonts, assets);
     for (uint32_t i = 0; i < assets->fonts.count; i++) {
         auto font = assets->fonts[i];
-        for (uint32_t glyphIndex = font->encodingStart; glyphIndex <= font->encodingEnd; glyphIndex++) {
-            fixOffset(font->glyphs[glyphIndex - font->encodingStart], assets);
-        }
+        fixOffset(font->groups, assets);
+        fixOffset(font->glyphs, assets);
     }
 
     fixOffset(assets->bitmaps, assets);
