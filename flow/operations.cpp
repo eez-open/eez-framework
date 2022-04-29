@@ -19,6 +19,12 @@
 #include <stdio.h>
 #include <math.h>
 #include <chrono>
+#include <string>
+#include <iostream>
+#include <sstream>
+
+// https://howardhinnant.github.io/date/date.html
+#include <eez/libs/date.h>
 
 #include <eez/gui/gui.h>
 
@@ -797,6 +803,53 @@ bool do_OPERATION_TYPE_DATE_NOW(EvalStack &stack) {
 	return true;
 }
 
+bool do_OPERATION_TYPE_DATE_TO_STRING(EvalStack &stack) {
+	auto a = stack.pop().getValue();
+
+    using namespace std;
+    using namespace std::chrono;
+    using namespace date;
+
+
+    long long ms = a.getDouble();
+    auto dur = milliseconds(ms);
+    system_clock::time_point tp(dur);
+
+    stringstream out;
+
+    out << tp << endl;
+
+    if (!stack.push(Value::makeStringRef(out.str().c_str(), -1, 0xbe440ec8))) {
+        return false;
+    }
+
+	return true;
+}
+
+bool do_OPERATION_TYPE_DATE_FROM_STRING(EvalStack &stack) {
+	auto a = stack.pop().getValue();
+
+    Value dateStrValue = a.toString(0x99cb1a93);
+
+    using namespace std;
+    using namespace std::chrono;
+
+    istringstream in{dateStrValue.getString()};
+
+    system_clock::time_point tp;
+    in >> date::parse("%Y-%m-%d %T", tp);
+
+    milliseconds ms = duration_cast<milliseconds>(
+        tp.time_since_epoch()
+    );
+
+    if (!stack.push(Value((double)ms.count(), VALUE_TYPE_DATE))) {
+        return false;
+    }
+
+	return true;
+}
+
 bool do_OPERATION_TYPE_MATH_SIN(EvalStack &stack) {
 	auto a = stack.pop().getValue();
 
@@ -1198,6 +1251,8 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_FLOW_LANGUAGES,
     do_OPERATION_TYPE_FLOW_TRANSLATE,
     do_OPERATION_TYPE_DATE_NOW,
+    do_OPERATION_TYPE_DATE_TO_STRING,
+    do_OPERATION_TYPE_DATE_FROM_STRING,
 	do_OPERATION_TYPE_MATH_SIN,
 	do_OPERATION_TYPE_MATH_COS,
 	do_OPERATION_TYPE_MATH_LOG,

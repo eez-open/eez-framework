@@ -381,7 +381,8 @@ void writeValue(const Value &value) {
 		break;
 
 	case VALUE_TYPE_DATE:
-		snprintf(tempStr, sizeof(tempStr) - 1, "!%d", (int)(value.doubleValue));
+        tempStr[0] = '!';
+		writeHex(tempStr + 1, (uint8_t *)&value.doubleValue, sizeof(double));
 		break;
 
 	default:
