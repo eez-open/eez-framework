@@ -293,6 +293,14 @@ void writeArray(const ArrayValue *arrayValue) {
     }
 }
 
+void writeHex(char *dst, uint8_t *src, size_t srcLength) {
+    *dst++ = 'H';
+    for (size_t i = 0; i < srcLength; i++) {
+        *dst++ = toHexDigit(src[i] / 16);
+        *dst++ = toHexDigit(src[i] % 16);
+    }
+}
+
 void writeValue(const Value &value) {
 	char tempStr[64];
 
@@ -347,11 +355,11 @@ void writeValue(const Value &value) {
 		break;
 
 	case VALUE_TYPE_DOUBLE:
-		snprintf(tempStr, sizeof(tempStr) - 1, "%.17g", value.doubleValue);
+        writeHex(tempStr, (uint8_t *)&value.doubleValue, sizeof(double));
 		break;
 
 	case VALUE_TYPE_FLOAT:
-		snprintf(tempStr, sizeof(tempStr) - 1, "%.9g", value.floatValue);
+        writeHex(tempStr, (uint8_t *)&value.floatValue, sizeof(float));
 		break;
 
 	case VALUE_TYPE_STRING:

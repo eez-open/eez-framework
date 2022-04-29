@@ -1022,22 +1022,48 @@ bool do_OPERATION_TYPE_MATH_CEIL(EvalStack &stack) {
 	return false;
 }
 
+float roundN(float value, unsigned int numDigits) {
+  float pow_10 = pow(10.0f, numDigits);
+  return round(value * pow_10) / pow_10;
+}
+
+double roundN(double value, unsigned int numDigits) {
+  float pow_10 = pow(10.0f, numDigits);
+  return round(value * pow_10) / pow_10;
+}
+
 bool do_OPERATION_TYPE_MATH_ROUND(EvalStack &stack) {
+    auto numArgs = stack.pop().getInt();
 	auto a = stack.pop().getValue();
 
+    unsigned int numDigits;
+    if (numArgs > 1) {
+        auto b = stack.pop().getValue();
+        numDigits = b.toInt32();
+    } else {
+        numDigits = 1;
+    }
+
 	if (a.isDouble()) {
-		if (!stack.push(Value(round(a.getDouble()), VALUE_TYPE_DOUBLE))) {
+		if (!stack.push(Value(roundN(a.getDouble(), numDigits), VALUE_TYPE_DOUBLE))) {
 			return false;
 		}
 		return true;
 	}
 
 	if (a.isFloat()) {
-		if (!stack.push(Value(roundf(a.toFloat()), VALUE_TYPE_FLOAT))) {
+		if (!stack.push(Value(roundN(a.toFloat(), numDigits), VALUE_TYPE_FLOAT))) {
 			return false;
 		}
 		return true;
 	}
+
+    if (a.isInt32OrLess()) {
+		if (!stack.push(a)) {
+			return false;
+		}
+		return true;
+    }
 
 	return false;
 }
