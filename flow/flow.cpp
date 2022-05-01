@@ -117,14 +117,18 @@ void tick() {
 	finishToDebuggerMessageHook();
 }
 
-void stop() {
-    auto flowState = g_firstFlowState;
+void freeAllChildrenFlowStates(FlowState *firstChildFlowState) {
+    auto flowState = firstChildFlowState;
     while (flowState != nullptr) {
         auto nextFlowState = flowState->nextSibling;
+        freeAllChildrenFlowStates(flowState->firstChild);
         freeFlowState(flowState);
         flowState = nextFlowState;
     }
+}
 
+void stop() {
+    freeAllChildrenFlowStates(g_firstFlowState);
     g_firstFlowState = nullptr;
     g_lastFlowState = nullptr;
 

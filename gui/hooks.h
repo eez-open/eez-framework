@@ -60,6 +60,7 @@ struct Hooks {
         int16_t touchScreenCalTrx, int16_t touchScreenCalTry
     );
     void (*onGuiQueueMessage)(uint8_t type, int16_t param);
+    void (*onArrayValueFreeHook)(ArrayValue *arrayValue);
 };
 
 extern Hooks g_hooks;

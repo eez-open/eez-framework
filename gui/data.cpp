@@ -653,6 +653,15 @@ ValueTypeNameFunction g_valueTypeNames[] = {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+ArrayValueRef::~ArrayValueRef() {
+    g_hooks.onArrayValueFreeHook(&arrayValue);
+    for (uint32_t i = 1; i < arrayValue.arraySize; i++) {
+        (arrayValue.values + i)->~Value();
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 bool assignValue(Value &dstValue, const Value &srcValue) {
     if (dstValue.isInt32OrLess()) {
         dstValue = srcValue.toInt32();

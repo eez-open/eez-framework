@@ -165,6 +165,8 @@ static void setTouchScreenCalibrationParams(
 static void onGuiQueueMessage(uint8_t type, int16_t param) {
 }
 
+static void onArrayValueFree(ArrayValue *) {}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 Hooks g_hooks = {
@@ -197,7 +199,8 @@ Hooks g_hooks = {
     onTouchCalibrationConfirm,
     getTouchScreenCalibrationParams,
     setTouchScreenCalibrationParams,
-    onGuiQueueMessage
+    onGuiQueueMessage,
+    onArrayValueFree
 };
 
 } // namespace gui
