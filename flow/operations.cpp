@@ -1116,6 +1116,44 @@ bool do_OPERATION_TYPE_MATH_ROUND(EvalStack &stack) {
 	return false;
 }
 
+bool do_OPERATION_TYPE_MATH_MIN(EvalStack &stack) {
+    auto numArgs = stack.pop().getInt();
+
+    double minValue = INFINITY;
+
+    for (int i = 0; i < numArgs; i++) {
+        auto value = stack.pop().getValue().toDouble();
+        if (value < minValue) {
+            minValue = value;
+        }
+    }
+
+	if (!stack.push(Value(minValue, VALUE_TYPE_DOUBLE))) {
+		return false;
+	}
+
+	return true;
+}
+
+bool do_OPERATION_TYPE_MATH_MAX(EvalStack &stack) {
+    auto numArgs = stack.pop().getInt();
+
+    double maxValue = -INFINITY;
+
+    for (int i = 0; i < numArgs; i++) {
+        auto value = stack.pop().getValue().toDouble();
+        if (value > maxValue) {
+            maxValue = value;
+        }
+    }
+
+	if (!stack.push(Value(maxValue, VALUE_TYPE_DOUBLE))) {
+		return false;
+	}
+
+	return true;
+}
+
 bool do_OPERATION_TYPE_STRING_FIND(EvalStack &stack) {
 	auto b = stack.pop().getValue();
 	auto a = stack.pop().getValue();
@@ -1256,6 +1294,8 @@ EvalOperation g_evalOperations[] = {
 	do_OPERATION_TYPE_MATH_FLOOR,
 	do_OPERATION_TYPE_MATH_CEIL,
 	do_OPERATION_TYPE_MATH_ROUND,
+    do_OPERATION_TYPE_MATH_MIN,
+    do_OPERATION_TYPE_MATH_MAX,
 	do_OPERATION_TYPE_STRING_FIND,
 	do_OPERATION_TYPE_STRING_PAD_START,
 	do_OPERATION_TYPE_STRING_SPLIT,
