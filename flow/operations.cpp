@@ -792,9 +792,7 @@ bool do_OPERATION_TYPE_FLOW_TRANSLATE(EvalStack &stack) {
 
 bool do_OPERATION_TYPE_DATE_NOW(EvalStack &stack) {
     using namespace std::chrono;
-    milliseconds ms = duration_cast<milliseconds>(
-        system_clock::now().time_since_epoch()
-    );
+    milliseconds ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
 
     if (!stack.push(Value((double)ms.count(), VALUE_TYPE_DATE))) {
         return false;
@@ -805,18 +803,17 @@ bool do_OPERATION_TYPE_DATE_NOW(EvalStack &stack) {
 
 bool do_OPERATION_TYPE_DATE_TO_STRING(EvalStack &stack) {
 	auto a = stack.pop().getValue();
+    if (a.getType() != VALUE_TYPE_DATE) {
+        return false;
+    }
 
     using namespace std;
     using namespace std::chrono;
     using namespace date;
 
-
-    long long ms = a.getDouble();
-    auto dur = milliseconds(ms);
-    system_clock::time_point tp(dur);
+    auto tp = system_clock::time_point(milliseconds((long long)a.getDouble()));
 
     stringstream out;
-
     out << tp << endl;
 
     if (!stack.push(Value::makeStringRef(out.str().c_str(), -1, 0xbe440ec8))) {
@@ -833,16 +830,14 @@ bool do_OPERATION_TYPE_DATE_FROM_STRING(EvalStack &stack) {
 
     using namespace std;
     using namespace std::chrono;
+    using namespace date;
 
     istringstream in{dateStrValue.getString()};
 
     system_clock::time_point tp;
     in >> date::parse("%Y-%m-%d %T", tp);
 
-    milliseconds ms = duration_cast<milliseconds>(
-        tp.time_since_epoch()
-    );
-
+    milliseconds ms = duration_cast<milliseconds>(tp.time_since_epoch());
     if (!stack.push(Value((double)ms.count(), VALUE_TYPE_DATE))) {
         return false;
     }
@@ -1094,7 +1089,7 @@ bool do_OPERATION_TYPE_MATH_ROUND(EvalStack &stack) {
         auto b = stack.pop().getValue();
         numDigits = b.toInt32();
     } else {
-        numDigits = 1;
+        numDigits = 0;
     }
 
 	if (a.isDouble()) {
