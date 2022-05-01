@@ -1071,9 +1071,9 @@ Value Value::toString(uint32_t id) const {
 #endif
 
     if (type == VALUE_TYPE_DOUBLE) {
-        snprintf(tempStr, sizeof(tempStr), "%.17g", doubleValue);
+        snprintf(tempStr, sizeof(tempStr), "%g", doubleValue);
     } else if (type == VALUE_TYPE_FLOAT) {
-        snprintf(tempStr, sizeof(tempStr), "%.9g", floatValue);
+        snprintf(tempStr, sizeof(tempStr), "%g", floatValue);
     } else if (type == VALUE_TYPE_INT8) {
         snprintf(tempStr, sizeof(tempStr), "%" PRId8 "", int8Value);
     } else if (type == VALUE_TYPE_UINT8) {
@@ -1099,7 +1099,6 @@ Value Value::toString(uint32_t id) const {
 #endif
 
 	return makeStringRef(tempStr, strlen(tempStr), id);
-
 }
 
 Value Value::makeStringRef(const char *str, int len, uint32_t id) {
