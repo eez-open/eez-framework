@@ -663,7 +663,9 @@ ArrayValueRef::~ArrayValueRef() {
 ////////////////////////////////////////////////////////////////////////////////
 
 bool assignValue(Value &dstValue, const Value &srcValue) {
-    if (dstValue.isInt32OrLess()) {
+    if (dstValue.isBoolean()) {
+        dstValue = srcValue;
+    } else if (dstValue.isInt32OrLess()) {
         dstValue = srcValue.toInt32();
     } else if (dstValue.isFloat()) {
         dstValue.floatValue = srcValue.toFloat();
