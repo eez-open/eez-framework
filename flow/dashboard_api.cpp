@@ -117,7 +117,7 @@ EM_PORT_API(Value *) createStreamValue(double value) {
     return pValue;
 }
 
-EM_PORT_API(Value *) createDateValue(int value) {
+EM_PORT_API(Value *) createDateValue(double value) {
     auto pValue = ObjectAllocator<Value>::allocate(0x90b7ce70);
     *pValue = Value(value, VALUE_TYPE_DATE);
     return pValue;
