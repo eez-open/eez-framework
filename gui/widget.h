@@ -95,6 +95,8 @@ struct WidgetCursor {
     flow::FlowState *flowState;
     int16_t x;
     int16_t y;
+    int16_t w;
+    int16_t h;
 
 	WidgetState *currentState;
 	bool refreshed;
@@ -207,10 +209,10 @@ struct WidgetState {
 	virtual bool updateState();
 	virtual void render();
 	virtual void enumChildren();
-	
+
 	virtual bool hasOnTouch();
 	virtual void onTouch(const WidgetCursor &widgetCursor, Event &touchEvent);
-	
+
 	virtual bool hasOnKeyboard();
 	virtual bool onKeyboard(const WidgetCursor &widgetCursor, uint8_t key, uint8_t mod);
 };
@@ -245,6 +247,14 @@ WidgetCursor findWidget(int16_t x, int16_t y, bool clicked = true);
 
 typedef void (*OnTouchFunctionType)(const WidgetCursor &widgetCursor, Event &touchEvent);
 OnTouchFunctionType getWidgetTouchFunction(const WidgetCursor &widgetCursor);
+
+void resizeWidget(
+    WidgetCursor &widgetCursor,
+    int containerOriginalWidth,
+    int containerOriginalHeight,
+    int containerWidth,
+    int containerHeight
+);
 
 } // namespace gui
 } // namespace eez

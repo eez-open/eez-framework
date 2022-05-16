@@ -139,10 +139,13 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#define SHADOW_FLAG (1 << 0)
-#define CLOSE_PAGE_IF_TOUCHED_OUTSIDE_FLAG (1 << 1)
-#define PAGE_IS_USED_AS_CUSTOM_WIDGET (1 << 2)
-#define PAGE_CONTAINER (1 << 3)
+#define WIDGET_FLAG_PIN_TO_LEFT (1 << 0)
+#define WIDGET_FLAG_PIN_TO_RIGHT (1 << 1)
+#define WIDGET_FLAG_PIN_TO_TOP (1 << 2)
+#define WIDGET_FLAG_PIN_TO_BOTTOM (1 << 3)
+
+#define WIDGET_FLAG_FIX_WIDTH (1 << 4)
+#define WIDGET_FLAG_FIX_HEIGHT (1 << 5)
 
 struct Widget {
 	uint16_t type;
@@ -150,10 +153,17 @@ struct Widget {
 	int16_t action;
 	int16_t x;
 	int16_t y;
-	int16_t w;
-	int16_t h;
+	int16_t width;
+	int16_t height;
 	int16_t style;
+    uint32_t flags;
 };
+
+#define SHADOW_FLAG (1 << 0)
+#define CLOSE_PAGE_IF_TOUCHED_OUTSIDE_FLAG (1 << 1)
+#define PAGE_IS_USED_AS_CUSTOM_WIDGET (1 << 2)
+#define PAGE_CONTAINER (1 << 3)
+#define PAGE_SCALE_TO_FIT (1 << 4)
 
 struct PageAsset : public Widget {
 	ListOfAssetsPtr<Widget> widgets;

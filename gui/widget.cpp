@@ -116,8 +116,8 @@ bool WidgetState::hasOnKeyboard() {
     return false;
 }
 
-bool WidgetState::onKeyboard(const WidgetCursor &widgetCursor, uint8_t key, uint8_t mod) { 
-    return false; 
+bool WidgetState::onKeyboard(const WidgetCursor &widgetCursor, uint8_t key, uint8_t mod) {
+    return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -217,9 +217,11 @@ void enumNoneWidget() {
     WidgetCursor &widgetCursor = g_widgetCursor;
     auto savedWidget = widgetCursor.widget;
     widgetCursor.widget = &g_noneWidget;
+    g_widgetCursor.w = g_noneWidget.width;
+    g_widgetCursor.h = g_noneWidget.height;
 	enumWidget();
     widgetCursor.widget = savedWidget;
-}    
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -316,21 +318,21 @@ static void findWidgetStep() {
 	}
 
     static const int MIN_SIZE = 50;
-        
-    int w = overlay ? overlay->width : widget->w;
+
+    int w = overlay ? overlay->width : widgetCursor.w;
     if (w < MIN_SIZE) {
         x = x - (MIN_SIZE - w) / 2;
         w = MIN_SIZE;
     }
 
-    int h = overlay ? overlay->height : widget->h;
+    int h = overlay ? overlay->height : widgetCursor.h;
     if (h < MIN_SIZE) {
         y = y - (MIN_SIZE - h) / 2;
         h = MIN_SIZE;
     }
 
-    bool inside = 
-        g_findWidgetAtX >= x && g_findWidgetAtX < x + w && 
+    bool inside =
+        g_findWidgetAtX >= x && g_findWidgetAtX < x + w &&
         g_findWidgetAtY >= y && g_findWidgetAtY < y + h;
 
     if (inside && (widget->type == WIDGET_TYPE_APP_VIEW || getWidgetTouchFunction(widgetCursor))) {
@@ -338,7 +340,7 @@ static void findWidgetStep() {
         int dy = g_findWidgetAtY - (y + h / 2);
         int distance = dx * dx + dy * dy;
 
-        auto action = getWidgetAction(widgetCursor);        
+        auto action = getWidgetAction(widgetCursor);
         if (action == ACTION_ID_DRAG_OVERLAY) {
             if (overlay && !overlay->state) {
                 return;
@@ -347,8 +349,8 @@ static void findWidgetStep() {
             g_distanceToFoundWidget = INT_MAX;
         } else {
             if (
-				!g_foundWidget || 
-				distance <= g_distanceToFoundWidget || 
+				!g_foundWidget ||
+				distance <= g_distanceToFoundWidget ||
 				g_foundWidget.widget->type == WIDGET_TYPE_APP_VIEW ||
 				g_foundWidget.widget->type == WIDGET_TYPE_LIST ||
 				g_foundWidget.widget->type == WIDGET_TYPE_GRID
@@ -389,6 +391,104 @@ WidgetCursor findWidget(int16_t x, int16_t y, bool clicked) {
     }
 
     return g_foundWidget;
+}
+
+void resizeWidget(
+    WidgetCursor &widgetCursor,
+    int containerOriginalWidth,
+    int containerOriginalHeight,
+    int containerWidth,
+    int containerHeight
+) {
+    auto widget = widgetCursor.widget;
+    auto flags = widget->flags;
+
+    auto pinToLeft = flags & WIDGET_FLAG_PIN_TO_LEFT;
+    auto pinToRight = flags & WIDGET_FLAG_PIN_TO_RIGHT;
+    auto pinToTop = flags & WIDGET_FLAG_PIN_TO_TOP;
+    auto pinToBottom = flags & WIDGET_FLAG_PIN_TO_BOTTOM;
+
+    auto fixWidth = flags & WIDGET_FLAG_FIX_WIDTH;
+    auto fixHeight = flags & WIDGET_FLAG_FIX_HEIGHT;
+
+    auto left = widget->x;
+    auto right = widget->x + widget->width;
+
+    if (pinToLeft) {
+        // left = left;
+    } else {
+        if (!fixWidth) {
+            left =
+                (widget->x * containerWidth) /
+                containerOriginalWidth;
+        }
+    }
+
+    if (pinToRight) {
+        right = containerWidth - (containerOriginalWidth - right);
+    } else {
+        if (!fixWidth) {
+            right = (right * containerWidth) / containerOriginalWidth;
+        }
+    }
+
+    if (fixWidth) {
+        if (pinToLeft && !pinToRight) {
+            right = left + widget->width;
+        } else if (pinToRight && !pinToLeft) {
+            left = right - widget->width;
+        } else if (!pinToLeft && !pinToRight) {
+            auto center =
+                ((widget->x + widget->width / 2) *
+                    containerWidth) /
+                containerOriginalWidth;
+            left = center - widget->width / 2;
+            right = left + widget->width;
+        }
+    }
+
+    auto top = widget->y;
+    auto bottom = widget->y + widget->height;
+
+    if (pinToTop) {
+        //top = top;
+    } else {
+        if (!fixHeight) {
+            top =
+                (widget->y * containerHeight) /
+                containerOriginalHeight;
+        }
+    }
+
+    if (pinToBottom) {
+        bottom = containerHeight - (containerOriginalHeight - bottom);
+    } else {
+        if (!fixHeight) {
+            bottom =
+                (bottom * containerHeight) / containerOriginalHeight;
+        }
+    }
+
+    if (fixHeight) {
+        if (pinToTop && !pinToBottom) {
+            bottom = top + widget->height;
+        } else if (pinToBottom && !pinToTop) {
+            top = bottom - widget->height;
+        } else if (!pinToTop && !pinToBottom) {
+            auto center =
+                ((widget->y + widget->height / 2) *
+                    containerHeight) /
+                containerOriginalHeight;
+            top = center - widget->height / 2;
+            bottom = top + widget->height;
+        }
+    }
+
+
+    widgetCursor.x += left - widget->x;
+    widgetCursor.y += top - widget->y;
+    widgetCursor.w = right - left;
+    widgetCursor.h = bottom - top;
 }
 
 } // namespace gui

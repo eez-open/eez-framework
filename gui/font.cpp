@@ -48,13 +48,13 @@ const GlyphData *Font::getGlyph(int32_t encoding) {
 	auto start = fontData->encodingStart;
 	auto end = fontData->encodingEnd;
 
-    uint32_t glyphIndex;
-	if (encoding < start || encoding > end) {
+    uint32_t glyphIndex = 0;
+	if ((uint32_t)encoding < start || (uint32_t)encoding > end) {
         // TODO use binary search
         uint32_t i;
 		for (i = 0; i < fontData->groups.count; i++) {
             auto group = fontData->groups[i];
-            if (encoding >= group->encoding && encoding < group->encoding + group->length) {
+            if ((uint32_t)encoding >= group->encoding && (uint32_t)encoding < group->encoding + group->length) {
                 glyphIndex = group->glyphIndex + (encoding - group->encoding);
                 break;
             }
