@@ -335,39 +335,28 @@ void AppContext::updatePage(int i, WidgetCursor &widgetCursor) {
     } else {
         auto page = getPageAsset(m_pageNavigationStack[i].pageId, widgetCursor);
 
+        auto savedWidget = widgetCursor.widget;
+        widgetCursor.widget = page;
+
         if (page->flags & PAGE_SCALE_TO_FIT) {
 		    x = rect.x;
 		    y = rect.y;
 		    width = rect.w;
 		    height = rect.h;
-
-		    withShadow = false;
-
-            auto savedWidget = widgetCursor.widget;
-            widgetCursor.widget = page;
-
-            widgetCursor.w = page->width;
-            widgetCursor.h = page->height;
-            enumWidget();
-
-            widgetCursor.widget = savedWidget;
         } else {
             x = widgetCursor.x + page->x;
             y = widgetCursor.y + page->y;
             width = page->width;
             height = page->height;
-
-		    withShadow = page->x > 0;
-
-            auto savedWidget = widgetCursor.widget;
-            widgetCursor.widget = page;
-
-            widgetCursor.w = page->width;
-            widgetCursor.h = page->height;
-            enumWidget();
-
-            widgetCursor.widget = savedWidget;
         }
+
+        withShadow = page->x > 0;
+
+        widgetCursor.w = width;
+        widgetCursor.h = height;
+        enumWidget();
+
+        widgetCursor.widget = savedWidget;
     }
 
 	if (g_findCallback == nullptr) {
