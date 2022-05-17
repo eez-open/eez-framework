@@ -38,6 +38,8 @@
 #include <eez/gui/touch_calibration.h>
 #include <eez/gui/widgets/button.h>
 
+#include <eez/flow/debugger.h>
+
 #include <eez/core/hmi.h>
 
 #define CONF_GUI_TOAST_DURATION_MS 1000L
@@ -338,7 +340,7 @@ void AppContext::updatePage(int i, WidgetCursor &widgetCursor) {
         auto savedWidget = widgetCursor.widget;
         widgetCursor.widget = page;
 
-        if (page->flags & PAGE_SCALE_TO_FIT) {
+        if ((page->flags & PAGE_SCALE_TO_FIT) && flow::g_debuggerMode == flow::DEBUGGER_MODE_RUN) {
 		    x = rect.x;
 		    y = rect.y;
 		    width = rect.w;
@@ -382,7 +384,7 @@ void AppContext::getPageRect(int pageId, Page *page, int &x, int &y, int &w, int
         h = ((InternalPage *)page)->height;
     } else {
         auto page = getPageAsset(pageId);
-        if (page->flags & PAGE_SCALE_TO_FIT) {
+        if ((page->flags & PAGE_SCALE_TO_FIT) && flow::g_debuggerMode == flow::DEBUGGER_MODE_RUN) {
 		    x = rect.x;
 		    y = rect.y;
 		    w = rect.w;
