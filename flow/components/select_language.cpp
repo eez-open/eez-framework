@@ -28,8 +28,7 @@ namespace flow {
 
 void executeSelectLanguageComponent(FlowState *flowState, unsigned componentIndex) {
 	Value languageValue;
-	if (!evalProperty(flowState, componentIndex, defs_v3::SELECT_LANGUAGE_ACTION_COMPONENT_PROPERTY_LANGUAGE, languageValue)) {
-		throwError(flowState, componentIndex, "Failed to evaluate Language in SelectLanguage\n");
+	if (!evalProperty(flowState, componentIndex, defs_v3::SELECT_LANGUAGE_ACTION_COMPONENT_PROPERTY_LANGUAGE, languageValue, "Failed to evaluate Language in SelectLanguage")) {
 		return;
 	}
 
