@@ -167,13 +167,19 @@ void enumWidget() {
 	g_isActiveWidget = g_isActiveWidget || widgetCursor == g_activeWidget;
 
 	if (g_findCallback) {
-		g_findCallback();
+        if (widgetState->visible.toBool()) {
+    		g_findCallback();
+        }
 	} else {
 		if (widgetCursor.hasPreviousState && widget->type == widgetState->type) {
             // reuse existing widget state
             bool refresh = widgetState->updateState();
             if (refresh || widgetCursor.refreshed) {
-                widgetState->render();
+                if (widgetState->visible.toBool()) {
+                    widgetState->render();
+                } else {
+                    drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, nullptr);
+                }
             }
 		} else {
 			if (widgetCursor.hasPreviousState) {
@@ -187,7 +193,12 @@ void enumWidget() {
 			widgetState->type = widget->type;
 
 			widgetState->updateState();
-			widgetState->render();
+
+            if (widgetState->visible.toBool()) {
+                widgetState->render();
+            } else {
+                drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, nullptr);
+            }
 
 			if (g_foundWidgetAtDownInvalid) {
 				// find new cursor for g_foundWidgetAtDown

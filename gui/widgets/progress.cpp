@@ -25,14 +25,11 @@ namespace eez {
 namespace gui {
 
 bool ProgressWidgetState::updateState() {
-    const WidgetCursor &widgetCursor = g_widgetCursor;
+    WIDGET_STATE_START(ProgressWidget);
 
-    bool hasPreviousState = widgetCursor.hasPreviousState;
-    auto widget = (const ProgressWidget *)widgetCursor.widget;
-    
     WIDGET_STATE(data, get(widgetCursor, widget->data));
 
-    return !hasPreviousState;
+    WIDGET_STATE_END()
 }
 
 void ProgressWidgetState::render() {

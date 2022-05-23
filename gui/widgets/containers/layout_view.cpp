@@ -34,10 +34,7 @@ int getLayoutId(const WidgetCursor &widgetCursor) {
 }
 
 bool LayoutViewWidgetState::updateState() {
-    WidgetCursor &widgetCursor = g_widgetCursor;
-
-    bool hasPreviousState = widgetCursor.hasPreviousState;
-    auto widget = (const LayoutViewWidget *)widgetCursor.widget;
+    WIDGET_STATE_START(LayoutViewWidget);
 
     auto savedCursor = widgetCursor.cursor;
 
@@ -54,18 +51,18 @@ bool LayoutViewWidgetState::updateState() {
     WIDGET_STATE(flags.active, g_isActiveWidget);
 
     auto savedFlowState = widgetCursor.flowState;
-    WIDGET_STATE(layout, getPageAsset(getLayoutId(widgetCursor), widgetCursor));
+    WIDGET_STATE(layout, getPageAsset(getLayoutId(widgetCursor), (WidgetCursor &)widgetCursor));
     flowState = widgetCursor.flowState;
-    widgetCursor.flowState = savedFlowState;
+    ((WidgetCursor &)widgetCursor).flowState = savedFlowState;
 
     if (widget->context) {
-        restoreContext(widgetCursor, widget->context, oldContext);
+        restoreContext((WidgetCursor &)widgetCursor, widget->context, oldContext);
     }
 
-    widgetCursor.cursor = savedCursor;
+    ((WidgetCursor &)widgetCursor).cursor = savedCursor;
 
-    return !hasPreviousState;
-}
+    WIDGET_STATE_END()
+    }
 
 void LayoutViewWidgetState::render() {
 	const WidgetCursor& widgetCursor = g_widgetCursor;
