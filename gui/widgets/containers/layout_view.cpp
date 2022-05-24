@@ -122,19 +122,34 @@ void LayoutViewWidgetState::enumChildren() {
         ) {
             for (uint32_t index = 0; index < widgets.count; ++index) {
                 widgetCursor.widget = widgets[index];
+
                 auto savedX = widgetCursor.x;
 	            auto savedY = widgetCursor.y;
+
                 resizeWidget(widgetCursor, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
+
                 enumWidget();
+
                 widgetCursor.x = savedX;
                 widgetCursor.y = savedY;
             }
         } else {
             for (uint32_t index = 0; index < widgets.count; ++index) {
                 widgetCursor.widget = widgets[index];
+
+                auto savedX = widgetCursor.x;
+                auto savedY = widgetCursor.y;
+
+                widgetCursor.x += widgetCursor.widget->x;
+                widgetCursor.y += widgetCursor.widget->y;
+
                 widgetCursor.w = widgetCursor.widget->width;
                 widgetCursor.h = widgetCursor.widget->height;
+
                 enumWidget();
+
+                widgetCursor.x = savedX;
+                widgetCursor.y = savedY;
             }
         }
 

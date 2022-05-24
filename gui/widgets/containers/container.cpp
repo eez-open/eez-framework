@@ -135,9 +135,19 @@ void ContainerWidgetState::enumChildren() {
 				((Widget*)widgetCursor.widget)->height = widgetOverrides->h;
 			}
 
+            auto savedX = widgetCursor.x;
+            auto savedY = widgetCursor.y;
+
+            widgetCursor.x += widgetCursor.widget->x;
+            widgetCursor.y += widgetCursor.widget->y;
+
             widgetCursor.w = widgetCursor.widget->width;
             widgetCursor.h = widgetCursor.widget->height;
-			enumWidget();
+
+            enumWidget();
+
+            widgetCursor.x = savedX;
+            widgetCursor.y = savedY;
 
 			if (widgetOverrides) {
 				((Widget*)widgetCursor.widget)->x = xSaved;
@@ -166,37 +176,58 @@ void ContainerWidgetState::enumChildren() {
             ) {
                 for (uint32_t index = 0; index < widgets.count; ++index) {
                     widgetCursor.widget = widgets[index];
+
                     auto savedX = widgetCursor.x;
                     auto savedY = widgetCursor.y;
+
                     resizeWidget(widgetCursor, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
+
                     enumWidget();
+
                     widgetCursor.x = savedX;
                     widgetCursor.y = savedY;
                 }
             } else {
                 for (uint32_t index = 0; index < widgets.count; ++index) {
                     widgetCursor.widget = widgets[index];
+
+                    auto savedX = widgetCursor.x;
+                    auto savedY = widgetCursor.y;
+
+                    widgetCursor.x += widgetCursor.widget->x;
+                    widgetCursor.y += widgetCursor.widget->y;
+
                     widgetCursor.w = widgetCursor.widget->width;
                     widgetCursor.h = widgetCursor.widget->height;
+
                     enumWidget();
+
+                    widgetCursor.x = savedX;
+                    widgetCursor.y = savedY;
                 }
             }
         } else if (widget->layout == CONTAINER_WIDGET_LAYOUT_HORIZONTAL) {
             auto savedX = widgetCursor.x;
             auto savedY = widgetCursor.y;
+
             int offset = 0;
             for (uint32_t index = 0; index < widgets.count; ++index) {
                 widgetCursor.widget = widgets[index];
-                widgetCursor.x = savedX + offset - widgetCursor.widget->x;
-                widgetCursor.y = savedY - widgetCursor.widget->y;
+
+                widgetCursor.x = savedX + offset;
+                widgetCursor.y = savedY;
                 widgetCursor.w = widgetCursor.widget->width;
                 widgetCursor.h = widgetCursor.widget->height;
+
                 auto widgetState = widgetCursor.currentState;
+
                 enumWidget();
+
                 if (widgetState->visible.toBool()) {
                     offset += widgetCursor.w;
                 }
             }
+
             widgetCursor.x = savedX;
             widgetCursor.y = savedY;
 
@@ -208,19 +239,25 @@ void ContainerWidgetState::enumChildren() {
         } else if (widget->layout == CONTAINER_WIDGET_LAYOUT_VERTICAL) {
             auto savedX = widgetCursor.x;
             auto savedY = widgetCursor.y;
+
             int offset = 0;
             for (uint32_t index = 0; index < widgets.count; ++index) {
                 widgetCursor.widget = widgets[index];
-                widgetCursor.x = savedX - widgetCursor.widget->x;
-                widgetCursor.y = savedY + offset - widgetCursor.widget->y;
+
+                widgetCursor.x = savedX;
+                widgetCursor.y = savedY + offset;
                 widgetCursor.w = widgetCursor.widget->width;
                 widgetCursor.h = widgetCursor.widget->height;
+
                 auto widgetState = widgetCursor.currentState;
+
                 enumWidget();
+
                 if (widgetState->visible.toBool()) {
                     offset += widgetCursor.h;
                 }
             }
+
             widgetCursor.x = savedX;
             widgetCursor.y = savedY;
 

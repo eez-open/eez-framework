@@ -75,9 +75,19 @@ void SelectWidgetState::enumChildren() {
 		auto savedWidget = widgetCursor.widget;
 		widgetCursor.widget = widget->widgets[widgetIndex];
 
+        auto savedX = widgetCursor.x;
+        auto savedY = widgetCursor.y;
+
+        widgetCursor.x += widgetCursor.widget->x;
+        widgetCursor.y += widgetCursor.widget->y;
+
         widgetCursor.w = widgetCursor.widget->width;
         widgetCursor.h = widgetCursor.widget->height;
+
         enumWidget();
+
+        widgetCursor.x = savedX;
+        widgetCursor.y = savedY;
 
 		widgetCursor.widget = savedWidget;
 	}

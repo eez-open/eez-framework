@@ -152,14 +152,7 @@ void WidgetCursor::popBackground() {
 
 void enumWidget() {
     WidgetCursor &widgetCursor = g_widgetCursor;
-
     const Widget *widget = widgetCursor.widget;
-
-    auto savedX = widgetCursor.x;
-	auto savedY = widgetCursor.y;
-
-    widgetCursor.x += widget->x;
-    widgetCursor.y += widget->y;
 
 	auto widgetState = widgetCursor.currentState;
 
@@ -219,18 +212,21 @@ void enumWidget() {
 	widgetState->enumChildren();
 
 	g_isActiveWidget = savedIsActiveWidget;
-
-    widgetCursor.x = savedX;
-    widgetCursor.y = savedY;
 }
 
 void enumNoneWidget() {
     WidgetCursor &widgetCursor = g_widgetCursor;
     auto savedWidget = widgetCursor.widget;
     widgetCursor.widget = &g_noneWidget;
+    auto savedX = g_widgetCursor.x;
+    auto savedY = g_widgetCursor.y;
+    g_widgetCursor.x += g_noneWidget.x;
+    g_widgetCursor.y += g_noneWidget.y;
     g_widgetCursor.w = g_noneWidget.width;
     g_widgetCursor.h = g_noneWidget.height;
 	enumWidget();
+    g_widgetCursor.x = savedX;
+    g_widgetCursor.y = savedY;
     widgetCursor.widget = savedWidget;
 }
 
@@ -496,8 +492,8 @@ void resizeWidget(
     }
 
 
-    widgetCursor.x += left - widget->x;
-    widgetCursor.y += top - widget->y;
+    widgetCursor.x += left;
+    widgetCursor.y += top;
     widgetCursor.w = right - left;
     widgetCursor.h = bottom - top;
 }
