@@ -182,6 +182,10 @@ void ContainerWidgetState::enumChildren() {
 
                     resizeWidget(widgetCursor, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
 
+                    if (g_isRTL) {
+                        widgetCursor.x = savedX + containerWidth - ((widgetCursor.x - savedX) + widgetCursor.w);
+                    }
+
                     enumWidget();
 
                     widgetCursor.x = savedX;
@@ -199,6 +203,10 @@ void ContainerWidgetState::enumChildren() {
 
                     widgetCursor.w = widgetCursor.widget->width;
                     widgetCursor.h = widgetCursor.widget->height;
+
+                    if (g_isRTL) {
+                        widgetCursor.x = savedX + containerWidth - ((widgetCursor.x - savedX) + widgetCursor.w);
+                    }
 
                     enumWidget();
 
@@ -221,6 +229,10 @@ void ContainerWidgetState::enumChildren() {
 
                 auto widgetState = widgetCursor.currentState;
 
+                if (g_isRTL) {
+                    widgetCursor.x = savedX + containerWidth - ((widgetCursor.x - savedX) + widgetCursor.w);
+                }
+
                 enumWidget();
 
                 if (widgetState->visible.toBool()) {
@@ -232,7 +244,11 @@ void ContainerWidgetState::enumChildren() {
             widgetCursor.y = savedY;
 
             if (!repainted && !g_findCallback && offset != offsetPrevious) {
-                drawRectangle(widgetCursor.x + offset, widgetCursor.y, widget->width - offset, widget->height, nullptr);
+                if (g_isRTL) {
+                    drawRectangle(widgetCursor.x, widgetCursor.y, widget->width - offset, widget->height, nullptr);
+                } else {
+                    drawRectangle(widgetCursor.x + offset, widgetCursor.y, widget->width - offset, widget->height, nullptr);
+                }
             }
 
             offsetPrevious = offset;

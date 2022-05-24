@@ -128,6 +128,10 @@ void LayoutViewWidgetState::enumChildren() {
 
                 resizeWidget(widgetCursor, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
 
+                if (g_isRTL) {
+                    widgetCursor.x = savedX + containerWidth - ((widgetCursor.x - savedX) + widgetCursor.w);
+                }
+
                 enumWidget();
 
                 widgetCursor.x = savedX;
@@ -145,6 +149,10 @@ void LayoutViewWidgetState::enumChildren() {
 
                 widgetCursor.w = widgetCursor.widget->width;
                 widgetCursor.h = widgetCursor.widget->height;
+
+                if (g_isRTL) {
+                    widgetCursor.x = savedX + containerWidth - ((widgetCursor.x - savedX) + widgetCursor.w);
+                }
 
                 enumWidget();
 

@@ -252,6 +252,7 @@ struct WidgetState {
 ////////////////////////////////////////////////////////////////////////////////
 
 extern bool g_isActiveWidget;
+extern bool g_isRTL;
 
 void enumRootWidget();
 void enumWidget();

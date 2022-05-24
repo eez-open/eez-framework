@@ -64,6 +64,8 @@ bool g_isActiveWidget;
 EnumWidgetsCallback g_findCallback;
 bool g_foundWidgetAtDownInvalid;
 
+bool g_isRTL = true;
+
 ////////////////////////////////////////////////////////////////////////////////
 
 struct NoneWidgetState : public WidgetState {};
