@@ -24,10 +24,15 @@
 namespace eez {
 namespace gui {
 
+static const uint8_t PROGRESS_WIDGET_ORIENTATION_HORIZONTAL = 0;
+// static const uint8_t PROGRESS_WIDGET_ORIENTATION_VERTICAL = 1;
+
 bool ProgressWidgetState::updateState() {
     WIDGET_STATE_START(ProgressWidget);
 
     WIDGET_STATE(data, get(widgetCursor, widget->data));
+    WIDGET_STATE(min, get(widgetCursor, widget->min));
+    WIDGET_STATE(max, get(widgetCursor, widget->max));
 
     WIDGET_STATE_END()
 }
@@ -42,12 +47,21 @@ void ProgressWidgetState::render() {
 
     int percentFrom;
     int percentTo;
-    if (data.getType() == VALUE_TYPE_RANGE) {
-        percentFrom = data.getRangeFrom();
-        percentTo = data.getRangeTo();
-    } else {
+
+    if (widgetCursor.flowState) {
+        float fmin = min.toFloat();
+        float fmax = max.toFloat();
+        float value = data.toFloat();
         percentFrom = 0;
-        percentTo = data.getInt();
+        percentTo = (value - fmin) * 100.0f / (fmax - fmin);
+    } else {
+        if (data.getType() == VALUE_TYPE_RANGE) {
+            percentFrom = data.getRangeFrom();
+            percentTo = data.getRangeTo();
+        } else {
+            percentFrom = 0;
+            percentTo = data.getInt();
+        }
     }
 
     percentFrom = clamp(percentFrom, 0, 100.0f);
@@ -56,7 +70,7 @@ void ProgressWidgetState::render() {
         percentFrom = percentTo;
     }
 
-    auto isHorizontal = widgetCursor.w > widgetCursor.h;
+    auto isHorizontal = widget->orientation == PROGRESS_WIDGET_ORIENTATION_HORIZONTAL;
     if (isHorizontal) {
         auto xFrom = percentFrom * widgetCursor.w / 100;
         auto xTo = percentTo * widgetCursor.w / 100;
@@ -64,7 +78,7 @@ void ProgressWidgetState::render() {
     } else {
         auto yFrom = percentFrom * widgetCursor.h / 100;
         auto yTo = percentTo * widgetCursor.h / 100;
-        drawRectangle(widgetCursor.x, widgetCursor.y - yFrom, yTo - yFrom, widgetCursor.h, getStyle(widget->style), true);
+        drawRectangle(widgetCursor.x, widgetCursor.y + widgetCursor.h - yTo, widgetCursor.w, yTo - yFrom, style, true);
     }
 }
 
