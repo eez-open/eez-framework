@@ -20,6 +20,7 @@
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/expression.h>
 #include <eez/flow/private.h>
+#include <eez/flow/queue.h>
 
 #include <eez/gui/gui.h>
 
@@ -28,17 +29,72 @@ using namespace eez::gui;
 namespace eez {
 namespace flow {
 
-#define PAGE_DIRECTION_LTR 0
-#define PAGE_DIRECTION_RTL 1
+struct AnimateComponenentExecutionState : public ComponenentExecutionState {
+    float startPosition;
+    float endPosition;
+    float speed;
+    uint32_t startTimestamp;
+};
 
 void executeAnimateComponent(FlowState *flowState, unsigned componentIndex) {
-	Value timeValue;
-	if (!evalProperty(flowState, componentIndex, defs_v3::ANIMATE_ACTION_COMPONENT_PROPERTY_TIME, timeValue, "Failed to evaluate Time in Animate")) {
-		return;
-	}
+	auto state = (AnimateComponenentExecutionState *)flowState->componenentExecutionStates[componentIndex];
+	if (!state) {
+        Value positionValue;
+        if (!evalProperty(flowState, componentIndex, defs_v3::ANIMATE_ACTION_COMPONENT_PROPERTY_TIME, positionValue, "Failed to evaluate Time in Animate")) {
+            return;
+        }
 
-    flowState->timelineTime = timeValue.toFloat();
-    onFlowStateTimelineChanged(flowState);
+        Value speedValue;
+        if (!evalProperty(flowState, componentIndex, defs_v3::ANIMATE_ACTION_COMPONENT_PROPERTY_SPEED, speedValue, "Failed to evaluate Speed in Animate")) {
+            return;
+        }
+
+        float position = positionValue.toFloat();
+        float speed = speedValue.toFloat();
+
+        if (flowState->timelinePosition == position) {
+            propagateValueThroughSeqout(flowState, componentIndex);
+        } else {
+		    state = allocateComponentExecutionState<AnimateComponenentExecutionState>(flowState, componentIndex);
+
+            state->startPosition = flowState->timelinePosition;
+            state->endPosition = position;
+            state->speed = speed;
+            state->startTimestamp = millis();
+
+            if (!addToQueue(flowState, componentIndex, -1, -1, -1, true)) {
+                throwError(flowState, componentIndex, "Execution queue is full\n");
+                return;
+            }
+        }
+    } else {
+        float currentTime;
+
+        if (state->startPosition < state->endPosition) {
+            currentTime = state->startPosition + state->speed * (millis() - state->startTimestamp) / 1000.0f;
+            if (currentTime >= state->endPosition) {
+                currentTime = state->endPosition;
+            }
+        } else {
+            currentTime = state->startPosition - state->speed * (millis() - state->startTimestamp) / 1000.0f;
+            if (currentTime <= state->endPosition) {
+                currentTime = state->endPosition;
+            }
+        }
+
+        flowState->timelinePosition = currentTime;
+        onFlowStateTimelineChanged(flowState);
+
+        if (currentTime == state->endPosition) {
+            deallocateComponentExecutionState(flowState, componentIndex);
+            propagateValueThroughSeqout(flowState, componentIndex);
+        } else {
+            if (!addToQueue(flowState, componentIndex, -1, -1, -1, true)) {
+                throwError(flowState, componentIndex, "Execution queue is full\n");
+                return;
+            }
+        }
+    }
 }
 
 } // namespace flow

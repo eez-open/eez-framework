@@ -128,6 +128,8 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
 	flowState->numAsyncComponents = 0;
 	flowState->parentFlowState = parentFlowState;
 
+    flowState->timelinePosition = 0;
+
     if (parentFlowState) {
         if (parentFlowState->lastChild) {
             parentFlowState->lastChild->nextSibling = flowState;
