@@ -47,6 +47,7 @@ enum MessagesToDebugger {
     MESSAGE_TO_DEBUGGER_VALUE_CHANGED, // VALUE_ADDR, VALUE
 
     MESSAGE_TO_DEBUGGER_FLOW_STATE_CREATED, // FLOW_STATE_INDEX, FLOW_INDEX, PARENT_FLOW_STATE_INDEX (-1 - NO PARENT), PARENT_COMPONENT_INDEX (-1 - NO PARENT COMPONENT)
+    MESSAGE_TO_DEBUGGER_FLOW_STATE_TIMELINE_CHANGED, // FLOW_STATE_INDEX, TIMELINE_TIME
     MESSAGE_TO_DEBUGGER_FLOW_STATE_DESTROYED, // FLOW_STATE_INDEX
 
 	MESSAGE_TO_DEBUGGER_FLOW_STATE_ERROR, // FLOW_STATE_INDEX, COMPONENT_INDEX, ERROR_MESSAGE
@@ -545,6 +546,20 @@ void onFlowStateDestroyed(FlowState *flowState) {
 		snprintf(buffer, sizeof(buffer), "%d\t%d\n",
 			MESSAGE_TO_DEBUGGER_FLOW_STATE_DESTROYED,
 			(int)flowState->flowStateIndex
+		);
+		writeDebuggerBufferHook(buffer, strlen(buffer));
+	}
+}
+
+void onFlowStateTimelineChanged(FlowState *flowState) {
+	if (g_debuggerIsConnected) {
+		startToDebuggerMessageHook();
+
+		char buffer[256];
+		snprintf(buffer, sizeof(buffer), "%d\t%d\t%g\n",
+			MESSAGE_TO_DEBUGGER_FLOW_STATE_TIMELINE_CHANGED,
+			(int)flowState->flowStateIndex,
+            flowState->timelineTime
 		);
 		writeDebuggerBufferHook(buffer, strlen(buffer));
 	}

@@ -58,6 +58,7 @@ struct FlowState {
 	Value *values;
 	ComponenentExecutionState **componenentExecutionStates;
     bool *componenentAsyncStates;
+    float timelineTime;
 
     FlowState *firstChild;
     FlowState *lastChild;

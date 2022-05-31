@@ -41,6 +41,7 @@ void onValueChanged(const gui::Value *pValue);
 
 void onFlowStateCreated(FlowState *flowState);
 void onFlowStateDestroyed(FlowState *flowState);
+void onFlowStateTimelineChanged(FlowState *flowState);
 
 void onFlowError(FlowState *flowState, int componentIndex, const char *errorMessage);
 

@@ -60,6 +60,7 @@ void executeShowKeyboardComponent(FlowState *flowState, unsigned componentIndex)
 void executeShowKeypadComponent(FlowState *flowState, unsigned componentIndex);
 void executeSelectLanguageComponent(FlowState *flowState, unsigned componentIndex);
 void executeSetPageDirectionComponent(FlowState *flowState, unsigned componentIndex);
+void executeAnimateComponent(FlowState *flowState, unsigned componentIndex);
 void executeNoopComponent(FlowState *flowState, unsigned componentIndex);
 
 void executeLayoutViewWidgetComponent(FlowState *flowState, unsigned componentIndex);
@@ -95,6 +96,7 @@ static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
 	nullptr, // COMPONENT_TYPE_COMMENT_ACTION
     executeSelectLanguageComponent, // COMPONENT_TYPE_SELECT_LANGUAGE_ACTION
     executeSetPageDirectionComponent, // COMPONENT_TYPE_SET_PAGE_DIRECTION_ACTION
+    executeAnimateComponent, // COMPONENT_TYPE_ANIMATE_ACTION
 };
 
 void registerComponent(ComponentTypes componentType, ExecuteComponentFunctionType executeComponentFunction) {
