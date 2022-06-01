@@ -170,6 +170,8 @@ void fixOffsets(Assets *assets, ListOfAssetsPtr<Widget> &widgets) {
 }
 
 void fixOffsets(Assets *assets, Widget *widget) {
+    fixOffset(widget->timeline, assets);
+
     switch (widget->type) {
     case WIDGET_TYPE_CONTAINER:
         fixOffsets(assets, ((ContainerWidget *)widget)->widgets);

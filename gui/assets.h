@@ -147,6 +147,23 @@ private:
 #define WIDGET_FLAG_FIX_WIDTH (1 << 4)
 #define WIDGET_FLAG_FIX_HEIGHT (1 << 5)
 
+#define WIDGET_TIMELINE_PROPERTY_X (1 << 0)
+#define WIDGET_TIMELINE_PROPERTY_Y (1 << 1)
+#define WIDGET_TIMELINE_PROPERTY_WIDTH (1 << 2)
+#define WIDGET_TIMELINE_PROPERTY_HEIGHT (1 << 3)
+#define WIDGET_TIMELINE_PROPERTY_OPACITY (1 << 4)
+
+struct WidgetTimelineProperties {
+    float start;
+    float end;
+    uint32_t enabledProperties;
+	int16_t x;
+	int16_t y;
+	int16_t width;
+	int16_t height;
+    float opacity;
+};
+
 struct Widget {
 	uint16_t type;
 	int16_t data;
@@ -158,6 +175,7 @@ struct Widget {
 	int16_t height;
 	int16_t style;
     uint16_t flags;
+    ListOfAssetsPtr<WidgetTimelineProperties> timeline;
 };
 
 #define SHADOW_FLAG (1 << 0)

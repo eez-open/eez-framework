@@ -175,7 +175,7 @@ void enumWidget() {
             // reuse existing widget state
             bool refresh = widgetState->updateState();
             if (refresh || widgetCursor.refreshed) {
-                if (widgetState->visible.toBool()) {
+                if (widgetState->visible.toBool() && widgetCursor.opacity == 255) {
                     widgetState->render();
                 } else {
                     drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, nullptr);
@@ -194,7 +194,7 @@ void enumWidget() {
 
 			widgetState->updateState();
 
-            if (widgetState->visible.toBool()) {
+            if (widgetState->visible.toBool() && widgetCursor.opacity == 255) {
                 widgetState->render();
             } else {
                 drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, nullptr);

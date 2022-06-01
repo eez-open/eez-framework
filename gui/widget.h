@@ -97,6 +97,7 @@ struct WidgetCursor {
     int16_t y;
     int16_t w;
     int16_t h;
+    uint8_t opacity;
 
 	WidgetState *currentState;
 	bool refreshed;
@@ -113,6 +114,7 @@ struct WidgetCursor {
 		, flowState(nullptr)
 		, x(0)
 		, y(0)
+        , opacity(255)
 		, currentState(nullptr)
 		, refreshed(true)
 		, hasPreviousState(false)
@@ -138,6 +140,7 @@ struct WidgetCursor {
 		, flowState(nullptr)
 		, x(x_)
 		, y(y_)
+        , opacity(255)
 		, currentState(currentState_)
 		, refreshed(refreshed_)
 		, hasPreviousState(hasPreviousState_)
@@ -154,6 +157,7 @@ struct WidgetCursor {
 		, flowState(nullptr)
 		, x(0)
 		, y(0)
+        , opacity(255)
 		, currentState(nullptr)
 		, refreshed(true)
 		, hasPreviousState(false)

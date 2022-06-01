@@ -22,6 +22,8 @@
 #include <eez/gui/gui.h>
 #include <eez/gui/widgets/containers/container.h>
 
+#include <eez/flow/private.h>
+
 namespace eez {
 namespace gui {
 
@@ -197,12 +199,85 @@ void ContainerWidgetState::enumChildren() {
 
                     auto savedX = widgetCursor.x;
                     auto savedY = widgetCursor.y;
+                    auto savedOpacity = widgetCursor.opacity;
 
-                    widgetCursor.x += widgetCursor.widget->x;
-                    widgetCursor.y += widgetCursor.widget->y;
+                    if (widgetCursor.widget->timeline.count > 0) {
+                        auto x = widgetCursor.widget->x;
+                        auto y = widgetCursor.widget->y;
+                        auto w = widgetCursor.widget->width;
+                        auto h = widgetCursor.widget->height;
+                        float opacity = 1.0f;
 
-                    widgetCursor.w = widgetCursor.widget->width;
-                    widgetCursor.h = widgetCursor.widget->height;
+                        auto timelinePosition = widgetCursor.flowState->timelinePosition;
+                        for (uint32_t i = 0; i < widgetCursor.widget->timeline.count; i++) {
+                            auto timelineProperties = widgetCursor.widget->timeline[i];
+
+                            if (timelinePosition < timelineProperties->start) {
+                                continue;
+                            }
+
+                            if (
+                                timelinePosition >= timelineProperties->start &&
+                                timelinePosition <= timelineProperties->end
+                            ) {
+                                auto t =
+                                    timelineProperties->start == timelineProperties->end
+                                        ? 1
+                                        : (timelinePosition - timelineProperties->start) /
+                                        (timelineProperties->end - timelineProperties->start);
+
+                                if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_X) {
+                                    x += t * (timelineProperties->x - x);
+                                }
+                                if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_Y) {
+                                    y += t * (timelineProperties->y - y);
+                                }
+                                if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_WIDTH) {
+                                    w += t * (timelineProperties->width - w);
+                                }
+                                if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_HEIGHT) {
+                                    h += t * (timelineProperties->height - h);
+                                }
+
+                                if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_OPACITY) {
+                                    opacity += t * (timelineProperties->opacity - opacity);
+                                }
+
+                                break;
+                            }
+
+                            if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_X) {
+                                x = timelineProperties->x;
+                            }
+                            if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_Y) {
+                                y = timelineProperties->y;
+                            }
+                            if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_WIDTH) {
+                                w = timelineProperties->width;
+                            }
+                            if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_HEIGHT) {
+                                h = timelineProperties->height;
+                            }
+
+                            if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_OPACITY) {
+                                opacity = timelineProperties->opacity;
+                            }
+                        }
+
+                        widgetCursor.x += x;
+                        widgetCursor.y += y;
+
+                        widgetCursor.w = w;
+                        widgetCursor.h = h;
+
+                        widgetCursor.opacity = (uint8_t)roundf(255.0f * opacity);
+                    } else {
+                        widgetCursor.x += widgetCursor.widget->x;
+                        widgetCursor.y += widgetCursor.widget->y;
+
+                        widgetCursor.w = widgetCursor.widget->width;
+                        widgetCursor.h = widgetCursor.widget->height;
+                    }
 
                     if (g_isRTL) {
                         widgetCursor.x = savedX + containerWidth - ((widgetCursor.x - savedX) + widgetCursor.w);
@@ -212,6 +287,7 @@ void ContainerWidgetState::enumChildren() {
 
                     widgetCursor.x = savedX;
                     widgetCursor.y = savedY;
+                    widgetCursor.opacity = savedOpacity;
                 }
             }
         } else if (widget->layout == CONTAINER_WIDGET_LAYOUT_HORIZONTAL) {
