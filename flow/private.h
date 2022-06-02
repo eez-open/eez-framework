@@ -103,6 +103,13 @@ void endAsyncExecution(FlowState *flowState, int componentIndex);
 
 void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIndex);
 
+enum FlowEvent {
+    FLOW_EVENT_OPEN_PAGE,
+    FLOW_EVENT_CLOSE_PAGE
+};
+
+void onEvent(FlowState *flowState, FlowEvent flowEvent);
+
 void throwError(FlowState *flowState, int componentIndex, const char *errorMessage);
 void throwError(FlowState *flowState, int componentIndex, const char *errorMessage, const char *errorMessageDescription);
 

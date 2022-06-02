@@ -16,23 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <eez/flow/flow.h>
 #include <eez/flow/components.h>
-#include <eez/flow/debugger.h>
-#include <eez/flow/hooks.h>
+
+using namespace eez::gui;
 
 namespace eez {
 namespace flow {
 
-struct ShowPageActionComponent : public Component {
-	int16_t page;
-};
-
-void executeShowPageComponent(FlowState *flowState, unsigned componentIndex) {
-	auto component = (ShowPageActionComponent *)flowState->flow->components[componentIndex];
-
-	replacePageHook(component->page);
-
+void executeOnEventComponent(FlowState *flowState, unsigned componentIndex) {
 	propagateValueThroughSeqout(flowState, componentIndex);
 }
 
