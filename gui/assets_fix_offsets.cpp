@@ -74,6 +74,8 @@ void fixOffsets(Assets *assets, ListOfAssetsPtr<Language> &languages);
 void fixOffsets(Assets *assets, Value &value);
 
 void fixOffsets(Assets *assets) {
+    fixOffset(assets->settings, assets);
+
 	fixOffset(assets->pages, assets);
     for (uint32_t i = 0; i < assets->pages.count; i++) {
         fixOffsets(assets, assets->pages[i]->widgets);

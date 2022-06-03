@@ -139,6 +139,13 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
+struct Settings {
+    uint16_t displayWidth;
+    uint16_t displayHeight;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
 #define WIDGET_FLAG_PIN_TO_LEFT (1 << 0)
 #define WIDGET_FLAG_PIN_TO_RIGHT (1 << 1)
 #define WIDGET_FLAG_PIN_TO_TOP (1 << 2)
@@ -368,15 +375,15 @@ struct Flow {
 	ListOfAssetsPtr<WidgetActionItem> widgetActions;
 };
 
-struct Language {
-    AssetsPtr<const char> languageID;
-    ListOfAssetsPtr<const char> translations;
-};
-
 struct FlowDefinition {
 	ListOfAssetsPtr<Flow> flows;
 	ListOfAssetsPtr<Value> constants;
 	ListOfAssetsPtr<Value> globalVariables;
+};
+
+struct Language {
+    AssetsPtr<const char> languageID;
+    ListOfAssetsPtr<const char> translations;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -387,8 +394,7 @@ struct Assets {
     uint8_t reserved;
     uint8_t external;
 
-    uint16_t displayWidth;
-    uint16_t displayHeight;
+    AssetsPtr<Settings> settings;
 	ListOfAssetsPtr<PageAsset> pages;
 	ListOfAssetsPtr<Style> styles;
 	ListOfAssetsPtr<FontData> fonts;

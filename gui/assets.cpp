@@ -75,7 +75,7 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 #pragma GCC diagnostic ignored "-Winvalid-offsetof"
 #endif
 
-	auto decompressedDataOffset = offsetof(Assets, displayWidth);
+	auto decompressedDataOffset = offsetof(Assets, settings);
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
@@ -117,9 +117,8 @@ void loadMainAssets(const uint8_t *assets, uint32_t assetsSize) {
     g_mainAssets->external = false;
     auto decompressedSize = decompressAssetsData(assets, assetsSize, g_mainAssets, MAX_DECOMPRESSED_ASSETS_SIZE, nullptr);
     assert(decompressedSize);
-    printf("%d, %d\n", (int)g_mainAssets->displayWidth, (int)g_mainAssets->displayHeight);
-    DISPLAY_WIDTH = g_mainAssets->displayWidth;
-    DISPLAY_HEIGHT = g_mainAssets->displayHeight;
+    DISPLAY_WIDTH = g_mainAssets->settings->displayWidth;
+    DISPLAY_HEIGHT = g_mainAssets->settings->displayHeight;
     g_isMainAssetsLoaded = true;
 }
 
