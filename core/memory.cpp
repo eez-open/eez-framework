@@ -49,6 +49,11 @@ uint8_t *GUI_STATE_BUFFER;
 uint8_t *ALLOC_BUFFER;
 uint32_t ALLOC_BUFFER_SIZE;
 
+void initMemory() {
+    initAssetsMemory();
+    initOtherMemory();
+}
+
 void initAssetsMemory() {
     ALLOC_BUFFER = MEMORY_BEGIN;
     ALLOC_BUFFER_SIZE = MEMORY_SIZE;
