@@ -387,6 +387,8 @@ struct Assets {
     uint8_t reserved;
     uint8_t external;
 
+    uint16_t displayWidth;
+    uint16_t displayHeight;
 	ListOfAssetsPtr<PageAsset> pages;
 	ListOfAssetsPtr<Style> styles;
 	ListOfAssetsPtr<FontData> fonts;
