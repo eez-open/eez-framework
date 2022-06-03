@@ -275,7 +275,25 @@ typedef void (*OnTouchFunctionType)(const WidgetCursor &widgetCursor, Event &tou
 OnTouchFunctionType getWidgetTouchFunction(const WidgetCursor &widgetCursor);
 
 void resizeWidget(
-    WidgetCursor &widgetCursor,
+    const Widget *widget,
+    Rect &widgetRect,
+    int containerOriginalWidth,
+    int containerOriginalHeight,
+    int containerWidth,
+    int containerHeight
+);
+
+void applyTimeline(
+    WidgetCursor& widgetCursor,
+    Rect &widgetRect
+);
+
+template<typename T>
+struct ListOfAssetsPtr;
+
+void doStaticLayout(
+    WidgetCursor& widgetCursor,
+    const ListOfAssetsPtr<Widget> &widgets,
     int containerOriginalWidth,
     int containerOriginalHeight,
     int containerWidth,
