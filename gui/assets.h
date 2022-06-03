@@ -153,7 +153,7 @@ private:
 #define WIDGET_TIMELINE_PROPERTY_HEIGHT (1 << 3)
 #define WIDGET_TIMELINE_PROPERTY_OPACITY (1 << 4)
 
-struct WidgetTimelineProperties {
+struct TimelineKeyframe {
     float start;
     float end;
     uint32_t enabledProperties;
@@ -175,7 +175,7 @@ struct Widget {
 	int16_t height;
 	int16_t style;
     uint16_t flags;
-    ListOfAssetsPtr<WidgetTimelineProperties> timeline;
+    ListOfAssetsPtr<TimelineKeyframe> timeline;
 };
 
 #define SHADOW_FLAG (1 << 0)

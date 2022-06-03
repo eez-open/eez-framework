@@ -734,7 +734,6 @@ void onPageChanged(int previousPageId, int activePageId) {
         }
 
         if (g_debuggerIsConnected) {
-            printf("T6\n");
             startToDebuggerMessageHook();
 
             char buffer[256];

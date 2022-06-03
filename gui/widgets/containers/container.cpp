@@ -210,57 +210,57 @@ void ContainerWidgetState::enumChildren() {
 
                         auto timelinePosition = widgetCursor.flowState->timelinePosition;
                         for (uint32_t i = 0; i < widgetCursor.widget->timeline.count; i++) {
-                            auto timelineProperties = widgetCursor.widget->timeline[i];
+                            auto keyframe = widgetCursor.widget->timeline[i];
 
-                            if (timelinePosition < timelineProperties->start) {
+                            if (timelinePosition < keyframe->start) {
                                 continue;
                             }
 
                             if (
-                                timelinePosition >= timelineProperties->start &&
-                                timelinePosition <= timelineProperties->end
+                                timelinePosition >= keyframe->start &&
+                                timelinePosition <= keyframe->end
                             ) {
                                 auto t =
-                                    timelineProperties->start == timelineProperties->end
+                                    keyframe->start == keyframe->end
                                         ? 1
-                                        : (timelinePosition - timelineProperties->start) /
-                                        (timelineProperties->end - timelineProperties->start);
+                                        : (timelinePosition - keyframe->start) /
+                                        (keyframe->end - keyframe->start);
 
-                                if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_X) {
-                                    x += t * (timelineProperties->x - x);
+                                if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_X) {
+                                    x += t * (keyframe->x - x);
                                 }
-                                if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_Y) {
-                                    y += t * (timelineProperties->y - y);
+                                if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_Y) {
+                                    y += t * (keyframe->y - y);
                                 }
-                                if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_WIDTH) {
-                                    w += t * (timelineProperties->width - w);
+                                if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_WIDTH) {
+                                    w += t * (keyframe->width - w);
                                 }
-                                if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_HEIGHT) {
-                                    h += t * (timelineProperties->height - h);
+                                if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_HEIGHT) {
+                                    h += t * (keyframe->height - h);
                                 }
 
-                                if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_OPACITY) {
-                                    opacity += t * (timelineProperties->opacity - opacity);
+                                if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_OPACITY) {
+                                    opacity += t * (keyframe->opacity - opacity);
                                 }
 
                                 break;
                             }
 
-                            if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_X) {
-                                x = timelineProperties->x;
+                            if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_X) {
+                                x = keyframe->x;
                             }
-                            if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_Y) {
-                                y = timelineProperties->y;
+                            if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_Y) {
+                                y = keyframe->y;
                             }
-                            if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_WIDTH) {
-                                w = timelineProperties->width;
+                            if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_WIDTH) {
+                                w = keyframe->width;
                             }
-                            if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_HEIGHT) {
-                                h = timelineProperties->height;
+                            if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_HEIGHT) {
+                                h = keyframe->height;
                             }
 
-                            if (timelineProperties->enabledProperties & WIDGET_TIMELINE_PROPERTY_OPACITY) {
-                                opacity = timelineProperties->opacity;
+                            if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_OPACITY) {
+                                opacity = keyframe->opacity;
                             }
                         }
 
