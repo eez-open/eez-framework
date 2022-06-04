@@ -117,8 +117,6 @@ void loadMainAssets(const uint8_t *assets, uint32_t assetsSize) {
     g_mainAssets->external = false;
     auto decompressedSize = decompressAssetsData(assets, assetsSize, g_mainAssets, MAX_DECOMPRESSED_ASSETS_SIZE, nullptr);
     assert(decompressedSize);
-    DISPLAY_WIDTH = g_mainAssets->settings->displayWidth;
-    DISPLAY_HEIGHT = g_mainAssets->settings->displayHeight;
     g_isMainAssetsLoaded = true;
 }
 
