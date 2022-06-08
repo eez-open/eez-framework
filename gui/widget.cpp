@@ -22,6 +22,7 @@
 
 #include <eez/core/debug.h>
 #include <eez/core/os.h>
+#include <eez/core/util.h>
 
 #include <eez/gui/gui.h>
 #include <eez/gui/assets.h>
@@ -533,30 +534,30 @@ void applyTimeline(WidgetCursor& widgetCursor, Rect &widgetRect) {
 
                 if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_X) {
                     auto savedX = x;
-                    x += t * (keyframe->x - x);
+                    x += g_easingFuncs[keyframe->xEasingFunc](t) * (keyframe->x - x);
                     if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_WIDTH) {
                         auto right = savedX + w;
-                        right += t * ((keyframe->x + keyframe->width) - right);
+                        right += g_easingFuncs[keyframe->widthEasingFunc](t) * ((keyframe->x + keyframe->width) - right);
                         w = right - x;
                     }
                 } else if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_WIDTH) {
-                    w += t * (keyframe->width - w);
+                    w += g_easingFuncs[keyframe->widthEasingFunc](t) * (keyframe->width - w);
                 }
 
                 if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_Y) {
                     auto savedY = y;
-                    y += t * (keyframe->y - y);
+                    y += g_easingFuncs[keyframe->yEasingFunc](t) * (keyframe->y - y);
                     if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_HEIGHT) {
                         auto bottom = savedY + h;
-                        bottom += t * ((keyframe->y + keyframe->height) - bottom);
+                        bottom += g_easingFuncs[keyframe->heightEasingFunc](t) * ((keyframe->y + keyframe->height) - bottom);
                         h = bottom - y;
                     }
                 } else if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_HEIGHT) {
-                    h += t * (keyframe->height - h);
+                    h += g_easingFuncs[keyframe->heightEasingFunc](t) * (keyframe->height - h);
                 }
 
                 if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_OPACITY) {
-                    opacity += t * (keyframe->opacity - opacity);
+                    opacity += g_easingFuncs[keyframe->opacityEasingFunc](t) * (keyframe->opacity - opacity);
                 }
 
                 break;
