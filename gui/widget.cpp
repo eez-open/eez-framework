@@ -158,6 +158,13 @@ void WidgetCursor::popBackground() {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#define RENDER_WIDGET() \
+    if (widgetState->visible.toBool() && widgetCursor.opacity > 0) { \
+        auto savedOpacity = display::setOpacity(widgetCursor.opacity); \
+        widgetState->render(); \
+        display::setOpacity(savedOpacity); \
+    }
+
 void enumWidget() {
     WidgetCursor &widgetCursor = g_widgetCursor;
     const Widget *widget = widgetCursor.widget;
@@ -176,11 +183,7 @@ void enumWidget() {
             // reuse existing widget state
             bool refresh = widgetState->updateState();
             if (refresh || widgetCursor.refreshed) {
-                if (widgetState->visible.toBool() && widgetCursor.opacity == 255) {
-                    widgetState->render();
-                } else {
-                    drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, nullptr);
-                }
+                RENDER_WIDGET();
             }
 		} else {
 			if (widgetCursor.hasPreviousState) {
@@ -195,11 +198,7 @@ void enumWidget() {
 
 			widgetState->updateState();
 
-            if (widgetState->visible.toBool() && widgetCursor.opacity == 255) {
-                widgetState->render();
-            } else {
-                drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, nullptr);
-            }
+            RENDER_WIDGET();
 
 			if (g_foundWidgetAtDownInvalid) {
 				// find new cursor for g_foundWidgetAtDown
