@@ -18,6 +18,7 @@
 
 #include <eez/core/util.h>
 
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -686,7 +687,7 @@ void getBaseFileName(const char *path, char *baseName, unsigned baseNameSize) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static const float PI = M_PI;
+static const float PI = (float)M_PI;
 static const float c1 = 1.70158f;
 static const float c2 = c1 * 1.525f;
 static const float c3 = c1 + 1.0f;
