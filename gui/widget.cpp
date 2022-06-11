@@ -215,7 +215,7 @@ void enumWidget() {
 
 	uint32_t stateSize = (uint8_t *)widgetCursor.currentState - (uint8_t *)g_widgetStateStart;
 	if (stateSize > GUI_STATE_BUFFER_SIZE) {
-        return;        
+        return;
     }
 
 	widgetState->enumChildren();

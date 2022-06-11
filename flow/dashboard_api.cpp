@@ -42,8 +42,8 @@ int getFlowStateIndex(FlowState *flowState) {
 struct DashboardComponentExecutionState : public ComponenentExecutionState {
     ~DashboardComponentExecutionState() {
 		EM_ASM({
-            freeComponentExecutionState($0);
-        }, state);
+            freeComponentExecutionState($0, $1);
+        }, g_wasmModuleId, state);
     }
 	int32_t state;
 };

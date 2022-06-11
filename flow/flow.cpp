@@ -39,6 +39,10 @@ using namespace eez::gui;
 namespace eez {
 namespace flow {
 
+#if defined(__EMSCRIPTEN__)
+uint32_t g_wasmModuleId = 0;
+#endif
+
 static const uint32_t FLOW_TICK_MAX_DURATION_MS = 5;
 
 int g_selectedLanguage = 0;
