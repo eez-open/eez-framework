@@ -23,6 +23,7 @@
 #include <eez/core/os.h>
 
 #include <eez/gui/gui.h>
+#include <eez/gui/keypad.h>
 #include <eez/gui/widgets/input.h>
 
 #include <eez/gui/widgets/containers/layout_view.h>
@@ -273,7 +274,10 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const gui::Widge
 				value = 0;
 			}
 		}  else if (operation == DATA_OPERATION_GET_TEXT_CURSOR_POSITION) {
-			getValue(flowDataId, operation, widgetCursor, value);
+			Keypad *keypad = getActiveKeypad();
+			if (keypad) {
+				value = keypad->getCursorPosition();
+			}
 		} else if (operation == DATA_OPERATION_GET_MIN) {
 			if (component->type == WIDGET_TYPE_INPUT) {
 				value = getInputWidgetMin(widgetCursor);
