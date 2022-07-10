@@ -807,7 +807,7 @@ bool do_OPERATION_TYPE_FLOW_PARSE_INTEGER(EvalStack &stack) {
         return false;
     }
 
-    if (!stack.push(Value(value, VALUE_TYPE_INT32))) {
+    if (!stack.push(Value((int)value, VALUE_TYPE_INT32))) {
         return false;
     }
 
@@ -1237,9 +1237,9 @@ bool do_OPERATION_TYPE_STRING_FIND(EvalStack &stack) {
 }
 
 bool do_OPERATION_TYPE_STRING_PAD_START(EvalStack &stack) {
-	auto c = stack.pop().getValue();
+    auto a = stack.pop().getValue();
 	auto b = stack.pop().getValue();
-	auto a = stack.pop().getValue();
+    auto c = stack.pop().getValue();
 
 	auto str = a.toString(0xcf6aabe6);
 	if (!str.getString()) {

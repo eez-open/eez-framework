@@ -43,6 +43,9 @@ static struct {
 static int g_currentPoint;
 
 bool isTouchCalibrated() {
+#if defined(SKIP_TOUCH_CALIBRATION) || defined(EEZ_PLATFORM_STM32F469I_DISCO)
+    return true;
+#else    
     bool success;
 
 	int16_t touchScreenCalTlx;
@@ -64,6 +67,7 @@ bool isTouchCalibrated() {
         touchScreenCalTrx, touchScreenCalTry,
         CONF_GUI_TOUCH_CALIBRATION_M, display::getDisplayWidth(), display::getDisplayHeight());
     return success;
+#endif
 }
 
 void startCalibration() {
