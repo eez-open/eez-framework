@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if OPTION_TOUCH_CALIBRATION
+
 #include <eez/core/os.h>
 #include <eez/core/sound.h>
 
@@ -123,13 +125,14 @@ void findActiveWidget() {
         return;
     }
 
+#if OPTION_TOUCH_CALIBRATION
     const WidgetCursor& widgetCursor = g_widgetCursor;
-
     if (widgetCursor.appContext->getActivePageId() == PAGE_ID_TOUCH_CALIBRATION) {
         if (widgetCursor.widget->type == WIDGET_TYPE_TEXT) {
             g_activeWidget = widgetCursor;
         }
-    }    
+    }
+#endif
 }
 
 void onTouchCalibrationPageTouch(const WidgetCursor &foundWidget, Event &touchEvent) {
@@ -155,3 +158,5 @@ void data_touch_calibration_point(DataOperationEnum operation, const WidgetCurso
 
 } // namespace gui
 } // namespace eez
+
+#endif
