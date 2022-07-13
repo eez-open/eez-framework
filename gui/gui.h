@@ -19,6 +19,23 @@
 #pragma once
 
 #include <eez/gui_conf.h>
+
+#ifndef PAGE_ID_ASYNC_OPERATION_IN_PROGRESS
+#define PAGE_ID_ASYNC_OPERATION_IN_PROGRESS 0
+#endif
+
+#ifndef COLOR_ID_BOOKMARK
+#define COLOR_ID_BOOKMARK 0
+#endif
+
+#ifndef MAX_KEYPAD_TEXT_LENGTH
+#define MAX_KEYPAD_TEXT_LENGTH 128
+#endif
+
+#ifndef MAX_KEYPAD_LABEL_LENGTH
+#define MAX_KEYPAD_LABEL_LENGTH 64
+#endif
+
 #include <eez/gui/assets.h>
 #include <eez/gui/display.h>
 
