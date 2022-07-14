@@ -159,7 +159,7 @@ void WidgetCursor::popBackground() {
 ////////////////////////////////////////////////////////////////////////////////
 
 #define RENDER_WIDGET() \
-    if (widgetState->visible.toBool() && widgetCursor.opacity > 0) { \
+    if ((!widget->visible || widgetState->isVisible.toBool()) && widgetCursor.opacity > 0) { \
         auto savedOpacity = display::setOpacity(widgetCursor.opacity); \
         widgetState->render(); \
         display::setOpacity(savedOpacity); \
@@ -175,7 +175,7 @@ void enumWidget() {
 	g_isActiveWidget = g_isActiveWidget || widgetCursor == g_activeWidget;
 
 	if (g_findCallback) {
-        if (widgetState->visible.toBool()) {
+        if (!widget->visible || widgetState->isVisible.toBool()) {
     		g_findCallback();
         }
 	} else {
