@@ -229,6 +229,38 @@ EM_PORT_API(void) freeExpressionListParam(void *ptr) {
     ::free(ptr);
 }
 
+EM_PORT_API(int) getListParamSize(int flowStateIndex, int componentIndex, int offset) {
+    auto flowState = getFlowState(flowStateIndex);
+    auto component = flowState->flow->components[componentIndex];
+    auto list = (ListOfAssetsPtr<void> *)((const uint8_t *)component + sizeof(Component) + offset);
+    return list->count;
+}
+
+EM_PORT_API(Value *) evalListParamElementExpression(int flowStateIndex, int componentIndex, int listOffset, int elementIndex, int expressionOffset, const char *errorMessage) {
+    auto flowState = getFlowState(flowStateIndex);
+    auto component = flowState->flow->components[componentIndex];
+
+    auto list = (ListOfAssetsPtr<void> *)((const uint8_t *)component + sizeof(Component) + listOffset);
+    auto items = (uint32_t *)((uint8_t *)list->items + (uint32_t)MEMORY_BEGIN + 4);
+    auto item = (uint8_t *)((uint8_t *)items[elementIndex] + (uint32_t)MEMORY_BEGIN + 4);
+    auto expressionInstructions = (uint8_t *)((uint8_t *)(*((uint32_t *)(item + expressionOffset))) + (uint32_t)MEMORY_BEGIN + 4);
+
+    Value result;
+    if (!evalExpression(flowState, componentIndex, expressionInstructions, result, errorMessage)) {
+        return nullptr;
+    }
+
+    auto pValue = ObjectAllocator<Value>::allocate(0x15cb2009);
+    if (!pValue) {
+        throwError(flowState, componentIndex, "Out of memory\n");
+        return nullptr;
+    }
+
+    *pValue = result;
+
+    return pValue;
+}
+
 EM_PORT_API(Value*) getInputValue(int flowStateIndex, int inputIndex) {
     auto flowState = getFlowState(g_mainAssets, flowStateIndex);
     return flowState->values + inputIndex;
