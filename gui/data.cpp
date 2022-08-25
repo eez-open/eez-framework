@@ -430,7 +430,7 @@ bool compare_BLOB_REF_value(const Value &a, const Value &b) {
 }
 
 void BLOB_REF_value_to_text(const Value &value, char *text, int count) {
-    text[0] = 0;
+    snprintf(text, count, "blob (size=%d)", value.getInt());
 }
 
 const char *BLOB_REF_value_type_name(const Value &value) {
@@ -442,7 +442,7 @@ bool compare_STREAM_value(const Value &a, const Value &b) {
 }
 
 void STREAM_value_to_text(const Value &value, char *text, int count) {
-    text[0] = 0;
+    snprintf(text, count, "stream (id=%d)", value.getInt());
 }
 
 const char *STREAM_value_type_name(const Value &value) {

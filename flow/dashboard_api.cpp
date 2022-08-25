@@ -111,7 +111,7 @@ EM_PORT_API(Value *) createArrayValue(int arraySize, int arrayType) {
     return pValue;
 }
 
-EM_PORT_API(Value *) createStreamValue(double value) {
+EM_PORT_API(Value *) createStreamValue(int value) {
     auto pValue = ObjectAllocator<Value>::allocate(0x53a2e660);
     *pValue = Value(value, VALUE_TYPE_STREAM);
     return pValue;
@@ -176,6 +176,13 @@ EM_PORT_API(void) setComponentExecutionState(int flowStateIndex, int componentIn
         }
     }
 }
+
+EM_PORT_API(uint32_t) getUint32Param(int flowStateIndex, int componentIndex, int offset) {
+    auto flowState = getFlowState(flowStateIndex);
+    auto component = flowState->flow->components[componentIndex];
+    return *(const uint32_t *)((const uint8_t *)component + sizeof(Component) + offset);
+}
+
 
 EM_PORT_API(const char *) getStringParam(int flowStateIndex, int componentIndex, int offset) {
     auto flowState = getFlowState(flowStateIndex);
