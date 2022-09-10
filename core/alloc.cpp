@@ -26,7 +26,7 @@
 
 namespace eez {
 
-static const size_t ALIGNMENT = 8;
+static const size_t ALIGNMENT = 64;
 static const size_t MIN_BLOCK_SIZE = 8;
 
 struct AllocBlock {
@@ -118,7 +118,7 @@ void free(void *ptr) {
 
 		AllocBlock *prevBlock = nullptr;
 		AllocBlock *block = firstBlock;
-		
+
 		while (block && block + 1 < ptr) {
 			prevBlock = block;
 			block = block->next;

@@ -21,6 +21,13 @@
 #include <string.h>
 #include <inttypes.h>
 
+#include <chrono>
+#include <string>
+#include <iostream>
+#include <sstream>
+// https://howardhinnant.github.io/date/date.html
+#include <eez/libs/date.h>
+
 #include <eez/core/util.h>
 
 #include <eez/gui/gui.h>
@@ -454,7 +461,15 @@ bool compare_DATE_value(const Value &a, const Value &b) {
 }
 
 void DATE_value_to_text(const Value &value, char *text, int count) {
-    text[0] = 0;
+    using namespace std;
+    using namespace std::chrono;
+    using namespace date;
+
+    auto tp = system_clock::time_point(milliseconds((long long)value.doubleValue));
+    stringstream out;
+    out << tp;
+
+    stringCopy(text, count, out.str().c_str());
 }
 
 const char *DATE_value_type_name(const Value &value) {
@@ -777,6 +792,10 @@ double Value::toDouble(int *err) const {
 	}
 	if (type == VALUE_TYPE_UINT64) {
 		return (double)uint64Value;
+	}
+
+	if (type == VALUE_TYPE_DATE) {
+		return doubleValue;
 	}
 
 	if (type == VALUE_TYPE_STRING) {

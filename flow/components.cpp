@@ -65,6 +65,7 @@ void executeNoopComponent(FlowState *flowState, unsigned componentIndex);
 void executeOnEventComponent(FlowState *flowState, unsigned componentIndex);
 
 void executeLayoutViewWidgetComponent(FlowState *flowState, unsigned componentIndex);
+void executeLineChartWidgetComponent(FlowState *flowState, unsigned componentIndex);
 void executeRollerWidgetComponent(FlowState *flowState, unsigned componentIndex);
 
 typedef void (*ExecuteComponentFunctionType)(FlowState *flowState, unsigned componentIndex);
@@ -127,7 +128,9 @@ void executeComponent(FlowState *flowState, unsigned componentIndex) {
 	} else if (component->type < 1000) {
 		if (component->type == defs_v3::COMPONENT_TYPE_LAYOUT_VIEW_WIDGET) {
             executeLayoutViewWidgetComponent(flowState, componentIndex);
-        } else if (component->type == defs_v3::COMPONENT_TYPE_ROLLER_WIDGET) {
+        } else if (component->type == defs_v3::COMPONENT_TYPE_LINE_CHART_EMBEDDED_WIDGET) {
+			executeLineChartWidgetComponent(flowState, componentIndex);
+		} else if (component->type == defs_v3::COMPONENT_TYPE_ROLLER_WIDGET) {
 			executeRollerWidgetComponent(flowState, componentIndex);
 		}
 		return;

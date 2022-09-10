@@ -31,10 +31,12 @@
 #include <eez/gui/widgets/text.h>
 #include <eez/gui/widgets/toggle_button.h>
 #include <eez/gui/widgets/up_down.h>
+#include <eez/gui/widgets/line_chart.h>
 
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/components/switch.h>
 #include <eez/flow/components/set_variable.h>
+#include <eez/flow/components/line_chart_widget.h>
 
 namespace eez {
 namespace gui {
@@ -136,6 +138,7 @@ void fixOffsets(Assets *assets) {
                         }
                     }
                     break;
+
                 case COMPONENT_TYPE_SET_VARIABLE_ACTION:
                     {
                         auto setVariableActionComponent = (SetVariableActionComponent *)component;
@@ -144,6 +147,21 @@ void fixOffsets(Assets *assets) {
                             auto entry = setVariableActionComponent->entries[entryIndex];
                             fixOffset(entry->variable, assets);
                             fixOffset(entry->value, assets);
+                        }
+                    }
+                    break;
+
+                case COMPONENT_TYPE_LINE_CHART_EMBEDDED_WIDGET:
+                    {
+                        auto lineChartWidgetComponent = (LineChartWidgetComponenent *)component;
+
+                        fixOffset(lineChartWidgetComponent->xValue, assets);
+
+                        fixOffset(lineChartWidgetComponent->lines, assets);
+                        for (uint32_t lineIndex = 0; lineIndex < lineChartWidgetComponent->lines.count; lineIndex++) {
+                            auto line = lineChartWidgetComponent->lines[lineIndex];
+                            fixOffset(line->label, assets);
+                            fixOffset(line->value, assets);
                         }
                     }
                     break;

@@ -39,6 +39,11 @@ int getFlowStateIndex(FlowState *flowState) {
     return (int)((uint8_t *)flowState - ALLOC_BUFFER);
 }
 
+void clearInputValue(FlowState *flowState, int inputIndex) {
+    flowState->values[inputIndex] = Value();
+    onValueChanged(flowState->values + inputIndex);
+}
+
 struct DashboardComponentExecutionState : public ComponenentExecutionState {
     ~DashboardComponentExecutionState() {
 		EM_ASM({
@@ -275,8 +280,7 @@ EM_PORT_API(Value*) getInputValue(int flowStateIndex, int inputIndex) {
 
 EM_PORT_API(void) clearInputValue(int flowStateIndex, int inputIndex) {
     auto flowState = getFlowState(g_mainAssets, flowStateIndex);
-    flowState->values[inputIndex] = Value();
-    onValueChanged(flowState->values + inputIndex);
+    clearInputValue(flowState, inputIndex);
 }
 
 EM_PORT_API(Value *) evalProperty(int flowStateIndex, int componentIndex, int propertyIndex, int32_t *iterators) {
