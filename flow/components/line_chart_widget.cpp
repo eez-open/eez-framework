@@ -127,8 +127,8 @@ void executeLineChartWidgetComponent(FlowState *flowState, unsigned componentInd
         if (executionState->numPoints < component->maxPoints) {
             pointIndex = executionState->numPoints++;
         } else {
-            executionState->startPointIndex++;
-            pointIndex = (executionState->startPointIndex + component->maxPoints) % component->maxPoints;
+            executionState->startPointIndex = (executionState->startPointIndex + 1) % component->maxPoints;
+            pointIndex = (executionState->startPointIndex + component->maxPoints - 1) % component->maxPoints;
         }
 
         Value value;
