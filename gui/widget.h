@@ -60,6 +60,7 @@ namespace gui {
 	WIDGET_TYPE(Slider,        SLIDER,         27) \
 	WIDGET_TYPE(DropDownList,  DROP_DOWN_LIST, 28) \
     WIDGET_TYPE(LineChart,     LINE_CHART,     29) \
+    WIDGET_TYPE(QRCode,        QR_CODE,        30) \
 
 #define WIDGET_TYPE(NAME_PASCAL_CASE, NAME, ID) WIDGET_TYPE_##NAME = ID,
 enum WidgetTypes {

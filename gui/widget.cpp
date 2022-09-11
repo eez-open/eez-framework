@@ -56,6 +56,7 @@
 #include <eez/gui/widgets/up_down.h>
 #include <eez/gui/widgets/yt_graph.h>
 #include <eez/gui/widgets/line_chart.h>
+#include <eez/gui/widgets/qr_code.h>
 
 namespace eez {
 namespace gui {
