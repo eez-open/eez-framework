@@ -74,11 +74,10 @@ void QRCodeWidgetState::render() {
     for (int y = 0; y < size; y++) {
 		for (int x = 0; x < size; x++) {
             if (qrcodegen_getModule(qrcode, x, y)) {
-                double x1 = widgetCursor.x + xPadding + x * sizePx;
-                double y1 = widgetCursor.y + yPadding + y * sizePx;
-                double x2 = x1 + sizePx;
-                double y2 = y1 + sizePx;
-                graphics.moveTo(x1, y1);
+                graphics.moveTo(
+                    widgetCursor.x + xPadding + x * sizePx,
+                    widgetCursor.y + yPadding + y * sizePx
+                );
                 graphics.horLineRel(sizePx);
                 graphics.verLineRel(sizePx);
                 graphics.horLineRel(-sizePx);
