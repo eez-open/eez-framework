@@ -27,6 +27,7 @@
 #include <eez/flow/flow.h>
 #include <eez/flow/expression.h>
 #include <eez/flow/dashboard_api.h>
+#include <eez/flow/private.h>
 
 using namespace eez;
 using namespace eez::gui;
@@ -37,11 +38,6 @@ namespace flow {
 
 int getFlowStateIndex(FlowState *flowState) {
     return (int)((uint8_t *)flowState - ALLOC_BUFFER);
-}
-
-void clearInputValue(FlowState *flowState, int inputIndex) {
-    flowState->values[inputIndex] = Value();
-    onValueChanged(flowState->values + inputIndex);
 }
 
 struct DashboardComponentExecutionState : public ComponenentExecutionState {

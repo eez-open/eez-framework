@@ -24,7 +24,6 @@ namespace eez {
 namespace flow {
 
 int getFlowStateIndex(FlowState *flowState);
-void clearInputValue(FlowState *flowState, int inputIndex);
 
 } // flow
 } // eez

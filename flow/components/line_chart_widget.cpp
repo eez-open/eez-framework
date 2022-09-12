@@ -21,7 +21,7 @@
 #include <eez/flow/components.h>
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/expression.h>
-#include <eez/flow/dashboard_api.h>
+#include <eez/flow/private.h>
 #include <eez/flow/components/line_chart_widget.h>
 
 using namespace eez::gui;

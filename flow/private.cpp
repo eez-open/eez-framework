@@ -408,6 +408,13 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void clearInputValue(FlowState *flowState, int inputIndex) {
+    flowState->values[inputIndex] = Value();
+    onValueChanged(flowState->values + inputIndex);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void startAsyncExecution(FlowState *flowState, int componentIndex) {
     if (!flowState->componenentAsyncStates[componentIndex]) {
         flowState->componenentAsyncStates[componentIndex] = true;
