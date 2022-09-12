@@ -34,16 +34,16 @@ bool QRCodeWidgetState::updateState() {
     WIDGET_STATE_END()
 }
 
+uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX];
+uint8_t tempBuffer[qrcodegen_BUFFER_LEN_MAX];
+
 void QRCodeWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
 
     auto widget = (const QRCodeWidget *)widgetCursor.widget;
     const Style *style = getStyle(widget->style);
 
-    // Make and print the QR Code symbol
-	uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX];
-	uint8_t tempBuffer[qrcodegen_BUFFER_LEN_MAX];
-
+    // Make QR code
     qrcodegen_Ecc errCorLvl;
     if (widget->errorCorrection == 0) errCorLvl = qrcodegen_Ecc_LOW;
     else if (widget->errorCorrection == 1) errCorLvl = qrcodegen_Ecc_MEDIUM;
@@ -68,7 +68,8 @@ void QRCodeWidgetState::render() {
 	auto &graphics = aggDrawing.graphics;
 
     auto color16 = display::getColor16FromIndex(style->color);
-    graphics.fillColor(COLOR_TO_R(color16), COLOR_TO_G(color16), COLOR_TO_B(color16));
+
+    graphics.resetPath();
 
     for (int y = 0; y < size; y++) {
 		for (int x = 0; x < size; x++) {
@@ -77,10 +78,18 @@ void QRCodeWidgetState::render() {
                 double y1 = widgetCursor.y + yPadding + y * sizePx;
                 double x2 = x1 + sizePx;
                 double y2 = y1 + sizePx;
-                graphics.rectangle(x1, y1, x2, y2);
+                graphics.moveTo(x1, y1);
+                graphics.horLineRel(sizePx);
+                graphics.verLineRel(sizePx);
+                graphics.horLineRel(-sizePx);
+                graphics.closePolygon();
             }
 		}
 	}
+
+    graphics.fillColor(COLOR_TO_R(color16), COLOR_TO_G(color16), COLOR_TO_B(color16));
+    graphics.noLine();
+    graphics.drawPath();
 }
 
 } // namespace gui
