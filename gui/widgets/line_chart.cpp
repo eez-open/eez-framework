@@ -46,7 +46,7 @@ struct Axis {
     AxisPosition position;
     AxisValueType valueType;
     Rect rect;
-    int maxTicks;
+    unsigned maxTicks;
     double min;
     double max;
     double offset;
@@ -215,14 +215,14 @@ void LineChartWidgetState::render() {
     if (showLegend) {
         auto legendFont = styleGetFont(legendStyle);
 
-        unsigned maxWidth = 0;
+        int maxWidth = 0;
 
         for (uint32_t lineIndex = 0; lineIndex < executionState->numLines; lineIndex++) {
             static const size_t MAX_LINE_LABEL_LEN = 128;
             char text[MAX_LINE_LABEL_LEN + 1];
             executionState->lineLabels[lineIndex].toText(text, sizeof(text));
             if (*text == 0) {
-                snprintf(text, sizeof(text), "Trace %d", lineIndex + 1);
+                snprintf(text, sizeof(text), "Trace %d", (int)(lineIndex + 1));
             }
 
             auto width = measureStr(
@@ -296,7 +296,6 @@ void LineChartWidgetState::render() {
         auto x = widgetCursor.x + gridRect.x + gridRect.w;
         auto y = widgetCursor.y + gridRect.y;
         auto w = marginRight;
-        auto h = gridRect.h;
 
         x = x + w - legendWidth;
 
@@ -331,7 +330,7 @@ void LineChartWidgetState::render() {
             char text[MAX_LINE_LABEL_LEN + 1];
             executionState->lineLabels[lineIndex].toText(text, sizeof(text));
             if (*text == 0) {
-                snprintf(text, sizeof(text), "Trace %d", lineIndex + 1);
+                snprintf(text, sizeof(text), "Trace %d", (int)(lineIndex + 1));
             }
             drawText(
                 text,
