@@ -211,7 +211,7 @@ void LineChartWidgetState::render() {
     // measure legend width
     static const unsigned LEGEND_ICON_WIDTH = 32;
     int legendWidth;
-    int legendLineHeight;
+    int legendLineHeight = 0;
     if (showLegend) {
         auto legendFont = styleGetFont(legendStyle);
 
@@ -369,7 +369,7 @@ void LineChartWidgetState::render() {
             int textLength;
 
             char *textDate = nullptr;
-            int textDateLength;
+            int textDateLength = -1;
 
             if (axis.valueType == AXIS_VALUE_TYPE_NUMBER) {
                 snprintf(textBuffer, sizeof(textBuffer), "%g", tick);

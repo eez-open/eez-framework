@@ -137,7 +137,7 @@ void executeLineChartWidgetComponent(FlowState *flowState, unsigned componentInd
         }
 
         int err;
-        auto xValue = value.toDouble(&err);
+        value.toDouble(&err);
         if (err) {
             throwError(flowState, componentIndex, "X value not an number or date");
             return;
