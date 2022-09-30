@@ -78,7 +78,10 @@ void tick() {
 
 	uint32_t startTickCount = millis();
 
-    while (true) {
+    // remember queue size before the loop
+    size_t queueSize = getQueueSize();
+
+    for (size_t i = 0; ; i++) {
 		FlowState *flowState;
 		unsigned componentIndex;
         bool continuousTask;
@@ -86,6 +89,13 @@ void tick() {
 			break;
 		}
 
+        // if continuous task and we are above remembered queue size then stop
+        // (we don't want to exhaust flow execution because of, for example, animate block)
+        if (continuousTask && i >= queueSize) {
+            break;
+        }
+
+        // do not execute continuous task twice during same tick
 		if (!continuousTask && !canExecuteStep(flowState, componentIndex)) {
 			break;
 		}
@@ -273,7 +283,7 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const gui::Widge
 			} else {
 				value = 0;
 			}
-		}  
+		}
 #if OPTION_KEYPAD
 		else if (operation == DATA_OPERATION_GET_TEXT_CURSOR_POSITION) {
 
@@ -281,7 +291,7 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const gui::Widge
 			if (keypad) {
 				value = keypad->getCursorPosition();
 			}
-		} 
+		}
 #endif
 		else if (operation == DATA_OPERATION_GET_MIN) {
 			if (component->type == WIDGET_TYPE_INPUT) {
