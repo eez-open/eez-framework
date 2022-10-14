@@ -22,12 +22,6 @@
 
 #include <eez/core/os.h>
 
-#include <eez/gui/gui.h>
-#include <eez/gui/keypad.h>
-#include <eez/gui/widgets/input.h>
-
-#include <eez/gui/widgets/containers/layout_view.h>
-
 #include <eez/flow/flow.h>
 #include <eez/flow/components.h>
 #include <eez/flow/queue.h>
@@ -35,7 +29,13 @@
 #include <eez/flow/debugger.h>
 #include <eez/flow/hooks.h>
 
+#if OPTION_GUI || !defined(OPTION_GUI)
+#include <eez/gui/gui.h>
+#include <eez/gui/keypad.h>
+#include <eez/gui/widgets/input.h>
+#include <eez/gui/widgets/containers/layout_view.h>
 using namespace eez::gui;
+#endif
 
 namespace eez {
 namespace flow {
@@ -156,11 +156,9 @@ bool isFlowStopped() {
     return g_isStopped;
 }
 
-FlowState *getFlowState(Assets *assets, int flowStateIndex) {
-    return (FlowState *)(ALLOC_BUFFER + flowStateIndex);
-}
+#if OPTION_GUI || !defined(OPTION_GUI)
 
-FlowState *getFlowState(Assets *assets, int16_t pageIndex, const WidgetCursor &widgetCursor) {
+FlowState *getPageFlowState(Assets *assets, int16_t pageIndex, const WidgetCursor &widgetCursor) {
 	if (!assets->flowDefinition) {
 		return nullptr;
 	}
@@ -198,11 +196,39 @@ FlowState *getFlowState(Assets *assets, int16_t pageIndex, const WidgetCursor &w
 	return nullptr;
 }
 
+#else
+
+FlowState *getPageFlowState(Assets *assets, int16_t pageIndex) {
+	if (!assets->flowDefinition) {
+		return nullptr;
+	}
+
+	if (!isFlowRunningHook()) {
+		return nullptr;
+	}
+
+    FlowState *flowState;
+    for (flowState = g_firstFlowState; flowState; flowState = flowState->nextSibling) {
+        if (flowState->flowIndex == pageIndex) {
+            break;
+        }
+    }
+
+    if (!flowState) {
+        flowState = initPageFlowState(assets, pageIndex, nullptr, 0);
+    }
+
+    return flowState;
+}
+
+#endif // OPTION_GUI || !defined(OPTION_GUI)
+
 int getPageIndex(FlowState *flowState) {
 	return flowState->flowIndex;
 }
 
-void executeFlowAction(const gui::WidgetCursor &widgetCursor, int16_t actionId, void *param) {
+#if OPTION_GUI || !defined(OPTION_GUI)
+void executeFlowAction(const WidgetCursor &widgetCursor, int16_t actionId, void *param) {
 	if (!isFlowRunningHook()) {
 		return;
 	}
@@ -255,7 +281,7 @@ void executeFlowAction(const gui::WidgetCursor &widgetCursor, int16_t actionId, 
 	}
 }
 
-void dataOperation(int16_t dataId, DataOperationEnum operation, const gui::WidgetCursor &widgetCursor, Value &value) {
+void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCursor &widgetCursor, Value &value) {
 	if (!isFlowRunningHook()) {
 		return;
 	}
@@ -336,6 +362,8 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const gui::Widge
 		value = Value();
 	}
 }
+
+#endif // OPTION_GUI || !defined(OPTION_GUI)
 
 } // namespace flow
 } // namespace eez

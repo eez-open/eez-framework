@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <eez/gui/assets.h>
+#include <eez/core/assets.h>
 
+#if OPTION_GUI || !defined(OPTION_GUI)
 #include <eez/gui/gui.h>
 
 #include <eez/gui/widgets/containers/container.h>
@@ -32,6 +33,7 @@
 #include <eez/gui/widgets/toggle_button.h>
 #include <eez/gui/widgets/up_down.h>
 #include <eez/gui/widgets/line_chart.h>
+#endif
 
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/components/switch.h>
@@ -39,7 +41,6 @@
 #include <eez/flow/components/line_chart_widget.h>
 
 namespace eez {
-namespace gui {
 
 template<typename T>
 void fixOffset(AssetsPtrImpl<T> &ptr, void *assets) {
@@ -69,8 +70,11 @@ void fixOffset(ListOfFundamentalType<T> &list, Assets *assets) {
     fixOffset(list.items, assets);
 }
 
+#if OPTION_GUI || !defined(OPTION_GUI)
+using namespace gui;
 void fixOffsets(Assets *assets, ListOfAssetsPtr<Widget> &widgets);
-void fixOffsets(Assets *assets, Widget *widget);
+void fixOffsets(Assets *assets, gui::Widget *widget);
+#endif
 void fixOffsets(Assets *assets, ListOfAssetsPtr<Value> &values);
 void fixOffsets(Assets *assets, ListOfAssetsPtr<Language> &languages);
 void fixOffsets(Assets *assets, Value &value);
@@ -78,6 +82,7 @@ void fixOffsets(Assets *assets, Value &value);
 void fixOffsets(Assets *assets) {
     fixOffset(assets->settings, assets);
 
+#if OPTION_GUI || !defined(OPTION_GUI)
 	fixOffset(assets->pages, assets);
     for (uint32_t i = 0; i < assets->pages.count; i++) {
         fixOffsets(assets, assets->pages[i]->widgets);
@@ -93,6 +98,7 @@ void fixOffsets(Assets *assets) {
     }
 
     fixOffset(assets->bitmaps, assets);
+#endif // OPTION_GUI || !defined(OPTION_GUI)
 
     if (assets->colorsDefinition) {
         fixOffset(assets->colorsDefinition, assets);
@@ -190,6 +196,8 @@ void fixOffsets(Assets *assets) {
     fixOffsets(assets, assets->languages);
 }
 
+#if OPTION_GUI || !defined(OPTION_GUI)
+using namespace gui;
 void fixOffsets(Assets *assets, ListOfAssetsPtr<Widget> &widgets) {
     fixOffset(widgets, assets);
     for (uint32_t i = 0; i < widgets.count; i++) {
@@ -248,6 +256,7 @@ void fixOffsets(Assets *assets, Widget *widget) {
         break;
     }
 }
+#endif // OPTION_GUI || !defined(OPTION_GUI)
 
 void fixOffsets(Assets *assets, ListOfAssetsPtr<Value> &values) {
     fixOffset(values, assets);
@@ -290,12 +299,11 @@ void fixOffsets(Assets *assets, Value &value) {
 #endif
 
         fixOffset(assetsPtr, assets);
-        value.arrayValue = (eez::gui::ArrayValue *)(assetsPtr);
+        value.arrayValue = (eez::ArrayValue *)(assetsPtr);
         for (uint32_t i = 0; i < value.arrayValue->arraySize; i++) {
             fixOffsets(assets, value.arrayValue->values[i]);
         }
     }
 }
 
-} // namespace gui
 } // namespace eez

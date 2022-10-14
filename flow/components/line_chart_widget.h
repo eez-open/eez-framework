@@ -24,17 +24,19 @@ namespace eez {
 namespace flow {
 
 struct LineChartLine {
-    eez::gui::AssetsPtr<uint8_t> label;
+    AssetsPtr<uint8_t> label;
     uint16_t color;
     uint16_t reserved;
-    eez::gui::AssetsPtr<uint8_t> value;
+    AssetsPtr<uint8_t> value;
 };
 
 struct LineChartWidgetComponenent : public Component {
     uint32_t maxPoints;
-    eez::gui::AssetsPtr<uint8_t> xValue;
-    eez::gui::ListOfAssetsPtr<LineChartLine> lines;
+    AssetsPtr<uint8_t> xValue;
+    ListOfAssetsPtr<LineChartLine> lines;
 };
+
+#if OPTION_GUI || !defined(OPTION_GUI)
 
 struct Point {
     float x;
@@ -73,6 +75,8 @@ private:
     // Yn1 Yn2 ... Ynm,
     void *data;
 };
+
+#endif // OPTION_GUI || !defined(OPTION_GUI)
 
 } // flow
 } // eez

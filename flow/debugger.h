@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <eez/flow/private.h>
+
 namespace eez {
 namespace flow {
 
@@ -31,13 +33,13 @@ extern int g_debuggerMode;
 
 bool canExecuteStep(FlowState *&flowState, unsigned &componentIndex);
 
-void onStarted(gui::Assets *assets);
+void onStarted(Assets *assets);
 void onStopped();
 
 void onAddToQueue(FlowState *flowState, int sourceComponentIndex, int sourceOutputIndex, unsigned targetComponentIndex, int targetInputIndex);
 void onRemoveFromQueue();
 
-void onValueChanged(const gui::Value *pValue);
+void onValueChanged(const Value *pValue);
 
 void onFlowStateCreated(FlowState *flowState);
 void onFlowStateDestroyed(FlowState *flowState);
@@ -54,7 +56,9 @@ void logScpiCommand(FlowState *flowState, unsigned componentIndex, const char *c
 void logScpiQuery(FlowState *flowState, unsigned componentIndex, const char *query);
 void logScpiQueryResult(FlowState *flowState, unsigned componentIndex, const char *resultText, size_t resultTextLen);
 
+#if OPTION_GUI || !defined(OPTION_GUI)
 void onPageChanged(int previousPageId, int activePageId);
+#endif
 
 void processDebuggerInput(char *buffer, uint32_t length);
 

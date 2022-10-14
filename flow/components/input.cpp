@@ -22,8 +22,6 @@
 #include <eez/flow/components/call_action.h>
 #include <eez/flow/flow_defs_v3.h>
 
-using namespace eez::gui;
-
 namespace eez {
 namespace flow {
 

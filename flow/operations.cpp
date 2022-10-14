@@ -17,6 +17,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 
 #include <chrono>
@@ -27,15 +28,20 @@
 // https://howardhinnant.github.io/date/date.html
 #include <eez/libs/date.h>
 
-#include <eez/gui/gui.h>
+#include <eez/core/os.h>
+#include <eez/core/value.h>
+#include <eez/core/util.h>
 
 #include <eez/flow/flow.h>
 #include <eez/flow/operations.h>
 
+#if OPTION_GUI || !defined(OPTION_GUI)
+#include <eez/gui/gui.h>
+using namespace eez::gui;
+#endif
+
 namespace eez {
 namespace flow {
-
-using namespace gui;
 
 Value op_add(const Value& a1, const Value& b1) {
 	auto a = a1.getValue();
@@ -682,8 +688,6 @@ bool do_OPERATION_TYPE_FLOW_INDEX(EvalStack &stack) {
 		return false;
 	}
 
-	using eez::gui::MAX_ITERATORS;
-
 	iteratorIndex = iteratorIndex;
 	if (iteratorIndex < 0 || iteratorIndex >= (int)MAX_ITERATORS) {
 		return false;
@@ -697,6 +701,7 @@ bool do_OPERATION_TYPE_FLOW_INDEX(EvalStack &stack) {
 }
 
 bool do_OPERATION_TYPE_FLOW_IS_PAGE_ACTIVE(EvalStack &stack) {
+#if OPTION_GUI || !defined(OPTION_GUI)
 	bool isActive = false;
 
 	auto pageIndex = getPageIndex(stack.flowState);
@@ -724,6 +729,9 @@ bool do_OPERATION_TYPE_FLOW_IS_PAGE_ACTIVE(EvalStack &stack) {
 	}
 
 	return true;
+#else
+    return false;
+#endif // OPTION_GUI || !defined(OPTION_GUI)
 }
 
 bool do_OPERATION_TYPE_FLOW_PAGE_TIMELINE_POSITION(EvalStack &stack) {
@@ -1275,7 +1283,7 @@ bool do_OPERATION_TYPE_STRING_SUBSTRING(EvalStack &stack) {
     }
 
     if (start < end) {
-        Value resultValue = eez::gui::Value::makeStringRef(str + start, end - start, 0x203b08a2);
+        Value resultValue = Value::makeStringRef(str + start, end - start, 0x203b08a2);
         if (!stack.push(resultValue)) {
             return false;
         }
@@ -1340,7 +1348,7 @@ bool do_OPERATION_TYPE_STRING_PAD_START(EvalStack &stack) {
 	}
 	int padStrLen = strlen(padStr.getString());
 
-	Value resultValue = eez::gui::Value::makeStringRef("", targetLength, 0xf43b14dd);
+	Value resultValue = Value::makeStringRef("", targetLength, 0xf43b14dd);
 	if (resultValue.type == VALUE_TYPE_NULL) {
 		return false;
 	}

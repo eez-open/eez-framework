@@ -21,10 +21,37 @@
 #include <assert.h>
 #include <memory.h>
 
+#if defined(EEZ_FOR_LVGL)
+#include "lvgl/lvgl.h"
+#endif
+
 #include <eez/core/alloc.h>
 #include <eez/core/os.h>
 
 namespace eez {
+
+#if defined(EEZ_FOR_LVGL)
+
+void initAllocHeap(uint8_t *heap, size_t heapSize) {
+}
+
+void *alloc(size_t size, uint32_t id) {
+    return lv_malloc(size);
+}
+
+void free(void *ptr) {}
+
+template<typename T> void freeObject(T *ptr) {
+	ptr->~T();
+	lv_free(ptr);
+}
+
+void getAllocInfo(uint32_t &free, uint32_t &alloc) {
+	free = 0;
+	alloc = 0;
+}
+
+#else
 
 static const size_t ALIGNMENT = 64;
 static const size_t MIN_BLOCK_SIZE = 8;
@@ -197,5 +224,7 @@ void getAllocInfo(uint32_t &free, uint32_t &alloc) {
 		EEZ_MUTEX_RELEASE(alloc);
 	}
 }
+
+#endif
 
 } // eez

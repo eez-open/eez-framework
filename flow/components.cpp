@@ -31,8 +31,6 @@
 #include <eez/flow/dashboard_api.h>
 #endif
 
-using namespace eez::gui;
-
 namespace eez {
 namespace flow {
 
@@ -115,8 +113,8 @@ void executeComponent(FlowState *flowState, unsigned componentIndex) {
 	if (component->type >= defs_v3::FIRST_DASHBOARD_COMPONENT_TYPE) {
         if (executeDashboardComponentHook) {
             executeDashboardComponentHook(component->type, getFlowStateIndex(flowState), componentIndex);
-            return;
         }
+        return;
     } else
 #endif // __EMSCRIPTEN__
     if (component->type >= defs_v3::COMPONENT_TYPE_START_ACTION) {

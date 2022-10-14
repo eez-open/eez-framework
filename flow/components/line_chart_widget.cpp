@@ -24,10 +24,10 @@
 #include <eez/flow/private.h>
 #include <eez/flow/components/line_chart_widget.h>
 
-using namespace eez::gui;
-
 namespace eez {
 namespace flow {
+
+#if OPTION_GUI || !defined(OPTION_GUI)
 
 LineChartWidgetComponenentExecutionState::LineChartWidgetComponenentExecutionState()
     : data(nullptr)
@@ -169,6 +169,13 @@ void executeLineChartWidgetComponent(FlowState *flowState, unsigned componentInd
         clearInputValue(flowState, component->inputs[0]);
     }
 }
+
+#else
+
+void executeLineChartWidgetComponent(FlowState *flowState, unsigned componentIndex) {
+}
+
+#endif // OPTION_GUI || !defined(OPTION_GUI)
 
 } // namespace flow
 } // namespace eez

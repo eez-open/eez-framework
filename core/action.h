@@ -1,6 +1,6 @@
 /*
  * EEZ Modular Firmware
- * Copyright (C) 2021-present, Envox d.o.o.
+ * Copyright (C) 2022-present, Envox d.o.o.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,14 +16,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <eez/flow/components.h>
+#pragma once
+
+#if defined(EEZ_FOR_LVGL)
+#include "lvgl/lvgl.h"
+#endif
 
 namespace eez {
-namespace flow {
 
-void executeOnEventComponent(FlowState *flowState, unsigned componentIndex) {
-	propagateValueThroughSeqout(flowState, componentIndex);
-}
+#if OPTION_GUI || !defined(OPTION_GUI)
+namespace gui {
+#endif
 
-} // namespace flow
-} // namespace eez
+#if defined(EEZ_FOR_LVGL)
+typedef void (*ActionExecFunc)(lv_event_t * e);
+#else
+typedef void (*ActionExecFunc)();
+#endif
+extern ActionExecFunc g_actionExecFunctions[];
+
+void executeActionFunction(int actionId);
+
+#if OPTION_GUI || !defined(OPTION_GUI)
+} // gui
+#endif
+
+} // eez

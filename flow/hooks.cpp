@@ -16,10 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <assert.h>
 #include <math.h>
 
 #include <eez/flow/hooks.h>
+
+#if OPTION_GUI || !defined(OPTION_GUI)
 #include <eez/gui/gui.h>
+#endif
 
 namespace eez {
 namespace flow {
@@ -29,7 +33,9 @@ static bool isFlowRunning() {
 }
 
 static void replacePage(int16_t pageId) {
+#if OPTION_GUI || !defined(OPTION_GUI)
 	eez::gui::getAppContextFromId(APP_CONTEXT_ID_DEVICE)->replacePage(pageId);
+#endif
 }
 
 static void showKeyboard(Value label, Value initialText, Value minChars, Value maxChars, bool isPassword, void(*onOk)(char *), void(*onCancel)()) {
@@ -71,6 +77,8 @@ void (*finishToDebuggerMessageHook)() = finishToDebuggerMessage;
 void (*onDebuggerInputAvailableHook)() = onDebuggerInputAvailable;
 
 void (*executeDashboardComponentHook)(uint16_t componentType, int flowStateIndex, int componentIndex) = nullptr;
+
+void (*onArrayValueFreeHook)(ArrayValue *arrayValue) = nullptr;
 
 } // namespace flow
 } // namespace eez

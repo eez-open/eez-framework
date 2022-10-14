@@ -20,15 +20,20 @@
 
 #include <eez/core/memory.h>
 
+#if defined(EEZ_FOR_LVGL)
+#include "lvgl/lvgl.h"
+#endif
+
 namespace eez {
 
-#if defined(EEZ_PLATFORM_SIMULATOR)
+#if defined(EEZ_PLATFORM_SIMULATOR) && !defined(EEZ_FOR_LVGL)
 uint8_t g_memory[MEMORY_SIZE] = { 0 };
 #endif
 
 uint8_t *DECOMPRESSED_ASSETS_START_ADDRESS;
 uint8_t *FLOW_TO_DEBUGGER_MESSAGE_BUFFER;
 
+#if OPTION_GUI || !defined(OPTION_GUI)
 uint8_t *VRAM_BUFFER1_START_ADDRESS;
 uint8_t *VRAM_BUFFER2_START_ADDRESS;
 
@@ -45,9 +50,10 @@ uint8_t *VRAM_AUX_BUFFER6_START_ADDRESS;
 uint8_t *SCREENSHOOT_BUFFER_START_ADDRESS;
 
 uint8_t *GUI_STATE_BUFFER;
+#endif
 
-uint8_t *ALLOC_BUFFER;
-uint32_t ALLOC_BUFFER_SIZE;
+uint8_t *ALLOC_BUFFER = 0;
+uint32_t ALLOC_BUFFER_SIZE = 0;
 
 void initMemory() {
     initAssetsMemory();
@@ -55,8 +61,10 @@ void initMemory() {
 }
 
 void initAssetsMemory() {
+#if !defined(EEZ_FOR_LVGL)
     ALLOC_BUFFER = MEMORY_BEGIN;
     ALLOC_BUFFER_SIZE = MEMORY_SIZE;
+#endif
 
     DECOMPRESSED_ASSETS_START_ADDRESS = allocBuffer(MAX_DECOMPRESSED_ASSETS_SIZE);
 }
@@ -64,6 +72,7 @@ void initAssetsMemory() {
 void initOtherMemory() {
     FLOW_TO_DEBUGGER_MESSAGE_BUFFER = allocBuffer(FLOW_TO_DEBUGGER_MESSAGE_BUFFER_SIZE);
 
+#if OPTION_GUI || !defined(OPTION_GUI)
     uint32_t VRAM_BUFFER_SIZE = DISPLAY_WIDTH * DISPLAY_HEIGHT * DISPLAY_BPP / 8;
 
     VRAM_BUFFER1_START_ADDRESS = allocBuffer(VRAM_BUFFER_SIZE);
@@ -82,9 +91,13 @@ void initOtherMemory() {
     GUI_STATE_BUFFER = allocBuffer(GUI_STATE_BUFFER_SIZE);
 
     SCREENSHOOT_BUFFER_START_ADDRESS = VRAM_ANIMATION_BUFFER1_START_ADDRESS;
+#endif
 }
 
 uint8_t *allocBuffer(uint32_t size) {
+#if defined(EEZ_FOR_LVGL)
+    return (uint8_t *)lv_malloc(size);
+#else
     size = ((size + 1023) / 1024) * 1024;
 
     auto buffer = ALLOC_BUFFER;
@@ -94,6 +107,7 @@ uint8_t *allocBuffer(uint32_t size) {
     ALLOC_BUFFER_SIZE -= size;
 
     return buffer;
+#endif
 }
 
 } // eez

@@ -23,6 +23,12 @@
 
 namespace eez {
 
+#if defined(EEZ_FOR_LVGL)
+
+static uint8_t * const MEMORY_BEGIN = 0;
+
+#else
+
 #if defined(EEZ_PLATFORM_STM32)
 static uint8_t * const MEMORY_BEGIN = (uint8_t *)0xc0000000u;
 #if CONF_OPTION_FPGA
@@ -38,6 +44,8 @@ static const uint32_t MEMORY_SIZE = 8 * 1024 * 1024;
 extern uint8_t g_memory[];
 static uint8_t * const MEMORY_BEGIN = g_memory;
 static const uint32_t MEMORY_SIZE = 64 * 1024 * 1024;
+#endif
+
 #endif
 
 extern uint8_t *ALLOC_BUFFER;
@@ -59,6 +67,7 @@ static const uint32_t FLOW_TO_DEBUGGER_MESSAGE_BUFFER_SIZE = 32 * 1024;
 static const uint32_t FLOW_TO_DEBUGGER_MESSAGE_BUFFER_SIZE = 1024 * 1024;
 #endif
 
+#if OPTION_GUI || !defined(OPTION_GUI)
 extern uint8_t *VRAM_BUFFER1_START_ADDRESS;
 extern uint8_t *VRAM_BUFFER2_START_ADDRESS;
 
@@ -75,6 +84,7 @@ extern uint8_t *VRAM_AUX_BUFFER6_START_ADDRESS;
 extern uint8_t* SCREENSHOOT_BUFFER_START_ADDRESS;
 
 extern uint8_t* GUI_STATE_BUFFER;
+#endif
 
 void initMemory();
 void initAssetsMemory();

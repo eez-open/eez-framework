@@ -18,11 +18,12 @@
 
 #pragma once
 
-#include <eez/gui/data.h>
-#include <eez/gui/widget.h>
+#include <stdint.h>
+
+#include <eez/core/memory.h>
+#include <eez/core/value.h>
 
 namespace eez {
-namespace gui {
 
 static const uint32_t HEADER_TAG = 0x7A65657E;
 
@@ -45,6 +46,7 @@ struct Header {
 };
 
 extern bool g_isMainAssetsLoaded;
+struct Assets;
 extern Assets *g_mainAssets;
 extern Assets *g_externalAssets;
 
@@ -153,6 +155,8 @@ struct Settings {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#if OPTION_GUI || !defined(OPTION_GUI)
+
 #define WIDGET_FLAG_PIN_TO_LEFT (1 << 0)
 #define WIDGET_FLAG_PIN_TO_RIGHT (1 << 1)
 #define WIDGET_FLAG_PIN_TO_TOP (1 << 2)
@@ -198,6 +202,8 @@ struct Settings {
 #define EASING_FUNC_IN_BOUNCE 28
 #define EASING_FUNC_OUT_BOUNCE 29
 #define EASING_FUNC_IN_OUT_BOUNCE 30
+
+namespace gui {
 
 struct TimelineKeyframe {
     float start;
@@ -342,6 +348,10 @@ struct Bitmap {
     const uint8_t pixels[1];
 };
 
+} // namespace gui
+
+#endif // OPTION_GUI || !defined(OPTION_GUI)
+
 ////////////////////////////////////////////////////////////////////////////////
 
 struct Theme {
@@ -446,10 +456,12 @@ struct Assets {
     uint8_t external;
 
     AssetsPtr<Settings> settings;
-	ListOfAssetsPtr<PageAsset> pages;
-	ListOfAssetsPtr<Style> styles;
-	ListOfAssetsPtr<FontData> fonts;
-	ListOfAssetsPtr<Bitmap> bitmaps;
+#if OPTION_GUI || !defined(OPTION_GUI)
+	ListOfAssetsPtr<gui::PageAsset> pages;
+	ListOfAssetsPtr<gui::Style> styles;
+	ListOfAssetsPtr<gui::FontData> fonts;
+	ListOfAssetsPtr<gui::Bitmap> bitmaps;
+#endif // OPTION_GUI || !defined(OPTION_GUI)
 	AssetsPtr<Colors> colorsDefinition;
 	ListOfAssetsPtr<const char> actionNames;
 	ListOfAssetsPtr<const char> variableNames;
@@ -469,12 +481,13 @@ void unloadExternalAssets();
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const PageAsset *getPageAsset(int pageId);
-const PageAsset* getPageAsset(int pageId, WidgetCursor& widgetCursor);
-
-const Style *getStyle(int styleID);
-const FontData *getFontData(int fontID);
-const Bitmap *getBitmap(int bitmapID);
+#if OPTION_GUI || !defined(OPTION_GUI)
+const gui::PageAsset *getPageAsset(int pageId);
+const gui::PageAsset* getPageAsset(int pageId, gui::WidgetCursor& widgetCursor);
+const gui::Style *getStyle(int styleID);
+const gui::FontData *getFontData(int fontID);
+const gui::Bitmap *getBitmap(int bitmapID);
+#endif
 
 int getThemesCount();
 const char *getThemeName(int i);
@@ -484,10 +497,11 @@ const uint16_t *getColors();
 
 int getExternalAssetsMainPageId();
 
-const char *getActionName(const WidgetCursor &widgetCursor, int16_t actionId);
-int16_t getDataIdFromName(const WidgetCursor &widgetCursor, const char *name);
+#if OPTION_GUI || !defined(OPTION_GUI)
+const char *getActionName(const gui::WidgetCursor &widgetCursor, int16_t actionId);
+int16_t getDataIdFromName(const gui::WidgetCursor &widgetCursor, const char *name);
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
-} // namespace gui
 } // namespace eez

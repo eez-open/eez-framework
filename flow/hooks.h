@@ -20,13 +20,11 @@
 
 #include <stdint.h>
 
+#include <eez/core/value.h>
 #include <eez/flow/private.h>
-#include <eez/gui/data.h>
 
 namespace eez {
 namespace flow {
-
-using eez::gui::Value;
 
 extern bool (*isFlowRunningHook)();
 extern void (*replacePageHook)(int16_t pageId);
@@ -42,6 +40,8 @@ extern void (*finishToDebuggerMessageHook)();
 extern void (*onDebuggerInputAvailableHook)();
 
 extern void (*executeDashboardComponentHook)(uint16_t componentType, int flowStateIndex, int componentIndex);
+
+extern void (*onArrayValueFreeHook)(ArrayValue *arrayValue);
 
 } // flow
 } // eez
