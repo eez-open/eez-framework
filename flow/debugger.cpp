@@ -757,6 +757,41 @@ void onPageChanged(int previousPageId, int activePageId) {
         writeDebuggerBufferHook(buffer, strlen(buffer));
     }
 }
+#else
+void onPageChanged(int previousPageId, int activePageId) {
+    if (flow::isFlowStopped()) {
+        return;
+    }
+
+    if (previousPageId == activePageId) {
+        return;
+    }
+
+    if (previousPageId > 0) {
+        auto flowState = getPageFlowState(g_mainAssets, previousPageId - 1);
+        if (flowState) {
+            onEvent(flowState, FLOW_EVENT_CLOSE_PAGE);
+        }
+    }
+
+    if (activePageId > 0) {
+        auto flowState = getPageFlowState(g_mainAssets, activePageId - 1);
+        if (flowState) {
+            onEvent(flowState, FLOW_EVENT_OPEN_PAGE);
+        }
+    }
+
+    if (g_debuggerIsConnected) {
+        startToDebuggerMessageHook();
+
+        char buffer[256];
+        snprintf(buffer, sizeof(buffer), "%d\t%d\n",
+            MESSAGE_TO_DEBUGGER_PAGE_CHANGED,
+            activePageId
+        );
+        writeDebuggerBufferHook(buffer, strlen(buffer));
+    }
+}
 #endif // OPTION_GUI || !defined(OPTION_GUI)
 
 } // namespace flow
