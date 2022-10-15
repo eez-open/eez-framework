@@ -36,14 +36,14 @@ void initAllocHeap(uint8_t *heap, size_t heapSize) {
 }
 
 void *alloc(size_t size, uint32_t id) {
-    return lv_malloc(size);
+    return lv_mem_alloc(size);
 }
 
 void free(void *ptr) {}
 
 template<typename T> void freeObject(T *ptr) {
 	ptr->~T();
-	lv_free(ptr);
+	lv_mem_free(ptr);
 }
 
 void getAllocInfo(uint32_t &free, uint32_t &alloc) {

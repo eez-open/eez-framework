@@ -96,7 +96,7 @@ void initOtherMemory() {
 
 uint8_t *allocBuffer(uint32_t size) {
 #if defined(EEZ_FOR_LVGL)
-    return (uint8_t *)lv_malloc(size);
+    return (uint8_t *)lv_mem_alloc(size);
 #else
     size = ((size + 1023) / 1024) * 1024;
 
