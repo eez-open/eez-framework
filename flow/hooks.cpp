@@ -32,7 +32,7 @@ static bool isFlowRunning() {
 	return true;
 }
 
-static void replacePage(int16_t pageId) {
+static void replacePage(int16_t pageId, uint32_t animType, uint32_t speed, uint32_t delay) {
 #if OPTION_GUI || !defined(OPTION_GUI)
 	eez::gui::getAppContextFromId(APP_CONTEXT_ID_DEVICE)->replacePage(pageId);
 #endif
@@ -64,7 +64,7 @@ static void onDebuggerInputAvailable() {
 }
 
 bool (*isFlowRunningHook)() = isFlowRunning;
-void (*replacePageHook)(int16_t pageId) = replacePage;
+void (*replacePageHook)(int16_t pageId, uint32_t animType, uint32_t speed, uint32_t delay) = replacePage;
 void (*showKeyboardHook)(Value label, Value initialText, Value minChars, Value maxChars, bool isPassword, void(*onOk)(char *), void(*onCancel)()) = showKeyboard;
 void (*showKeypadHook)(Value label, Value initialValue, Value min, Value max, Unit unit, void(*onOk)(float), void(*onCancel)()) = showKeypad;
 void (*stopScriptHook)() = stopScript;

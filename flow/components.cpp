@@ -61,6 +61,7 @@ void executeSetPageDirectionComponent(FlowState *flowState, unsigned componentIn
 void executeAnimateComponent(FlowState *flowState, unsigned componentIndex);
 void executeNoopComponent(FlowState *flowState, unsigned componentIndex);
 void executeOnEventComponent(FlowState *flowState, unsigned componentIndex);
+void executeLVGLComponent(FlowState *flowState, unsigned componentIndex);
 
 void executeLayoutViewWidgetComponent(FlowState *flowState, unsigned componentIndex);
 void executeLineChartWidgetComponent(FlowState *flowState, unsigned componentIndex);
@@ -97,7 +98,8 @@ static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
     executeSelectLanguageComponent, // COMPONENT_TYPE_SELECT_LANGUAGE_ACTION
     executeSetPageDirectionComponent, // COMPONENT_TYPE_SET_PAGE_DIRECTION_ACTION
     executeAnimateComponent, // COMPONENT_TYPE_ANIMATE_ACTION
-    executeOnEventComponent, // COMPONENT_TYPE_ON_EVENT_ACTION
+    executeOnEventComponent, // COMPONENT_TYPE_ON_EVENT_ACTION,
+    executeLVGLComponent, // COMPONENT_TYPE_LVGLACTION
 };
 
 void registerComponent(ComponentTypes componentType, ExecuteComponentFunctionType executeComponentFunction) {
