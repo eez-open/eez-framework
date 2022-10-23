@@ -688,7 +688,9 @@ ValueTypeNameFunction g_valueTypeNames[] = {
 ////////////////////////////////////////////////////////////////////////////////
 
 ArrayValueRef::~ArrayValueRef() {
-    eez::flow::onArrayValueFreeHook(&arrayValue);
+    if (eez::flow::onArrayValueFreeHook) {
+        eez::flow::onArrayValueFreeHook(&arrayValue);
+    }
     for (uint32_t i = 1; i < arrayValue.arraySize; i++) {
         (arrayValue.values + i)->~Value();
     }
