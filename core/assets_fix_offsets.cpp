@@ -39,6 +39,7 @@
 #include <eez/flow/components/switch.h>
 #include <eez/flow/components/set_variable.h>
 #include <eez/flow/components/line_chart_widget.h>
+#include <eez/flow/components/lvgl.h>
 
 namespace eez {
 
@@ -153,6 +154,17 @@ void fixOffsets(Assets *assets) {
                             auto entry = setVariableActionComponent->entries[entryIndex];
                             fixOffset(entry->variable, assets);
                             fixOffset(entry->value, assets);
+                        }
+                    }
+                    break;
+
+                case COMPONENT_TYPE_LVGLACTION:
+                    {
+                        auto componentGeneral = (LVGLComponent *)component;
+                        if (componentGeneral->action == CHANGE_SCREEN) {
+                        } else if (componentGeneral->action == PLAY_ANIMATION) {
+                            auto componentSpecific = (LVGLComponent_PlayAnimation *)componentGeneral;
+                            fixOffset(componentSpecific->items, assets);
                         }
                     }
                     break;

@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdio.h>
 #include <eez/core/os.h>
 
 #include <eez/flow/components.h>
@@ -26,31 +27,93 @@
 #include <eez/flow/debugger.h>
 #include <eez/flow/hooks.h>
 
+#include <eez/flow/components/lvgl.h>
+
 #if defined(EEZ_FOR_LVGL)
 
 namespace eez {
 namespace flow {
 
-enum LVGL_ACTIONS {
-    CHANGE_SCREEN
+void anim_callback_set_x(lv_anim_t * a, int32_t v) { lv_obj_set_x((lv_obj_t *)a->user_data, v); }
+int32_t anim_callback_get_x(lv_anim_t * a) { return lv_obj_get_x_aligned((lv_obj_t *)a->user_data); }
+
+void anim_callback_set_y(lv_anim_t * a, int32_t v) { lv_obj_set_y((lv_obj_t *)a->user_data, v); }
+int32_t anim_callback_get_y(lv_anim_t * a) { return lv_obj_get_y_aligned((lv_obj_t *)a->user_data); }
+
+void anim_callback_set_width(lv_anim_t * a, int32_t v) { lv_obj_set_width((lv_obj_t *)a->user_data, v); }
+int32_t anim_callback_get_width(lv_anim_t * a) { return lv_obj_get_width((lv_obj_t *)a->user_data); }
+
+void anim_callback_set_height(lv_anim_t * a, int32_t v) { lv_obj_set_height((lv_obj_t *)a->user_data, v); }
+int32_t anim_callback_get_height(lv_anim_t * a) { return lv_obj_get_height((lv_obj_t *)a->user_data); }
+
+void anim_callback_set_opacity(lv_anim_t * a, int32_t v) { lv_obj_set_style_opa((lv_obj_t *)a->user_data, v, 0); }
+int32_t anim_callback_get_opacity(lv_anim_t * a) { return lv_obj_get_style_opa((lv_obj_t *)a->user_data, 0); }
+
+void anim_callback_set_image_zoom(lv_anim_t * a, int32_t v) { lv_img_set_zoom((lv_obj_t *)a->user_data, v); }
+int32_t anim_callback_get_image_zoom(lv_anim_t * a) { return lv_img_get_zoom((lv_obj_t *)a->user_data); }
+
+void anim_callback_set_image_angle(lv_anim_t * a, int32_t v) { lv_img_set_angle((lv_obj_t *)a->user_data, v); }
+int32_t anim_callback_get_image_angle(lv_anim_t * a) { return lv_img_get_angle((lv_obj_t *)a->user_data); }
+
+void (*anim_set_callbacks[])(lv_anim_t *a, int32_t v) = {
+    anim_callback_set_x,
+    anim_callback_set_y,
+    anim_callback_set_width,
+    anim_callback_set_height,
+    anim_callback_set_opacity,
+    anim_callback_set_image_zoom,
+    anim_callback_set_image_angle
 };
 
-struct LVGLComponent : public Component {
-	uint32_t action;
+int32_t (*anim_get_callbacks[])(lv_anim_t *a) = {
+    anim_callback_get_x,
+    anim_callback_get_y,
+    anim_callback_get_width,
+    anim_callback_get_height,
+    anim_callback_get_opacity,
+    anim_callback_get_image_zoom,
+    anim_callback_get_image_angle
 };
 
-struct LVGLComponent_ChangeScreen : public LVGLComponent {
-    int32_t screen;
-    uint32_t fadeMode;
-    uint32_t speed;
-    uint32_t delay;
+int32_t (*anim_path_callbacks[])(const lv_anim_t *a) = {
+    lv_anim_path_linear,
+    lv_anim_path_ease_in,
+    lv_anim_path_ease_out,
+    lv_anim_path_ease_in_out,
+    lv_anim_path_overshoot,
+    lv_anim_path_bounce
 };
 
 void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
     auto componentGeneral = (LVGLComponent *)flowState->flow->components[componentIndex];
     if (componentGeneral->action == CHANGE_SCREEN) {
-        auto component = (LVGLComponent_ChangeScreen *)componentGeneral;
-        replacePageHook(component->screen, component->fadeMode, component->speed, component->delay);
+        auto componentSpecific = (LVGLComponent_ChangeScreen *)componentGeneral;
+        replacePageHook(componentSpecific->screen, componentSpecific->fadeMode, componentSpecific->speed, componentSpecific->delay);
+    } else if (componentGeneral->action == PLAY_ANIMATION) {
+        auto componentSpecific = (LVGLComponent_PlayAnimation *)componentGeneral;
+
+        auto target = getLvglObjectFromIndexHook(componentSpecific->target);
+        auto delay = componentSpecific->delay;
+
+        for (uint32_t itemIndex = 0; itemIndex < componentSpecific->items.count; itemIndex++) {
+            auto item = componentSpecific->items[itemIndex];
+
+            lv_anim_t anim;
+
+            lv_anim_init(&anim);
+            lv_anim_set_time(&anim, item->time);
+            lv_anim_set_user_data(&anim, target);
+            lv_anim_set_custom_exec_cb(&anim, anim_set_callbacks[item->property]);
+            lv_anim_set_values(&anim, item->start, item->end);
+            lv_anim_set_path_cb(&anim, anim_path_callbacks[item->path]);
+            lv_anim_set_delay(&anim, delay + item->delay);
+            lv_anim_set_early_apply(&anim, item->flags & ANIMATION_ITEM_FLAG_INSTANT ? true : false);
+            if (item->flags & ANIMATION_ITEM_FLAG_RELATIVE) {
+                lv_anim_set_get_value_cb(&anim, anim_get_callbacks[item->property]);
+            }
+
+            lv_anim_start(&anim);
+        }
     }
 }
 

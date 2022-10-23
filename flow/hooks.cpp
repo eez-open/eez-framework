@@ -80,6 +80,14 @@ void (*executeDashboardComponentHook)(uint16_t componentType, int flowStateIndex
 
 void (*onArrayValueFreeHook)(ArrayValue *arrayValue) = nullptr;
 
+#if defined(EEZ_FOR_LVGL)
+static lv_obj_t *getLvglObjectFromIndex(int32_t index) {
+    return 0;
+}
+
+lv_obj_t *(*getLvglObjectFromIndexHook)(int32_t index) = getLvglObjectFromIndex;
+#endif
+
 } // namespace flow
 } // namespace eez
 

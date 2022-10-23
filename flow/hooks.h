@@ -23,6 +23,10 @@
 #include <eez/core/value.h>
 #include <eez/flow/private.h>
 
+#if defined(EEZ_FOR_LVGL)
+#include <lvgl/lvgl.h>
+#endif
+
 namespace eez {
 namespace flow {
 
@@ -42,6 +46,10 @@ extern void (*onDebuggerInputAvailableHook)();
 extern void (*executeDashboardComponentHook)(uint16_t componentType, int flowStateIndex, int componentIndex);
 
 extern void (*onArrayValueFreeHook)(ArrayValue *arrayValue);
+
+#if defined(EEZ_FOR_LVGL)
+extern lv_obj_t *(*getLvglObjectFromIndexHook)(int32_t index);
+#endif
 
 } // flow
 } // eez
