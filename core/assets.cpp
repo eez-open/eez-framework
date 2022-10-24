@@ -117,7 +117,24 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 	return true;
 }
 
+void allocMemoryForDecompressedAssets(const uint8_t *assetsData, uint32_t assetsDataSize, uint8_t *&decompressedAssetsMemoryBuffer, uint32_t &decompressedAssetsMemoryBufferSize) {
+    auto decompressedDataOffset = offsetof(Assets, settings);
+
+    auto header = (Header *)assetsData;
+    assert (header->tag == HEADER_TAG);
+    uint32_t decompressedSize = header->decompressedSize;
+
+    decompressedAssetsMemoryBufferSize = decompressedDataOffset + decompressedSize;
+
+    decompressedAssetsMemoryBuffer = (uint8_t *)eez::alloc(decompressedAssetsMemoryBufferSize, 0x587da194);
+}
+
 void loadMainAssets(const uint8_t *assets, uint32_t assetsSize) {
+#if defined(EEZ_FOR_LVGL)
+    uint8_t *DECOMPRESSED_ASSETS_START_ADDRESS = 0;
+    uint32_t MAX_DECOMPRESSED_ASSETS_SIZE = 0;
+    allocMemoryForDecompressedAssets(assets, assetsSize, DECOMPRESSED_ASSETS_START_ADDRESS, MAX_DECOMPRESSED_ASSETS_SIZE);
+#endif
     g_mainAssets = (Assets *)DECOMPRESSED_ASSETS_START_ADDRESS;
     g_mainAssets->external = false;
     auto decompressedSize = decompressAssetsData(assets, assetsSize, g_mainAssets, MAX_DECOMPRESSED_ASSETS_SIZE, nullptr);
