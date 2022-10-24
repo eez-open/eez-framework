@@ -112,11 +112,14 @@ void executeComponent(FlowState *flowState, unsigned componentIndex) {
 	auto component = flowState->flow->components[componentIndex];
 
 	if (component->type >= defs_v3::FIRST_DASHBOARD_COMPONENT_TYPE) {
+#if defined(__EMSCRIPTEN__)
         if (executeDashboardComponentHook) {
             executeDashboardComponentHook(component->type, getFlowStateIndex(flowState), componentIndex);
         }
+#endif // __EMSCRIPTEN__
         return;
-    } else if (component->type >= defs_v3::COMPONENT_TYPE_START_ACTION) {
+    } else
+    if (component->type >= defs_v3::COMPONENT_TYPE_START_ACTION) {
 		auto executeComponentFunction = g_executeComponentFunctions[component->type - defs_v3::COMPONENT_TYPE_START_ACTION];
 		if (executeComponentFunction != nullptr) {
 			executeComponentFunction(flowState, componentIndex);
