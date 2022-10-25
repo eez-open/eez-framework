@@ -39,7 +39,9 @@ void *alloc(size_t size, uint32_t id) {
     return lv_mem_alloc(size);
 }
 
-void free(void *ptr) {}
+void free(void *ptr) {
+    lv_mem_free(ptr);
+}
 
 template<typename T> void freeObject(T *ptr) {
 	ptr->~T();
