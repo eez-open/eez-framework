@@ -34,6 +34,8 @@
 namespace eez {
 namespace flow {
 
+////////////////////////////////////////////////////////////////////////////////
+
 void anim_callback_set_x(lv_anim_t * a, int32_t v) { lv_obj_set_x((lv_obj_t *)a->user_data, v); }
 int32_t anim_callback_get_x(lv_anim_t * a) { return lv_obj_get_x_aligned((lv_obj_t *)a->user_data); }
 
@@ -84,6 +86,33 @@ int32_t (*anim_path_callbacks[])(const lv_anim_t *a) = {
     lv_anim_path_bounce
 };
 
+////////////////////////////////////////////////////////////////////////////////
+
+enum PropertyCode {
+    NONE,
+
+    BAR_VALUE,
+
+    BASIC_X,
+    BASIC_Y,
+    BASIC_WIDTH,
+    BASIC_HEIGHT,
+
+    DROPDOWN_SELECTED,
+
+    IMAGE_IMAGE,
+    IMAGE_ANGLE,
+    IMAGE_ZOOM,
+
+    LABEL_TEXT,
+
+    ROLLER_SELECTED,
+
+    SLIDER_VALUE
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
 void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
     auto componentGeneral = (LVGLComponent *)flowState->flow->components[componentIndex];
     if (componentGeneral->action == CHANGE_SCREEN) {
@@ -114,7 +143,63 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
 
             lv_anim_start(&anim);
         }
+    } else if (componentGeneral->action == SET_PROPERTY) {
+        auto componentSpecific = (LVGLComponent_SetProperty *)componentGeneral;
+
+		Value value;
+		if (!evalExpression(flowState, componentIndex, componentSpecific->value, value, "Failed to evaluate Value in LVGL Set Property")) {
+			return;
+		}
+
+        auto target = getLvglObjectFromIndexHook(componentSpecific->target);
+
+        if (componentSpecific->property == IMAGE_IMAGE || componentSpecific->property == LABEL_TEXT) {
+            const char *strValue = value.toString(0xe42b3ca2).getString();
+            if (componentSpecific->property == IMAGE_IMAGE) {
+                const void *src = getLvglImageByNameHook(strValue);
+                if (src) {
+                    lv_img_set_src(target, src);
+                } else {
+                    char errorMessage[256];
+                    snprintf(errorMessage, sizeof(errorMessage), "Image \"%s\" not found in LVGL Set Property", strValue);
+                    throwError(flowState, componentIndex, errorMessage);
+                }
+            } else {
+                lv_label_set_text(target, strValue);
+            }
+        } else {
+            int err;
+            int32_t intValue = value.toInt32(&err);
+            if (err) {
+                throwError(flowState, componentIndex, "Failed to convert value to integer in LVGL Set Property");
+                return;
+            }
+
+            if (componentSpecific->property == BAR_VALUE) {
+                lv_bar_set_value(target, intValue, componentSpecific->animated ? LV_ANIM_ON : LV_ANIM_OFF);
+            } else if (componentSpecific->property == BASIC_X) {
+                lv_obj_set_x(target, intValue);
+            } else if (componentSpecific->property == BASIC_Y) {
+                lv_obj_set_y(target, intValue);
+            } else if (componentSpecific->property == BASIC_WIDTH) {
+                lv_obj_set_width(target, intValue);
+            } else if (componentSpecific->property == BASIC_HEIGHT) {
+                lv_obj_set_height(target, intValue);
+            } else if (componentSpecific->property == DROPDOWN_SELECTED) {
+                lv_dropdown_set_selected(target, intValue);
+            } else if (componentSpecific->property == IMAGE_ANGLE) {
+                lv_img_set_angle(target, intValue);
+            } else if (componentSpecific->property == IMAGE_ZOOM) {
+                lv_img_set_zoom(target, intValue);
+            } else if (componentSpecific->property == ROLLER_SELECTED) {
+                lv_roller_set_selected(target, intValue, componentSpecific->animated ? LV_ANIM_ON : LV_ANIM_OFF);
+            } else if (componentSpecific->property == SLIDER_VALUE) {
+                lv_slider_set_value(target, intValue, componentSpecific->animated ? LV_ANIM_ON : LV_ANIM_OFF);
+            }
+        }
     }
+
+    propagateValueThroughSeqout(flowState, componentIndex);
 }
 
 } // namespace flow

@@ -165,6 +165,9 @@ void fixOffsets(Assets *assets) {
                         } else if (componentGeneral->action == PLAY_ANIMATION) {
                             auto componentSpecific = (LVGLComponent_PlayAnimation *)componentGeneral;
                             fixOffset(componentSpecific->items, assets);
+                        } else if (componentGeneral->action == SET_PROPERTY) {
+                            auto componentSpecific = (LVGLComponent_SetProperty *)componentGeneral;
+                            fixOffset(componentSpecific->value, assets);
                         }
                     }
                     break;

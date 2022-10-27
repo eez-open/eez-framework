@@ -23,14 +23,19 @@
 namespace eez {
 namespace flow {
 
+////////////////////////////////////////////////////////////////////////////////
+
 enum LVGL_ACTIONS {
     CHANGE_SCREEN,
-    PLAY_ANIMATION
+    PLAY_ANIMATION,
+    SET_PROPERTY
 };
 
 struct LVGLComponent : public Component {
 	uint32_t action;
 };
+
+////////////////////////////////////////////////////////////////////////////////
 
 struct LVGLComponent_ChangeScreen : public LVGLComponent {
     int32_t screen;
@@ -38,6 +43,8 @@ struct LVGLComponent_ChangeScreen : public LVGLComponent {
     uint32_t speed;
     uint32_t delay;
 };
+
+////////////////////////////////////////////////////////////////////////////////
 
 #define ANIMATION_PROPERTY_POSITION_X 0
 #define ANIMATION_PROPERTY_POSITION_Y 1
@@ -72,6 +79,17 @@ struct LVGLComponent_PlayAnimation : public LVGLComponent {
     uint32_t delay;
     ListOfAssetsPtr<AnimationItem> items;
 };
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct LVGLComponent_SetProperty : public LVGLComponent {
+    int32_t target;
+    uint32_t property;
+    AssetsPtr<uint8_t> value;
+    uint32_t animated;
+};
+
+////////////////////////////////////////////////////////////////////////////////
 
 } // flow
 } // eez

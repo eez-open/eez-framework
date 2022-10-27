@@ -85,7 +85,12 @@ static lv_obj_t *getLvglObjectFromIndex(int32_t index) {
     return 0;
 }
 
+static const void *getLvglImageByName(const char *name) {
+    return 0;
+}
+
 lv_obj_t *(*getLvglObjectFromIndexHook)(int32_t index) = getLvglObjectFromIndex;
+const void *(*getLvglImageByNameHook)(const char *name) = getLvglImageByName;
 #endif
 
 } // namespace flow
