@@ -91,12 +91,15 @@ int32_t (*anim_path_callbacks[])(const lv_anim_t *a) = {
 enum PropertyCode {
     NONE,
 
+    ARC_VALUE,
+
     BAR_VALUE,
 
     BASIC_X,
     BASIC_Y,
     BASIC_WIDTH,
     BASIC_HEIGHT,
+    BASIC_OPACITY,
 
     DROPDOWN_SELECTED,
 
@@ -175,7 +178,9 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                 return;
             }
 
-            if (componentSpecific->property == BAR_VALUE) {
+            if (componentSpecific->property == ARC_VALUE) {
+                lv_arc_set_value(target, intValue);
+            } else if (componentSpecific->property == BAR_VALUE) {
                 lv_bar_set_value(target, intValue, componentSpecific->animated ? LV_ANIM_ON : LV_ANIM_OFF);
             } else if (componentSpecific->property == BASIC_X) {
                 lv_obj_set_x(target, intValue);
@@ -185,6 +190,8 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                 lv_obj_set_width(target, intValue);
             } else if (componentSpecific->property == BASIC_HEIGHT) {
                 lv_obj_set_height(target, intValue);
+            } else if (componentSpecific->property == BASIC_OPACITY) {
+                lv_obj_set_style_opa(target, intValue, 0);
             } else if (componentSpecific->property == DROPDOWN_SELECTED) {
                 lv_dropdown_set_selected(target, intValue);
             } else if (componentSpecific->property == IMAGE_ANGLE) {
