@@ -100,6 +100,8 @@ enum PropertyCode {
     BASIC_WIDTH,
     BASIC_HEIGHT,
     BASIC_OPACITY,
+    BASIC_CHECKED,
+    BASIC_DISABLED,
 
     DROPDOWN_SELECTED,
 
@@ -118,6 +120,8 @@ enum PropertyCode {
 
 void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
     auto component = (LVGLComponent *)flowState->flow->components[componentIndex];
+
+    char errorMessage[256];
 
     for (uint32_t actionIndex = 0; actionIndex < component->actions.count; actionIndex++) {
         auto general = (LVGLComponent_ActionType *)component->actions[actionIndex];
@@ -148,7 +152,8 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
             auto specific = (LVGLComponent_SetProperty_ActionType *)general;
 
             Value value;
-            if (!evalExpression(flowState, componentIndex, specific->value, value, "Failed to evaluate Value in LVGL Set Property")) {
+            snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate Value in LVGL Set Property action #%d", actionIndex + 1);
+            if (!evalExpression(flowState, componentIndex, specific->value, value, errorMessage)) {
                 return;
             }
 
@@ -161,18 +166,31 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                     if (src) {
                         lv_img_set_src(target, src);
                     } else {
-                        char errorMessage[256];
-                        snprintf(errorMessage, sizeof(errorMessage), "Image \"%s\" not found in LVGL Set Property", strValue);
+                        snprintf(errorMessage, sizeof(errorMessage), "Image \"%s\" not found in LVGL Set Property action #%d", strValue, actionIndex + 1);
                         throwError(flowState, componentIndex, errorMessage);
                     }
                 } else {
                     lv_label_set_text(target, strValue);
                 }
+            } else if (specific->property == BASIC_CHECKED || specific->property == BASIC_DISABLED) {
+                int err;
+                bool booleanValue = value.toBool(&err);
+                if (err) {
+                    snprintf(errorMessage, sizeof(errorMessage), "Failed to convert value to boolean in LVGL Set Property action #%d", actionIndex + 1);
+                    throwError(flowState, componentIndex, errorMessage);
+                    return;
+                }
+
+                lv_state_t state = specific->property == BASIC_CHECKED ? LV_STATE_CHECKED : LV_STATE_DISABLED;
+
+                if (booleanValue) lv_obj_add_state(target, state);
+                else lv_obj_clear_state(target, state);
             } else {
                 int err;
                 int32_t intValue = value.toInt32(&err);
                 if (err) {
-                    throwError(flowState, componentIndex, "Failed to convert value to integer in LVGL Set Property");
+                    snprintf(errorMessage, sizeof(errorMessage), "Failed to convert value to integer in LVGL Set Property action #%d", actionIndex + 1);
+                    throwError(flowState, componentIndex, errorMessage);
                     return;
                 }
 
