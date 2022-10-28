@@ -160,14 +160,14 @@ void fixOffsets(Assets *assets) {
 
                 case COMPONENT_TYPE_LVGLACTION:
                     {
-                        auto componentGeneral = (LVGLComponent *)component;
-                        if (componentGeneral->action == CHANGE_SCREEN) {
-                        } else if (componentGeneral->action == PLAY_ANIMATION) {
-                            auto componentSpecific = (LVGLComponent_PlayAnimation *)componentGeneral;
-                            fixOffset(componentSpecific->items, assets);
-                        } else if (componentGeneral->action == SET_PROPERTY) {
-                            auto componentSpecific = (LVGLComponent_SetProperty *)componentGeneral;
-                            fixOffset(componentSpecific->value, assets);
+                        auto lvglComponent = (LVGLComponent *)component;
+                        fixOffset(lvglComponent->actions, assets);
+                        for (uint32_t actionIndex = 0; actionIndex < lvglComponent->actions.count; actionIndex++) {
+                            auto general = (LVGLComponent_ActionType *)lvglComponent->actions[actionIndex];
+                            if (general->action == SET_PROPERTY) {
+                                auto specific = (LVGLComponent_SetProperty_ActionType *)general;
+                                fixOffset(specific->value, assets);
+                            }
                         }
                     }
                     break;

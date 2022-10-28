@@ -117,91 +117,90 @@ enum PropertyCode {
 ////////////////////////////////////////////////////////////////////////////////
 
 void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
-    auto componentGeneral = (LVGLComponent *)flowState->flow->components[componentIndex];
-    if (componentGeneral->action == CHANGE_SCREEN) {
-        auto componentSpecific = (LVGLComponent_ChangeScreen *)componentGeneral;
-        replacePageHook(componentSpecific->screen, componentSpecific->fadeMode, componentSpecific->speed, componentSpecific->delay);
-    } else if (componentGeneral->action == PLAY_ANIMATION) {
-        auto componentSpecific = (LVGLComponent_PlayAnimation *)componentGeneral;
+    auto component = (LVGLComponent *)flowState->flow->components[componentIndex];
 
-        auto target = getLvglObjectFromIndexHook(componentSpecific->target);
-        auto delay = componentSpecific->delay;
+    for (uint32_t actionIndex = 0; actionIndex < component->actions.count; actionIndex++) {
+        auto general = (LVGLComponent_ActionType *)component->actions[actionIndex];
+        if (general->action == CHANGE_SCREEN) {
+            auto specific = (LVGLComponent_ChangeScreen_ActionType *)general;
+            replacePageHook(specific->screen, specific->fadeMode, specific->speed, specific->delay);
+        } else if (general->action == PLAY_ANIMATION) {
+            auto specific = (LVGLComponent_PlayAnimation_ActionType *)general;
 
-        for (uint32_t itemIndex = 0; itemIndex < componentSpecific->items.count; itemIndex++) {
-            auto item = componentSpecific->items[itemIndex];
+            auto target = getLvglObjectFromIndexHook(specific->target);
 
             lv_anim_t anim;
 
             lv_anim_init(&anim);
-            lv_anim_set_time(&anim, item->time);
+            lv_anim_set_time(&anim, specific->time);
             lv_anim_set_user_data(&anim, target);
-            lv_anim_set_custom_exec_cb(&anim, anim_set_callbacks[item->property]);
-            lv_anim_set_values(&anim, item->start, item->end);
-            lv_anim_set_path_cb(&anim, anim_path_callbacks[item->path]);
-            lv_anim_set_delay(&anim, delay + item->delay);
-            lv_anim_set_early_apply(&anim, item->flags & ANIMATION_ITEM_FLAG_INSTANT ? true : false);
-            if (item->flags & ANIMATION_ITEM_FLAG_RELATIVE) {
-                lv_anim_set_get_value_cb(&anim, anim_get_callbacks[item->property]);
+            lv_anim_set_custom_exec_cb(&anim, anim_set_callbacks[specific->property]);
+            lv_anim_set_values(&anim, specific->start, specific->end);
+            lv_anim_set_path_cb(&anim, anim_path_callbacks[specific->path]);
+            lv_anim_set_delay(&anim, specific->delay);
+            lv_anim_set_early_apply(&anim, specific->flags & ANIMATION_ITEM_FLAG_INSTANT ? true : false);
+            if (specific->flags & ANIMATION_ITEM_FLAG_RELATIVE) {
+                lv_anim_set_get_value_cb(&anim, anim_get_callbacks[specific->property]);
             }
 
             lv_anim_start(&anim);
-        }
-    } else if (componentGeneral->action == SET_PROPERTY) {
-        auto componentSpecific = (LVGLComponent_SetProperty *)componentGeneral;
+        } else if (general->action == SET_PROPERTY) {
+            auto specific = (LVGLComponent_SetProperty_ActionType *)general;
 
-		Value value;
-		if (!evalExpression(flowState, componentIndex, componentSpecific->value, value, "Failed to evaluate Value in LVGL Set Property")) {
-			return;
-		}
-
-        auto target = getLvglObjectFromIndexHook(componentSpecific->target);
-
-        if (componentSpecific->property == IMAGE_IMAGE || componentSpecific->property == LABEL_TEXT) {
-            const char *strValue = value.toString(0xe42b3ca2).getString();
-            if (componentSpecific->property == IMAGE_IMAGE) {
-                const void *src = getLvglImageByNameHook(strValue);
-                if (src) {
-                    lv_img_set_src(target, src);
-                } else {
-                    char errorMessage[256];
-                    snprintf(errorMessage, sizeof(errorMessage), "Image \"%s\" not found in LVGL Set Property", strValue);
-                    throwError(flowState, componentIndex, errorMessage);
-                }
-            } else {
-                lv_label_set_text(target, strValue);
-            }
-        } else {
-            int err;
-            int32_t intValue = value.toInt32(&err);
-            if (err) {
-                throwError(flowState, componentIndex, "Failed to convert value to integer in LVGL Set Property");
+            Value value;
+            if (!evalExpression(flowState, componentIndex, specific->value, value, "Failed to evaluate Value in LVGL Set Property")) {
                 return;
             }
 
-            if (componentSpecific->property == ARC_VALUE) {
-                lv_arc_set_value(target, intValue);
-            } else if (componentSpecific->property == BAR_VALUE) {
-                lv_bar_set_value(target, intValue, componentSpecific->animated ? LV_ANIM_ON : LV_ANIM_OFF);
-            } else if (componentSpecific->property == BASIC_X) {
-                lv_obj_set_x(target, intValue);
-            } else if (componentSpecific->property == BASIC_Y) {
-                lv_obj_set_y(target, intValue);
-            } else if (componentSpecific->property == BASIC_WIDTH) {
-                lv_obj_set_width(target, intValue);
-            } else if (componentSpecific->property == BASIC_HEIGHT) {
-                lv_obj_set_height(target, intValue);
-            } else if (componentSpecific->property == BASIC_OPACITY) {
-                lv_obj_set_style_opa(target, intValue, 0);
-            } else if (componentSpecific->property == DROPDOWN_SELECTED) {
-                lv_dropdown_set_selected(target, intValue);
-            } else if (componentSpecific->property == IMAGE_ANGLE) {
-                lv_img_set_angle(target, intValue);
-            } else if (componentSpecific->property == IMAGE_ZOOM) {
-                lv_img_set_zoom(target, intValue);
-            } else if (componentSpecific->property == ROLLER_SELECTED) {
-                lv_roller_set_selected(target, intValue, componentSpecific->animated ? LV_ANIM_ON : LV_ANIM_OFF);
-            } else if (componentSpecific->property == SLIDER_VALUE) {
-                lv_slider_set_value(target, intValue, componentSpecific->animated ? LV_ANIM_ON : LV_ANIM_OFF);
+            auto target = getLvglObjectFromIndexHook(specific->target);
+
+            if (specific->property == IMAGE_IMAGE || specific->property == LABEL_TEXT) {
+                const char *strValue = value.toString(0xe42b3ca2).getString();
+                if (specific->property == IMAGE_IMAGE) {
+                    const void *src = getLvglImageByNameHook(strValue);
+                    if (src) {
+                        lv_img_set_src(target, src);
+                    } else {
+                        char errorMessage[256];
+                        snprintf(errorMessage, sizeof(errorMessage), "Image \"%s\" not found in LVGL Set Property", strValue);
+                        throwError(flowState, componentIndex, errorMessage);
+                    }
+                } else {
+                    lv_label_set_text(target, strValue);
+                }
+            } else {
+                int err;
+                int32_t intValue = value.toInt32(&err);
+                if (err) {
+                    throwError(flowState, componentIndex, "Failed to convert value to integer in LVGL Set Property");
+                    return;
+                }
+
+                if (specific->property == ARC_VALUE) {
+                    lv_arc_set_value(target, intValue);
+                } else if (specific->property == BAR_VALUE) {
+                    lv_bar_set_value(target, intValue, specific->animated ? LV_ANIM_ON : LV_ANIM_OFF);
+                } else if (specific->property == BASIC_X) {
+                    lv_obj_set_x(target, intValue);
+                } else if (specific->property == BASIC_Y) {
+                    lv_obj_set_y(target, intValue);
+                } else if (specific->property == BASIC_WIDTH) {
+                    lv_obj_set_width(target, intValue);
+                } else if (specific->property == BASIC_HEIGHT) {
+                    lv_obj_set_height(target, intValue);
+                } else if (specific->property == BASIC_OPACITY) {
+                    lv_obj_set_style_opa(target, intValue, 0);
+                } else if (specific->property == DROPDOWN_SELECTED) {
+                    lv_dropdown_set_selected(target, intValue);
+                } else if (specific->property == IMAGE_ANGLE) {
+                    lv_img_set_angle(target, intValue);
+                } else if (specific->property == IMAGE_ZOOM) {
+                    lv_img_set_zoom(target, intValue);
+                } else if (specific->property == ROLLER_SELECTED) {
+                    lv_roller_set_selected(target, intValue, specific->animated ? LV_ANIM_ON : LV_ANIM_OFF);
+                } else if (specific->property == SLIDER_VALUE) {
+                    lv_slider_set_value(target, intValue, specific->animated ? LV_ANIM_ON : LV_ANIM_OFF);
+                }
             }
         }
     }

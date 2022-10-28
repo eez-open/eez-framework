@@ -31,13 +31,13 @@ enum LVGL_ACTIONS {
     SET_PROPERTY
 };
 
-struct LVGLComponent : public Component {
-	uint32_t action;
+struct LVGLComponent_ActionType {
+    uint32_t action;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-struct LVGLComponent_ChangeScreen : public LVGLComponent {
+struct LVGLComponent_ChangeScreen_ActionType : public LVGLComponent_ActionType {
     int32_t screen;
     uint32_t fadeMode;
     uint32_t speed;
@@ -64,7 +64,8 @@ struct LVGLComponent_ChangeScreen : public LVGLComponent {
 #define ANIMATION_PATH_OVERSHOOT 4
 #define ANIMATION_PATH_BOUNCE 5
 
-struct AnimationItem {
+struct LVGLComponent_PlayAnimation_ActionType : public LVGLComponent_ActionType {
+    int32_t target;
     uint32_t property;
     int32_t start;
     int32_t end;
@@ -74,19 +75,17 @@ struct AnimationItem {
     uint32_t path;
 };
 
-struct LVGLComponent_PlayAnimation : public LVGLComponent {
-    int32_t target;
-    uint32_t delay;
-    ListOfAssetsPtr<AnimationItem> items;
-};
-
 ////////////////////////////////////////////////////////////////////////////////
 
-struct LVGLComponent_SetProperty : public LVGLComponent {
+struct LVGLComponent_SetProperty_ActionType : public LVGLComponent_ActionType {
     int32_t target;
     uint32_t property;
     AssetsPtr<uint8_t> value;
     uint32_t animated;
+};
+
+struct LVGLComponent : public Component {
+    ListOfAssetsPtr<LVGLComponent_ActionType> actions;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
