@@ -100,6 +100,7 @@ enum PropertyCode {
     BASIC_WIDTH,
     BASIC_HEIGHT,
     BASIC_OPACITY,
+    BASIC_HIDDEN,
     BASIC_CHECKED,
     BASIC_DISABLED,
 
@@ -172,6 +173,19 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                 } else {
                     lv_label_set_text(target, strValue);
                 }
+            } else if (specific->property == BASIC_HIDDEN) {
+                int err;
+                bool booleanValue = value.toBool(&err);
+                if (err) {
+                    snprintf(errorMessage, sizeof(errorMessage), "Failed to convert value to boolean in LVGL Set Property action #%d", actionIndex + 1);
+                    throwError(flowState, componentIndex, errorMessage);
+                    return;
+                }
+
+                lv_state_t flag = LV_OBJ_FLAG_HIDDEN;
+
+                if (booleanValue) lv_obj_add_flag(target, flag);
+                else lv_obj_clear_flag(target, flag);
             } else if (specific->property == BASIC_CHECKED || specific->property == BASIC_DISABLED) {
                 int err;
                 bool booleanValue = value.toBool(&err);
