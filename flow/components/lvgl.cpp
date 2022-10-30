@@ -153,7 +153,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
             auto specific = (LVGLComponent_SetProperty_ActionType *)general;
 
             Value value;
-            snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate Value in LVGL Set Property action #%d", actionIndex + 1);
+            snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate Value in LVGL Set Property action #%d", (int)(actionIndex + 1));
             if (!evalExpression(flowState, componentIndex, specific->value, value, errorMessage)) {
                 return;
             }
