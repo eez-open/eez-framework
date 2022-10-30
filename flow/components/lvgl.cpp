@@ -167,7 +167,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                     if (src) {
                         lv_img_set_src(target, src);
                     } else {
-                        snprintf(errorMessage, sizeof(errorMessage), "Image \"%s\" not found in LVGL Set Property action #%d", strValue, actionIndex + 1);
+                        snprintf(errorMessage, sizeof(errorMessage), "Image \"%s\" not found in LVGL Set Property action #%d", strValue, (int)(actionIndex + 1));
                         throwError(flowState, componentIndex, errorMessage);
                     }
                 } else {
@@ -177,7 +177,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                 int err;
                 bool booleanValue = value.toBool(&err);
                 if (err) {
-                    snprintf(errorMessage, sizeof(errorMessage), "Failed to convert value to boolean in LVGL Set Property action #%d", actionIndex + 1);
+                    snprintf(errorMessage, sizeof(errorMessage), "Failed to convert value to boolean in LVGL Set Property action #%d", (int)(actionIndex + 1));
                     throwError(flowState, componentIndex, errorMessage);
                     return;
                 }
@@ -190,7 +190,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                 int err;
                 bool booleanValue = value.toBool(&err);
                 if (err) {
-                    snprintf(errorMessage, sizeof(errorMessage), "Failed to convert value to boolean in LVGL Set Property action #%d", actionIndex + 1);
+                    snprintf(errorMessage, sizeof(errorMessage), "Failed to convert value to boolean in LVGL Set Property action #%d", (int)(actionIndex + 1));
                     throwError(flowState, componentIndex, errorMessage);
                     return;
                 }
@@ -203,7 +203,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                 int err;
                 int32_t intValue = value.toInt32(&err);
                 if (err) {
-                    snprintf(errorMessage, sizeof(errorMessage), "Failed to convert value to integer in LVGL Set Property action #%d", actionIndex + 1);
+                    snprintf(errorMessage, sizeof(errorMessage), "Failed to convert value to integer in LVGL Set Property action #%d", (int)(actionIndex + 1));
                     throwError(flowState, componentIndex, errorMessage);
                     return;
                 }
