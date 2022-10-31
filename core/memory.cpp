@@ -62,7 +62,9 @@ void initMemory() {
 
 void initAssetsMemory() {
 #if defined(EEZ_FOR_LVGL)
+#if defined(LV_MEM_SIZE)
     ALLOC_BUFFER_SIZE = LV_MEM_SIZE;
+#endif
 #else
     ALLOC_BUFFER = MEMORY_BEGIN;
     ALLOC_BUFFER_SIZE = MEMORY_SIZE;
