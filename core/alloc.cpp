@@ -49,8 +49,10 @@ template<typename T> void freeObject(T *ptr) {
 }
 
 void getAllocInfo(uint32_t &free, uint32_t &alloc) {
-	free = 0;
-	alloc = 0;
+    lv_mem_monitor_t mon;
+    lv_mem_monitor(&mon);
+	free = mon.free_size;
+	alloc = mon.total_size - mon.free_size;
 }
 
 #else

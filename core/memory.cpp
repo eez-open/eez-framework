@@ -61,7 +61,9 @@ void initMemory() {
 }
 
 void initAssetsMemory() {
-#if !defined(EEZ_FOR_LVGL)
+#if defined(EEZ_FOR_LVGL)
+    ALLOC_BUFFER_SIZE = LV_MEM_SIZE;
+#else
     ALLOC_BUFFER = MEMORY_BEGIN;
     ALLOC_BUFFER_SIZE = MEMORY_SIZE;
     DECOMPRESSED_ASSETS_START_ADDRESS = allocBuffer(MAX_DECOMPRESSED_ASSETS_SIZE);
