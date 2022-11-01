@@ -102,22 +102,15 @@ void tick() {
 
 		removeNextTaskFromQueue();
 
+        flowState->executingComponentIndex = componentIndex;
+
 		executeComponent(flowState, componentIndex);
 
         if (isFlowStopped()) {
             break;
         }
 
-		auto component = flowState->flow->components[componentIndex];
-
-		for (uint32_t i = 0; i < component->inputs.count; i++) {
-			auto inputIndex = component->inputs[i];
-			if (flowState->flow->componentInputs[inputIndex] & COMPONENT_INPUT_FLAG_IS_SEQ_INPUT) {
-                auto pValue = &flowState->values[inputIndex];
-				*pValue = Value();
-                onValueChanged(pValue);
-			}
-		}
+        resetSequenceInputs(flowState);
 
         if (canFreeFlowState(flowState)) {
             freeFlowState(flowState);

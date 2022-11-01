@@ -37,6 +37,8 @@ using namespace eez::gui;
 namespace eez {
 namespace flow {
 
+static const unsigned NO_COMPONENT_INDEX = 0xFFFFFFFF;
+
 bool isComponentReadyToRun(FlowState *flowState, unsigned componentIndex) {
 	auto component = flowState->flow->components[componentIndex];
 
@@ -133,6 +135,8 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
 	flowState->error = false;
 	flowState->numAsyncComponents = 0;
 	flowState->parentFlowState = parentFlowState;
+
+    flowState->executingComponentIndex = NO_COMPONENT_INDEX;
 
     flowState->timelinePosition = 0;
 
@@ -308,7 +312,28 @@ void deallocateComponentExecutionState(FlowState *flowState, unsigned componentI
     }
 }
 
+void resetSequenceInputs(FlowState *flowState) {
+    if (flowState->executingComponentIndex != NO_COMPONENT_INDEX) {
+		auto component = flowState->flow->components[flowState->executingComponentIndex];
+        flowState->executingComponentIndex = NO_COMPONENT_INDEX;
+
+		for (uint32_t i = 0; i < component->inputs.count; i++) {
+			auto inputIndex = component->inputs[i];
+			if (flowState->flow->componentInputs[inputIndex] & COMPONENT_INPUT_FLAG_IS_SEQ_INPUT) {
+                auto pValue = &flowState->values[inputIndex];
+                if (pValue->getType() != VALUE_TYPE_UNDEFINED) {
+				    *pValue = Value();
+                    onValueChanged(pValue);
+                }
+			}
+		}
+    }
+}
+
 void propagateValue(FlowState *flowState, unsigned componentIndex, unsigned outputIndex, const Value &value) {
+    // Reset sequence inputs before propagate value, in case component propagates value to itself
+    resetSequenceInputs(flowState);
+
 	auto component = flowState->flow->components[componentIndex];
 	auto componentOutput = component->outputs[outputIndex];
 

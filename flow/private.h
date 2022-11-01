@@ -55,6 +55,7 @@ struct FlowState {
 	Value *values;
 	ComponenentExecutionState **componenentExecutionStates;
     bool *componenentAsyncStates;
+    unsigned executingComponentIndex;
     float timelinePosition;
 
     FlowState *firstChild;
@@ -86,6 +87,8 @@ T *allocateComponentExecutionState(FlowState *flowState, unsigned componentIndex
     onComponentExecutionStateChanged(flowState, componentIndex);
     return executionState;
 }
+
+void resetSequenceInputs(FlowState *flowState);
 
 void propagateValue(FlowState *flowState, unsigned componentIndex, unsigned outputIndex, const Value &value);
 void propagateValue(FlowState *flowState, unsigned componentIndex, unsigned outputIndex); // propagates null value
