@@ -50,8 +50,6 @@ Assets *g_externalAssets;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void fixOffsets(Assets *assets);
-
 bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, Assets *decompressedAssets, uint32_t maxDecompressedAssetsSize, int *err) {
 	uint32_t compressedDataOffset;
 	uint32_t decompressedSize;
@@ -109,10 +107,6 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 		}
 		return false;
 	}
-
-    if (decompressedAssets->projectMajorVersion >= PROJECT_VERSION_V3) {
-        fixOffsets(decompressedAssets);
-    }
 
 	return true;
 }

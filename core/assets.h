@@ -64,7 +64,7 @@ extern Assets *g_externalAssets;
  * code the same.
  */
 template<typename T>
-struct AssetsPtrImpl {
+struct AssetsPtr {
     /* Conversion to a T pointer */
     operator T*() { return ptr(); }
     operator const T*() const { return ptr(); }
@@ -74,41 +74,23 @@ struct AssetsPtrImpl {
 
 	void operator=(T* ptr) {
 		if (ptr != nullptr) {
-            offset = (uint8_t *)ptr - MEMORY_BEGIN;
+            offset = (uint8_t *)ptr - (uint8_t *)&offset;
 		} else {
 			offset = 0;
 		}
     }
 
-    uint32_t offset = 0;
+    int32_t offset = 0;
 
 private:
     T* ptr() {
-        return offset ? (T *)(MEMORY_BEGIN + offset) : nullptr;
+        return offset ? (T *)((uint8_t *)&offset + offset) : nullptr;
     }
 
 	const T* ptr() const {
-		return offset ? (const T *)(MEMORY_BEGIN + offset) : nullptr;
+		return offset ? (const T *)((uint8_t *)&offset + offset) : nullptr;
 	}
 };
-
-/* This struct chooses the type used for AssetsPtr<T> - by default it uses an AssetsPtrImpl<> */
-template<typename T, uint32_t ptrSize>
-struct AssetsPtrChooser
-{
-    using type = AssetsPtrImpl<T>;
-};
-
-/* On 32-bit systems, we can just use raw pointers */
-template<typename T>
-struct AssetsPtrChooser<T, 4>
-{
-    using type = T*;
-};
-
-/* Utility typedef that delegates to AssetsPtrChooser */
-template<typename T>
-using AssetsPtr = typename AssetsPtrChooser<T, sizeof(void*)>::type;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -127,7 +109,7 @@ private:
     }
 
     const T* item(int i) const {
-        return static_cast<const T *>(static_cast<const     AssetsPtr<T> *>(items)[i]);
+        return static_cast<const T *>(static_cast<const AssetsPtr<T> *>(items)[i]);
     }
 };
 
