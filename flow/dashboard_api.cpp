@@ -140,6 +140,7 @@ EM_PORT_API(void) setGlobalVariable(int globalVariableIndex, Value *valuePtr) {
     auto flowDefinition = static_cast<FlowDefinition *>(eez::g_mainAssets->flowDefinition);
     Value *globalVariableValuePtr = flowDefinition->globalVariables[globalVariableIndex];
     *globalVariableValuePtr = *valuePtr;
+    onValueChanged(globalVariableValuePtr);
 }
 
 EM_PORT_API(void) updateGlobalVariable(int globalVariableIndex, Value *valuePtr) {
@@ -191,8 +192,8 @@ EM_PORT_API(uint32_t) getUint32Param(int flowStateIndex, int componentIndex, int
 EM_PORT_API(const char *) getStringParam(int flowStateIndex, int componentIndex, int offset) {
     auto flowState = getFlowStateFromFlowStateIndex(flowStateIndex);
     auto component = flowState->flow->components[componentIndex];
-    auto ptr = (const uint32_t *)((const uint8_t *)component + sizeof(Component) + offset);
-    return (const char *)(MEMORY_BEGIN + 4 + *ptr);
+    auto ptr = (AssetsPtr<const char> *)((const uint8_t *)component + sizeof(Component) + offset);
+    return *ptr;
 }
 
 struct ExpressionList {
@@ -204,23 +205,17 @@ EM_PORT_API(void *) getExpressionListParam(int flowStateIndex, int componentInde
     auto flowState = getFlowStateFromFlowStateIndex(flowStateIndex);
     auto component = flowState->flow->components[componentIndex];
 
-    struct List {
-        uint32_t count;
-        uint32_t items;
-    };
-    auto list = (const List *)((const uint8_t *)component + sizeof(Component) + offset);
+    auto &list = *(ListOfAssetsPtr<uint8_t> *)((const uint8_t *)component + sizeof(Component) + offset);
 
-    auto expressionList = (ExpressionList *)::malloc((list->count + 1) * sizeof(Value));
+    auto expressionList = (ExpressionList *)::malloc(sizeof(ExpressionList) + (list.count - 1) * sizeof(Value));
 
-    expressionList->count = list->count;
+    expressionList->count = list.count;
 
-    auto items = (const uint32_t *)(MEMORY_BEGIN + 4 + list->items);
-
-    for (uint32_t i = 0; i < list->count; i++) {
+    for (uint32_t i = 0; i < list.count; i++) {
         // call Value constructor
         new (expressionList->values + i) Value();
 
-        auto valueExpression = (const uint8_t *)(MEMORY_BEGIN + 4 + items[i]);
+        auto valueExpression = list[i];
         if (!evalExpression(flowState, componentIndex, valueExpression, expressionList->values[i], "Failed to evaluate expression")) {
             return nullptr;
         }
@@ -240,10 +235,14 @@ EM_PORT_API(void) freeExpressionListParam(void *ptr) {
     ::free(ptr);
 }
 
+struct Expressions {
+    AssetsPtr<uint8_t> expressions[1];
+};
+
 EM_PORT_API(int) getListParamSize(int flowStateIndex, int componentIndex, int offset) {
     auto flowState = getFlowStateFromFlowStateIndex(flowStateIndex);
     auto component = flowState->flow->components[componentIndex];
-    auto list = (ListOfAssetsPtr<void> *)((const uint8_t *)component + sizeof(Component) + offset);
+    auto list = (ListOfAssetsPtr<Expressions> *)((const uint8_t *)component + sizeof(Component) + offset);
     return list->count;
 }
 
@@ -251,10 +250,8 @@ EM_PORT_API(Value *) evalListParamElementExpression(int flowStateIndex, int comp
     auto flowState = getFlowStateFromFlowStateIndex(flowStateIndex);
     auto component = flowState->flow->components[componentIndex];
 
-    auto list = (ListOfAssetsPtr<void> *)((const uint8_t *)component + sizeof(Component) + listOffset);
-    auto items = (uint32_t *)((uint8_t *)list->items + (uint32_t)MEMORY_BEGIN + 4);
-    auto item = (uint8_t *)((uint8_t *)items[elementIndex] + (uint32_t)MEMORY_BEGIN + 4);
-    auto expressionInstructions = (uint8_t *)((uint8_t *)(*((uint32_t *)(item + expressionOffset))) + (uint32_t)MEMORY_BEGIN + 4);
+    ListOfAssetsPtr<Expressions> &list = *(ListOfAssetsPtr<Expressions> *)((const uint8_t *)component + sizeof(Component) + listOffset);
+    auto &expressionInstructions = list[elementIndex]->expressions[expressionOffset / 4];
 
     Value result;
     if (!evalExpression(flowState, componentIndex, expressionInstructions, result, errorMessage)) {

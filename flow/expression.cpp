@@ -134,7 +134,9 @@ bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *ins
 		if (g_stack.sp == 1) {
 			result = g_stack.pop().getValue();
 			return true;
-		}
+		} else {
+            throwError(flowState, componentIndex, errorMessage);
+        }
 	}
 
 	result = Value();

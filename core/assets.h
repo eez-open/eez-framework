@@ -52,25 +52,10 @@ extern Assets *g_externalAssets;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/* This template is used (on 64-bit systems) to pack asset pointers into 32-bit values.
- * All pointers are relative to MEMORY_BEGIN.
- * This way, the assets created by Studio can be used without having to fix all
- * the sizes - Studio creates 32-bit pointers that are relative to the
- * beginning of the assets, which the firmware rewrites to global pointers
- * during initialization. On a 32-bit system this works just fine, but for a
- * 64-bit system the pointers have different sizes and this breaks. By
- * inserting a 'middleman' structure that stores the pointers as a 32-bit
- * offset to MEMORY_BEGIN, we can keep the pointer sizes and initialization
- * code the same.
- */
 template<typename T>
 struct AssetsPtr {
-    /* Conversion to a T pointer */
-    operator T*() { return ptr(); }
-    operator const T*() const { return ptr(); }
-    /* Dereferencing operators */
-          T* operator->()       { return ptr(); }
-    const T* operator->() const { return ptr(); }
+    AssetsPtr<T>() : offset(0) {}
+    AssetsPtr<T>(const AssetsPtr<T> &rhs) = delete;
 
 	void operator=(T* ptr) {
 		if (ptr != nullptr) {
@@ -80,9 +65,16 @@ struct AssetsPtr {
 		}
     }
 
-    int32_t offset = 0;
+    /* Conversion to a T pointer */
+    operator T*() { return ptr(); }
+    operator const T*() const { return ptr(); }
+    /* Dereferencing operators */
+          T* operator->()       { return ptr(); }
+    const T* operator->() const { return ptr(); }
 
 private:
+    int32_t offset;
+
     T* ptr() {
         return offset ? (T *)((uint8_t *)&offset + offset) : nullptr;
     }
@@ -96,14 +88,15 @@ private:
 
 template<typename T>
 struct ListOfAssetsPtr {
+	uint32_t count = 0;
+
     /* Array access */
     T*       operator[](uint32_t i)       { return item(i); }
     const T* operator[](uint32_t i) const { return item(i); }
 
-	uint32_t count = 0;
+private:
     AssetsPtr<AssetsPtr<T>> items;
 
-private:
     T* item(int i) {
         return static_cast<T *>(static_cast<AssetsPtr<T> *>(items)[i]);
     }
@@ -113,14 +106,16 @@ private:
     }
 };
 
+////////////////////////////////////////////////////////////////////////////////
+
 template<typename T>
 struct ListOfFundamentalType {
+	uint32_t count;
+    AssetsPtr<T> items;
+
     /* Array access */
     T&       operator[](uint32_t i)       { return ptr()[i]; }
     const T& operator[](uint32_t i) const { return ptr()[i]; }
-
-	uint32_t count;
-    AssetsPtr<T> items;
 
 private:
     T *ptr() {

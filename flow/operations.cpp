@@ -765,7 +765,7 @@ bool do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE(EvalStack &stack) {
 }
 
 bool do_OPERATION_TYPE_FLOW_LANGUAGES(EvalStack &stack) {
-    auto languages = stack.flowState->assets->languages;
+    auto &languages = stack.flowState->assets->languages;
 
     auto arrayValue = Value::makeArrayRef(languages.count, VALUE_TYPE_STRING, 0xff4787fc);
 
@@ -789,9 +789,9 @@ bool do_OPERATION_TYPE_FLOW_TRANSLATE(EvalStack &stack) {
 
     int languageIndex = g_selectedLanguage;
 
-    auto languages = stack.flowState->assets->languages;
+    auto &languages = stack.flowState->assets->languages;
     if (languageIndex >= 0 && languageIndex < (int)languages.count) {
-        auto translations = languages[languageIndex]->translations;
+        auto &translations = languages[languageIndex]->translations;
         if (textResourceIndex >= 0 && textResourceIndex < (int)translations.count) {
             if (!stack.push(translations[textResourceIndex])) {
                 return false;

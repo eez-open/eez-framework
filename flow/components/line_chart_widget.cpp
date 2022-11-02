@@ -104,7 +104,7 @@ void executeLineChartWidgetComponent(FlowState *flowState, unsigned componentInd
             char errorMessage[256];
             snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate line label no. %d in LineChartWidget", (int)(lineIndex + 1));
 
-            if (!evalExpression(flowState, componentIndex, component->lines.items[lineIndex]->label, executionState->lineLabels[lineIndex], errorMessage)) {
+            if (!evalExpression(flowState, componentIndex, component->lines[lineIndex]->label, executionState->lineLabels[lineIndex], errorMessage)) {
                 return;
             }
         }
@@ -149,7 +149,7 @@ void executeLineChartWidgetComponent(FlowState *flowState, unsigned componentInd
             char errorMessage[256];
             snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate line value no. %d in LineChartWidget", (int)(lineIndex + 1));
             Value value;
-            if (!evalExpression(flowState, componentIndex, component->lines.items[lineIndex]->value, value, errorMessage)) {
+            if (!evalExpression(flowState, componentIndex, component->lines[lineIndex]->value, value, errorMessage)) {
                 return;
             }
 

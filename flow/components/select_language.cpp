@@ -34,7 +34,7 @@ void executeSelectLanguageComponent(FlowState *flowState, unsigned componentInde
 
 	const char *language = languageValue.getString();
 
-    auto languages = flowState->assets->languages;
+    auto &languages = flowState->assets->languages;
 
     for (uint32_t languageIndex = 0; languageIndex < languages.count; languageIndex++) {
         if (strcmp(languages[languageIndex]->languageID, language) == 0) {
