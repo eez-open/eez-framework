@@ -375,6 +375,7 @@ void writeValue(const Value &value) {
 		break;
 
 	case VALUE_TYPE_STRING:
+    case VALUE_TYPE_STRING_ASSET:
 	case VALUE_TYPE_STRING_REF:
 		writeString(value.getString());
 		return;

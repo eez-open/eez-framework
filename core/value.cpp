@@ -384,6 +384,18 @@ const char *STRING_value_type_name(const Value &value) {
     return "string";
 }
 
+bool compare_STRING_ASSET_value(const Value &a, const Value &b) {
+    return compare_STRING_value(a, b);
+}
+
+void STRING_ASSET_value_to_text(const Value &value, char *text, int count) {
+    STRING_value_to_text(value, text, count);
+}
+
+const char *STRING_ASSET_value_type_name(const Value &value) {
+    return "string";
+}
+
 bool compare_ARRAY_value(const Value &a, const Value &b) {
     return a.arrayValue == b.arrayValue;
 }
@@ -707,7 +719,7 @@ bool assignValue(Value &dstValue, const Value &srcValue) {
         dstValue.floatValue = srcValue.toFloat();
     } else if (dstValue.isDouble()) {
         dstValue.doubleValue = srcValue.toDouble();
-    } else if (dstValue.isAnyStringType()) {
+    } else if (dstValue.isString()) {
         dstValue = srcValue.toString(0x30a91156);
     } else {
         dstValue = srcValue;
@@ -746,7 +758,7 @@ Value MakeEnumDefinitionValue(uint8_t enumValue, uint8_t enumDefinition) {
 ////////////////////////////////////////////////////////////////////////////////
 
 const char *Value::getString() const {
-    auto value = getValue();
+    auto value = getValue(); // will convert VALUE_TYPE_STRING_ASSET to VALUE_TYPE_STRING by using copy constructor
 	if (value.type == VALUE_TYPE_STRING_REF) {
 		return ((StringRef *)value.refValue)->str;
 	}
@@ -819,12 +831,8 @@ double Value::toDouble(int *err) const {
 		return doubleValue;
 	}
 
-	if (type == VALUE_TYPE_STRING) {
-		return (double)atof(strValue);
-	}
-
-	if (type == VALUE_TYPE_STRING_REF) {
-		return (double)atof(((StringRef *)refValue)->str);
+	if (isString()) {
+		return (double)atof(getString());
 	}
 
     if (err) {
@@ -879,12 +887,8 @@ float Value::toFloat(int *err) const {
 		return (float)uint64Value;
 	}
 
-	if (type == VALUE_TYPE_STRING) {
-		return (float)atof(strValue);
-	}
-
-	if (type == VALUE_TYPE_STRING_REF) {
-		return (float)atof(((StringRef *)refValue)->str);
+	if (isString()) {
+		return (float)atof(getString());
 	}
 
     if (err) {
@@ -943,12 +947,8 @@ int32_t Value::toInt32(int *err) const {
 		return (int32_t)floatValue;
 	}
 
-	if (type == VALUE_TYPE_STRING) {
-		return (int64_t)atoi(strValue);
-	}
-
-	if (type == VALUE_TYPE_STRING_REF) {
-		return (int64_t)atoi(((StringRef *)refValue)->str);
+	if (isString()) {
+		return (int64_t)atoi(getString());
 	}
 
     if (err) {
@@ -1001,12 +1001,8 @@ int64_t Value::toInt64(int *err) const {
 		return (int64_t)uint64Value;
 	}
 
-	if (type == VALUE_TYPE_STRING) {
-		return (int64_t)atoi(strValue);
-	}
-
-	if (type == VALUE_TYPE_STRING_REF) {
-		return (int64_t)atoi(((StringRef *)refValue)->str);
+	if (isString()) {
+		return (int64_t)atoi(getString());
 	}
 
     if (err) {
@@ -1063,13 +1059,8 @@ bool Value::toBool(int *err) const {
 		return uint64Value != 0;
 	}
 
-	if (type == VALUE_TYPE_STRING) {
-		return strValue && *strValue;
-	}
-
-	if (type == VALUE_TYPE_STRING_REF) {
-        auto strValue = toString(0xdbb61edf);
-		const char *str = strValue.getString();
+	if (isString()) {
+		const char *str = getString();
 		return str && *str;
 	}
 
@@ -1090,7 +1081,7 @@ Value Value::toString(uint32_t id) const {
 		return getValue().toString(id);
 	}
 
-	if (type == VALUE_TYPE_STRING || type == VALUE_TYPE_STRING_REF) {
+	if (isString()) {
 		return *this;
 	}
 
