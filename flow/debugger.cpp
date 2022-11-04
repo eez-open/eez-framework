@@ -381,6 +381,7 @@ void writeValue(const Value &value) {
 		return;
 
 	case VALUE_TYPE_ARRAY:
+    case VALUE_TYPE_ARRAY_ASSET:
 	case VALUE_TYPE_ARRAY_REF:
 		writeArray(value.getArray());
 		return;

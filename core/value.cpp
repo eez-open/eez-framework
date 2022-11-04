@@ -408,6 +408,18 @@ const char *ARRAY_value_type_name(const Value &value) {
     return "array";
 }
 
+bool compare_ARRAY_ASSET_value(const Value &a, const Value &b) {
+    return a.int32Value == b.int32Value;
+}
+
+void ARRAY_ASSET_value_to_text(const Value &value, char *text, int count) {
+    text[0] = 0;
+}
+
+const char *ARRAY_ASSET_value_type_name(const Value &value) {
+    return "array";
+}
+
 bool compare_ARRAY_REF_value(const Value &a, const Value &b) {
     return a.refValue == b.refValue;
 }
@@ -772,12 +784,18 @@ const ArrayValue *Value::getArray() const {
     if (type == VALUE_TYPE_ARRAY) {
         return arrayValue;
     }
+    if (type == VALUE_TYPE_ARRAY_ASSET) {
+        return (ArrayValue *)((uint8_t *)&int32Value + int32Value);
+    }
     return &((ArrayValueRef *)refValue)->arrayValue;
 }
 
 ArrayValue *Value::getArray() {
     if (type == VALUE_TYPE_ARRAY) {
         return arrayValue;
+    }
+    if (type == VALUE_TYPE_ARRAY_ASSET) {
+        return (ArrayValue *)((uint8_t *)&int32Value + int32Value);
     }
     return &((ArrayValueRef *)refValue)->arrayValue;
 }
@@ -1064,7 +1082,7 @@ bool Value::toBool(int *err) const {
 		return str && *str;
 	}
 
-	if (type == VALUE_TYPE_ARRAY || type == VALUE_TYPE_ARRAY_REF) {
+	if (isArray()) {
 		auto arrayValue = getArray();
         return arrayValue->arraySize != 0;
 	}

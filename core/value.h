@@ -252,6 +252,11 @@ struct Value {
             unit = 0;
             options = 0;
             strValue = (const char *)((uint8_t *)&value.int32Value + value.int32Value);
+        } else if (value.type == VALUE_TYPE_ARRAY_ASSET) {
+            type = VALUE_TYPE_ARRAY;
+            unit = 0;
+            options = 0;
+            arrayValue = (ArrayValue *)((uint8_t *)&value.int32Value + value.int32Value);
         } else {
             freeRef();
 
@@ -324,6 +329,10 @@ struct Value {
 
 	bool isString() const {
         return type == VALUE_TYPE_STRING || type == VALUE_TYPE_STRING_ASSET || type == VALUE_TYPE_STRING_REF;
+    }
+
+    bool isArray() const {
+        return type == VALUE_TYPE_ARRAY || type == VALUE_TYPE_ARRAY_ASSET || type == VALUE_TYPE_ARRAY_REF;
     }
 
     Unit getUnit() const {

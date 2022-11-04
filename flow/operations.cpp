@@ -1421,7 +1421,7 @@ bool do_OPERATION_TYPE_STRING_SPLIT(EvalStack &stack) {
 bool do_OPERATION_TYPE_ARRAY_LENGTH(EvalStack &stack) {
     auto a = stack.pop().getValue();
 
-    if (a.getType() == VALUE_TYPE_ARRAY || a.getType() == VALUE_TYPE_ARRAY_REF) {
+    if (a.isArray()) {
         auto array = a.getArray();
 
         if (!stack.push(Value(array->arraySize, VALUE_TYPE_UINT32))) {
