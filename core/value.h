@@ -247,6 +247,8 @@ struct Value {
     }
 
     Value& operator = (const Value &value) {
+        freeRef();
+
         if (value.type == VALUE_TYPE_STRING_ASSET) {
             type = VALUE_TYPE_STRING;
             unit = 0;
@@ -258,8 +260,6 @@ struct Value {
             options = 0;
             arrayValue = (ArrayValue *)((uint8_t *)&value.int32Value + value.int32Value);
         } else {
-            freeRef();
-
             type = value.type;
             unit = value.unit;
             options = value.options;
@@ -267,12 +267,13 @@ struct Value {
 
             if (options & VALUE_OPTIONS_REF) {
                 refValue->refCounter++;
-            }/* else if (type == VALUE_TYPE_VALUE_PTR) {
+            } /* else if (type == VALUE_TYPE_VALUE_PTR) {
                 if (pValueValue->options & VALUE_OPTIONS_REF) {
                     pValueValue->refValue->refCounter++;
                 }
             }*/
         }
+
         return *this;
     }
 
