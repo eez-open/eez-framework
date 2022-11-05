@@ -330,6 +330,12 @@ void resetSequenceInputs(FlowState *flowState) {
 }
 
 void propagateValue(FlowState *flowState, unsigned componentIndex, unsigned outputIndex, const Value &value) {
+    if (componentIndex == -1) {
+        auto flowIndex = outputIndex;
+        executeCallAction(flowState, -1, flowIndex);
+        return;
+    }
+
     // Reset sequence inputs before propagate value, in case component propagates value to itself
     resetSequenceInputs(flowState);
 
