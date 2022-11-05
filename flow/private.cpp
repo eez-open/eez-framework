@@ -56,9 +56,8 @@ bool isComponentReadyToRun(FlowState *flowState, unsigned componentIndex) {
     }
 
     if (component->type == defs_v3::COMPONENT_TYPE_START_ACTION) {
-        auto parentComponent = flowState->parentComponent;
-        if (parentComponent) {
-            auto flowInputIndex = parentComponent->inputs[0];
+        if (flowState->parentComponent && flowState->parentComponentIndex != -1) {
+            auto flowInputIndex = flowState->parentComponent->inputs[0];
             auto value = flowState->parentFlowState->values[flowInputIndex];
             return value.getType() != VALUE_TYPE_UNDEFINED;
         } else {

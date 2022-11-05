@@ -266,7 +266,10 @@ void executeFlowAction(const WidgetCursor &widgetCursor, int16_t actionId, void 
 
                 propagateValue(flowState, componentOutput->componentIndex, componentOutput->componentOutputIndex, params);
             }
-		}
+		} else if (componentOutput->componentOutputIndex != -1) {
+            auto flowIndex = componentOutput->componentOutputIndex;
+            executeCallAction(flowState, -1, flowIndex);
+        }
 	}
 
 	for (int i = 0; i < 3; i++) {

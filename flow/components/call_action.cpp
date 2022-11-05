@@ -38,24 +38,30 @@ void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIn
 		return;
 	}
 
-	auto callActionComponenentExecutionState = (CallActionComponenentExecutionState *)flowState->componenentExecutionStates[componentIndex];
-	if (callActionComponenentExecutionState) {
-        if (canFreeFlowState(callActionComponenentExecutionState->flowState)) {
-            freeFlowState(callActionComponenentExecutionState->flowState);
-        } else {
-		    throwError(flowState, componentIndex, "CallAction is already running\n");
-		    return;
+    if (componentIndex != -1) {
+        auto callActionComponenentExecutionState = (CallActionComponenentExecutionState *)flowState->componenentExecutionStates[componentIndex];
+        if (callActionComponenentExecutionState) {
+            if (canFreeFlowState(callActionComponenentExecutionState->flowState)) {
+                freeFlowState(callActionComponenentExecutionState->flowState);
+            } else {
+                throwError(flowState, componentIndex, "CallAction is already running\n");
+                return;
+            }
         }
-	}
+    }
 
 	FlowState *actionFlowState = initActionFlowState(flowIndex, flowState, componentIndex);
 
 	if (canFreeFlowState(actionFlowState)) {
 		freeFlowState(actionFlowState);
-		propagateValueThroughSeqout(flowState, componentIndex);
+        if (componentIndex != -1) {
+		    propagateValueThroughSeqout(flowState, componentIndex);
+        }
 	} else {
-		callActionComponenentExecutionState = allocateComponentExecutionState<CallActionComponenentExecutionState>(flowState, componentIndex);
-		callActionComponenentExecutionState->flowState = actionFlowState;
+        if (componentIndex != -1) {
+		    auto callActionComponenentExecutionState = allocateComponentExecutionState<CallActionComponenentExecutionState>(flowState, componentIndex);
+		    callActionComponenentExecutionState->flowState = actionFlowState;
+        }
 	}
 }
 
