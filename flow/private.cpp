@@ -419,6 +419,8 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
 	} else if (dstValue.getType() == VALUE_TYPE_NATIVE_VARIABLE) {
 #if OPTION_GUI || !defined(OPTION_GUI)
 		set(g_widgetCursor, dstValue.getInt(), srcValue);
+#else
+		setVar(dstValue.getInt(), srcValue);
 #endif
 	} else {
 		Value *pDstValue;

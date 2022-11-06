@@ -30,6 +30,7 @@
 
 #include <eez/core/util.h>
 #include <eez/core/value.h>
+#include <eez/core/vars.h>
 
 #include <eez/flow/hooks.h>
 
@@ -1277,5 +1278,69 @@ Value Value::makeBlobRef(const uint8_t *blob, uint32_t len, uint32_t id) {
 
 	return value;
 }
+
+#if defined(OPTION_GUI) && !OPTION_GUI
+
+Value getVar(int16_t id) {
+    auto native_var = native_vars[id];
+
+    if (native_var.type == NATIVE_VAR_TYPE_INTEGER) {
+        auto get = (int32_t (*)())native_var.get;
+        return Value(get(), VALUE_TYPE_INT32);
+    }
+
+    if (native_var.type == NATIVE_VAR_TYPE_BOOLEAN) {
+        auto get = (bool (*)())native_var.get;
+        return Value(get(), VALUE_TYPE_BOOLEAN);
+    }
+
+    if (native_var.type == NATIVE_VAR_TYPE_FLOAT) {
+        auto get = (float (*)())native_var.get;
+        return Value(get(), VALUE_TYPE_FLOAT);
+    }
+    
+    if (native_var.type == NATIVE_VAR_TYPE_DOUBLE) {
+        auto get = (double (*)())native_var.get;
+        return Value(get(), VALUE_TYPE_DOUBLE);
+    }
+    
+    if (native_var.type == NATIVE_VAR_TYPE_STRING) {
+        auto get = (const char *(*)())native_var.get;
+        return Value(get(), VALUE_TYPE_STRING);
+    }
+    
+    return Value();
+}
+
+void setVar(int16_t id, const Value& value) {
+    auto native_var = native_vars[id];
+
+    if (native_var.type == NATIVE_VAR_TYPE_INTEGER) {
+        auto set = (void (*)(int32_t))native_var.set;
+        set(value.getInt32());
+    }
+
+    if (native_var.type == NATIVE_VAR_TYPE_BOOLEAN) {
+        auto set = (void (*)(bool))native_var.set;
+        set(value.getBoolean());
+    }
+
+    if (native_var.type == NATIVE_VAR_TYPE_FLOAT) {
+        auto set = (void (*)(float))native_var.set;
+        set(value.getFloat());
+    }
+    
+    if (native_var.type == NATIVE_VAR_TYPE_DOUBLE) {
+        auto set = (void (*)(double))native_var.set;
+        set(value.getDouble());
+    }
+    
+    if (native_var.type == NATIVE_VAR_TYPE_STRING) {
+        auto set = (void (*)(const char *))native_var.set;
+        set(value.getString());
+    }
+}
+
+#endif // defined(OPTION_GUI) && !OPTION_GUI
 
 } // namespace eez

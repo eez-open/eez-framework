@@ -555,6 +555,9 @@ namespace gui {
     extern gui::WidgetCursor g_widgetCursor;
     extern Value get(const gui::WidgetCursor &widgetCursor, int16_t id);
 }
+#else
+Value getVar(int16_t id);
+void setVar(int16_t id, const Value& value);
 #endif
 
 inline Value Value::getValue() const {
@@ -566,7 +569,7 @@ inline Value Value::getValue() const {
         using namespace gui;
         return get(g_widgetCursor, int32Value);
 #else
-        return Value();
+        return getVar(int32Value);
 #endif
     }
     if (type == VALUE_TYPE_ARRAY_ELEMENT_VALUE) {
