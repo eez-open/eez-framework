@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if OPTION_GUI || !defined(OPTION_GUI)
+
 #include <eez/core/alloc.h>
 
 #include <eez/flow/components.h>
@@ -26,8 +28,6 @@
 
 namespace eez {
 namespace flow {
-
-#if OPTION_GUI || !defined(OPTION_GUI)
 
 LineChartWidgetComponenentExecutionState::LineChartWidgetComponenentExecutionState()
     : data(nullptr)
@@ -170,12 +170,7 @@ void executeLineChartWidgetComponent(FlowState *flowState, unsigned componentInd
     }
 }
 
-#else
-
-void executeLineChartWidgetComponent(FlowState *flowState, unsigned componentIndex) {
-}
-
-#endif // OPTION_GUI || !defined(OPTION_GUI)
-
 } // namespace flow
 } // namespace eez
+
+#endif // OPTION_GUI || !defined(OPTION_GUI)

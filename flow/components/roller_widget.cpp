@@ -16,19 +16,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if OPTION_GUI || !defined(OPTION_GUI)
+
 #include <eez/flow/components.h>
 #include <eez/flow/components/roller_widget.h>
 
-#if OPTION_GUI || !defined(OPTION_GUI)
 #include <eez/gui/widgets/roller.h>
 using namespace eez::gui;
-#endif
 
 namespace eez {
 namespace flow {
 
 void executeRollerWidgetComponent(FlowState *flowState, unsigned componentIndex) {
-#if OPTION_GUI || !defined(OPTION_GUI)
 	auto component = flowState->flow->components[componentIndex];
 
 	static const unsigned START_INPUT_INDEX = 0;
@@ -40,8 +39,9 @@ void executeRollerWidgetComponent(FlowState *flowState, unsigned componentIndex)
 		}
 		executionState->clear = true;
 	}
-#endif
 }
 
 } // namespace flow
 } // namespace eez
+
+#endif // OPTION_GUI || !defined(OPTION_GUI)
