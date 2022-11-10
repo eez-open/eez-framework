@@ -29,7 +29,7 @@ bool ListWidgetState::updateState() {
     WIDGET_STATE_START(ListWidget);
 
     auto newStartPosition = ytDataGetPosition(widgetCursor, widget->data);
-    if (newStartPosition != startPosition) {
+    if ((int)newStartPosition != startPosition) {
         startPosition = newStartPosition;
         hasPreviousState = false;
     }

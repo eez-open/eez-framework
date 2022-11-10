@@ -39,7 +39,7 @@ void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIn
 		return;
 	}
 
-    if (componentIndex != -1) {
+    if ((int)componentIndex != -1) {
         auto callActionComponenentExecutionState = (CallActionComponenentExecutionState *)flowState->componenentExecutionStates[componentIndex];
         if (callActionComponenentExecutionState) {
             if (canFreeFlowState(callActionComponenentExecutionState->flowState)) {
@@ -57,11 +57,11 @@ void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIn
 
 	if (canFreeFlowState(actionFlowState)) {
 		freeFlowState(actionFlowState);
-        if (componentIndex != -1) {
+        if ((int)componentIndex != -1) {
 		    propagateValueThroughSeqout(flowState, componentIndex);
         }
 	} else {
-        if (componentIndex != -1) {
+        if ((int)componentIndex != -1) {
 		    auto callActionComponenentExecutionState = allocateComponentExecutionState<CallActionComponenentExecutionState>(flowState, componentIndex);
 		    callActionComponenentExecutionState->flowState = actionFlowState;
         }

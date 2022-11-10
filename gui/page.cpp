@@ -909,7 +909,7 @@ void MenuWithButtonsPage::executeAction() {
 
 static QuestionPage g_questionPage;
 
-QuestionPage *QuestionPage::create(AppContext *appContext, const Value &message, const Value &buttons, void *userParam, void (*callback)(void *userParam, int buttonIndex)) {
+QuestionPage *QuestionPage::create(AppContext *appContext, const Value &message, const Value &buttons, void *userParam, void (*callback)(void *userParam, unsigned buttonIndex)) {
     QuestionPage *page = &g_questionPage;
 
     page->init(appContext, message, buttons, userParam, callback);
@@ -917,7 +917,7 @@ QuestionPage *QuestionPage::create(AppContext *appContext, const Value &message,
     return page;
 }
 
-void QuestionPage::init(AppContext *appContext, const Value &message, const Value &buttons, void *userParam, void (*callback)(void *userParam, int buttonIndex)) {
+void QuestionPage::init(AppContext *appContext, const Value &message, const Value &buttons, void *userParam, void (*callback)(void *userParam, unsigned buttonIndex)) {
     m_appContext = appContext;
     m_userParam = userParam;
     m_callback = callback;
@@ -1070,7 +1070,7 @@ WidgetCursor QuestionPage::findWidgetInternalPage(int x, int y, bool clicked) {
 
 void QuestionPage::executeAction() {
     g_questionPage.m_appContext->popPage();
-    (*g_questionPage.m_callback)(g_questionPage.m_userParam, getFoundWidgetAtDown().cursor);
+    (*g_questionPage.m_callback)(g_questionPage.m_userParam, (unsigned)getFoundWidgetAtDown().cursor);
 }
 
 } // namespace gui

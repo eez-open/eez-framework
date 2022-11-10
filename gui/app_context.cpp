@@ -501,7 +501,7 @@ void AppContext::pushToastMessage(ToastMessagePage *toastMessage) {
     pushPage(INTERNAL_PAGE_ID_TOAST_MESSAGE, toastMessage);
 }
 
-void AppContext::questionDialog(Value message, Value buttons, void *userParam, void (*callback)(void *userParam, int buttonIndex)) {
+void AppContext::questionDialog(Value message, Value buttons, void *userParam, void (*callback)(void *userParam, unsigned buttonIndex)) {
     pushPage(INTERNAL_PAGE_ID_QUESTION, QuestionPage::create(this, message, buttons, userParam, callback));
 }
 

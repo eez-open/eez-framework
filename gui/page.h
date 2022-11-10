@@ -268,7 +268,7 @@ private:
 
 class QuestionPage : public InternalPage {
 public:
-    static QuestionPage *create(AppContext *appContext, const Value &message, const Value &buttons, void *userParam, void (*callback)(void *userParam, int buttonIndex));
+    static QuestionPage *create(AppContext *appContext, const Value &message, const Value &buttons, void *userParam, void (*callback)(void *userParam, unsigned buttonIndex));
 
     void updateInternalPage();
     WidgetCursor findWidgetInternalPage(int x, int y, bool clicked);
@@ -280,14 +280,14 @@ private:
     Value m_message;
     Value m_buttons;
     void *m_userParam;
-    void (*m_callback)(void *userParam, int buttonIndex);
+    void (*m_callback)(void *userParam, unsigned buttonIndex);
 
     RectangleWidget m_containerRectangleWidget;
     TextWidget m_messageTextWidget;
     TextWidget m_buttonTextWidgets[MAX_MENU_ITEMS];
     size_t m_numButtonTextWidgets;
 
-    void init(AppContext *appContext, const Value &message, const Value &buttons, void *userParam, void (*callback)(void *userParam, int buttonIndex));
+    void init(AppContext *appContext, const Value &message, const Value &buttons, void *userParam, void (*callback)(void *userParam, unsigned buttonIndex));
 };
 
 } // namespace gui

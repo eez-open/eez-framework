@@ -41,7 +41,7 @@ struct ShowMessagePageComponentExecutionState : public ComponenentExecutionState
     unsigned componentIndex;
 };
 
-void questionCallback(void *userParam, int buttonIndex) {
+void questionCallback(void *userParam, unsigned buttonIndex) {
     auto executionState = (ShowMessagePageComponentExecutionState *)userParam;
 
     auto flowState = executionState->flowState;

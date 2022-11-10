@@ -1450,14 +1450,14 @@ bool do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
     }
     auto array = arrayValue.getArray();
 
-    if (from < 0 || from >= array->arraySize) {
+    if (from < 0 || from >= (int)array->arraySize) {
         return false;
     }
 
     if (numArgs <= 2) {
         to = array->arraySize;
     }
-    if (to < 0 || to >= array->arraySize) {
+    if (to < 0 || to >= (int)array->arraySize) {
         return false;
     }
 
@@ -1470,7 +1470,7 @@ bool do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
     auto resultArrayValue = Value::makeArrayRef(size, array->arrayType, 0xe2d78c65);
     auto resultArray = array;
 
-    for (uint32_t elementIndex = from; elementIndex < to; elementIndex++) {
+    for (int elementIndex = from; elementIndex < to; elementIndex++) {
         resultArray->values[elementIndex - from] = array->values[elementIndex];
     }
 
@@ -1534,7 +1534,7 @@ bool do_OPERATION_TYPE_ARRAY_INSERT(EvalStack &stack) {
     auto resultArrayValue = Value::makeArrayRef(array->arraySize + 1, array->arrayType, 0xc4fa9cd9);
     auto resultArray = resultArrayValue.getArray();
 
-    for (uint32_t elementIndex = 0; elementIndex < position; elementIndex++) {
+    for (uint32_t elementIndex = 0; (int)elementIndex < position; elementIndex++) {
         resultArray->values[elementIndex] = array->values[elementIndex];
     }
 
@@ -1568,7 +1568,7 @@ bool do_OPERATION_TYPE_ARRAY_REMOVE(EvalStack &stack) {
     auto resultArrayValue = Value::makeArrayRef(array->arraySize - 1, array->arrayType, 0x40e9bb4b);
     auto resultArray = resultArrayValue.getArray();
 
-        for (uint32_t elementIndex = 0; elementIndex < position; elementIndex++) {
+        for (uint32_t elementIndex = 0; (int)elementIndex < position; elementIndex++) {
             resultArray->values[elementIndex] = array->values[elementIndex];
         }
 
