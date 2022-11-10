@@ -23,6 +23,7 @@
 #include <eez/flow/components.h>
 #include <eez/flow/components/call_action.h>
 #include <eez/flow/debugger.h>
+#include <eez/flow/queue.h>
 
 namespace eez {
 namespace flow {
@@ -44,7 +45,9 @@ void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIn
             if (canFreeFlowState(callActionComponenentExecutionState->flowState)) {
                 freeFlowState(callActionComponenentExecutionState->flowState);
             } else {
-                throwError(flowState, componentIndex, "CallAction is already running\n");
+                if (!addToQueue(flowState, componentIndex, -1, -1, -1, true)) {
+			        throwError(flowState, componentIndex, "Execution queue is full\n");
+		        }
                 return;
             }
         }

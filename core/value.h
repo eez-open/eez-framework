@@ -476,6 +476,8 @@ struct Value {
 
     static Value makeBlobRef(const uint8_t *blob, uint32_t len, uint32_t id);
 
+    Value clone();
+
 	//////////
 
   public:

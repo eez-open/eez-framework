@@ -34,6 +34,7 @@
 
 #include <eez/flow/flow.h>
 #include <eez/flow/operations.h>
+#include <eez/flow/flow_defs_v3.h>
 
 #if OPTION_GUI || !defined(OPTION_GUI)
 #include <eez/gui/gui.h>
@@ -1435,8 +1436,162 @@ bool do_OPERATION_TYPE_ARRAY_LENGTH(EvalStack &stack) {
 }
 
 bool do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
-	// TODO
-	return false;
+    auto numArgs = stack.pop().getInt();
+    auto arrayValue = stack.pop().getValue();
+    auto from = stack.pop().getValue().getInt();
+
+    int to = -1;
+    if (numArgs > 2) {
+        to = stack.pop().getValue().getInt();
+    }
+
+    if (!arrayValue.isArray()) {
+        return false;
+    }
+    auto array = arrayValue.getArray();
+
+    if (from < 0 || from >= array->arraySize) {
+        return false;
+    }
+
+    if (numArgs <= 2) {
+        to = array->arraySize;
+    }
+    if (to < 0 || to >= array->arraySize) {
+        return false;
+    }
+
+    if (from > to) {
+        return false;
+    }
+
+    auto size = to - from;
+
+    auto resultArrayValue = Value::makeArrayRef(size, array->arrayType, 0xe2d78c65);
+    auto resultArray = array;
+
+    for (uint32_t elementIndex = from; elementIndex < to; elementIndex++) {
+        resultArray->values[elementIndex - from] = array->values[elementIndex];
+    }
+
+    if (!stack.push(resultArrayValue)) {
+        return false;
+    }
+	return true;
+}
+
+bool do_OPERATION_TYPE_ARRAY_ALLOCATE(EvalStack &stack) {
+    auto size = stack.pop().getInt();
+
+    auto resultArrayValue = Value::makeArrayRef(size, defs_v3::ARRAY_TYPE_ANY, 0xe2d78c65);
+
+    if (!stack.push(resultArrayValue)) {
+        return false;
+    }
+	return true;
+}
+
+bool do_OPERATION_TYPE_ARRAY_APPEND(EvalStack &stack) {
+	auto arrayValue = stack.pop().getValue();
+    auto value = stack.pop().getValue();
+
+    if (!arrayValue.isArray()) {
+        return false;
+    }
+
+    auto array = arrayValue.getArray();
+    auto resultArrayValue = Value::makeArrayRef(array->arraySize + 1, array->arrayType, 0x664c3199);
+    auto resultArray = resultArrayValue.getArray();
+
+    for (uint32_t elementIndex = 0; elementIndex < array->arraySize; elementIndex++) {
+        resultArray->values[elementIndex] = array->values[elementIndex];
+    }
+
+    resultArray->values[array->arraySize] = value;
+
+    if (!stack.push(resultArrayValue)) {
+        return false;
+    }
+	return true;
+}
+
+bool do_OPERATION_TYPE_ARRAY_INSERT(EvalStack &stack) {
+	auto arrayValue = stack.pop().getValue();
+    auto positionValue = stack.pop().getValue();
+    auto value = stack.pop().getValue();
+
+    if (!arrayValue.isArray()) {
+        return false;
+    }
+
+    int err;
+    auto position = positionValue.toInt32(&err);
+    if (err != 0) {
+        return false;
+    }
+
+    auto array = arrayValue.getArray();
+    auto resultArrayValue = Value::makeArrayRef(array->arraySize + 1, array->arrayType, 0xc4fa9cd9);
+    auto resultArray = resultArrayValue.getArray();
+
+    for (uint32_t elementIndex = 0; elementIndex < position; elementIndex++) {
+        resultArray->values[elementIndex] = array->values[elementIndex];
+    }
+
+    resultArray->values[position] = value;
+
+    for (uint32_t elementIndex = position; elementIndex < array->arraySize; elementIndex++) {
+        resultArray->values[elementIndex + 1] = array->values[elementIndex];
+    }
+
+    if (!stack.push(resultArrayValue)) {
+        return false;
+    }
+	return true;
+}
+
+bool do_OPERATION_TYPE_ARRAY_REMOVE(EvalStack &stack) {
+	auto arrayValue = stack.pop().getValue();
+    auto positionValue = stack.pop().getValue();
+
+    if (!arrayValue.isArray()) {
+        return false;
+    }
+
+    int err;
+    auto position = positionValue.toInt32(&err);
+    if (err != 0) {
+        return false;
+    }
+
+    auto array = arrayValue.getArray();
+    auto resultArrayValue = Value::makeArrayRef(array->arraySize - 1, array->arrayType, 0x40e9bb4b);
+    auto resultArray = resultArrayValue.getArray();
+
+        for (uint32_t elementIndex = 0; elementIndex < position; elementIndex++) {
+            resultArray->values[elementIndex] = array->values[elementIndex];
+        }
+
+    for (uint32_t elementIndex = position + 1; elementIndex < array->arraySize; elementIndex++) {
+        resultArray->values[elementIndex - 1] = array->values[elementIndex];
+    }
+
+    if (!stack.push(resultArrayValue)) {
+        return false;
+    }
+	return true;
+}
+
+bool do_OPERATION_TYPE_ARRAY_CLONE(EvalStack &stack) {
+	auto array = stack.pop().getValue();
+
+    auto resultArray = array.clone();
+
+    if (!stack.push(resultArray)) {
+        return false;
+    }
+
+	return true;
 }
 
 EvalOperation g_evalOperations[] = {
@@ -1493,7 +1648,12 @@ EvalOperation g_evalOperations[] = {
 	do_OPERATION_TYPE_STRING_PAD_START,
 	do_OPERATION_TYPE_STRING_SPLIT,
 	do_OPERATION_TYPE_ARRAY_LENGTH,
-	do_OPERATION_TYPE_ARRAY_SLICE
+	do_OPERATION_TYPE_ARRAY_SLICE,
+    do_OPERATION_TYPE_ARRAY_ALLOCATE,
+	do_OPERATION_TYPE_ARRAY_APPEND,
+	do_OPERATION_TYPE_ARRAY_INSERT,
+	do_OPERATION_TYPE_ARRAY_REMOVE,
+	do_OPERATION_TYPE_ARRAY_CLONE
 };
 
 } // namespace flow

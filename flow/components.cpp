@@ -58,6 +58,7 @@ void executeShowMessageBoxComponent(FlowState *flowState, unsigned componentInde
 void executeShowKeyboardComponent(FlowState *flowState, unsigned componentIndex);
 void executeShowKeypadComponent(FlowState *flowState, unsigned componentIndex);
 void executeSetPageDirectionComponent(FlowState *flowState, unsigned componentIndex);
+void executeOverrideStyleComponent(FlowState *flowState, unsigned componentIndex);
 #endif
 void executeSelectLanguageComponent(FlowState *flowState, unsigned componentIndex);
 void executeAnimateComponent(FlowState *flowState, unsigned componentIndex);
@@ -114,6 +115,11 @@ static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
     executeAnimateComponent, // COMPONENT_TYPE_ANIMATE_ACTION
     executeOnEventComponent, // COMPONENT_TYPE_ON_EVENT_ACTION,
     executeLVGLComponent, // COMPONENT_TYPE_LVGLACTION
+#if OPTION_GUI || !defined(OPTION_GUI)
+    executeOverrideStyleComponent, // COMPONENT_TYPE_OVERRIDE_STYLE
+#else
+    nullptr,
+#endif
 };
 
 void registerComponent(ComponentTypes componentType, ExecuteComponentFunctionType executeComponentFunction) {

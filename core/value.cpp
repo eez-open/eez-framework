@@ -256,8 +256,11 @@ void FLOAT_value_to_text(const Value &value, char *text, int count) {
             }
         }
 
-        stringAppendString(text, count, " ");
-        stringAppendString(text, count, getUnitName(unit));
+        const char *unitName = getUnitName(unit);
+        if (unitName && *unitName) {
+            stringAppendString(text, count, " ");
+            stringAppendString(text, count, unitName);
+        }
     } else {
         text[0] = 0;
     }
@@ -349,8 +352,11 @@ void DOUBLE_value_to_text(const Value &value, char *text, int count) {
             }
         }
 
-        stringAppendString(text, count, " ");
-        stringAppendString(text, count, getUnitName(unit));
+        const char *unitName = getUnitName(unit);
+        if (unitName && *unitName) {
+            stringAppendString(text, count, " ");
+            stringAppendString(text, count, unitName);
+        }
     } else {
         text[0] = 0;
     }
@@ -1279,6 +1285,22 @@ Value Value::makeBlobRef(const uint8_t *blob, uint32_t len, uint32_t id) {
 	return value;
 }
 
+Value Value::clone() {
+    if (isArray()) {
+        auto array = getArray();
+        auto resultArrayValue = makeArrayRef(array->arraySize, array->arrayType, 0x0ea48dcb);
+        auto resultArray = resultArrayValue.getArray();
+
+        for (uint32_t elementIndex = 0; elementIndex < array->arraySize; elementIndex++) {
+            resultArray->values[elementIndex] = array->values[elementIndex].clone();
+        }
+
+        return resultArrayValue;
+    }
+
+    return *this;
+}
+
 #if defined(OPTION_GUI) && !OPTION_GUI
 
 Value getVar(int16_t id) {
@@ -1298,17 +1320,17 @@ Value getVar(int16_t id) {
         auto get = (float (*)())native_var.get;
         return Value(get(), VALUE_TYPE_FLOAT);
     }
-    
+
     if (native_var.type == NATIVE_VAR_TYPE_DOUBLE) {
         auto get = (double (*)())native_var.get;
         return Value(get(), VALUE_TYPE_DOUBLE);
     }
-    
+
     if (native_var.type == NATIVE_VAR_TYPE_STRING) {
         auto get = (const char *(*)())native_var.get;
         return Value(get(), VALUE_TYPE_STRING);
     }
-    
+
     return Value();
 }
 
@@ -1329,12 +1351,12 @@ void setVar(int16_t id, const Value& value) {
         auto set = (void (*)(float))native_var.set;
         set(value.getFloat());
     }
-    
+
     if (native_var.type == NATIVE_VAR_TYPE_DOUBLE) {
         auto set = (void (*)(double))native_var.set;
         set(value.getDouble());
     }
-    
+
     if (native_var.type == NATIVE_VAR_TYPE_STRING) {
         auto set = (void (*)(const char *))native_var.set;
         set(value.getString());
