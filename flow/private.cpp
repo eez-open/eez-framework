@@ -39,6 +39,8 @@ namespace flow {
 
 static const unsigned NO_COMPONENT_INDEX = 0xFFFFFFFF;
 
+static bool g_enableThrowError = true;
+
 bool isComponentReadyToRun(FlowState *flowState, unsigned componentIndex) {
 	auto component = flowState->flow->components[componentIndex];
 
@@ -523,6 +525,10 @@ void throwError(FlowState *flowState, int componentIndex, const char *errorMessa
     printf("throwError: %s\n", errorMessage);
 #endif
 
+    if (!g_enableThrowError) {
+        return;
+    }
+
 	if (component->errorCatchOutput != -1) {
 		propagateValue(
 			flowState,
@@ -564,6 +570,10 @@ void throwError(FlowState *flowState, int componentIndex, const char *errorMessa
     } else {
         throwError(flowState, componentIndex, errorMessageDescription);
     }
+}
+
+void enableThrowError(bool enable) {
+    g_enableThrowError = enable;
 }
 
 } // namespace flow

@@ -159,6 +159,8 @@ bool evalAssignableExpression(FlowState *flowState, int componentIndex, const ui
 		}
 	}
 
+    throwError(flowState, componentIndex, errorMessage);
+
 	return false;
 }
 

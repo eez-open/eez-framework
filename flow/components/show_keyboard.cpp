@@ -73,7 +73,7 @@ void executeShowKeyboardComponent(FlowState *flowState, unsigned componentIndex)
 	};
 
 	auto onCancel = []() {
-		propagateValue(g_showKeyboardFlowState, g_showKeyboardComponentIndex, 1, Value());
+		propagateValue(g_showKeyboardFlowState, g_showKeyboardComponentIndex, 1);
 		getAppContextFromId(APP_CONTEXT_ID_DEVICE)->popPage();
 		endAsyncExecution(g_showKeyboardFlowState, g_showKeyboardComponentIndex);
 	};
