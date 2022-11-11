@@ -45,8 +45,12 @@ namespace eez {
 namespace flow {
 
 Value op_add(const Value& a1, const Value& b1) {
-    if (a1.isError() || b1.isError()) {
+    if (a1.isError()) {
         return a1;
+    }
+
+    if (b1.isError()) {
+        return b1;
     }
 
 	auto a = a1.getValue();
@@ -83,8 +87,12 @@ Value op_add(const Value& a1, const Value& b1) {
 }
 
 Value op_sub(const Value& a1, const Value& b1) {
-    if (a1.isError() || b1.isError()) {
+    if (a1.isError()) {
         return a1;
+    }
+
+    if (b1.isError()) {
+        return b1;
     }
 
 	auto a = a1.getValue();
@@ -110,8 +118,12 @@ Value op_sub(const Value& a1, const Value& b1) {
 }
 
 Value op_mul(const Value& a1, const Value& b1) {
-    if (a1.isError() || b1.isError()) {
+    if (a1.isError()) {
         return a1;
+    }
+
+    if (b1.isError()) {
+        return b1;
     }
 
 	auto a = a1.getValue();
@@ -137,8 +149,12 @@ Value op_mul(const Value& a1, const Value& b1) {
 }
 
 Value op_div(const Value& a1, const Value& b1) {
-    if (a1.isError() || b1.isError()) {
+    if (a1.isError()) {
         return a1;
+    }
+
+    if (b1.isError()) {
+        return b1;
     }
 
 	auto a = a1.getValue();
@@ -164,8 +180,12 @@ Value op_div(const Value& a1, const Value& b1) {
 }
 
 Value op_mod(const Value& a1, const Value& b1) {
-    if (a1.isError() || b1.isError()) {
+    if (a1.isError()) {
         return a1;
+    }
+
+    if (b1.isError()) {
+        return b1;
     }
 
 	auto a = a1.getValue();
@@ -175,8 +195,12 @@ Value op_mod(const Value& a1, const Value& b1) {
 }
 
 Value op_left_shift(const Value& a1, const Value& b1) {
-    if (a1.isError() || b1.isError()) {
+    if (a1.isError()) {
         return a1;
+    }
+
+    if (b1.isError()) {
+        return b1;
     }
 
 	auto a = a1.getValue();
@@ -186,8 +210,12 @@ Value op_left_shift(const Value& a1, const Value& b1) {
 }
 
 Value op_right_shift(const Value& a1, const Value& b1) {
-    if (a1.isError() || b1.isError()) {
+    if (a1.isError()) {
         return a1;
+    }
+
+    if (b1.isError()) {
+        return b1;
     }
 
 	auto a = a1.getValue();
@@ -197,8 +225,12 @@ Value op_right_shift(const Value& a1, const Value& b1) {
 }
 
 Value op_binary_and(const Value& a1, const Value& b1) {
-    if (a1.isError() || b1.isError()) {
+    if (a1.isError()) {
         return a1;
+    }
+
+    if (b1.isError()) {
+        return b1;
     }
 
 	auto a = a1.getValue();
@@ -208,8 +240,12 @@ Value op_binary_and(const Value& a1, const Value& b1) {
 }
 
 Value op_binary_or(const Value& a1, const Value& b1) {
-    if (a1.isError() || b1.isError()) {
+    if (a1.isError()) {
         return a1;
+    }
+
+    if (b1.isError()) {
+        return b1;
     }
 
 	auto a = a1.getValue();
@@ -219,8 +255,12 @@ Value op_binary_or(const Value& a1, const Value& b1) {
 }
 
 Value op_binary_xor(const Value& a1, const Value& b1) {
-    if (a1.isError() || b1.isError()) {
+    if (a1.isError()) {
         return a1;
+    }
+
+    if (b1.isError()) {
+        return b1;
     }
 
 	auto a = a1.getValue();
@@ -274,48 +314,72 @@ bool is_less(const Value& a1, const Value& b1) {
 }
 
 Value op_eq(const Value& a1, const Value& b1) {
-    if (a1.isError() || b1.isError()) {
+    if (a1.isError()) {
         return a1;
+    }
+
+    if (b1.isError()) {
+        return b1;
     }
 
 	return Value(is_equal(a1, b1), VALUE_TYPE_BOOLEAN);
 }
 
 Value op_neq(const Value& a1, const Value& b1) {
-    if (a1.isError() || b1.isError()) {
+    if (a1.isError()) {
         return a1;
+    }
+
+    if (b1.isError()) {
+        return b1;
     }
 
 	return Value(!is_equal(a1, b1), VALUE_TYPE_BOOLEAN);
 }
 
 Value op_less(const Value& a1, const Value& b1) {
-    if (a1.isError() || b1.isError()) {
+    if (a1.isError()) {
         return a1;
+    }
+
+    if (b1.isError()) {
+        return b1;
     }
 
 	return Value(is_less(a1, b1), VALUE_TYPE_BOOLEAN);
 }
 
 Value op_great(const Value& a1, const Value& b1) {
-    if (a1.isError() || b1.isError()) {
+    if (a1.isError()) {
         return a1;
+    }
+
+    if (b1.isError()) {
+        return b1;
     }
 
 	return Value(!is_less(a1, b1) && !is_equal(a1, b1), VALUE_TYPE_BOOLEAN);
 }
 
 Value op_less_eq(const Value& a1, const Value& b1) {
-    if (a1.isError() || b1.isError()) {
+    if (a1.isError()) {
         return a1;
+    }
+
+    if (b1.isError()) {
+        return b1;
     }
 
 	return Value(is_less(a1, b1) || is_equal(a1, b1), VALUE_TYPE_BOOLEAN);
 }
 
 Value op_great_eq(const Value& a1, const Value& b1) {
-    if (a1.isError() || b1.isError()) {
+    if (a1.isError()) {
         return a1;
+    }
+
+    if (b1.isError()) {
+        return b1;
     }
 
 	return Value(!is_less(a1, b1), VALUE_TYPE_BOOLEAN);

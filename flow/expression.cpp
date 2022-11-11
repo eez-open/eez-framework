@@ -130,7 +130,11 @@ bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *ins
 	if (evalExpression(flowState, instructions, numInstructionBytes, errorMessage)) {
 		if (g_stack.sp == 1) {
 			result = g_stack.pop().getValue();
-			return !result.isError();
+            if (result.isError()) {
+                throwError(flowState, componentIndex, errorMessage);
+                return false;
+            }
+			return true;
 		} else {
             throwError(flowState, componentIndex, errorMessage);
         }
