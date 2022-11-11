@@ -80,6 +80,10 @@ Value Keypad::getKeypadTextValue() {
     return Value::makeStringRef(text, strlen(text), 0x893cbf99);
 }
 
+const char *Keypad::getKeypadLabel() {
+    return m_label;
+}
+
 void Keypad::getKeypadText(char *text, size_t count) {
     // text
     char *textPtr = text;
@@ -157,7 +161,7 @@ void Keypad::insertChar(char c) {
 void Keypad::key() {
 	auto widgetCursor = getFoundWidgetAtDown();
 	auto widget = widgetCursor.widget;
-	
+
 	if (widget->type == WIDGET_TYPE_TEXT) {
 		auto textWidget = (TextWidget *)widget;
 		if (textWidget->text) {
@@ -257,7 +261,7 @@ void Keypad::setCursorPosition(int cursorPosition) {
 
 int Keypad::getXScroll(const WidgetCursor &widgetCursor) {
     int x = DISPLAY_DATA_getCursorXPosition(getCursorPosition(), widgetCursor);
-    
+
     x -= widgetCursor.x;
 
     if (x < m_xScroll + widgetCursor.w / 4) {
@@ -375,11 +379,6 @@ void NumericKeypad::appendEditUnit(char *text, size_t maxTextLength) {
 }
 
 void NumericKeypad::getKeypadText(char *text, size_t count) {
-    if (*m_label) {
-        stringCopy(text, count, m_label);
-        text += strlen(m_label);
-    }
-
     getText(text, 16);
 }
 
@@ -453,7 +452,7 @@ Unit NumericKeypad::getSwitchToUnit() {
             return getSmallestUnit(m_options.editValueUnit, m_options.min, getPrecision());
         }
     }
-        
+
     return unit;
 }
 
@@ -466,7 +465,20 @@ int NumericKeypad::getCursorPosition() {
         return -1;
     }
 
-    return Keypad::getCursorPosition();
+    return m_cursorPosition;
+}
+
+void NumericKeypad::setCursorPosition(int cursorPosition) {
+    m_cursorPosition = cursorPosition;
+
+    if (m_cursorPosition < 0) {
+        m_cursorPosition = 0;
+    } else {
+        int n = strlen(m_keypadText);
+        if (m_cursorPosition > n) {
+            m_cursorPosition = n;
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -802,6 +814,15 @@ void data_keypad_text(DataOperationEnum operation, const WidgetCursor &widgetCur
     }
 }
 
+void data_keypad_label(DataOperationEnum operation, const WidgetCursor &widgetCursor, Value &value) {
+    if (operation == DATA_OPERATION_GET) {
+        Keypad *keypad = getActiveKeypad();
+        if (keypad) {
+            value = keypad->getKeypadLabel();
+        }
+    }
+}
+
 void data_keypad_mode(DataOperationEnum operation, const WidgetCursor &widgetCursor, Value &value) {
     if (operation == DATA_OPERATION_GET) {
         Keypad *keypad = getActiveKeypad();
@@ -887,7 +908,7 @@ void data_keypad_unit_enabled(DataOperationEnum operation, const WidgetCursor &w
     if (operation == DATA_OPERATION_GET) {
         NumericKeypad *keypad = getActiveNumericKeypad();
         if (keypad) {
-            value = 
+            value =
                 getSmallestUnit(keypad->m_options.editValueUnit, keypad->m_options.min, keypad->getPrecision()) !=
                 getBiggestUnit(keypad->m_options.editValueUnit, keypad->m_options.max);
         }

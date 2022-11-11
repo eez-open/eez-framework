@@ -97,12 +97,10 @@ void executeShowKeypadComponent(FlowState *flowState, unsigned componentIndex) {
 		endAsyncExecution(g_showKeyboardFlowState, g_showKeyboardComponentIndex);
 	};
 
-	const char *label = labelValue.getString();
-	if (label && *label) {
-		labelValue = op_add(labelValue, Value(": "));
-	}
 
 	Unit unit = getUnitFromName(unitValue.getString());
+
+    initialValue.unit = unit;
 
 	showKeypadHook(labelValue, initialValue, minValue, maxValue, unit, onOk, onCancel);
 }
