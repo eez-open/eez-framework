@@ -336,6 +336,10 @@ struct Value {
         return type == VALUE_TYPE_ARRAY || type == VALUE_TYPE_ARRAY_ASSET || type == VALUE_TYPE_ARRAY_REF;
     }
 
+    bool isError() const {
+        return type == VALUE_TYPE_ERROR;
+    }
+
     Unit getUnit() const {
         return (Unit)unit;
     }
@@ -475,6 +479,8 @@ struct Value {
     static Value makeArrayElementRef(Value arrayValue, int elementIndex, uint32_t id);
 
     static Value makeBlobRef(const uint8_t *blob, uint32_t len, uint32_t id);
+
+    static Value makeError() { return Value(0, VALUE_TYPE_ERROR); }
 
     Value clone();
 

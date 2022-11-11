@@ -588,6 +588,18 @@ const char *NATIVE_VARIABLE_value_type_name(const Value &value) {
 }
 #endif
 
+bool compare_ERROR_value(const Value &a, const Value &b) {
+	return false;
+}
+
+void ERROR_value_to_text(const Value &value, char *text, int count) {
+    *text = 0;
+}
+
+const char *ERROR_value_type_name(const Value &value) {
+    return "error";
+}
+
 bool compare_RANGE_value(const Value &a, const Value &b) {
     return a.getUInt32() == b.getUInt32();
 }
@@ -1292,7 +1304,11 @@ Value Value::clone() {
         auto resultArray = resultArrayValue.getArray();
 
         for (uint32_t elementIndex = 0; elementIndex < array->arraySize; elementIndex++) {
-            resultArray->values[elementIndex] = array->values[elementIndex].clone();
+            auto elementValue = array->values[elementIndex].clone();
+            if (elementValue.isError()) {
+                return elementValue;
+            }
+            resultArray->values[elementIndex] = elementValue;
         }
 
         return resultArrayValue;
