@@ -121,6 +121,7 @@ struct NumericKeypadOptions {
         unsigned checkWhileTyping : 1;
         unsigned signButtonEnabled : 1;
         unsigned dotButtonEnabled : 1;
+        unsigned unitChangeEnabled: 1;
     } flags;
 
     int option1Action;

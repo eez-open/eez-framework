@@ -96,12 +96,18 @@ bool LineChartWidgetState::updateState() {
 
     WIDGET_STATE(title, get(widgetCursor, widget->title));
 
+    WIDGET_STATE(showTitleValue, get(widgetCursor, widget->showTitle));
     WIDGET_STATE(showLegendValue, get(widgetCursor, widget->showLegend));
+    WIDGET_STATE(showXAxisValue, get(widgetCursor, widget->showXAxis));
+    WIDGET_STATE(showYAxisValue, get(widgetCursor, widget->showYAxis));
+    WIDGET_STATE(showGridValue, get(widgetCursor, widget->showGrid));
 
     if (widget->yAxisRangeOption == Y_AXIS_RANGE_OPTION_FIXED) {
         WIDGET_STATE(yAxisRangeFrom, get(widgetCursor, widget->yAxisRangeFrom));
         WIDGET_STATE(yAxisRangeTo, get(widgetCursor, widget->yAxisRangeTo));
     }
+
+    WIDGET_STATE(markerValue, get(widgetCursor, widget->marker));
 
 	if (widgetCursor.flowState) {
         auto executionState = (flow::LineChartWidgetComponenentExecutionState *)widgetCursor.flowState->componenentExecutionStates[widget->componentIndex];
@@ -139,7 +145,11 @@ void LineChartWidgetState::render() {
 
     auto isActive = flags.active;
 
+    auto showTitle = showTitleValue.toBool(nullptr);
     auto showLegend = showLegendValue.toBool(nullptr);
+    auto showXAxis = showXAxisValue.toBool(nullptr);
+    auto showYAxis = showYAxisValue.toBool(nullptr);
+    auto showGrid = showGridValue.toBool(nullptr);
 
     Chart chart;
 
@@ -293,16 +303,18 @@ void LineChartWidgetState::render() {
     drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style, isActive, false, true);
 
     // draw title
-    static const size_t MAX_TITLE_LEN = 128;
-    char text[MAX_TITLE_LEN + 1];
-    title.toText(text, sizeof(text));
-    if (*text) {
-        drawText(
-            text, -1,
-            widgetCursor.x, widgetCursor.y, widgetCursor.w, marginTop,
-            titleStyle,
-            flags.active
-        );
+    if (showTitle) {
+        static const size_t MAX_TITLE_LEN = 128;
+        char text[MAX_TITLE_LEN + 1];
+        title.toText(text, sizeof(text));
+        if (*text) {
+            drawText(
+                text, -1,
+                widgetCursor.x, widgetCursor.y, widgetCursor.w, marginTop,
+                titleStyle,
+                flags.active
+            );
+        }
     }
 
     // draw legend
@@ -362,7 +374,7 @@ void LineChartWidgetState::render() {
     }
 
     // draw X axis
-    {
+    if (showXAxis) {
         auto from = ceil(chart.xAxis.min / chart.xAxis.ticksDelta) * chart.xAxis.ticksDelta;
         auto to = floor(chart.xAxis.max / chart.xAxis.ticksDelta) * chart.xAxis.ticksDelta;
 
@@ -469,7 +481,7 @@ void LineChartWidgetState::render() {
     }
 
     // draw Y axis
-    {
+    if (showYAxis) {
         auto from = ceil(chart.yAxis.min / chart.yAxis.ticksDelta) * chart.yAxis.ticksDelta;
         auto to = floor(chart.yAxis.max / chart.yAxis.ticksDelta) * chart.yAxis.ticksDelta;
 
@@ -509,31 +521,33 @@ void LineChartWidgetState::render() {
     }
 
     // draw grid
-    setColor(style->borderColor);
+    if (showGrid) {
+        setColor(style->borderColor);
 
-    {
-        // vertical lines
-        auto from = ceil(chart.xAxis.min / chart.xAxis.ticksDelta) * chart.xAxis.ticksDelta;
-        auto to = floor(chart.xAxis.max / chart.xAxis.ticksDelta) * chart.xAxis.ticksDelta;
-        for (unsigned i = 0; ; i++) {
-            auto tick = from + i * chart.xAxis.ticksDelta;
-            if (tick > to) break;
-            auto x = chart.xAxis.offset + tick * chart.xAxis.scale;
+        {
+            // vertical lines
+            auto from = ceil(chart.xAxis.min / chart.xAxis.ticksDelta) * chart.xAxis.ticksDelta;
+            auto to = floor(chart.xAxis.max / chart.xAxis.ticksDelta) * chart.xAxis.ticksDelta;
+            for (unsigned i = 0; ; i++) {
+                auto tick = from + i * chart.xAxis.ticksDelta;
+                if (tick > to) break;
+                auto x = chart.xAxis.offset + tick * chart.xAxis.scale;
 
-            drawVLine(widgetCursor.x + (int)round(x), widgetCursor.y + gridRect.y, gridRect.h);
+                drawVLine(widgetCursor.x + (int)round(x), widgetCursor.y + gridRect.y, gridRect.h - 1);
+            }
         }
-    }
 
-    {
-        // horizontal lines
-        auto from = ceil(chart.yAxis.min / chart.yAxis.ticksDelta) * chart.yAxis.ticksDelta;
-        auto to = floor(chart.yAxis.max / chart.yAxis.ticksDelta) * chart.yAxis.ticksDelta;
-        for (unsigned i = 0; ; i++) {
-            auto tick = from + i * chart.yAxis.ticksDelta;
-            if (tick > to) break;
-            auto y = chart.yAxis.offset + tick * chart.yAxis.scale;
+        {
+            // horizontal lines
+            auto from = ceil(chart.yAxis.min / chart.yAxis.ticksDelta) * chart.yAxis.ticksDelta;
+            auto to = floor(chart.yAxis.max / chart.yAxis.ticksDelta) * chart.yAxis.ticksDelta;
+            for (unsigned i = 0; ; i++) {
+                auto tick = from + i * chart.yAxis.ticksDelta;
+                if (tick > to) break;
+                auto y = chart.yAxis.offset + tick * chart.yAxis.scale;
 
-            drawHLine(widgetCursor.x + gridRect.x, widgetCursor.y + (int)round(y), gridRect.w);
+                drawHLine(widgetCursor.x + gridRect.x, widgetCursor.y +(int)round(y), gridRect.w - 1);
+            }
         }
     }
 
@@ -567,6 +581,16 @@ void LineChartWidgetState::render() {
             graphics.noFill();
             graphics.drawPath();
         }
+    }
+
+    // draw marker
+    int err;
+    double marker = markerValue.toDouble(&err);
+    if (err == 0) {
+        const Style* markerStyle = getStyle(widget->markerStyle);
+        setColor(markerStyle->borderColor);
+        auto x = chart.xAxis.offset + marker * chart.xAxis.scale;
+        drawVLine(widgetCursor.x + gridRect.x + (int)round(x), widgetCursor.y + gridRect.y, gridRect.h - 1);
     }
 }
 

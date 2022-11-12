@@ -288,6 +288,7 @@ NumericKeypadOptions::NumericKeypadOptions() {
     flags.checkWhileTyping = false;
     flags.signButtonEnabled = false;
     flags.dotButtonEnabled = false;
+    flags.unitChangeEnabled = true;
 
     option1Action = NUMERIC_KEYPAD_OPTION_ACTION_NONE;
     option2Action = NUMERIC_KEYPAD_OPTION_ACTION_NONE;
@@ -348,7 +349,7 @@ void NumericKeypad::init(
         m_options.flags.dotButtonEnabled = true;
     }
 
-    m_options.editValueUnit = findDerivedUnit(m_startValue.getFloat(), m_startValue.getUnit());
+    m_options.editValueUnit = m_options.flags.unitChangeEnabled ? findDerivedUnit(m_startValue.getFloat(), m_startValue.getUnit()) : m_startValue.getUnit();
 
     m_minChars = 0;
     m_maxChars = 16;
