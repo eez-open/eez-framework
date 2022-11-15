@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <eez/core/util.h>
 #include <eez/flow/private.h>
 
 namespace eez {
