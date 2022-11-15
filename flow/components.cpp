@@ -65,6 +65,7 @@ void executeAnimateComponent(FlowState *flowState, unsigned componentIndex);
 void executeNoopComponent(FlowState *flowState, unsigned componentIndex);
 void executeOnEventComponent(FlowState *flowState, unsigned componentIndex);
 void executeLVGLComponent(FlowState *flowState, unsigned componentIndex);
+void executeSortArrayComponent(FlowState *flowState, unsigned componentIndex);
 
 #if OPTION_GUI || !defined(OPTION_GUI)
 void executeLayoutViewWidgetComponent(FlowState *flowState, unsigned componentIndex);
@@ -116,10 +117,11 @@ static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
     executeOnEventComponent, // COMPONENT_TYPE_ON_EVENT_ACTION,
     executeLVGLComponent, // COMPONENT_TYPE_LVGLACTION
 #if OPTION_GUI || !defined(OPTION_GUI)
-    executeOverrideStyleComponent, // COMPONENT_TYPE_OVERRIDE_STYLE
+    executeOverrideStyleComponent, // COMPONENT_TYPE_OVERRIDE_STYLE_ACTION
 #else
     nullptr,
 #endif
+    executeSortArrayComponent, // COMPONENT_TYPE_SORT_ARRAY_ACTION
 };
 
 void registerComponent(ComponentTypes componentType, ExecuteComponentFunctionType executeComponentFunction) {

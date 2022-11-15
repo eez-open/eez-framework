@@ -521,13 +521,13 @@ bool findCatchErrorComponent(FlowState *flowState, FlowState *&catchErrorFlowSta
 void throwError(FlowState *flowState, int componentIndex, const char *errorMessage) {
     auto component = flowState->flow->components[componentIndex];
 
-#if defined(__EMSCRIPTEN__)
-    printf("throwError: %s\n", errorMessage);
-#endif
-
     if (!g_enableThrowError) {
         return;
     }
+
+#if defined(__EMSCRIPTEN__)
+    printf("throwError: %s\n", errorMessage);
+#endif
 
 	if (component->errorCatchOutput != -1) {
 		propagateValue(

@@ -33,6 +33,8 @@ struct EvalStack {
 	Value stack[STACK_SIZE];
 	size_t sp = 0;
 
+    char errorMessage[512];
+
 	bool push(const Value &value) {
 		if (sp >= STACK_SIZE) {
 			throwError(flowState, componentIndex, "Evaluation stack is full\n");
@@ -54,6 +56,9 @@ struct EvalStack {
 		return stack[--sp];
 	}
 
+    void setErrorMessage(const char *str) {
+        stringCopy(errorMessage, sizeof(errorMessage), str);
+    }
 };
 
 #if OPTION_GUI || !defined(OPTION_GUI)

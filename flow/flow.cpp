@@ -219,6 +219,19 @@ int getPageIndex(FlowState *flowState) {
 	return flowState->flowIndex;
 }
 
+Value getGlobalVariable(Assets *assets, uint32_t globalVariableIndex) {
+    if (globalVariableIndex >= 0 && globalVariableIndex < assets->flowDefinition->globalVariables.count) {
+        return *assets->flowDefinition->globalVariables[globalVariableIndex];
+    }
+    return Value();
+}
+
+void setGlobalVariable(Assets *assets, uint32_t globalVariableIndex, const Value &value) {
+    if (globalVariableIndex >= 0 && globalVariableIndex < assets->flowDefinition->globalVariables.count) {
+        *assets->flowDefinition->globalVariables[globalVariableIndex] = value;
+    }
+}
+
 #if OPTION_GUI || !defined(OPTION_GUI)
 void executeFlowAction(const WidgetCursor &widgetCursor, int16_t actionId, void *param) {
 	if (!isFlowRunningHook()) {

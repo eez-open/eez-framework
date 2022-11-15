@@ -589,8 +589,10 @@ void LineChartWidgetState::render() {
     if (err == 0) {
         const Style* markerStyle = getStyle(widget->markerStyle);
         setColor(markerStyle->borderColor);
-        auto x = chart.xAxis.offset + marker * chart.xAxis.scale;
-        drawVLine(widgetCursor.x + gridRect.x + (int)round(x), widgetCursor.y + gridRect.y, gridRect.h - 1);
+        auto x = widgetCursor.x + (int)round(chart.xAxis.offset + marker * chart.xAxis.scale);
+        if (x >= widgetCursor.x && x < widgetCursor.x + widgetCursor.w) {
+            drawVLine(x, widgetCursor.y + gridRect.y, gridRect.h - 1);
+        }
     }
 }
 
