@@ -112,7 +112,7 @@ void executeSortArrayComponent(FlowState *flowState, unsigned componentIndex) {
     auto array = arrayValue.getArray();
 
     if (component->arrayType != -1) {
-        if (array->arrayType != component->arrayType) {
+        if (array->arrayType != (uint32_t)component->arrayType) {
             throwError(flowState, componentIndex, "SortArray: invalid array type\n");
             return;
         }

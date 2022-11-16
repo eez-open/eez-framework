@@ -41,6 +41,28 @@ struct ShowMessagePageComponentExecutionState : public ComponenentExecutionState
     unsigned componentIndex;
 };
 
+ShowMessagePageComponentExecutionState *g_executionState;
+
+void infoMessageCallback() {
+    auto flowState = g_executionState->flowState;
+    auto componentIndex = g_executionState->componentIndex;
+    g_executionState = nullptr;
+
+    deallocateComponentExecutionState(flowState, componentIndex);
+
+    propagateValueThroughSeqout(flowState, componentIndex);
+}
+
+void errorMessageCallback(int userParam) {
+    auto flowState = g_executionState->flowState;
+    auto componentIndex = g_executionState->componentIndex;
+    g_executionState = nullptr;
+
+    deallocateComponentExecutionState(flowState, componentIndex);
+
+    propagateValueThroughSeqout(flowState, componentIndex);
+}
+
 void questionCallback(void *userParam, unsigned buttonIndex) {
     auto executionState = (ShowMessagePageComponentExecutionState *)userParam;
 
@@ -64,10 +86,16 @@ void executeShowMessageBoxComponent(FlowState *flowState, unsigned componentInde
         return;
     }
 
+    auto executionState = allocateComponentExecutionState<ShowMessagePageComponentExecutionState>(flowState, componentIndex);
+    executionState->flowState = flowState;
+    executionState->componentIndex = componentIndex;
+
 	if (component->type == MESSAGE_BOX_TYPE_INFO) {
-		getAppContextFromId(APP_CONTEXT_ID_DEVICE)->infoMessage(messageValue);
+        g_executionState = executionState;
+		getAppContextFromId(APP_CONTEXT_ID_DEVICE)->infoMessage(messageValue.getString(), infoMessageCallback, "Close");
 	} else if (component->type == MESSAGE_BOX_TYPE_ERROR) {
-		getAppContextFromId(APP_CONTEXT_ID_DEVICE)->errorMessage(messageValue);
+        g_executionState = executionState;
+		getAppContextFromId(APP_CONTEXT_ID_DEVICE)->errorMessageWithAction(messageValue, errorMessageCallback, "Close", 0);
 	} else if (component->type == MESSAGE_BOX_TYPE_QUESTION) {
         Value buttonsValue;
         if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_MESSAGE_BOX_ACTION_COMPONENT_PROPERTY_BUTTONS, buttonsValue, "Failed to evaluate Buttons in ShowMessageBox")) {
@@ -88,10 +116,6 @@ void executeShowMessageBoxComponent(FlowState *flowState, unsigned componentInde
                 return;
             }
         }
-
-        auto executionState = allocateComponentExecutionState<ShowMessagePageComponentExecutionState>(flowState, componentIndex);
-        executionState->flowState = flowState;
-        executionState->componentIndex = componentIndex;
 
         getAppContextFromId(APP_CONTEXT_ID_DEVICE)->questionDialog(messageValue, buttonsValue, executionState, questionCallback);
     }
