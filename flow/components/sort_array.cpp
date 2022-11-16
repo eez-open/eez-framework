@@ -50,7 +50,7 @@ int elementCompare(const void *a, const void *b) {
             return 0;
         }
         auto aArray = aValue.getArray();
-        if (g_sortArrayActionComponent->structFieldIndex >= aArray->arraySize) {
+        if ((uint32_t)g_sortArrayActionComponent->structFieldIndex >= aArray->arraySize) {
             return 0;
         }
         aValue = aArray->values[g_sortArrayActionComponent->structFieldIndex];
@@ -59,7 +59,7 @@ int elementCompare(const void *a, const void *b) {
             return 0;
         }
         auto bArray = bValue.getArray();
-        if (g_sortArrayActionComponent->structFieldIndex >= bArray->arraySize) {
+        if ((uint32_t)g_sortArrayActionComponent->structFieldIndex >= bArray->arraySize) {
             return 0;
         }
         bValue = bArray->values[g_sortArrayActionComponent->structFieldIndex];
