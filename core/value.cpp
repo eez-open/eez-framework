@@ -1324,7 +1324,7 @@ Value getVar(int16_t id) {
 
     if (native_var.type == NATIVE_VAR_TYPE_INTEGER) {
         auto get = (int32_t (*)())native_var.get;
-        return Value(get(), VALUE_TYPE_INT32);
+        return Value((int)get(), VALUE_TYPE_INT32);
     }
 
     if (native_var.type == NATIVE_VAR_TYPE_BOOLEAN) {
