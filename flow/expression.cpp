@@ -16,12 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <eez/conf-internal.h>
+
 #include <stdio.h>
 
 #include <eez/flow/private.h>
 #include <eez/flow/operations.h>
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 #include <eez/gui/gui.h>
 using namespace eez::gui;
 #endif
@@ -98,7 +100,7 @@ static void evalExpression(FlowState *flowState, const uint8_t *instructions, in
 	}
 }
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *instructions, Value &result, const char *errorMessage, int *numInstructionBytes, const int32_t *iterators, DataOperationEnum operation) {
 #else
 bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *instructions, Value &result, const char *errorMessage, int *numInstructionBytes, const int32_t *iterators) {
@@ -142,7 +144,7 @@ bool evalAssignableExpression(FlowState *flowState, int componentIndex, const ui
 	return false;
 }
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 bool evalProperty(FlowState *flowState, int componentIndex, int propertyIndex, Value &result, const char *errorMessage, int *numInstructionBytes, const int32_t *iterators, DataOperationEnum operation) {
 #else
 bool evalProperty(FlowState *flowState, int componentIndex, int propertyIndex, Value &result, const char *errorMessage, int *numInstructionBytes, const int32_t *iterators) {
@@ -160,7 +162,7 @@ bool evalProperty(FlowState *flowState, int componentIndex, int propertyIndex, V
         throwError(flowState, componentIndex, errorMessage, message);
         return false;
     }
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
     return evalExpression(flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, result, errorMessage, numInstructionBytes, iterators, operation);
 #else
     return evalExpression(flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, result, errorMessage, numInstructionBytes, iterators);
@@ -184,7 +186,7 @@ bool evalAssignableProperty(FlowState *flowState, int componentIndex, int proper
     return evalAssignableExpression(flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, result, errorMessage, numInstructionBytes, iterators);
 }
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 int16_t getNativeVariableId(const WidgetCursor &widgetCursor) {
 	if (widgetCursor.flowState) {
 		FlowState *flowState = widgetCursor.flowState;

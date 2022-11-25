@@ -16,9 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <eez/conf-internal.h>
+
 #if !defined(EEZ_FOR_LVGL)
 
-#include <memory.h>
+#include <string.h>
 
 #include <eez/core/eeprom.h>
 #include <eez/core/os.h>

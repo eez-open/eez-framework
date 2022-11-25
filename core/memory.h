@@ -19,7 +19,6 @@
 #pragma once
 
 #include <stdint.h>
-#include <eez/conf.h>
 
 namespace eez {
 
@@ -40,7 +39,7 @@ static const uint32_t MEMORY_SIZE = 8 * 1024 * 1024;
 #endif
 #endif
 
-#if defined(EEZ_PLATFORM_SIMULATOR)
+#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
 extern uint8_t g_memory[];
 static uint8_t * const MEMORY_BEGIN = g_memory;
 static const uint32_t MEMORY_SIZE = 64 * 1024 * 1024;
@@ -56,7 +55,7 @@ extern uint8_t *DECOMPRESSED_ASSETS_START_ADDRESS;
 #if defined(EEZ_PLATFORM_STM32)
 static const uint32_t MAX_DECOMPRESSED_ASSETS_SIZE = 2 * 1024 * 1024;
 #endif
-#if defined(EEZ_PLATFORM_SIMULATOR)
+#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
 static const uint32_t MAX_DECOMPRESSED_ASSETS_SIZE = 8 * 1024 * 1024;
 #endif
 #endif
@@ -69,13 +68,13 @@ static const uint32_t FLOW_TO_DEBUGGER_MESSAGE_BUFFER_SIZE = 32 * 1024;
 #if defined(EEZ_PLATFORM_STM32)
 static const uint32_t FLOW_TO_DEBUGGER_MESSAGE_BUFFER_SIZE = 32 * 1024;
 #endif
-#if defined(EEZ_PLATFORM_SIMULATOR)
+#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
 static const uint32_t FLOW_TO_DEBUGGER_MESSAGE_BUFFER_SIZE = 1024 * 1024;
 #endif
 #endif
 #endif
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 extern uint8_t *VRAM_BUFFER1_START_ADDRESS;
 extern uint8_t *VRAM_BUFFER2_START_ADDRESS;
 

@@ -16,11 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <eez/conf-internal.h>
+
 #include <eez/core/action.h>
 
 namespace eez {
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 namespace gui {
 #endif
 
@@ -32,7 +34,7 @@ void executeActionFunction(int actionId) {
 #endif
 }
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 } // gui
 #endif
 

@@ -18,8 +18,6 @@
 
 #pragma once
 
-#include <eez/conf.h>
-
 #ifndef UTF8_SUPPORT
 #define UTF8_SUPPORT 1
 #endif
@@ -35,7 +33,7 @@ typedef int32_t utf8_int32_t;
 
 inline const utf8_int8_t* utf8codepoint(const utf8_int8_t *str, utf8_int32_t *out_codepoint) {
     *out_codepoint = *((uint8_t *)str);
-    return str + 1; 
+    return str + 1;
 }
 
 #define utf8len strlen

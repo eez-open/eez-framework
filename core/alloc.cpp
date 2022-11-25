@@ -16,10 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <eez/conf-internal.h>
+
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
-#include <memory.h>
+#include <string.h>
 
 #if defined(EEZ_FOR_LVGL)
 #ifdef LV_LVGL_H_INCLUDE_SIMPLE

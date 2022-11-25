@@ -18,7 +18,6 @@
 
 #pragma once
 
-#include <eez/conf.h>
 #include <eez/core/unit.h>
 
 #define VALUE_TYPES \

@@ -16,7 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#include <eez/conf-internal.h>
+
+#if EEZ_OPTION_GUI
 
 #include <eez/core/sound.h>
 #include <eez/core/util.h>
@@ -141,4 +143,4 @@ void SliderWidgetState::onTouch(const WidgetCursor &widgetCursor, Event &touchEv
 } // namespace gui
 } // namespace eez
 
-#endif // EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#endif // EEZ_OPTION_GUI

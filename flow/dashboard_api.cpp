@@ -17,6 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <eez/conf-internal.h>
+
 #if defined(__EMSCRIPTEN__)
 
 #include <emscripten.h>
@@ -417,7 +419,7 @@ EM_PORT_API(int) getFlowStateFlowIndex(int flowStateIndex) {
     return flowState->flowIndex;
 }
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 EM_PORT_API(bool) isRTL() {
     return g_isRTL;
 }

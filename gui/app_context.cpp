@@ -16,13 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#include <eez/conf-internal.h>
+
+#if EEZ_OPTION_GUI
 
 #include <math.h>
 #include <assert.h>
-#include <memory.h>
+#include <string.h>
 
-#include <eez/conf.h>
 #include <eez/core/sound.h>
 #include <eez/core/os.h>
 #include <eez/core/util.h>
@@ -538,7 +539,7 @@ void AppContext::getBoundingRect(Rect &rectBounding) {
 }
 
 AppContext *getRootAppContext() {
-#ifdef EEZ_PLATFORM_SIMULATOR
+#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
     return getAppContextFromId(APP_CONTEXT_ID_SIMULATOR_FRONT_PANEL);
 #else
     return getAppContextFromId(APP_CONTEXT_ID_DEVICE);
@@ -548,4 +549,4 @@ AppContext *getRootAppContext() {
 } // namespace gui
 } // namespace eez
 
-#endif // EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#endif // EEZ_OPTION_GUI

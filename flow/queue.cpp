@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <eez/conf-internal.h>
+
 #include <eez/flow/queue.h>
 #include <eez/flow/debugger.h>
 #include <eez/flow/flow_defs_v3.h>

@@ -23,7 +23,9 @@
 //
 //----------------------------------------------------------------------------
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#include <eez/conf-internal.h>
+
+#if EEZ_OPTION_GUI
 
 #include "agg2d.h"
 
@@ -1225,4 +1227,4 @@ void Agg2D::updateRasterizerGamma()
     m_rasterizer.gamma(Agg2DRasterizerGamma(m_masterAlpha, m_antiAliasGamma));
 }
 
-#endif // EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#endif // EEZ_OPTION_GUI

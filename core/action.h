@@ -28,7 +28,7 @@
 
 namespace eez {
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 namespace gui {
 #endif
 
@@ -41,7 +41,7 @@ extern ActionExecFunc g_actionExecFunctions[];
 
 void executeActionFunction(int actionId);
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 } // gui
 #endif
 

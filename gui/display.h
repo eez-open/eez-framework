@@ -26,7 +26,7 @@
 #if defined(EEZ_PLATFORM_STM32)
 	typedef uint16_t *VideoBuffer;
 #endif
-#if defined(EEZ_PLATFORM_SIMULATOR)
+#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
 	typedef uint32_t *VideoBuffer;
 #endif
 

@@ -16,12 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <eez/conf-internal.h>
+
 #include <assert.h>
 #include <math.h>
 
 #include <eez/flow/hooks.h>
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 #include <eez/gui/gui.h>
 #endif
 
@@ -33,7 +35,7 @@ static bool isFlowRunning() {
 }
 
 static void replacePage(int16_t pageId, uint32_t animType, uint32_t speed, uint32_t delay) {
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 	eez::gui::getAppContextFromId(APP_CONTEXT_ID_DEVICE)->replacePage(pageId);
 #endif
 }

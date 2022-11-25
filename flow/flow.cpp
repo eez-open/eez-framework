@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <eez/conf-internal.h>
+
 #include <stdio.h>
 
 #include <eez/core/util.h>
@@ -29,7 +31,7 @@
 #include <eez/flow/debugger.h>
 #include <eez/flow/hooks.h>
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 #include <eez/gui/gui.h>
 #include <eez/gui/keypad.h>
 #include <eez/gui/widgets/input.h>
@@ -148,7 +150,7 @@ bool isFlowStopped() {
     return g_isStopped;
 }
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 
 FlowState *getPageFlowState(Assets *assets, int16_t pageIndex, const WidgetCursor &widgetCursor) {
 	if (!assets->flowDefinition) {
@@ -213,7 +215,7 @@ FlowState *getPageFlowState(Assets *assets, int16_t pageIndex) {
     return flowState;
 }
 
-#endif // EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#endif // EEZ_OPTION_GUI
 
 int getPageIndex(FlowState *flowState) {
 	return flowState->flowIndex;
@@ -232,7 +234,7 @@ void setGlobalVariable(Assets *assets, uint32_t globalVariableIndex, const Value
     }
 }
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 void executeFlowAction(const WidgetCursor &widgetCursor, int16_t actionId, void *param) {
 	if (!isFlowRunningHook()) {
 		return;
@@ -449,7 +451,7 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCurs
 	}
 }
 
-#endif // EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#endif // EEZ_OPTION_GUI
 
 } // namespace flow
 } // namespace eez

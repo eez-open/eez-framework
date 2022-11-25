@@ -1,10 +1,12 @@
-#if defined(EEZ_PLATFORM_SIMULATOR)
+#include <eez/conf-internal.h>
+
+#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
 
 #include "cmsis_os2.h"
 
 #include <assert.h>
 #include <stdio.h>
-#include <memory.h>
+#include <string.h>
 
 #ifndef __EMSCRIPTEN__
 #include <chrono>

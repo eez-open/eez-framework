@@ -30,7 +30,7 @@ void updateDisplay();
 
 void onPageChanged();
 
-#if defined(EEZ_PLATFORM_SIMULATOR)
+#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
 void onMouseEvent(bool mouseButton1IsPressed, int mouseX, int mouseY);
 #endif
 

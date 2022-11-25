@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <eez/conf-internal.h>
+
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -557,7 +559,7 @@ const char *FLOW_OUTPUT_value_type_name(const Value &value) {
     return "internal";
 }
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 using namespace gui;
 bool compare_NATIVE_VARIABLE_value(const Value &a, const Value &b) {
     auto aValue = get(g_widgetCursor, a.getInt());
@@ -624,7 +626,7 @@ const char *POINTER_value_type_name(const Value &value) {
     return "internal";
 }
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 using namespace gui;
 bool compare_ENUM_value(const Value &a, const Value &b) {
     return a.getEnum().enumDefinition == b.getEnum().enumDefinition &&
@@ -661,7 +663,7 @@ const char *ENUM_value_type_name(const Value &value) {
     return "internal";
 }
 
-#endif // EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#endif // EEZ_OPTION_GUI
 
 bool compare_YT_DATA_GET_VALUE_FUNCTION_POINTER_value(const Value &a, const Value &b) {
     return a.getUInt32() == b.getUInt32();

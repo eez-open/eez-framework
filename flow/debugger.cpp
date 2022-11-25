@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <eez/conf-internal.h>
+
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
@@ -170,7 +172,7 @@ void processDebuggerInput(char *buffer, uint32_t length) {
 				}
 			} else if (messageFromDebugger == MESSAGE_FROM_DEBUGGER_MODE) {
                 g_debuggerMode = strtol(g_inputFromDebugger + 2, nullptr, 10);
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
                 gui::refreshScreen();
 #endif
             }
@@ -714,7 +716,7 @@ void logScpiQueryResult(FlowState *flowState, unsigned componentIndex, const cha
     }
 }
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 void onPageChanged(int previousPageId, int activePageId, bool activePageIsFromStack, bool previousPageIsStillOnStack) {
     if (flow::isFlowStopped()) {
         return;
@@ -802,7 +804,7 @@ void onPageChanged(int previousPageId, int activePageId, bool activePageIsFromSt
         writeDebuggerBufferHook(buffer, strlen(buffer));
     }
 }
-#endif // EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#endif // EEZ_OPTION_GUI
 
 } // namespace flow
 } // namespace eez

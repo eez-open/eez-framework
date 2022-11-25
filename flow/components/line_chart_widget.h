@@ -37,7 +37,7 @@ struct LineChartWidgetComponenent : public Component {
     ListOfAssetsPtr<LineChartLine> lines;
 };
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 
 struct Point {
     float x;

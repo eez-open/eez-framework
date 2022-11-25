@@ -20,8 +20,6 @@
 
 #include <stdint.h>
 
-#include <eez/conf.h>
-
 #if defined(EEZ_PLATFORM_STM32)
 #if OPTION_KEYBOARD
 #include <usbh_hid.h>
@@ -59,7 +57,7 @@ static const uint8_t KEY_MOD_RSHIFT = 1 << 5;
 static const uint8_t KEY_MOD_RALT = 1 << 6;
 static const uint8_t KEY_MOD_RGUI = 1 << 7;
 
-#if defined(EEZ_PLATFORM_SIMULATOR)
+#if !defined(EEZ_PLATFORM_STM32)
 #define KEY_NONE                               0x00
 #define KEY_ERRORROLLOVER                      0x01
 #define KEY_POSTFAIL                           0x02

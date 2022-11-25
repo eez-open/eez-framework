@@ -16,9 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <eez/conf-internal.h>
+
 #include <assert.h>
 #include <stdlib.h>
-#include <memory.h>
+#include <string.h>
 
 #include <eez/core/alloc.h>
 #include <eez/core/os.h>
@@ -29,7 +31,7 @@
 
 #include <eez/libs/lz4/lz4.h>
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 #include <eez/gui/gui.h>
 #include <eez/gui/widget.h>
 using namespace eez::gui;
@@ -151,7 +153,7 @@ void loadMainAssets(const uint8_t *assets, uint32_t assetsSize) {
 
 void unloadExternalAssets() {
 	if (g_externalAssets) {
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 		removeExternalPagesFromTheStack();
 #endif
 		free(g_externalAssets);
@@ -161,7 +163,7 @@ void unloadExternalAssets() {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 
 const gui::PageAsset* getPageAsset(int pageId) {
 	if (pageId > 0) {
@@ -224,7 +226,7 @@ const gui::Bitmap *getBitmap(int bitmapID) {
 	return nullptr;
 }
 
-#endif // EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#endif // EEZ_OPTION_GUI
 
 int getThemesCount() {
 	return (int)g_mainAssets->colorsDefinition->themes.count;
@@ -254,7 +256,7 @@ int getExternalAssetsMainPageId() {
 	return -1;
 }
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 
 const char *getActionName(const WidgetCursor &widgetCursor, int16_t actionId) {
 	if (actionId == 0) {
@@ -286,6 +288,6 @@ int16_t getDataIdFromName(const WidgetCursor &widgetCursor, const char *name) {
 	return 0;
 }
 
-#endif // EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#endif // EEZ_OPTION_GUI
 
 } // namespace eez

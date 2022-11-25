@@ -16,6 +16,8 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <eez/conf-internal.h>
+
 #if defined(EEZ_PLATFORM_STM32)
 #include <main.h>
 #endif
@@ -33,7 +35,7 @@ uint32_t millis() {
 	return HAL_GetTick();
 #endif
 
-#if defined(EEZ_PLATFORM_SIMULATOR)
+#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
 	return osKernelGetTickCount();
 #endif
 

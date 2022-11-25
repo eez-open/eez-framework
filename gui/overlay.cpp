@@ -16,7 +16,9 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#include <eez/conf-internal.h>
+
+#if EEZ_OPTION_GUI
 
 #include <eez/gui/gui.h>
 #include <eez/gui/widgets/containers/container.h>
@@ -110,4 +112,4 @@ void dragOverlay(Event &touchEvent) {
 } // namespace gui
 } // namespace eez
 
-#endif // EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#endif // EEZ_OPTION_GUI

@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <eez/conf-internal.h>
+
 #include <eez/core/os.h>
 
 #include <eez/flow/components.h>
@@ -25,7 +27,7 @@
 #include <eez/flow/queue.h>
 #include <eez/flow/debugger.h>
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 #include <eez/gui/gui.h>
 using namespace eez::gui;
 #endif

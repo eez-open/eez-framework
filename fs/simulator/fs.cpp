@@ -16,7 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#if defined(EEZ_PLATFORM_SIMULATOR) && !defined(EEZ_FOR_LVGL)
+#include <eez/conf-internal.h>
+
+#if (defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)) && !defined(EEZ_FOR_LVGL)
 
 #include <eez/fs/fs.h>
 

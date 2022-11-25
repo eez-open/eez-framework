@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <eez/conf-internal.h>
+
 #include <stdio.h>
 #include <math.h>
 
@@ -53,7 +55,7 @@ void executeCatchErrorComponent(FlowState *flowState, unsigned componentIndex);
 void executeCounterComponent(FlowState *flowState, unsigned componentIndex);
 void executeLoopComponent(FlowState *flowState, unsigned componentIndex);
 void executeShowPageComponent(FlowState *flowState, unsigned componentIndex);
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 void executeShowMessageBoxComponent(FlowState *flowState, unsigned componentIndex);
 void executeShowKeyboardComponent(FlowState *flowState, unsigned componentIndex);
 void executeShowKeypadComponent(FlowState *flowState, unsigned componentIndex);
@@ -67,7 +69,7 @@ void executeOnEventComponent(FlowState *flowState, unsigned componentIndex);
 void executeLVGLComponent(FlowState *flowState, unsigned componentIndex);
 void executeSortArrayComponent(FlowState *flowState, unsigned componentIndex);
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 void executeLayoutViewWidgetComponent(FlowState *flowState, unsigned componentIndex);
 void executeLineChartWidgetComponent(FlowState *flowState, unsigned componentIndex);
 void executeRollerWidgetComponent(FlowState *flowState, unsigned componentIndex);
@@ -96,7 +98,7 @@ static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
 	executeLoopComponent,
 	executeShowPageComponent,
 	nullptr, // COMPONENT_TYPE_SCPIACTION
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 	executeShowMessageBoxComponent,
 	executeShowKeyboardComponent,
 	executeShowKeypadComponent,
@@ -108,7 +110,7 @@ static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
 	executeNoopComponent, // COMPONENT_TYPE_NOOP_ACTION
 	nullptr, // COMPONENT_TYPE_COMMENT_ACTION
     executeSelectLanguageComponent, // COMPONENT_TYPE_SELECT_LANGUAGE_ACTION
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
     executeSetPageDirectionComponent, // COMPONENT_TYPE_SET_PAGE_DIRECTION_ACTION
 #else
     nullptr,
@@ -116,7 +118,7 @@ static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
     executeAnimateComponent, // COMPONENT_TYPE_ANIMATE_ACTION
     executeOnEventComponent, // COMPONENT_TYPE_ON_EVENT_ACTION,
     executeLVGLComponent, // COMPONENT_TYPE_LVGLACTION
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
     executeOverrideStyleComponent, // COMPONENT_TYPE_OVERRIDE_STYLE_ACTION
 #else
     nullptr,
@@ -148,7 +150,7 @@ void executeComponent(FlowState *flowState, unsigned componentIndex) {
 			return;
 		}
 	}
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
     else if (component->type < 1000) {
 		if (component->type == defs_v3::COMPONENT_TYPE_LAYOUT_VIEW_WIDGET) {
             executeLayoutViewWidgetComponent(flowState, componentIndex);

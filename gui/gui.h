@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <eez/gui_conf.h>
+#include <eez/conf-internal.h>
 
 #ifndef PAGE_ID_ASYNC_OPERATION_IN_PROGRESS
 #define PAGE_ID_ASYNC_OPERATION_IN_PROGRESS 0

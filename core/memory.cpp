@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <eez/conf-internal.h>
+
 #include <assert.h>
 
 #include <eez/core/memory.h>
@@ -30,14 +32,14 @@
 
 namespace eez {
 
-#if defined(EEZ_PLATFORM_SIMULATOR) && !defined(EEZ_FOR_LVGL)
+#if (defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)) && !defined(EEZ_FOR_LVGL)
 uint8_t g_memory[MEMORY_SIZE] = { 0 };
 #endif
 
 uint8_t *DECOMPRESSED_ASSETS_START_ADDRESS;
 uint8_t *FLOW_TO_DEBUGGER_MESSAGE_BUFFER;
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
 uint8_t *VRAM_BUFFER1_START_ADDRESS;
 uint8_t *VRAM_BUFFER2_START_ADDRESS;
 
@@ -81,7 +83,7 @@ void initOtherMemory() {
     FLOW_TO_DEBUGGER_MESSAGE_BUFFER = allocBuffer(FLOW_TO_DEBUGGER_MESSAGE_BUFFER_SIZE);
 #endif
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if EEZ_OPTION_GUI
     uint32_t VRAM_BUFFER_SIZE = DISPLAY_WIDTH * DISPLAY_HEIGHT * DISPLAY_BPP / 8;
 
     VRAM_BUFFER1_START_ADDRESS = allocBuffer(VRAM_BUFFER_SIZE);

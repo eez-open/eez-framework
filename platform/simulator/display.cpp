@@ -16,12 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#if defined(EEZ_PLATFORM_SIMULATOR)
+#include <eez/conf-internal.h>
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
+
+#if EEZ_OPTION_GUI
 
 #include <math.h>
-#include <memory.h>
 #include <stdio.h>
 #include <string.h>
 #include <string>
@@ -31,7 +32,6 @@
 #include <SDL_image.h>
 #endif
 
-#include <eez/conf.h>
 #include <eez/core/debug.h>
 #include <eez/core/memory.h>
 #include <eez/core/util.h>
@@ -384,6 +384,6 @@ EM_PORT_API(uint8_t*) getSyncedBuffer() {
 
 #endif
 
-#endif // EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#endif // EEZ_OPTION_GUI
 
 #endif // defined(EEZ_PLATFORM_SIMULATOR)

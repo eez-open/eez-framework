@@ -16,9 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#if EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#include <eez/conf-internal.h>
 
-#include <eez/conf.h>
+#if EEZ_OPTION_GUI
 
 #if OPTION_KEYPAD
 
@@ -1000,4 +1000,4 @@ void action_keypad_option3() {
 
 #endif
 
-#endif // EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#endif // EEZ_OPTION_GUI

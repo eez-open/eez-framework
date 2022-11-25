@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <eez/conf-internal.h>
+
 #if defined(EEZ_PLATFORM_STM32) && !defined(EEZ_FOR_LVGL)
 
 #include <stdio.h>
