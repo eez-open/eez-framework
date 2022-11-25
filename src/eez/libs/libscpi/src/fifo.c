@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <eez/conf-internal.h>
+
 #if !defined(EEZ_FOR_LVGL)
 
 #include "fifo_private.h"

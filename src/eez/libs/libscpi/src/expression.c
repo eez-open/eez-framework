@@ -34,6 +34,8 @@
  *
  */
 
+#include <eez/conf-internal.h>
+
 #if !defined(EEZ_FOR_LVGL)
 
 #include "scpi/expression.h"
