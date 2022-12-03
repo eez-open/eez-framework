@@ -689,7 +689,11 @@ void getBaseFileName(const char *path, char *baseName, unsigned baseNameSize) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#if defined(M_PI)
 static const float PI_FLOAT = (float)M_PI;
+#else
+static const float PI_FLOAT = (float)3.14159265358979323846;
+#endif
 static const float c1 = 1.70158f;
 static const float c2 = c1 * 1.525f;
 static const float c3 = c1 + 1.0f;
