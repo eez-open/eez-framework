@@ -30,6 +30,10 @@
 #include "pico/stdlib.h"
 #endif
 
+#if defined(EEZ_PLATFORM_RASPBERRY)
+#include <circle/timer.h>
+#endif
+
 #if defined(EEZ_FOR_LVGL)
 #ifdef LV_LVGL_H_INCLUDE_SIMPLE
 #include "lvgl.h"
@@ -52,6 +56,9 @@ uint32_t millis() {
 #elif defined(EEZ_PLATFORM_PICO)
     auto abs_time = get_absolute_time();
     return to_ms_since_boot(abs_time);
+#elif defined(EEZ_PLATFORM_RASPBERRY)
+    unsigned nStartTicks = CTimer::Get()->GetClockTicks();
+    return nStartTicks / 1000;
 #elif defined(EEZ_FOR_LVGL)
     return lv_tick_get();
 #else
