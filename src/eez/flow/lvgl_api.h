@@ -60,6 +60,8 @@ void assignStringProperty(unsigned pageIndex, unsigned componentIndex, unsigned 
 void assignIntegerProperty(unsigned pageIndex, unsigned componentIndex, unsigned propertyIndex, int32_t value, const char *errorMessage);
 void assignBooleanProperty(unsigned pageIndex, unsigned componentIndex, unsigned propertyIndex, bool value, const char *errorMessage);
 
+float getTimelinePosition(unsigned pageIndex);
+
 #ifdef __cplusplus
 }
 #endif
