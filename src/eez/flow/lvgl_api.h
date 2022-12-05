@@ -93,6 +93,8 @@ float eez_easeInBounce(float x);
 float eez_easeOutBounce(float x);
 float eez_easeInOutBounce(float x);
 
+float getTimelinePosition(unsigned pageIndex);
+
 #ifdef __cplusplus
 }
 #endif
