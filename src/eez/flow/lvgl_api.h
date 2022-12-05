@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <math.h>
+
 #if defined(EEZ_FOR_LVGL)
 
 #include <stdint.h>
