@@ -542,26 +542,66 @@ void applyTimeline(WidgetCursor& widgetCursor, Rect &widgetRect) {
                         (keyframe->end - keyframe->start);
 
                 if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_X) {
-                    auto savedX = x;
-                    x += g_easingFuncs[keyframe->xEasingFunc](t) * (keyframe->x - x);
-                    if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_WIDTH) {
-                        auto right = savedX + w;
-                        right += g_easingFuncs[keyframe->widthEasingFunc](t) * ((keyframe->x + keyframe->width) - right);
-                        w = right - x;
+                    auto t2 = g_easingFuncs[keyframe->xEasingFunc](t);
+
+                    if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_CP2) {
+                        auto p1 = x;
+                        auto p2 = keyframe->cp1x;
+                        auto p3 = keyframe->cp2x;
+                        auto p4 = keyframe->x;
+                        x =
+                            (1 - t2) * (1 - t2) * (1 - t2) * p1 +
+                            3 * (1 - t2) * (1 - t2) * t2 * p2 +
+                            3 * (1 - t2) * t2 * t2 * p3 +
+                            t2 * t2 * t2 * p4;
+                    } else if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_CP1) {
+                        auto p1 = x;
+                        auto p2 = keyframe->cp1x;
+                        auto p3 = keyframe->x;
+                        x =
+                            (1 - t2) * (1 - t2) * p1 +
+                            2 * (1 - t2) * t2 * p2 +
+                            t2 * t2 * p3;
+                    } else {
+                        auto p1 = x;
+                        auto p2 = keyframe->x;
+                        x = (1 - t2) * p1 + t2 * p2;
                     }
-                } else if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_WIDTH) {
+                }
+
+                if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_WIDTH) {
                     w += g_easingFuncs[keyframe->widthEasingFunc](t) * (keyframe->width - w);
                 }
 
                 if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_Y) {
-                    auto savedY = y;
-                    y += g_easingFuncs[keyframe->yEasingFunc](t) * (keyframe->y - y);
-                    if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_HEIGHT) {
-                        auto bottom = savedY + h;
-                        bottom += g_easingFuncs[keyframe->heightEasingFunc](t) * ((keyframe->y + keyframe->height) - bottom);
-                        h = bottom - y;
+                    auto t2 = g_easingFuncs[keyframe->yEasingFunc](t);
+
+                    if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_CP2) {
+                        auto p1 = y;
+                        auto p2 = keyframe->cp1y;
+                        auto p3 = keyframe->cp2y;
+                        auto p4 = keyframe->y;
+                        y =
+                            (1 - t2) * (1 - t2) * (1 - t2) * p1 +
+                            3 * (1 - t2) * (1 - t2) * t2 * p2 +
+                            3 * (1 - t2) * t2 * t2 * p3 +
+                            t2 * t2 * t2 * p4;
+                    } else if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_CP1) {
+                        auto p1 = y;
+                        auto p2 = keyframe->cp1y;
+                        auto p3 = keyframe->y;
+                        y =
+                            (1 - t2) * (1 - t2) * p1 +
+                            2 * (1 - t2) * t2 * p2 +
+                            t2 * t2 * p3;
+                    } else {
+                        auto p1 = y;
+                        auto p2 = keyframe->y;
+                        y = (1 - t2) * p1 + t2 * p2;
                     }
-                } else if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_HEIGHT) {
+                }
+
+                if (keyframe->enabledProperties & WIDGET_TIMELINE_PROPERTY_HEIGHT) {
                     h += g_easingFuncs[keyframe->heightEasingFunc](t) * (keyframe->height - h);
                 }
 
