@@ -19,6 +19,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <eez/core/value.h>
 #include <eez/flow/private.h>
@@ -55,6 +56,12 @@ extern void (*onArrayValueFreeHook)(ArrayValue *arrayValue);
 extern lv_obj_t *(*getLvglObjectFromIndexHook)(int32_t index);
 extern const void *(*getLvglImageByNameHook)(const char *name);
 #endif
+
+extern double (*getDatetimeNowHook)();
+extern void (*formatDatetimeHook)(double datetime,  char *str, size_t strLen);
+extern double (*parseDatetimeHook)(const char *str);
+extern double (*makeDatetimeHook)(int year, int month, int day, int hours, int minutes, int seconds);
+extern void (*breakDatetimeHook)(double datetime, int *year, int *month, int *day, int *hours, int *minutes, int *seconds);
 
 } // flow
 } // eez

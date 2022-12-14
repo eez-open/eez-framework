@@ -23,8 +23,20 @@
 
 #include <eez/flow/hooks.h>
 
+#include <eez/core/util.h>
+
 #if EEZ_OPTION_GUI
 #include <eez/gui/gui.h>
+#endif
+
+#include <chrono>
+#include <iostream>
+#include <sstream>
+#include <time.h>
+
+#ifndef ARDUINO
+// https://howardhinnant.github.io/date/date.html
+#include <eez/libs/date.h>
 #endif
 
 namespace eez {
@@ -94,6 +106,78 @@ static const void *getLvglImageByName(const char *name) {
 lv_obj_t *(*getLvglObjectFromIndexHook)(int32_t index) = getLvglObjectFromIndex;
 const void *(*getLvglImageByNameHook)(const char *name) = getLvglImageByName;
 #endif
+
+double getDatetimeNowDefaultImplementation() {
+    using namespace std::chrono;
+    milliseconds ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+    return (double)ms.count();
+}
+
+void formatDatetimeDefaultImplementation(double datetime,  char *str, size_t strLen) {
+#ifndef ARDUINO
+    using namespace std;
+    using namespace std::chrono;
+    using namespace date;
+
+    auto tp = system_clock::time_point(milliseconds((long long)datetime));
+
+    stringstream out;
+    out << tp << endl;
+
+    stringCopy(str, strLen, out.str().c_str());
+#else
+    // NOT IMPLEMENTED
+    *str = 0;
+#endif
+}
+
+extern double parseDatetimeDefaultImplementation(const char *str) {
+#ifndef ARDUINO
+    using namespace std;
+    using namespace std::chrono;
+    using namespace date;
+
+    istringstream in{str};
+
+    system_clock::time_point tp;
+    in >> date::parse("%Y-%m-%d %T", tp);
+
+    milliseconds ms = duration_cast<milliseconds>(tp.time_since_epoch());
+    return (double)ms.count();
+#else
+    // NOT IMPLEMENTED
+    return 0;
+#endif
+}
+
+extern double makeDatetimeDefaultImplementation(int year, int month, int day, int hours, int minutes, int seconds) {
+    tm ts;
+    ts.tm_year = year - 1900;
+    ts.tm_mon = month - 1;
+    ts.tm_mday = day;
+    ts.tm_hour = hours;
+    ts.tm_min = minutes;
+    ts.tm_sec = seconds;
+    ts.tm_isdst = -1;
+    return mktime(&ts) * 1000.0;
+}
+
+extern void breakDatetimeDefaultImplementation(double datetime, int *year, int *month, int *day, int *hours, int *minutes, int *seconds) {
+    auto temp = (time_t)(datetime / 1000.0);
+    tm ts = *gmtime(&temp);
+    if (year) *year = ts.tm_year + 1900;
+    if (month) *month = ts.tm_mon + 1;
+    if (day) *day = ts.tm_mday;
+    if (hours) *hours = ts.tm_hour;
+    if (minutes) *minutes = ts.tm_min;
+    if (seconds) *seconds = ts.tm_sec;
+}
+
+double (*getDatetimeNowHook)() = getDatetimeNowDefaultImplementation;
+void (*formatDatetimeHook)(double datetime,  char *str, size_t strLen) = formatDatetimeDefaultImplementation;
+double (*parseDatetimeHook)(const char *str) = parseDatetimeDefaultImplementation;
+double (*makeDatetimeHook)(int year, int month, int day, int hours, int minutes, int seconds) = makeDatetimeDefaultImplementation;
+void (*breakDatetimeHook)(double datetime, int *year, int *month, int *day, int *hours, int *minutes, int *seconds) = breakDatetimeDefaultImplementation;
 
 } // namespace flow
 } // namespace eez

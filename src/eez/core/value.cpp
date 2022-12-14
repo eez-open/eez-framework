@@ -486,15 +486,7 @@ bool compare_DATE_value(const Value &a, const Value &b) {
 
 void DATE_value_to_text(const Value &value, char *text, int count) {
 #ifndef ARDUINO
-    using namespace std;
-    using namespace std::chrono;
-    using namespace date;
-
-    auto tp = system_clock::time_point(milliseconds((long long)value.doubleValue));
-    stringstream out;
-    out << tp;
-
-    stringCopy(text, count, out.str().c_str());
+    flow::formatDatetimeHook(value.getDouble(), text, count);
 #else
     stringCopy(text, count, "NOT IMPLEMENTED");
 #endif
