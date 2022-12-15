@@ -96,7 +96,7 @@ void toLocaleString(Date time, char *str, uint32_t strLen) {
     if (g_localeFormat == FORMAT_DMY_24) {
         snprintf(str, strLen, "%02d-%02d-%02d %02d:%02d:%02d.%03d", day, month, year, hours, minutes, seconds, milliseconds);
     } else if (g_localeFormat == FORMAT_MDY_24) {
-        snprintf(str, strLen, "%02d-%02d-%02d %02d:%02d:%02d.%03d", day, month, year, hours, minutes, seconds, milliseconds);
+        snprintf(str, strLen, "%02d-%02d-%02d %02d:%02d:%02d.%03d", month, day, year, hours, minutes, seconds, milliseconds);
     } else if (g_localeFormat == FORMAT_DMY_12) {
         bool am;
         convertTime24to12(hours, am);
@@ -104,7 +104,7 @@ void toLocaleString(Date time, char *str, uint32_t strLen) {
     } else if (g_localeFormat == FORMAT_MDY_12) {
         bool am;
         convertTime24to12(hours, am);
-        snprintf(str, strLen, "%02d-%02d-%02d %02d:%02d:%02d.%03d %s", day, month, year, hours, minutes, seconds, milliseconds, am ? "AM" : "PM");
+        snprintf(str, strLen, "%02d-%02d-%02d %02d:%02d:%02d.%03d %s", month, day, year, hours, minutes, seconds, milliseconds, am ? "AM" : "PM");
     }
 }
 
