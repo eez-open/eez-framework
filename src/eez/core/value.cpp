@@ -23,21 +23,12 @@
 #include <string.h>
 #include <inttypes.h>
 
-#include <chrono>
-#include <string>
-#include <iostream>
-#include <sstream>
-
-#ifndef ARDUINO
-// https://howardhinnant.github.io/date/date.html
-#include <eez/libs/date.h>
-#endif
-
 #include <eez/core/util.h>
 #include <eez/core/value.h>
 #include <eez/core/vars.h>
 
 #include <eez/flow/hooks.h>
+#include <eez/flow/date.h>
 
 namespace eez {
 
@@ -485,11 +476,7 @@ bool compare_DATE_value(const Value &a, const Value &b) {
 }
 
 void DATE_value_to_text(const Value &value, char *text, int count) {
-#ifndef ARDUINO
-    flow::formatDatetimeHook(value.getDouble(), text, count);
-#else
-    stringCopy(text, count, "NOT IMPLEMENTED");
-#endif
+    flow::date::toLocaleString((flow::date::Date)value.getDouble(), text, count);
 }
 
 const char *DATE_value_type_name(const Value &value) {

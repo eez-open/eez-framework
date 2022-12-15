@@ -31,7 +31,7 @@
 #include <eez/flow/flow.h>
 #include <eez/flow/operations.h>
 #include <eez/flow/flow_defs_v3.h>
-#include <eez/flow/hooks.h>
+#include <eez/flow/date.h>
 
 #if EEZ_OPTION_GUI
 #include <eez/gui/gui.h>
@@ -902,7 +902,7 @@ void do_OPERATION_TYPE_FLOW_PARSE_DOUBLE(EvalStack &stack) {
 }
 
 void do_OPERATION_TYPE_DATE_NOW(EvalStack &stack) {
-    stack.push(Value(getDatetimeNowHook(), VALUE_TYPE_DATE));
+    stack.push(Value((double)date::now(), VALUE_TYPE_DATE));
 }
 
 void do_OPERATION_TYPE_DATE_TO_STRING(EvalStack &stack) {
@@ -918,7 +918,27 @@ void do_OPERATION_TYPE_DATE_TO_STRING(EvalStack &stack) {
     }
 
     char str[128];
-    formatDatetimeHook(a.getDouble(), str, sizeof(str));
+    date::toString(a.getDouble(), str, sizeof(str));
+    stack.push(Value::makeStringRef(str, -1, 0xbe440ec8));
+#else
+    stack.push(Value::makeError());
+#endif
+}
+
+void do_OPERATION_TYPE_DATE_TO_LOCALE_STRING(EvalStack &stack) {
+#ifndef ARDUINO
+    auto a = stack.pop().getValue();
+    if (a.isError()) {
+        stack.push(a);
+        return;
+    }
+    if (a.getType() != VALUE_TYPE_DATE) {
+        stack.push(Value::makeError());
+        return;
+    }
+
+    char str[128];
+    date::toLocaleString(a.getDouble(), str, sizeof(str));
     stack.push(Value::makeStringRef(str, -1, 0xbe440ec8));
 #else
     stack.push(Value::makeError());
@@ -935,8 +955,8 @@ void do_OPERATION_TYPE_DATE_FROM_STRING(EvalStack &stack) {
 
     Value dateStrValue = a.toString(0x99cb1a93);
 
-    double datetime = parseDatetimeHook(dateStrValue.getString());
-    stack.push(Value(datetime, VALUE_TYPE_DATE));
+    auto date = (double)date::fromString(dateStrValue.getString());
+    stack.push(Value(date, VALUE_TYPE_DATE));
 #else
     stack.push(Value::makeError());
 #endif
@@ -952,10 +972,8 @@ void do_OPERATION_TYPE_DATE_GET_YEAR(EvalStack &stack) {
         stack.push(Value::makeError());
         return;
     }
-    
-    int year;
-    breakDatetimeHook(a.getDouble(), &year, nullptr, nullptr, nullptr, nullptr, nullptr);
-    stack.push(year);
+
+    stack.push(date::getYear(a.getDouble()));
 }
 
 void do_OPERATION_TYPE_DATE_GET_MONTH(EvalStack &stack) {
@@ -969,9 +987,7 @@ void do_OPERATION_TYPE_DATE_GET_MONTH(EvalStack &stack) {
         return;
     }
 
-    int month;
-    breakDatetimeHook(a.getDouble(), nullptr, &month, nullptr, nullptr, nullptr, nullptr);
-    stack.push(month);
+    stack.push(date::getMonth(a.getDouble()));
 }
 
 void do_OPERATION_TYPE_DATE_GET_DAY(EvalStack &stack) {
@@ -985,9 +1001,7 @@ void do_OPERATION_TYPE_DATE_GET_DAY(EvalStack &stack) {
         return;
     }
 
-    int day;
-    breakDatetimeHook(a.getDouble(), nullptr, nullptr, &day, nullptr, nullptr, nullptr);
-    stack.push(day);
+    stack.push(date::getDay(a.getDouble()));
 }
 
 void do_OPERATION_TYPE_DATE_GET_HOURS(EvalStack &stack) {
@@ -1001,9 +1015,7 @@ void do_OPERATION_TYPE_DATE_GET_HOURS(EvalStack &stack) {
         return;
     }
 
-    int hours;
-    breakDatetimeHook(a.getDouble(), nullptr, nullptr, nullptr, &hours, nullptr, nullptr);
-    stack.push(hours);
+    stack.push(date::getHours(a.getDouble()));
 }
 
 void do_OPERATION_TYPE_DATE_GET_MINUTES(EvalStack &stack) {
@@ -1017,9 +1029,7 @@ void do_OPERATION_TYPE_DATE_GET_MINUTES(EvalStack &stack) {
         return;
     }
 
-    int minutes;
-    breakDatetimeHook(a.getDouble(), nullptr, nullptr, nullptr, nullptr, &minutes, nullptr);
-    stack.push(minutes);
+    stack.push(date::getMinutes(a.getDouble()));
 }
 
 void do_OPERATION_TYPE_DATE_GET_SECONDS(EvalStack &stack) {
@@ -1033,12 +1043,24 @@ void do_OPERATION_TYPE_DATE_GET_SECONDS(EvalStack &stack) {
         return;
     }
 
-    int seconds;
-    breakDatetimeHook(a.getDouble(), nullptr, nullptr, nullptr, nullptr, nullptr, &seconds);
-    stack.push(seconds);
+    stack.push(date::getSeconds(a.getDouble()));
 }
 
-void do_OPERATION_TYPE_DATE_FROM(EvalStack &stack) {
+void do_OPERATION_TYPE_DATE_GET_MILLISECONDS(EvalStack &stack) {
+    auto a = stack.pop().getValue();
+    if (a.isError()) {
+        stack.push(a);
+        return;
+    }
+    if (a.getType() != VALUE_TYPE_DATE) {
+        stack.push(Value::makeError());
+        return;
+    }
+
+    stack.push(date::getMilliseconds(a.getDouble()));
+}
+
+void do_OPERATION_TYPE_DATE_MAKE(EvalStack &stack) {
     int err;
     Value value;
 
@@ -1108,9 +1130,19 @@ void do_OPERATION_TYPE_DATE_FROM(EvalStack &stack) {
         return;
     }
 
-    double datetime;
-    datetime = makeDatetimeHook(year, month, day, hours, minutes, seconds);
-    stack.push(Value(datetime, VALUE_TYPE_DATE));
+    value = stack.pop().getValue();
+    if (value.isError()) {
+        stack.push(value);
+        return;
+    }
+    int milliseconds = value.toInt32(&err);
+    if (err) {
+        stack.push(Value::makeError());
+        return;
+    }
+
+    auto date = (double)date::makeDate(year, month, day, hours, minutes, seconds, milliseconds);
+    stack.push(Value(date, VALUE_TYPE_DATE));
 }
 
 void do_OPERATION_TYPE_MATH_SIN(EvalStack &stack) {
@@ -1896,13 +1928,6 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_DATE_NOW,
     do_OPERATION_TYPE_DATE_TO_STRING,
     do_OPERATION_TYPE_DATE_FROM_STRING,
-    do_OPERATION_TYPE_DATE_GET_YEAR,
-    do_OPERATION_TYPE_DATE_GET_MONTH,
-    do_OPERATION_TYPE_DATE_GET_DAY,
-    do_OPERATION_TYPE_DATE_GET_HOURS,
-    do_OPERATION_TYPE_DATE_GET_MINUTES,
-    do_OPERATION_TYPE_DATE_GET_SECONDS,
-    do_OPERATION_TYPE_DATE_FROM,
     do_OPERATION_TYPE_MATH_SIN,
     do_OPERATION_TYPE_MATH_COS,
     do_OPERATION_TYPE_MATH_LOG,
@@ -1924,7 +1949,16 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_ARRAY_APPEND,
     do_OPERATION_TYPE_ARRAY_INSERT,
     do_OPERATION_TYPE_ARRAY_REMOVE,
-    do_OPERATION_TYPE_ARRAY_CLONE
+    do_OPERATION_TYPE_ARRAY_CLONE,
+    do_OPERATION_TYPE_DATE_TO_LOCALE_STRING,
+    do_OPERATION_TYPE_DATE_GET_YEAR,
+    do_OPERATION_TYPE_DATE_GET_MONTH,
+    do_OPERATION_TYPE_DATE_GET_DAY,
+    do_OPERATION_TYPE_DATE_GET_HOURS,
+    do_OPERATION_TYPE_DATE_GET_MINUTES,
+    do_OPERATION_TYPE_DATE_GET_SECONDS,
+    do_OPERATION_TYPE_DATE_GET_MILLISECONDS,
+    do_OPERATION_TYPE_DATE_MAKE
 };
 
 } // namespace flow
