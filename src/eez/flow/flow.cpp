@@ -444,6 +444,8 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCurs
             } else {
                 value = 0;
             }
+        } else if (operation == DATA_OPERATION_GET_TEXT_REFRESH_RATE) {
+            getValue(flowDataId, operation, widgetCursor, value);
         }
 	} else {
 		// TODO this shouldn't happen
