@@ -674,7 +674,7 @@ void SelectFromEnumPage::updateInternalPage() {
             text, -1,
             xItem, yItem, itemWidth, itemHeight,
             isDisabled(i) ? disabledItemStyle : itemStyle,
-            i == activeItemIndex || !showRadioButtonIcon && currentValue == getValue(i)
+            i == activeItemIndex || (!showRadioButtonIcon && currentValue == getValue(i))
         );
     }
 
