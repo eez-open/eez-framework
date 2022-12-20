@@ -113,6 +113,7 @@ bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *ins
 
 	evalExpression(flowState, instructions, numInstructionBytes, errorMessage);
     if (g_stack.sp == 1) {
+#if EEZ_OPTION_GUI
         if (operation == DATA_OPERATION_GET_TEXT_REFRESH_RATE) {
             result = g_stack.pop();
             if (!result.isError()) {
@@ -125,11 +126,14 @@ bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *ins
                 return true;
             }
         } else {
+#endif
             result = g_stack.pop().getValue();
             if (!result.isError()) {
                 return true;
             }
+#if EEZ_OPTION_GUI
         }
+#endif
     }
 
     throwError(flowState, componentIndex, errorMessage, *g_stack.errorMessage ? g_stack.errorMessage : nullptr);
