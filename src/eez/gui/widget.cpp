@@ -31,6 +31,8 @@
 #include <eez/gui/gui.h>
 #include <eez/core/assets.h>
 
+#include <eez/gui/draw.h>
+
 #include <eez/gui/widgets/containers/app_view.h>
 #include <eez/gui/widgets/containers/container.h>
 #include <eez/gui/widgets/containers/grid.h>
@@ -169,7 +171,13 @@ void WidgetCursor::popBackground() {
         auto savedOpacity = display::setOpacity(widgetCursor.opacity); \
         widgetState->render(); \
         display::setOpacity(savedOpacity); \
-    }
+    } else { \
+        int x1 = g_widgetCursor.x; \
+        int y1 = g_widgetCursor.y; \
+        int x2 = g_widgetCursor.x + g_widgetCursor.w - 1; \
+        int y2 = g_widgetCursor.y + g_widgetCursor.h - 1; \
+        drawBorderAndBackground(x1, y1, x2, y2, nullptr, TRANSPARENT_COLOR_INDEX); \
+    } \
 
 void enumWidget() {
     WidgetCursor &widgetCursor = g_widgetCursor;
