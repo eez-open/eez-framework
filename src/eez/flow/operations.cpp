@@ -1205,6 +1205,66 @@ void do_OPERATION_TYPE_MATH_COS(EvalStack &stack) {
     stack.push(Value::makeError());
 }
 
+void do_OPERATION_TYPE_MATH_POW(EvalStack &stack) {
+    auto baseValue = stack.pop().getValue();
+    if (baseValue.isError()) {
+        stack.push(Value::makeError());
+        return;
+    }
+    if (!baseValue.isInt32OrLess() && !baseValue.isFloat() && !baseValue.isDouble()) {
+        stack.push(Value::makeError());
+        return;
+    }
+
+    auto exponentValue = stack.pop().getValue();
+    if (exponentValue.isError()) {
+        stack.push(Value::makeError());
+        return;
+    }
+    if (!exponentValue.isInt32OrLess() && !exponentValue.isFloat() && !exponentValue.isDouble()) {
+        stack.push(Value::makeError());
+        return;
+    }
+
+    if (baseValue.isFloat() && (exponentValue.isFloat() || exponentValue.isInt32OrLess())) {
+        int err;
+
+        float base = baseValue.toFloat(&err);
+        if (err) {
+            stack.push(Value::makeError());
+            return;
+        }
+
+        float exponent = exponentValue.toFloat(&err);
+        if (err) {
+            stack.push(Value::makeError());
+            return;
+        }
+
+        float result = powf(base, exponent);
+
+        stack.push(Value(result, VALUE_TYPE_FLOAT));
+    } else {
+        int err;
+
+        double base = baseValue.toDouble(&err);
+        if (err) {
+            stack.push(Value::makeError());
+            return;
+        }
+
+        double exponent = exponentValue.toDouble(&err);
+        if (err) {
+            stack.push(Value::makeError());
+            return;
+        }
+
+        double result = pow(base, exponent);
+
+        stack.push(Value(result, VALUE_TYPE_DOUBLE));
+    }
+}
+
 void do_OPERATION_TYPE_MATH_LOG(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
@@ -1958,7 +2018,8 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_DATE_GET_MINUTES,
     do_OPERATION_TYPE_DATE_GET_SECONDS,
     do_OPERATION_TYPE_DATE_GET_MILLISECONDS,
-    do_OPERATION_TYPE_DATE_MAKE
+    do_OPERATION_TYPE_DATE_MAKE,
+    do_OPERATION_TYPE_MATH_POW
 };
 
 } // namespace flow
