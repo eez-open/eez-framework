@@ -35,6 +35,8 @@ CallActionComponenentExecutionState::~CallActionComponenentExecutionState() {
 }
 
 void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIndex) {
+    // if componentIndex == -1 then execute flow at flowIndex without CallAction component
+
 	if (flowIndex >= (int)flowState->flowDefinition->flows.count) {
         // native action
 		executeActionFunction(flowIndex - flowState->flowDefinition->flows.count);
@@ -45,14 +47,14 @@ void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIn
     if ((int)componentIndex != -1) {
         auto callActionComponenentExecutionState = (CallActionComponenentExecutionState *)flowState->componenentExecutionStates[componentIndex];
         if (callActionComponenentExecutionState) {
-            // if (canFreeFlowState(callActionComponenentExecutionState->flowState)) {
-            //     freeFlowState(callActionComponenentExecutionState->flowState);
-            // } else {
+            if (canFreeFlowState(callActionComponenentExecutionState->flowState)) {
+                deallocateComponentExecutionState(flowState, componentIndex);
+            } else {
                 if (!addToQueue(flowState, componentIndex, -1, -1, -1, true)) {
 			        throwError(flowState, componentIndex, "Execution queue is full\n");
 		        }
                 return;
-            // }
+            }
         }
     }
 
