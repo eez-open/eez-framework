@@ -320,16 +320,18 @@ void resetSequenceInputs(FlowState *flowState) {
 		auto component = flowState->flow->components[flowState->executingComponentIndex];
         flowState->executingComponentIndex = NO_COMPONENT_INDEX;
 
-		for (uint32_t i = 0; i < component->inputs.count; i++) {
-			auto inputIndex = component->inputs[i];
-			if (flowState->flow->componentInputs[inputIndex] & COMPONENT_INPUT_FLAG_IS_SEQ_INPUT) {
-                auto pValue = &flowState->values[inputIndex];
-                if (pValue->getType() != VALUE_TYPE_UNDEFINED) {
-				    *pValue = Value();
-                    onValueChanged(pValue);
+        if (component->type != defs_v3::COMPONENT_TYPE_OUTPUT_ACTION) {
+            for (uint32_t i = 0; i < component->inputs.count; i++) {
+                auto inputIndex = component->inputs[i];
+                if (flowState->flow->componentInputs[inputIndex] & COMPONENT_INPUT_FLAG_IS_SEQ_INPUT) {
+                    auto pValue = &flowState->values[inputIndex];
+                    if (pValue->getType() != VALUE_TYPE_UNDEFINED) {
+                        *pValue = Value();
+                        onValueChanged(pValue);
+                    }
                 }
-			}
-		}
+            }
+        }
     }
 }
 
