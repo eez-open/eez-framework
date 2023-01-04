@@ -97,6 +97,8 @@ float eez_easeInOutBounce(float x);
 
 float getTimelinePosition(unsigned pageIndex);
 
+extern int g_eezFlowLvlgMeterTickIndex;
+
 #ifdef __cplusplus
 }
 #endif

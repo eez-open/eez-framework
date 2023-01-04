@@ -38,6 +38,8 @@
 using namespace eez::gui;
 #endif
 
+extern "C" int g_eezFlowLvlgMeterTickIndex = 0;
+
 namespace eez {
 namespace flow {
 
@@ -1950,6 +1952,10 @@ void do_OPERATION_TYPE_ARRAY_CLONE(EvalStack &stack) {
     stack.push(resultArray);
 }
 
+void do_OPERATION_TYPE_LVGL_METER_TICK_INDEX(EvalStack &stack) {
+    stack.push(g_eezFlowLvlgMeterTickIndex);
+}
+
 EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_ADD,
     do_OPERATION_TYPE_SUB,
@@ -2019,7 +2025,8 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_DATE_GET_SECONDS,
     do_OPERATION_TYPE_DATE_GET_MILLISECONDS,
     do_OPERATION_TYPE_DATE_MAKE,
-    do_OPERATION_TYPE_MATH_POW
+    do_OPERATION_TYPE_MATH_POW,
+    do_OPERATION_TYPE_LVGL_METER_TICK_INDEX,
 };
 
 } // namespace flow
