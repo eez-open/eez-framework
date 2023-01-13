@@ -106,11 +106,7 @@ bool isComponentReadyToRun(FlowState *flowState, unsigned componentIndex) {
 
 static bool pingComponent(FlowState *flowState, unsigned componentIndex, int sourceComponentIndex = -1, int sourceOutputIndex = -1, int targetInputIndex = -1) {
 	if (isComponentReadyToRun(flowState, componentIndex)) {
-		if (!addToQueue(flowState, componentIndex, sourceComponentIndex, sourceOutputIndex, targetInputIndex)) {
-			throwError(flowState, componentIndex, "Execution queue is full\n");
-			return false;
-		}
-		return true;
+		return addToQueue(flowState, componentIndex, sourceComponentIndex, sourceOutputIndex, targetInputIndex, false);
 	}
 	return false;
 }
@@ -496,7 +492,6 @@ void onEvent(FlowState *flowState, FlowEvent flowEvent) {
             auto onEventComponent = (OnEventComponent *)component;
             if (onEventComponent->event == flowEvent) {
                 if (!addToQueue(flowState, componentIndex, -1, -1, -1, false)) {
-                    throwError(flowState, componentIndex, "Execution queue is full\n");
                     return;
                 }
             }
@@ -554,9 +549,8 @@ void throwError(FlowState *flowState, int componentIndex, const char *errorMessa
 			auto catchErrorComponentExecutionState = allocateComponentExecutionState<CatchErrorComponenentExecutionState>(catchErrorFlowState, catchErrorComponentIndex);
 			catchErrorComponentExecutionState->message = Value::makeStringRef(errorMessage, strlen(errorMessage), 0x9473eef2);
 
-			if (!addToQueue(catchErrorFlowState, catchErrorComponentIndex, -1, -1, -1)) {
+			if (!addToQueue(catchErrorFlowState, catchErrorComponentIndex, -1, -1, -1, false)) {
 				catchErrorFlowState->error = true;
-				onFlowError(catchErrorFlowState, catchErrorComponentIndex, "Execution queue is full\n");
 				stopScriptHook();
 			}
 		} else {

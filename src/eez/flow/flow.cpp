@@ -80,9 +80,6 @@ void tick() {
 
 	uint32_t startTickCount = millis();
 
-    // // remember queue size before the loop
-    // size_t queueSize = getQueueSize();
-
     for (size_t i = 0; ; i++) {
 		FlowState *flowState;
 		unsigned componentIndex;
@@ -90,12 +87,6 @@ void tick() {
 		if (!peekNextTaskFromQueue(flowState, componentIndex, continuousTask)) {
 			break;
 		}
-
-        // // if continuous task and we are above remembered queue size then stop
-        // // (we don't want to exhaust flow execution because of, for example, animate block)
-        // if (continuousTask && i >= queueSize) {
-        //     break;
-        // }
 
 		if (!continuousTask && !canExecuteStep(flowState, componentIndex)) {
 			break;
@@ -105,7 +96,19 @@ void tick() {
 
         flowState->executingComponentIndex = componentIndex;
 
-		executeComponent(flowState, componentIndex);
+        if (continuousTask) {
+            auto componentExecutionState = (ComponenentExecutionState *)flowState->componenentExecutionStates[componentIndex];
+            if (!componentExecutionState) {
+                executeComponent(flowState, componentIndex);
+            } else if (componentExecutionState->lastExecutedTime + FLOW_TICK_MAX_DURATION_MS <= startTickCount) {
+                componentExecutionState->lastExecutedTime = startTickCount;
+                executeComponent(flowState, componentIndex);
+            } else {
+                addToQueue(flowState, componentIndex, -1, -1, -1, true);
+            }
+        } else {
+		    executeComponent(flowState, componentIndex);
+        }
 
         if (isFlowStopped()) {
             break;

@@ -50,9 +50,7 @@ void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIn
             if (canFreeFlowState(callActionComponenentExecutionState->flowState)) {
                 deallocateComponentExecutionState(flowState, componentIndex);
             } else {
-                if (!addToQueue(flowState, componentIndex, -1, -1, -1, true)) {
-			        throwError(flowState, componentIndex, "Execution queue is full\n");
-		        }
+                addToQueue(flowState, componentIndex, -1, -1, -1, true);
                 return;
             }
         }
