@@ -385,7 +385,7 @@ void propagateValueThroughSeqout(FlowState *flowState, unsigned componentIndex) 
 
 #if EEZ_OPTION_GUI
 void getValue(uint16_t dataId, DataOperationEnum operation, const WidgetCursor &widgetCursor, Value &value) {
-	if (isFlowRunningHook()) {
+	if (!isFlowStopped()) {
 		FlowState *flowState = widgetCursor.flowState;
 		auto flow = flowState->flow;
 
@@ -397,7 +397,7 @@ void getValue(uint16_t dataId, DataOperationEnum operation, const WidgetCursor &
 }
 
 void setValue(uint16_t dataId, const WidgetCursor &widgetCursor, const Value& value) {
-	if (isFlowRunningHook()) {
+	if (!isFlowStopped()) {
 		FlowState *flowState = widgetCursor.flowState;
 		auto flow = flowState->flow;
 

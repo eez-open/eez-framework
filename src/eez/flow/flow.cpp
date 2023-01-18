@@ -74,7 +74,7 @@ unsigned start(Assets *assets) {
 }
 
 void tick() {
-	if (!isFlowRunningHook()) {
+	if (isFlowStopped()) {
 		return;
 	}
 
@@ -160,7 +160,7 @@ FlowState *getPageFlowState(Assets *assets, int16_t pageIndex, const WidgetCurso
 		return nullptr;
 	}
 
-	if (!isFlowRunningHook()) {
+	if (isFlowStopped()) {
 		return nullptr;
 	}
 
@@ -200,7 +200,7 @@ FlowState *getPageFlowState(Assets *assets, int16_t pageIndex) {
 		return nullptr;
 	}
 
-	if (!isFlowRunningHook()) {
+	if (isFlowStopped()) {
 		return nullptr;
 	}
 
@@ -239,7 +239,7 @@ void setGlobalVariable(Assets *assets, uint32_t globalVariableIndex, const Value
 
 #if EEZ_OPTION_GUI
 void executeFlowAction(const WidgetCursor &widgetCursor, int16_t actionId, void *param) {
-	if (!isFlowRunningHook()) {
+	if (isFlowStopped()) {
 		return;
 	}
 
@@ -294,7 +294,7 @@ void executeFlowAction(const WidgetCursor &widgetCursor, int16_t actionId, void 
 }
 
 void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCursor &widgetCursor, Value &value) {
-	if (!isFlowRunningHook()) {
+	if (isFlowStopped()) {
 		return;
 	}
 
