@@ -38,7 +38,7 @@
 using namespace eez::gui;
 #endif
 
-extern "C" int g_eezFlowLvlgMeterTickIndex = 0;
+int g_eezFlowLvlgMeterTickIndex = 0;
 
 namespace eez {
 namespace flow {
