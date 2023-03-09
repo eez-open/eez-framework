@@ -321,7 +321,7 @@ struct Value {
     }
 
 	bool isDouble() const {
-		return type == VALUE_TYPE_DOUBLE;
+		return type == VALUE_TYPE_DOUBLE || type == VALUE_TYPE_DATE;
 	}
 
 	bool isBoolean() const {
