@@ -50,7 +50,7 @@ struct FlowState {
 	Flow *flow;
 	uint16_t flowIndex;
 	bool isAction;
-	uint16_t error;
+	bool error;
 	uint32_t numAsyncComponents;
 	FlowState *parentFlowState;
 	Component *parentComponent;

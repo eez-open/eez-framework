@@ -96,18 +96,22 @@ void tick() {
 
         flowState->executingComponentIndex = componentIndex;
 
-        if (continuousTask) {
-            auto componentExecutionState = (ComponenentExecutionState *)flowState->componenentExecutionStates[componentIndex];
-            if (!componentExecutionState) {
-                executeComponent(flowState, componentIndex);
-            } else if (componentExecutionState->lastExecutedTime + FLOW_TICK_MAX_DURATION_MS <= startTickCount) {
-                componentExecutionState->lastExecutedTime = startTickCount;
-                executeComponent(flowState, componentIndex);
-            } else {
-                addToQueue(flowState, componentIndex, -1, -1, -1, true);
-            }
+        if (flowState->error) {
+            deallocateComponentExecutionState(flowState, componentIndex);
         } else {
-		    executeComponent(flowState, componentIndex);
+            if (continuousTask) {
+                auto componentExecutionState = (ComponenentExecutionState *)flowState->componenentExecutionStates[componentIndex];
+                if (!componentExecutionState) {
+                    executeComponent(flowState, componentIndex);
+                } else if (componentExecutionState->lastExecutedTime + FLOW_TICK_MAX_DURATION_MS <= startTickCount) {
+                    componentExecutionState->lastExecutedTime = startTickCount;
+                    executeComponent(flowState, componentIndex);
+                } else {
+                    addToQueue(flowState, componentIndex, -1, -1, -1, true);
+                }
+            } else {
+                executeComponent(flowState, componentIndex);
+            }
         }
 
         if (isFlowStopped()) {
