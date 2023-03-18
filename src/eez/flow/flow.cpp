@@ -80,7 +80,9 @@ void tick() {
 
 	uint32_t startTickCount = millis();
 
-    for (size_t i = 0; ; i++) {
+    auto n = getQueueSize();
+
+    for (size_t i = 0; i < n || g_numContinuousTaskInQueue > 0; i++) {
 		FlowState *flowState;
 		unsigned componentIndex;
         bool continuousTask;
@@ -124,9 +126,11 @@ void tick() {
             freeFlowState(flowState);
         }
 
-		if (millis() - startTickCount >= FLOW_TICK_MAX_DURATION_MS) {
-			break;
-		}
+        if ((i + 1) % 5 == 0) {
+            if (millis() - startTickCount >= FLOW_TICK_MAX_DURATION_MS) {
+                break;
+            }
+        }
 	}
 
 	finishToDebuggerMessageHook();
