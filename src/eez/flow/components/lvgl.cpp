@@ -243,6 +243,8 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                     }
                 }
             }
+
+            lv_obj_update_layout(target);
         }
     }
 

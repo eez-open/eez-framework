@@ -67,6 +67,7 @@ void executeAnimateComponent(FlowState *flowState, unsigned componentIndex);
 void executeNoopComponent(FlowState *flowState, unsigned componentIndex);
 void executeOnEventComponent(FlowState *flowState, unsigned componentIndex);
 void executeLVGLComponent(FlowState *flowState, unsigned componentIndex);
+void executeLVGLUserWidgetComponent(FlowState *flowState, unsigned componentIndex);
 void executeSortArrayComponent(FlowState *flowState, unsigned componentIndex);
 
 #if EEZ_OPTION_GUI
@@ -124,6 +125,7 @@ static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
     nullptr,
 #endif
     executeSortArrayComponent, // COMPONENT_TYPE_SORT_ARRAY_ACTION
+    executeLVGLUserWidgetComponent, // COMPONENT_TYPE_LVGL_USER_WIDGET
 };
 
 void registerComponent(ComponentTypes componentType, ExecuteComponentFunctionType executeComponentFunction) {
