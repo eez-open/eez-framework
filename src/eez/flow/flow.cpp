@@ -30,12 +30,13 @@
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/debugger.h>
 #include <eez/flow/hooks.h>
+#include <eez/flow/components/lvgl_user_widget.h>
 
 #if EEZ_OPTION_GUI
 #include <eez/gui/gui.h>
 #include <eez/gui/keypad.h>
 #include <eez/gui/widgets/input.h>
-#include <eez/gui/widgets/containers/layout_view.h>
+#include <eez/gui/widgets/containers/user_widget.h>
 using namespace eez::gui;
 #endif
 
@@ -172,17 +173,17 @@ FlowState *getPageFlowState(Assets *assets, int16_t pageIndex, const WidgetCurso
 		return nullptr;
 	}
 
-	if (widgetCursor.widget && widgetCursor.widget->type == WIDGET_TYPE_LAYOUT_VIEW) {
+	if (widgetCursor.widget && widgetCursor.widget->type == WIDGET_TYPE_USER_WIDGET) {
 		if (widgetCursor.flowState) {
-			auto layoutViewWidget = (LayoutViewWidget *)widgetCursor.widget;
+			auto userWidgetWidget = (UserWidgetWidget *)widgetCursor.widget;
 			auto flowState = widgetCursor.flowState;
-			auto layoutViewWidgetComponentIndex = layoutViewWidget->componentIndex;
+			auto userWidgetWidgetComponentIndex = userWidgetWidget->componentIndex;
 
-			return getLayoutViewFlowState(flowState, layoutViewWidgetComponentIndex, pageIndex);
+			return getUserWidgetFlowState(flowState, userWidgetWidgetComponentIndex, pageIndex);
 		}
 	} else {
 		auto page = assets->pages[pageIndex];
-		if (!(page->flags & PAGE_IS_USED_AS_CUSTOM_WIDGET)) {
+		if (!(page->flags & PAGE_IS_USED_AS_USER_WIDGET)) {
             FlowState *flowState;
             for (flowState = g_firstFlowState; flowState; flowState = flowState->nextSibling) {
                 if (flowState->flowIndex == pageIndex) {
@@ -223,6 +224,15 @@ FlowState *getPageFlowState(Assets *assets, int16_t pageIndex) {
         flowState = initPageFlowState(assets, pageIndex, nullptr, 0);
     }
 
+    return flowState;
+}
+
+FlowState *getFlowState(Assets *assets, int32_t *flowStateAddressIndex) {
+    FlowState *flowState = getPageFlowState(assets, flowStateAddressIndex[0]);
+    for (int i = 1; flowStateAddressIndex[i] != -1; ++i) {
+        auto executionState = (LVGLUserWidgetExecutionState *)flowState->componenentExecutionStates[flowStateAddressIndex[i]];
+        flowState = executionState->flowState;
+    }
     return flowState;
 }
 

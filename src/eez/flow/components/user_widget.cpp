@@ -18,6 +18,8 @@
 
 #include <eez/conf-internal.h>
 
+#if EEZ_OPTION_GUI
+
 #include <eez/core/alloc.h>
 #include <eez/core/os.h>
 
@@ -25,35 +27,44 @@
 #include <eez/flow/flow.h>
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/queue.h>
+#include <eez/flow/components/call_action.h>
 #include <eez/flow/components/input.h>
-#include <eez/flow/components/lvgl_user_widget.h>
-
-#if defined(EEZ_FOR_LVGL)
 
 namespace eez {
 namespace flow {
 
-struct LVGLUserWidgetComponent : public Component {
-	int16_t flowIndex;
-	uint8_t inputsStartIndex;
-	uint8_t outputsStartIndex;
-    int32_t widgetStartIndex;
+typedef CallActionActionComponent UserWidgetWidgetComponent;
+
+struct UserWidgetWidgetExecutionState : public ComponenentExecutionState {
+    FlowState *flowState;
+
+    ~UserWidgetWidgetExecutionState() {
+        freeFlowState(flowState);
+    }
 };
 
-static LVGLUserWidgetExecutionState *createUserWidgetFlowState(FlowState *flowState, uint16_t userWidgetWidgetComponentIndex, int16_t pageId, uint16_t widgetStartIndex) {
+static UserWidgetWidgetExecutionState *createUserWidgetFlowState(FlowState *flowState, uint16_t userWidgetWidgetComponentIndex, int16_t pageId) {
     auto userWidgetFlowState = initPageFlowState(flowState->assets, pageId, flowState, userWidgetWidgetComponentIndex);
-    userWidgetFlowState->lvglWidgetStartIndex = widgetStartIndex;
-    auto userWidgetWidgetExecutionState = allocateComponentExecutionState<LVGLUserWidgetExecutionState>(flowState, userWidgetWidgetComponentIndex);
+    auto userWidgetWidgetExecutionState = allocateComponentExecutionState<UserWidgetWidgetExecutionState>(flowState, userWidgetWidgetComponentIndex);
     userWidgetWidgetExecutionState->flowState = userWidgetFlowState;
     return userWidgetWidgetExecutionState;
 }
 
-void executeLVGLUserWidgetComponent(FlowState *flowState, unsigned componentIndex) {
-    auto component = (LVGLUserWidgetComponent *)flowState->flow->components[componentIndex];
-
-    auto userWidgetWidgetExecutionState = (LVGLUserWidgetExecutionState *)flowState->componenentExecutionStates[componentIndex];
+FlowState *getUserWidgetFlowState(FlowState *flowState, uint16_t userWidgetWidgetComponentIndex, int16_t pageId) {
+    auto userWidgetWidgetExecutionState = (UserWidgetWidgetExecutionState *)flowState->componenentExecutionStates[userWidgetWidgetComponentIndex];
     if (!userWidgetWidgetExecutionState) {
-        createUserWidgetFlowState(flowState, componentIndex, component->flowIndex, component->widgetStartIndex);
+        userWidgetWidgetExecutionState = createUserWidgetFlowState(flowState, userWidgetWidgetComponentIndex, pageId);
+    }
+
+    return userWidgetWidgetExecutionState->flowState;
+}
+
+void executeUserWidgetWidgetComponent(FlowState *flowState, unsigned componentIndex) {
+    auto component = (UserWidgetWidgetComponent *)flowState->flow->components[componentIndex];
+
+    auto userWidgetWidgetExecutionState = (UserWidgetWidgetExecutionState *)flowState->componenentExecutionStates[componentIndex];
+    if (!userWidgetWidgetExecutionState) {
+        createUserWidgetFlowState(flowState, componentIndex, component->flowIndex);
     } else {
         auto userWidgetFlowState = userWidgetWidgetExecutionState->flowState;
         for (
@@ -92,17 +103,4 @@ void executeLVGLUserWidgetComponent(FlowState *flowState, unsigned componentInde
 } // namespace flow
 } // namespace eez
 
-
-#else
-
-namespace eez {
-namespace flow {
-
-void executeLVGLUserWidgetComponent(FlowState *flowState, unsigned componentIndex) {
-    throwError(flowState, componentIndex, "Not implemented");
-}
-
-} // namespace flow
-} // namespace eez
-
-#endif
+#endif // EEZ_OPTION_GUI

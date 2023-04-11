@@ -52,15 +52,16 @@ extern int16_t g_currentScreen;
 void loadScreen(int index);
 
 void flowOnPageLoaded(unsigned pageIndex);
-void flowPropagateValue(unsigned pageIndex, unsigned componentIndex, unsigned outputIndex);
 
-const char *evalTextProperty(unsigned pageIndex, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage);
-int32_t evalIntegerProperty(unsigned pageIndex, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage);
-bool evalBooleanProperty(unsigned pageIndex, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage);
+void flowPropagateValue(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned outputIndex);
 
-void assignStringProperty(unsigned pageIndex, unsigned componentIndex, unsigned propertyIndex, const char *value, const char *errorMessage);
-void assignIntegerProperty(unsigned pageIndex, unsigned componentIndex, unsigned propertyIndex, int32_t value, const char *errorMessage);
-void assignBooleanProperty(unsigned pageIndex, unsigned componentIndex, unsigned propertyIndex, bool value, const char *errorMessage);
+const char *evalTextProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage);
+int32_t evalIntegerProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage);
+bool evalBooleanProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage);
+
+void assignStringProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, const char *value, const char *errorMessage);
+void assignIntegerProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, int32_t value, const char *errorMessage);
+void assignBooleanProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, bool value, const char *errorMessage);
 
 float eez_linear(float x);
 float eez_easeInQuad(float x);

@@ -139,6 +139,10 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
 
     flowState->timelinePosition = 0;
 
+#if defined(EEZ_FOR_LVGL)
+    flowState->lvglWidgetStartIndex = 0;
+#endif
+
     if (parentFlowState) {
         if (parentFlowState->lastChild) {
             parentFlowState->lastChild->nextSibling = flowState;

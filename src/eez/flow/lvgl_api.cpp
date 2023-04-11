@@ -116,15 +116,15 @@ extern "C" void flowOnPageLoaded(unsigned pageIndex) {
     eez::flow::getPageFlowState(eez::g_mainAssets, pageIndex);
 }
 
-extern "C" void flowPropagateValue(unsigned pageIndex, unsigned componentIndex, unsigned outputIndex) {
-    eez::flow::FlowState *flowState = eez::flow::getPageFlowState(eez::g_mainAssets, pageIndex);
+extern "C" void flowPropagateValue(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned outputIndex) {
+    eez::flow::FlowState *flowState = eez::flow::getFlowState(eez::g_mainAssets, flowStateAddressIndex);
     eez::flow::propagateValue(flowState, componentIndex, outputIndex);
 }
 
 static char textValue[1000];
 
-extern "C" const char *evalTextProperty(unsigned pageIndex, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage) {
-    eez::flow::FlowState *flowState = eez::flow::getPageFlowState(eez::g_mainAssets, pageIndex);
+extern "C" const char *evalTextProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage) {
+    eez::flow::FlowState *flowState = eez::flow::getFlowState(eez::g_mainAssets, flowStateAddressIndex);
     eez::Value value;
     if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, value, errorMessage)) {
         return "";
@@ -133,8 +133,8 @@ extern "C" const char *evalTextProperty(unsigned pageIndex, unsigned componentIn
     return textValue;
 }
 
-extern "C" int32_t evalIntegerProperty(unsigned pageIndex, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage) {
-    eez::flow::FlowState *flowState = eez::flow::getPageFlowState(eez::g_mainAssets, pageIndex);
+extern "C" int32_t evalIntegerProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage) {
+    eez::flow::FlowState *flowState = eez::flow::getFlowState(eez::g_mainAssets, flowStateAddressIndex);
     eez::Value value;
     if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, value, errorMessage)) {
         return 0;
@@ -148,8 +148,8 @@ extern "C" int32_t evalIntegerProperty(unsigned pageIndex, unsigned componentInd
     return intValue;
 }
 
-extern "C" bool evalBooleanProperty(unsigned pageIndex, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage) {
-    eez::flow::FlowState *flowState = eez::flow::getPageFlowState(eez::g_mainAssets, pageIndex);
+extern "C" bool evalBooleanProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage) {
+    eez::flow::FlowState *flowState = eez::flow::getFlowState(eez::g_mainAssets, flowStateAddressIndex);
     eez::Value value;
     if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, value, errorMessage)) {
         return 0;
@@ -163,8 +163,8 @@ extern "C" bool evalBooleanProperty(unsigned pageIndex, unsigned componentIndex,
     return booleanValue;
 }
 
-extern "C" void assignStringProperty(unsigned pageIndex, unsigned componentIndex, unsigned propertyIndex, const char *value, const char *errorMessage) {
-    eez::flow::FlowState *flowState = eez::flow::getPageFlowState(eez::g_mainAssets, pageIndex);
+extern "C" void assignStringProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, const char *value, const char *errorMessage) {
+    eez::flow::FlowState *flowState = eez::flow::getFlowState(eez::g_mainAssets, flowStateAddressIndex);
 
     auto component = flowState->flow->components[componentIndex];
 
@@ -178,8 +178,8 @@ extern "C" void assignStringProperty(unsigned pageIndex, unsigned componentIndex
     eez::flow::assignValue(flowState, componentIndex, dstValue, srcValue);
 }
 
-extern "C" void assignIntegerProperty(unsigned pageIndex, unsigned componentIndex, unsigned propertyIndex, int32_t value, const char *errorMessage) {
-    eez::flow::FlowState *flowState = eez::flow::getPageFlowState(eez::g_mainAssets, pageIndex);
+extern "C" void assignIntegerProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, int32_t value, const char *errorMessage) {
+    eez::flow::FlowState *flowState = eez::flow::getFlowState(eez::g_mainAssets, flowStateAddressIndex);
 
     auto component = flowState->flow->components[componentIndex];
 
@@ -193,8 +193,8 @@ extern "C" void assignIntegerProperty(unsigned pageIndex, unsigned componentInde
     eez::flow::assignValue(flowState, componentIndex, dstValue, srcValue);
 }
 
-extern "C" void assignBooleanProperty(unsigned pageIndex, unsigned componentIndex, unsigned propertyIndex, bool value, const char *errorMessage) {
-    eez::flow::FlowState *flowState = eez::flow::getPageFlowState(eez::g_mainAssets, pageIndex);
+extern "C" void assignBooleanProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, bool value, const char *errorMessage) {
+    eez::flow::FlowState *flowState = eez::flow::getFlowState(eez::g_mainAssets, flowStateAddressIndex);
 
     auto component = flowState->flow->components[componentIndex];
 

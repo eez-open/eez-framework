@@ -1,6 +1,6 @@
 /*
-* EEZ Generic Firmware
-* Copyright (C) 2021-present, Envox d.o.o.
+* EEZ Framework
+* Copyright (C) 2022-present, Envox d.o.o.
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -23,17 +23,14 @@
 namespace eez {
 namespace flow {
 
-struct CallActionActionComponent : public Component {
-	int16_t flowIndex;
-	uint8_t inputsStartIndex;
-	uint8_t outputsStartIndex;
+struct LVGLUserWidgetExecutionState : public ComponenentExecutionState {
+    FlowState *flowState;
+
+    ~LVGLUserWidgetExecutionState() {
+        freeFlowState(flowState);
+    }
 };
 
-struct CallActionComponenentExecutionState : public ComponenentExecutionState {
-	FlowState *flowState;
-
-	~CallActionComponenentExecutionState();
-};
 
 } // flow
 } // eez

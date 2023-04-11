@@ -26,13 +26,13 @@ namespace flow {
 
 namespace gui {
 
-struct LayoutViewWidget : public Widget {
+struct UserWidgetWidget : public Widget {
     int16_t layout; // page ID
     int16_t context; // data ID
 	uint16_t componentIndex;
 };
 
-struct LayoutViewWidgetState : public WidgetState {
+struct UserWidgetWidgetState : public WidgetState {
 	WidgetStateFlags flags;
     Value context;
 	bool repainted;

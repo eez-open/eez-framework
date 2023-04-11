@@ -22,7 +22,7 @@
 
 #include <eez/gui/gui.h>
 #include <eez/gui/widgets/containers/container.h>
-#include <eez/gui/widgets/containers/layout_view.h>
+#include <eez/gui/widgets/containers/user_widget.h>
 
 #include <eez/flow/private.h>
 
@@ -35,12 +35,12 @@ int getLayoutId(const WidgetCursor &widgetCursor) {
         return layoutValue.getInt();
     }
 
-    auto layoutView = (const LayoutViewWidget *)widgetCursor.widget;
-    return layoutView->layout;
+    auto userWidgetWidget = (const UserWidgetWidget *)widgetCursor.widget;
+    return userWidgetWidget->layout;
 }
 
-bool LayoutViewWidgetState::updateState() {
-    WIDGET_STATE_START(LayoutViewWidget);
+bool UserWidgetWidgetState::updateState() {
+    WIDGET_STATE_START(UserWidgetWidget);
 
     auto savedCursor = widgetCursor.cursor;
 
@@ -78,9 +78,9 @@ bool LayoutViewWidgetState::updateState() {
     WIDGET_STATE_END()
 }
 
-void LayoutViewWidgetState::render() {
+void UserWidgetWidgetState::render() {
 	const WidgetCursor& widgetCursor = g_widgetCursor;
-    auto widget = (const LayoutViewWidget *)widgetCursor.widget;
+    auto widget = (const UserWidgetWidget *)widgetCursor.widget;
     const Style* style = getStyle(widget->style);
     drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style, flags.active);
     // if (layout) {
@@ -90,13 +90,13 @@ void LayoutViewWidgetState::render() {
 	repainted = true;
 }
 
-void LayoutViewWidgetState::enumChildren() {
+void UserWidgetWidgetState::enumChildren() {
 	WidgetCursor& widgetCursor = g_widgetCursor;
 
     auto savedFlowState = widgetCursor.flowState;
     widgetCursor.flowState = flowState;
 
-	auto widget = (const LayoutViewWidget *)widgetCursor.widget;
+	auto widget = (const UserWidgetWidget *)widgetCursor.widget;
 
 	bool savedRefreshed = false;
 

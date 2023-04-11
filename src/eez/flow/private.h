@@ -60,6 +60,9 @@ struct FlowState {
     bool *componenentAsyncStates;
     unsigned executingComponentIndex;
     float timelinePosition;
+#if defined(EEZ_FOR_LVGL)
+    int32_t lvglWidgetStartIndex;
+#endif
 
     FlowState *firstChild;
     FlowState *lastChild;
