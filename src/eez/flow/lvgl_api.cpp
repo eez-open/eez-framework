@@ -40,7 +40,7 @@
 #include <eez/flow/debugger.h>
 #include <eez/flow/components.h>
 #include <eez/flow/flow_defs_v3.h>
-
+#include <eez/flow/components/lvgl_user_widget.h>
 #include <eez/flow/lvgl_api.h>
 
 static void replacePageHook(int16_t pageId, uint32_t animType, uint32_t speed, uint32_t delay);
@@ -116,101 +116,102 @@ extern "C" void flowOnPageLoaded(unsigned pageIndex) {
     eez::flow::getPageFlowState(eez::g_mainAssets, pageIndex);
 }
 
-extern "C" void flowPropagateValue(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned outputIndex) {
-    eez::flow::FlowState *flowState = eez::flow::getFlowState(eez::g_mainAssets, flowStateAddressIndex);
-    eez::flow::propagateValue(flowState, componentIndex, outputIndex);
+extern "C" void flowPropagateValue(void *flowState, unsigned componentIndex, unsigned outputIndex) {
+    eez::flow::propagateValue((eez::flow::FlowState *)flowState, componentIndex, outputIndex);
 }
 
 static char textValue[1000];
 
-extern "C" const char *evalTextProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage) {
-    eez::flow::FlowState *flowState = eez::flow::getFlowState(eez::g_mainAssets, flowStateAddressIndex);
+extern "C" const char *evalTextProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage) {
     eez::Value value;
-    if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, value, errorMessage)) {
+    if (!eez::flow::evalProperty((eez::flow::FlowState *)flowState, componentIndex, propertyIndex, value, errorMessage)) {
         return "";
     }
     value.toText(textValue, sizeof(textValue));
     return textValue;
 }
 
-extern "C" int32_t evalIntegerProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage) {
-    eez::flow::FlowState *flowState = eez::flow::getFlowState(eez::g_mainAssets, flowStateAddressIndex);
+extern "C" int32_t evalIntegerProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage) {
     eez::Value value;
-    if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, value, errorMessage)) {
+    if (!eez::flow::evalProperty((eez::flow::FlowState *)flowState, componentIndex, propertyIndex, value, errorMessage)) {
         return 0;
     }
     int err;
     int32_t intValue = value.toInt32(&err);
     if (err) {
-        eez::flow::throwError(flowState, componentIndex, errorMessage);
+        eez::flow::throwError((eez::flow::FlowState *)flowState, componentIndex, errorMessage);
         return 0;
     }
     return intValue;
 }
 
-extern "C" bool evalBooleanProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage) {
-    eez::flow::FlowState *flowState = eez::flow::getFlowState(eez::g_mainAssets, flowStateAddressIndex);
+extern "C" bool evalBooleanProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage) {
     eez::Value value;
-    if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, value, errorMessage)) {
+    if (!eez::flow::evalProperty((eez::flow::FlowState *)flowState, componentIndex, propertyIndex, value, errorMessage)) {
         return 0;
     }
     int err;
     bool booleanValue = value.toBool(&err);
     if (err) {
-        eez::flow::throwError(flowState, componentIndex, errorMessage);
+        eez::flow::throwError((eez::flow::FlowState *)flowState, componentIndex, errorMessage);
         return 0;
     }
     return booleanValue;
 }
 
-extern "C" void assignStringProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, const char *value, const char *errorMessage) {
-    eez::flow::FlowState *flowState = eez::flow::getFlowState(eez::g_mainAssets, flowStateAddressIndex);
-
-    auto component = flowState->flow->components[componentIndex];
+extern "C" void assignStringProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *value, const char *errorMessage) {
+    auto component = ((eez::flow::FlowState *)flowState)->flow->components[componentIndex];
 
     eez::Value dstValue;
-    if (!eez::flow::evalAssignableExpression(flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, dstValue, errorMessage)) {
+    if (!eez::flow::evalAssignableExpression((eez::flow::FlowState *)flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, dstValue, errorMessage)) {
         return;
     }
 
     eez::Value srcValue = eez::Value::makeStringRef(value, -1, 0x3eefcf0d);
 
-    eez::flow::assignValue(flowState, componentIndex, dstValue, srcValue);
+    eez::flow::assignValue((eez::flow::FlowState *)flowState, componentIndex, dstValue, srcValue);
 }
 
-extern "C" void assignIntegerProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, int32_t value, const char *errorMessage) {
-    eez::flow::FlowState *flowState = eez::flow::getFlowState(eez::g_mainAssets, flowStateAddressIndex);
-
-    auto component = flowState->flow->components[componentIndex];
+extern "C" void assignIntegerProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, int32_t value, const char *errorMessage) {
+    auto component = ((eez::flow::FlowState *)flowState)->flow->components[componentIndex];
 
     eez::Value dstValue;
-    if (!eez::flow::evalAssignableExpression(flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, dstValue, errorMessage)) {
+    if (!eez::flow::evalAssignableExpression((eez::flow::FlowState *)flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, dstValue, errorMessage)) {
         return;
     }
 
     eez::Value srcValue((int)value, eez::VALUE_TYPE_INT32);
 
-    eez::flow::assignValue(flowState, componentIndex, dstValue, srcValue);
+    eez::flow::assignValue((eez::flow::FlowState *)flowState, componentIndex, dstValue, srcValue);
 }
 
-extern "C" void assignBooleanProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, bool value, const char *errorMessage) {
-    eez::flow::FlowState *flowState = eez::flow::getFlowState(eez::g_mainAssets, flowStateAddressIndex);
-
-    auto component = flowState->flow->components[componentIndex];
+extern "C" void assignBooleanProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, bool value, const char *errorMessage) {
+    auto component = ((eez::flow::FlowState *)flowState)->flow->components[componentIndex];
 
     eez::Value dstValue;
-    if (!eez::flow::evalAssignableExpression(flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, dstValue, errorMessage)) {
+    if (!eez::flow::evalAssignableExpression((eez::flow::FlowState *)flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, dstValue, errorMessage)) {
         return;
     }
 
     eez::Value srcValue(value, eez::VALUE_TYPE_BOOLEAN);
 
-    eez::flow::assignValue(flowState, componentIndex, dstValue, srcValue);
+    eez::flow::assignValue((eez::flow::FlowState *)flowState, componentIndex, dstValue, srcValue);
 }
 
 extern "C" float getTimelinePosition(unsigned pageIndex) {
     eez::flow::FlowState *flowState = eez::flow::getPageFlowState(eez::g_mainAssets, pageIndex);
     return flowState->timelinePosition;
+}
+
+void *getFlowState(void *flowState, unsigned userWidgetComponentIndexOrPageIndex) {
+    if (!flowState) {
+        return eez::flow::getPageFlowState(eez::g_mainAssets, userWidgetComponentIndexOrPageIndex);
+    }
+    auto executionState = (eez::flow::LVGLUserWidgetExecutionState *)((eez::flow::FlowState *)flowState)->componenentExecutionStates[userWidgetComponentIndexOrPageIndex];
+    if (!executionState) {
+        executionState = eez::flow::createUserWidgetFlowState((eez::flow::FlowState *)flowState, userWidgetComponentIndexOrPageIndex);
+    }
+    return executionState->flowState;
 }
 
 #endif // EEZ_FOR_LVGL

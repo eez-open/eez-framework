@@ -53,15 +53,18 @@ void loadScreen(int index);
 
 void flowOnPageLoaded(unsigned pageIndex);
 
-void flowPropagateValue(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned outputIndex);
+// if flowState is nullptr then userWidgetComponentIndexOrPageIndex is page index
+void *getFlowState(void *flowState, unsigned userWidgetComponentIndexOrPageIndex);
 
-const char *evalTextProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage);
-int32_t evalIntegerProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage);
-bool evalBooleanProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage);
+void flowPropagateValue(void *flowState, unsigned componentIndex, unsigned outputIndex);
 
-void assignStringProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, const char *value, const char *errorMessage);
-void assignIntegerProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, int32_t value, const char *errorMessage);
-void assignBooleanProperty(int32_t *flowStateAddressIndex, unsigned componentIndex, unsigned propertyIndex, bool value, const char *errorMessage);
+const char *evalTextProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage);
+int32_t evalIntegerProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage);
+bool evalBooleanProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage);
+
+void assignStringProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *value, const char *errorMessage);
+void assignIntegerProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, int32_t value, const char *errorMessage);
+void assignBooleanProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, bool value, const char *errorMessage);
 
 float eez_linear(float x);
 float eez_easeInQuad(float x);

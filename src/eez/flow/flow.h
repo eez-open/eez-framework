@@ -44,7 +44,6 @@ bool isFlowStopped();
 FlowState *getPageFlowState(Assets *assets, int16_t pageIndex, const WidgetCursor &widgetCursor);
 #else
 FlowState *getPageFlowState(Assets *assets, int16_t pageIndex);
-FlowState *getFlowState(Assets *assets, int32_t *flowStateAddressIndex);
 #endif
 int getPageIndex(FlowState *flowState);
 

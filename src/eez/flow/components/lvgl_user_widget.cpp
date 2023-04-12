@@ -40,11 +40,13 @@ struct LVGLUserWidgetComponent : public Component {
     int32_t widgetStartIndex;
 };
 
-static LVGLUserWidgetExecutionState *createUserWidgetFlowState(FlowState *flowState, uint16_t userWidgetWidgetComponentIndex, int16_t pageId, uint16_t widgetStartIndex) {
-    auto userWidgetFlowState = initPageFlowState(flowState->assets, pageId, flowState, userWidgetWidgetComponentIndex);
-    userWidgetFlowState->lvglWidgetStartIndex = widgetStartIndex;
+LVGLUserWidgetExecutionState *createUserWidgetFlowState(FlowState *flowState, unsigned userWidgetWidgetComponentIndex) {
+    auto component = (LVGLUserWidgetComponent *)flowState->flow->components[userWidgetWidgetComponentIndex];
+    auto userWidgetFlowState = initPageFlowState(flowState->assets, component->flowIndex, flowState, userWidgetWidgetComponentIndex);
+    userWidgetFlowState->lvglWidgetStartIndex = component->widgetStartIndex;
     auto userWidgetWidgetExecutionState = allocateComponentExecutionState<LVGLUserWidgetExecutionState>(flowState, userWidgetWidgetComponentIndex);
     userWidgetWidgetExecutionState->flowState = userWidgetFlowState;
+    userWidgetWidgetExecutionState->firstTime = true;
     return userWidgetWidgetExecutionState;
 }
 
@@ -52,8 +54,11 @@ void executeLVGLUserWidgetComponent(FlowState *flowState, unsigned componentInde
     auto component = (LVGLUserWidgetComponent *)flowState->flow->components[componentIndex];
 
     auto userWidgetWidgetExecutionState = (LVGLUserWidgetExecutionState *)flowState->componenentExecutionStates[componentIndex];
-    if (!userWidgetWidgetExecutionState) {
-        createUserWidgetFlowState(flowState, componentIndex, component->flowIndex, component->widgetStartIndex);
+    if (!userWidgetWidgetExecutionState || userWidgetWidgetExecutionState->firstTime) {
+        if (!userWidgetWidgetExecutionState) {
+            userWidgetWidgetExecutionState = createUserWidgetFlowState(flowState, componentIndex);
+        }
+        userWidgetWidgetExecutionState->firstTime = false;
     } else {
         auto userWidgetFlowState = userWidgetWidgetExecutionState->flowState;
         for (

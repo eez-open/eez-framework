@@ -25,12 +25,14 @@ namespace flow {
 
 struct LVGLUserWidgetExecutionState : public ComponenentExecutionState {
     FlowState *flowState;
+    bool firstTime;
 
     ~LVGLUserWidgetExecutionState() {
         freeFlowState(flowState);
     }
 };
 
+LVGLUserWidgetExecutionState *createUserWidgetFlowState(FlowState *flowState, unsigned userWidgetWidgetComponentIndex);
 
 } // flow
 } // eez

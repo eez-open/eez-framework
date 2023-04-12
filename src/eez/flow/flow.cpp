@@ -227,15 +227,6 @@ FlowState *getPageFlowState(Assets *assets, int16_t pageIndex) {
     return flowState;
 }
 
-FlowState *getFlowState(Assets *assets, int32_t *flowStateAddressIndex) {
-    FlowState *flowState = getPageFlowState(assets, flowStateAddressIndex[0]);
-    for (int i = 1; flowStateAddressIndex[i] != -1; ++i) {
-        auto executionState = (LVGLUserWidgetExecutionState *)flowState->componenentExecutionStates[flowStateAddressIndex[i]];
-        flowState = executionState->flowState;
-    }
-    return flowState;
-}
-
 #endif // EEZ_OPTION_GUI
 
 int getPageIndex(FlowState *flowState) {
