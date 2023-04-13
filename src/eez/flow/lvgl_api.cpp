@@ -198,9 +198,8 @@ extern "C" void assignBooleanProperty(void *flowState, unsigned componentIndex, 
     eez::flow::assignValue((eez::flow::FlowState *)flowState, componentIndex, dstValue, srcValue);
 }
 
-extern "C" float getTimelinePosition(unsigned pageIndex) {
-    eez::flow::FlowState *flowState = eez::flow::getPageFlowState(eez::g_mainAssets, pageIndex);
-    return flowState->timelinePosition;
+extern "C" float getTimelinePosition(void *flowState) {
+    return ((eez::flow::FlowState *)flowState)->timelinePosition;
 }
 
 void *getFlowState(void *flowState, unsigned userWidgetComponentIndexOrPageIndex) {
