@@ -52,6 +52,7 @@ static lv_obj_t **g_objects;
 static size_t g_numObjects;
 static const ext_img_desc_t *g_images;
 static size_t g_numImages;
+static ActionExecFunc *g_actions;
 
 int16_t g_currentScreen = -1;
 
@@ -71,17 +72,22 @@ static const void *getLvglImageByName(const char *name) {
     return 0;
 }
 
+static void executeLvglAction(int actionIndex) {
+    g_actions[actionIndex](0);
+}
+
 extern "C" void loadScreen(int index) {
     g_currentScreen = index;
     lv_obj_t *screen = getLvglObjectFromIndex(index);
     lv_scr_load_anim(screen, LV_SCR_LOAD_ANIM_FADE_IN, 200, 0, false);
 }
 
-extern "C" void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj_t **objects, size_t numObjects, const ext_img_desc_t *images, size_t numImages) {
+extern "C" void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj_t **objects, size_t numObjects, const ext_img_desc_t *images, size_t numImages, ActionExecFunc *actions) {
     g_objects = objects;
     g_numObjects = numObjects;
     g_images = images;
     g_numImages = numImages;
+    g_actions = actions;
 
     eez::initAssetsMemory();
     eez::loadMainAssets(assets, assetsSize);
@@ -91,6 +97,7 @@ extern "C" void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj
     eez::flow::replacePageHook = replacePageHook;
     eez::flow::getLvglObjectFromIndexHook = getLvglObjectFromIndex;
     eez::flow::getLvglImageByNameHook = getLvglImageByName;
+    eez::flow::executeLvglActionHook = executeLvglAction;
 
     eez::flow::start(eez::g_mainAssets);
 

@@ -44,7 +44,9 @@ typedef struct _ext_img_desc_t {
 } ext_img_desc_t;
 #endif
 
-void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj_t **objects, size_t numObjects, const ext_img_desc_t *images, size_t numImages);
+typedef void (*ActionExecFunc)(lv_event_t * e);
+void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj_t **objects, size_t numObjects, const ext_img_desc_t *images, size_t numImages, ActionExecFunc *actions);
+
 void eez_flow_tick();
 
 extern int16_t g_currentScreen;
