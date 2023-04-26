@@ -25,7 +25,6 @@ namespace flow {
 
 struct LVGLUserWidgetExecutionState : public ComponenentExecutionState {
     FlowState *flowState;
-    bool firstTime;
 
     ~LVGLUserWidgetExecutionState() {
         freeFlowState(flowState);

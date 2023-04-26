@@ -46,7 +46,6 @@ LVGLUserWidgetExecutionState *createUserWidgetFlowState(FlowState *flowState, un
     userWidgetFlowState->lvglWidgetStartIndex = component->widgetStartIndex;
     auto userWidgetWidgetExecutionState = allocateComponentExecutionState<LVGLUserWidgetExecutionState>(flowState, userWidgetWidgetComponentIndex);
     userWidgetWidgetExecutionState->flowState = userWidgetFlowState;
-    userWidgetWidgetExecutionState->firstTime = true;
     return userWidgetWidgetExecutionState;
 }
 
@@ -54,41 +53,38 @@ void executeLVGLUserWidgetComponent(FlowState *flowState, unsigned componentInde
     auto component = (LVGLUserWidgetComponent *)flowState->flow->components[componentIndex];
 
     auto userWidgetWidgetExecutionState = (LVGLUserWidgetExecutionState *)flowState->componenentExecutionStates[componentIndex];
-    if (!userWidgetWidgetExecutionState || userWidgetWidgetExecutionState->firstTime) {
-        if (!userWidgetWidgetExecutionState) {
-            userWidgetWidgetExecutionState = createUserWidgetFlowState(flowState, componentIndex);
-        }
-        userWidgetWidgetExecutionState->firstTime = false;
-    } else {
-        auto userWidgetFlowState = userWidgetWidgetExecutionState->flowState;
-        for (
-            unsigned userWidgetComponentIndex = 0;
-            userWidgetComponentIndex < userWidgetFlowState->flow->components.count;
-            userWidgetComponentIndex++
-        ) {
-            auto userWidgetComponent = userWidgetFlowState->flow->components[userWidgetComponentIndex];
-            if (userWidgetComponent->type == defs_v3::COMPONENT_TYPE_INPUT_ACTION) {
-                auto inputActionComponentExecutionState = (InputActionComponentExecutionState *)userWidgetFlowState->componenentExecutionStates[userWidgetComponentIndex];
-                if (inputActionComponentExecutionState) {
-                    Value value;
-                    if (getCallActionValue(userWidgetFlowState, userWidgetComponentIndex, value)) {
-                        if (inputActionComponentExecutionState->value != value) {
-                            addToQueue(userWidgetWidgetExecutionState->flowState, userWidgetComponentIndex, -1, -1, -1, false);
-                            inputActionComponentExecutionState->value = value;
-                        }
-                    } else {
-                        return;
-                    }
-                }
-            } else if (userWidgetComponent->type == defs_v3::COMPONENT_TYPE_START_ACTION) {
+    if (!userWidgetWidgetExecutionState) {
+        userWidgetWidgetExecutionState = createUserWidgetFlowState(flowState, componentIndex);
+    }
+    auto userWidgetFlowState = userWidgetWidgetExecutionState->flowState;
+
+    for (
+        unsigned userWidgetComponentIndex = 0;
+        userWidgetComponentIndex < userWidgetFlowState->flow->components.count;
+        userWidgetComponentIndex++
+    ) {
+        auto userWidgetComponent = userWidgetFlowState->flow->components[userWidgetComponentIndex];
+        if (userWidgetComponent->type == defs_v3::COMPONENT_TYPE_INPUT_ACTION) {
+            auto inputActionComponentExecutionState = (InputActionComponentExecutionState *)userWidgetFlowState->componenentExecutionStates[userWidgetComponentIndex];
+            if (inputActionComponentExecutionState) {
                 Value value;
                 if (getCallActionValue(userWidgetFlowState, userWidgetComponentIndex, value)) {
-                    if (value.getType() != VALUE_TYPE_UNDEFINED) {
+                    if (inputActionComponentExecutionState->value != value) {
                         addToQueue(userWidgetWidgetExecutionState->flowState, userWidgetComponentIndex, -1, -1, -1, false);
+                        inputActionComponentExecutionState->value = value;
                     }
                 } else {
                     return;
                 }
+            }
+        } else if (userWidgetComponent->type == defs_v3::COMPONENT_TYPE_START_ACTION) {
+            Value value;
+            if (getCallActionValue(userWidgetFlowState, userWidgetComponentIndex, value)) {
+                if (value.getType() != VALUE_TYPE_UNDEFINED) {
+                    addToQueue(userWidgetWidgetExecutionState->flowState, userWidgetComponentIndex, -1, -1, -1, false);
+                }
+            } else {
+                return;
             }
         }
     }
