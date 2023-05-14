@@ -50,6 +50,7 @@ static const uint32_t MEMORY_SIZE = 64 * 1024 * 1024;
 extern uint8_t *ALLOC_BUFFER;
 extern uint32_t ALLOC_BUFFER_SIZE;
 
+#ifndef DECOMPRESSED_ASSETS_START_ADDRESS
 #if !defined(EEZ_FOR_LVGL)
 extern uint8_t *DECOMPRESSED_ASSETS_START_ADDRESS;
 #if defined(EEZ_PLATFORM_STM32)
@@ -57,6 +58,7 @@ static const uint32_t MAX_DECOMPRESSED_ASSETS_SIZE = 2 * 1024 * 1024;
 #endif
 #if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
 static const uint32_t MAX_DECOMPRESSED_ASSETS_SIZE = 8 * 1024 * 1024;
+#endif
 #endif
 #endif
 
