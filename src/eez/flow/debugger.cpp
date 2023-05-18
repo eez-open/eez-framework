@@ -91,7 +91,7 @@ enum DebuggerState {
 };
 
 bool g_debuggerIsConnected;
-static bool g_sendMinimalDebuggerMessages;
+bool g_sendMinimalDebuggerMessages;
 static DebuggerState g_debuggerState;
 static bool g_skipNextBreakpoint;
 
