@@ -261,34 +261,34 @@ void executeFlowAction(const WidgetCursor &widgetCursor, int16_t actionId, void 
 		auto componentOutput = flow->widgetActions[actionId];
 		if (componentOutput->componentIndex != -1 && componentOutput->componentOutputIndex != -1) {
             if (widgetCursor.widget->type == WIDGET_TYPE_DROP_DOWN_LIST) {
-                auto params = Value::makeArrayRef(defs_v3::SYSTEM_STRUCTURE_DROP_DOWN_LIST_ACTION_PARAMS_NUM_FIELDS, defs_v3::SYSTEM_STRUCTURE_DROP_DOWN_LIST_ACTION_PARAMS, 0x53e3b30b);
+                auto params = Value::makeArrayRef(defs_v3::SYSTEM_STRUCTURE_DROP_DOWN_LIST_CHANGE_EVENT_NUM_FIELDS, defs_v3::SYSTEM_STRUCTURE_DROP_DOWN_LIST_CHANGE_EVENT, 0x53e3b30b);
 
                 // index
-                ((ArrayValueRef *)params.refValue)->arrayValue.values[defs_v3::SYSTEM_STRUCTURE_DROP_DOWN_LIST_ACTION_PARAMS_FIELD_INDEX] = widgetCursor.iterators[0];
+                ((ArrayValueRef *)params.refValue)->arrayValue.values[defs_v3::SYSTEM_STRUCTURE_DROP_DOWN_LIST_CHANGE_EVENT_FIELD_INDEX] = widgetCursor.iterators[0];
 
                 // indexes
                 auto indexes = Value::makeArrayRef(MAX_ITERATORS, defs_v3::ARRAY_TYPE_INTEGER, 0xb1f68ef8);
                 for (size_t i = 0; i < MAX_ITERATORS; i++) {
                     ((ArrayValueRef *)indexes.refValue)->arrayValue.values[i] = (int)widgetCursor.iterators[i];
                 }
-                ((ArrayValueRef *)params.refValue)->arrayValue.values[defs_v3::SYSTEM_STRUCTURE_DROP_DOWN_LIST_ACTION_PARAMS_FIELD_INDEXES] = indexes;
+                ((ArrayValueRef *)params.refValue)->arrayValue.values[defs_v3::SYSTEM_STRUCTURE_DROP_DOWN_LIST_CHANGE_EVENT_FIELD_INDEXES] = indexes;
 
                 // selectedIndex
-                ((ArrayValueRef *)params.refValue)->arrayValue.values[defs_v3::SYSTEM_STRUCTURE_DROP_DOWN_LIST_ACTION_PARAMS_FIELD_SELECTED_INDEX] = *((int *)param);
+                ((ArrayValueRef *)params.refValue)->arrayValue.values[defs_v3::SYSTEM_STRUCTURE_DROP_DOWN_LIST_CHANGE_EVENT_FIELD_SELECTED_INDEX] = *((int *)param);
 
                 propagateValue(flowState, componentOutput->componentIndex, componentOutput->componentOutputIndex, params);
             } else {
-                auto params = Value::makeArrayRef(defs_v3::SYSTEM_STRUCTURE_ACTION_PARAMS_NUM_FIELDS, defs_v3::SYSTEM_STRUCTURE_ACTION_PARAMS, 0x285940bb);
+                auto params = Value::makeArrayRef(defs_v3::SYSTEM_STRUCTURE_CLICK_EVENT_NUM_FIELDS, defs_v3::SYSTEM_STRUCTURE_CLICK_EVENT, 0x285940bb);
 
                 // index
-                ((ArrayValueRef *)params.refValue)->arrayValue.values[defs_v3::SYSTEM_STRUCTURE_ACTION_PARAMS_FIELD_INDEX] = widgetCursor.iterators[0];
+                ((ArrayValueRef *)params.refValue)->arrayValue.values[defs_v3::SYSTEM_STRUCTURE_CLICK_EVENT_FIELD_INDEX] = widgetCursor.iterators[0];
 
                 // indexes
                 auto indexes = Value::makeArrayRef(MAX_ITERATORS, defs_v3::ARRAY_TYPE_INTEGER, 0xb1f68ef8);
                 for (size_t i = 0; i < MAX_ITERATORS; i++) {
                     ((ArrayValueRef *)indexes.refValue)->arrayValue.values[i] = (int)widgetCursor.iterators[i];
                 }
-                ((ArrayValueRef *)params.refValue)->arrayValue.values[defs_v3::SYSTEM_STRUCTURE_ACTION_PARAMS_FIELD_INDEXES] = indexes;
+                ((ArrayValueRef *)params.refValue)->arrayValue.values[defs_v3::SYSTEM_STRUCTURE_CLICK_EVENT_FIELD_INDEXES] = indexes;
 
                 propagateValue(flowState, componentOutput->componentIndex, componentOutput->componentOutputIndex, params);
             }
