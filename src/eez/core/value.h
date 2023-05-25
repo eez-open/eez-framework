@@ -584,6 +584,9 @@ inline Value Value::getValue() const {
     if (type == VALUE_TYPE_ARRAY_ELEMENT_VALUE) {
         auto arrayElementValue = (ArrayElementValue *)refValue;
         auto array = arrayElementValue->arrayValue.getArray();
+        if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= array->arraySize) {
+            return Value();
+        }
         return array->values[arrayElementValue->elementIndex];
     }
     return *this;
@@ -621,6 +624,10 @@ struct ArrayOf {
 
     ArrayOf(Value value) : value(value) {}
 
+    operator Value() const { return value; }
+
+    operator bool() const { return value.isArray(); }
+
     size_t size() {
         return (size_t)value.getArray()->arraySize;
     }
@@ -642,6 +649,10 @@ struct ArrayOfInteger {
     }
 
     ArrayOfInteger(Value value) : value(value) {}
+
+    operator Value() const { return value; }
+
+    operator bool() const { return value.isArray(); }
 
     size_t size() {
         return (size_t)value.getArray()->arraySize;
@@ -665,6 +676,10 @@ struct ArrayOfFloat {
 
     ArrayOfFloat(Value value) : value(value) {}
 
+    operator Value() const { return value; }
+
+    operator bool() const { return value.isArray(); }
+
     size_t size() {
         return (size_t)value.getArray()->arraySize;
     }
@@ -686,6 +701,10 @@ struct ArrayOfDouble {
     }
 
     ArrayOfDouble(Value value) : value(value) {}
+
+    operator Value() const { return value; }
+
+    operator bool() const { return value.isArray(); }
 
     size_t size() {
         return (size_t)value.getArray()->arraySize;
@@ -709,6 +728,10 @@ struct ArrayOfBoolean {
 
     ArrayOfBoolean(Value value) : value(value) {}
 
+    operator Value() const { return value; }
+
+    operator bool() const { return value.isArray(); }
+
     size_t size() {
         return (size_t)value.getArray()->arraySize;
     }
@@ -730,6 +753,10 @@ struct ArrayOfString {
     }
 
     ArrayOfString(Value value) : value(value) {}
+
+    operator Value() const { return value; }
+
+    operator bool() const { return value.isArray(); }
 
     size_t size() {
         return (size_t)value.getArray()->arraySize;

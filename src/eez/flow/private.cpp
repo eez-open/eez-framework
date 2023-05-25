@@ -428,20 +428,24 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
         if (dstValue.getType() == VALUE_TYPE_ARRAY_ELEMENT_VALUE) {
             auto arrayElementValue = (ArrayElementValue *)dstValue.refValue;
             auto array = arrayElementValue->arrayValue.getArray();
+            if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= array->arraySize) {
+                throwError(flowState, componentIndex, "Can not assign, array element index out of bounds\n");
+                return;
+            }
             pDstValue = &array->values[arrayElementValue->elementIndex];
         } else {
             pDstValue = dstValue.pValueValue;
         }
 
-		if (assignValue(*pDstValue, srcValue)) {
-			onValueChanged(pDstValue);
-		} else {
-			char errorMessage[100];
-			snprintf(errorMessage, sizeof(errorMessage), "Can not assign %s to %s\n",
-				g_valueTypeNames[pDstValue->type](srcValue), g_valueTypeNames[srcValue.type](*pDstValue)
-			);
-			throwError(flowState, componentIndex, errorMessage);
-		}
+        if (assignValue(*pDstValue, srcValue)) {
+            onValueChanged(pDstValue);
+        } else {
+            char errorMessage[100];
+            snprintf(errorMessage, sizeof(errorMessage), "Can not assign %s to %s\n",
+                g_valueTypeNames[pDstValue->type](srcValue), g_valueTypeNames[srcValue.type](*pDstValue)
+            );
+            throwError(flowState, componentIndex, errorMessage);
+        }
 	}
 }
 

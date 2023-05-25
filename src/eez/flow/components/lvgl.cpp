@@ -211,7 +211,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                             throwError(flowState, componentIndex, errorMessage);
                         }
                     } else {
-                        lv_label_set_text(target, strValue);
+                        lv_label_set_text(target, strValue ? strValue : "");
                     }
                 } else if (specific->property == BASIC_HIDDEN) {
                     int err;
