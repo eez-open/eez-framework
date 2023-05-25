@@ -648,7 +648,7 @@ struct ArrayOfInteger {
     }
 
     int at(int position) {
-        return value.getArray()->values[position].getInt32();
+        return value.getArray()->values[position].getInt();
     }
 
     void at(int position, int intValue) {
