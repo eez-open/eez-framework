@@ -21,6 +21,7 @@
 #include <string.h>
 #include <eez/core/value_types.h>
 #include <eez/core/alloc.h>
+#include <eez/flow/flow_defs_v3.h>
 
 namespace eez {
 
@@ -601,5 +602,140 @@ uint16_t getNumPagesFromValue(const Value &value);
 
 Value MakeRangeValue(uint16_t from, uint16_t to);
 Value MakeEnumDefinitionValue(uint8_t enumValue, uint8_t enumDefinition);
+
+////////////////////////////////////////////////////////////////////////////////
+
+template<class T, uint32_t ARRAY_TYPE>
+struct ArrayOf {
+    Value value;
+
+    ArrayOf(uint32_t size) {
+        value = Value::makeArrayRef(size, ARRAY_TYPE, 0);
+    }
+
+    ArrayOf(Value value) : value(value) {}
+
+    uint32_t size() {
+        return value.getArray()->arraySize;
+    }
+
+    T at(int i) {
+        return value.getArray()->values[i];
+    }
+
+    void at(int i, const T &point) {
+        value.getArray()->values[i] = point.value;
+    }
+};
+
+struct ArrayOfInt32 {
+    Value value;
+
+    ArrayOfInt32(uint32_t size) {
+        value = Value::makeArrayRef(size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
+    }
+
+    ArrayOfInt32(Value value) : value(value) {}
+
+    uint32_t size() {
+        return value.getArray()->arraySize;
+    }
+
+    int32_t at(int i) {
+        return value.getArray()->values[i].getInt32();
+    }
+
+    void at(int i, int32_t intValue) {
+        value.getArray()->values[i] = Value(intValue, VALUE_TYPE_INT32);
+    }
+};
+
+struct ArrayOfFloat {
+    Value value;
+
+    ArrayOfFloat(uint32_t size) {
+        value = Value::makeArrayRef(size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
+    }
+
+    ArrayOfFloat(Value value) : value(value) {}
+
+    uint32_t size() {
+        return value.getArray()->arraySize;
+    }
+
+    float at(int i) {
+        return value.getArray()->values[i].getFloat();
+    }
+
+    void at(int i, float floatValue) {
+        value.getArray()->values[i] = Value(floatValue, VALUE_TYPE_FLOAT);
+    }
+};
+
+struct ArrayOfDouble {
+    Value value;
+
+    ArrayOfDouble(uint32_t size) {
+        value = Value::makeArrayRef(size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
+    }
+
+    ArrayOfDouble(Value value) : value(value) {}
+
+    uint32_t size() {
+        return value.getArray()->arraySize;
+    }
+
+    double at(int i) {
+        return value.getArray()->values[i].getDouble();
+    }
+
+    void at(int i, double doubleValue) {
+        value.getArray()->values[i] = Value(doubleValue, VALUE_TYPE_DOUBLE);
+    }
+};
+
+struct ArrayOfBoolean {
+    Value value;
+
+    ArrayOfBoolean(uint32_t size) {
+        value = Value::makeArrayRef(size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
+    }
+
+    ArrayOfBoolean(Value value) : value(value) {}
+
+    uint32_t size() {
+        return value.getArray()->arraySize;
+    }
+
+    bool at(int i) {
+        return value.getArray()->values[i].getDouble();
+    }
+
+    void at(int i, bool boolValue) {
+        value.getArray()->values[i] = Value(boolValue, VALUE_TYPE_BOOLEAN);
+    }
+};
+
+struct ArrayOfString {
+    Value value;
+
+    ArrayOfString(uint32_t size) {
+        value = Value::makeArrayRef(size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
+    }
+
+    ArrayOfString(Value value) : value(value) {}
+
+    uint32_t size() {
+        return value.getArray()->arraySize;
+    }
+
+    const char *at(int i) {
+        return value.getArray()->values[i].getString();
+    }
+
+    void at(int i, const char *stringValue) {
+        value.getArray()->values[i] = Value(stringValue, VALUE_TYPE_STRING);
+    }
+};
 
 } // namespace eez
