@@ -233,11 +233,19 @@ int getPageIndex(FlowState *flowState) {
 	return flowState->flowIndex;
 }
 
+Value getGlobalVariable(uint32_t globalVariableIndex) {
+    return getGlobalVariable(g_mainAssets, globalVariableIndex);
+}
+
 Value getGlobalVariable(Assets *assets, uint32_t globalVariableIndex) {
     if (globalVariableIndex >= 0 && globalVariableIndex < assets->flowDefinition->globalVariables.count) {
         return *assets->flowDefinition->globalVariables[globalVariableIndex];
     }
     return Value();
+}
+
+void setGlobalVariable(uint32_t globalVariableIndex, const Value &value) {
+    setGlobalVariable(g_mainAssets, globalVariableIndex, value);
 }
 
 void setGlobalVariable(Assets *assets, uint32_t globalVariableIndex, const Value &value) {

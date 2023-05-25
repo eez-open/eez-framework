@@ -47,7 +47,9 @@ FlowState *getPageFlowState(Assets *assets, int16_t pageIndex);
 #endif
 int getPageIndex(FlowState *flowState);
 
+Value getGlobalVariable(uint32_t globalVariableIndex);
 Value getGlobalVariable(Assets *assets, uint32_t globalVariableIndex);
+void setGlobalVariable(uint32_t globalVariableIndex, const Value &value);
 void setGlobalVariable(Assets *assets, uint32_t globalVariableIndex, const Value &value);
 
 #if EEZ_OPTION_GUI
