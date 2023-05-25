@@ -605,136 +605,142 @@ Value MakeEnumDefinitionValue(uint8_t enumValue, uint8_t enumDefinition);
 
 ////////////////////////////////////////////////////////////////////////////////
 
+inline Value IntegerValue(int32_t value) { return Value(value, VALUE_TYPE_INT32); }
+inline Value FloatValue(float value) { return Value(value, VALUE_TYPE_FLOAT); }
+inline Value DoubleValue(double value) { return Value(value, VALUE_TYPE_DOUBLE); }
+inline Value BooleanValue(bool value) { return Value(value, VALUE_TYPE_BOOLEAN); }
+inline Value StringValue(const char *value) { return Value::makeStringRef(value, -1, 0); }
+
 template<class T, uint32_t ARRAY_TYPE>
 struct ArrayOf {
     Value value;
 
-    ArrayOf(uint32_t size) {
-        value = Value::makeArrayRef(size, ARRAY_TYPE, 0);
+    ArrayOf(size_t size) {
+        value = Value::makeArrayRef((uint32_t)size, ARRAY_TYPE, 0);
     }
 
     ArrayOf(Value value) : value(value) {}
 
-    uint32_t size() {
-        return value.getArray()->arraySize;
+    size_t size() {
+        return (size_t)value.getArray()->arraySize;
     }
 
-    T at(int i) {
-        return value.getArray()->values[i];
+    T at(int position) {
+        return value.getArray()->values[position];
     }
 
-    void at(int i, const T &point) {
-        value.getArray()->values[i] = point.value;
+    void at(int position, const T &point) {
+        value.getArray()->values[position] = point.value;
     }
 };
 
-struct ArrayOfInt32 {
+struct ArrayOfInteger {
     Value value;
 
-    ArrayOfInt32(uint32_t size) {
-        value = Value::makeArrayRef(size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
+    ArrayOfInteger(size_t size) {
+        value = Value::makeArrayRef((uint32_t)size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
     }
 
-    ArrayOfInt32(Value value) : value(value) {}
+    ArrayOfInteger(Value value) : value(value) {}
 
-    uint32_t size() {
-        return value.getArray()->arraySize;
+    size_t size() {
+        return (size_t)value.getArray()->arraySize;
     }
 
-    int32_t at(int i) {
-        return value.getArray()->values[i].getInt32();
+    int at(int position) {
+        return value.getArray()->values[position].getInt32();
     }
 
-    void at(int i, int32_t intValue) {
-        value.getArray()->values[i] = Value(intValue, VALUE_TYPE_INT32);
+    void at(int position, int intValue) {
+        value.getArray()->values[position] = Value(intValue, VALUE_TYPE_INT32);
     }
 };
 
 struct ArrayOfFloat {
     Value value;
 
-    ArrayOfFloat(uint32_t size) {
-        value = Value::makeArrayRef(size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
+    ArrayOfFloat(size_t size) {
+        value = Value::makeArrayRef((uint32_t)size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
     }
 
     ArrayOfFloat(Value value) : value(value) {}
 
-    uint32_t size() {
-        return value.getArray()->arraySize;
+    size_t size() {
+        return (size_t)value.getArray()->arraySize;
     }
 
-    float at(int i) {
-        return value.getArray()->values[i].getFloat();
+    float at(int position) {
+        return value.getArray()->values[position].getFloat();
     }
 
-    void at(int i, float floatValue) {
-        value.getArray()->values[i] = Value(floatValue, VALUE_TYPE_FLOAT);
+    void at(int position, float floatValue) {
+        value.getArray()->values[position] = Value(floatValue, VALUE_TYPE_FLOAT);
     }
 };
 
 struct ArrayOfDouble {
     Value value;
 
-    ArrayOfDouble(uint32_t size) {
-        value = Value::makeArrayRef(size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
+    ArrayOfDouble(size_t size) {
+        value = Value::makeArrayRef((uint32_t)size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
     }
 
     ArrayOfDouble(Value value) : value(value) {}
 
-    uint32_t size() {
-        return value.getArray()->arraySize;
+    size_t size() {
+        return (size_t)value.getArray()->arraySize;
     }
 
-    double at(int i) {
-        return value.getArray()->values[i].getDouble();
+    double at(int position) {
+        return value.getArray()->values[position].getDouble();
     }
 
-    void at(int i, double doubleValue) {
-        value.getArray()->values[i] = Value(doubleValue, VALUE_TYPE_DOUBLE);
+    void at(int position, double doubleValue) {
+        value.getArray()->values[position] = Value(doubleValue, VALUE_TYPE_DOUBLE);
     }
 };
 
 struct ArrayOfBoolean {
     Value value;
 
-    ArrayOfBoolean(uint32_t size) {
-        value = Value::makeArrayRef(size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
+    ArrayOfBoolean(size_t size) {
+        value = Value::makeArrayRef((uint32_t)size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
     }
 
     ArrayOfBoolean(Value value) : value(value) {}
 
-    uint32_t size() {
-        return value.getArray()->arraySize;
+    size_t size() {
+        return (size_t)value.getArray()->arraySize;
     }
 
-    bool at(int i) {
-        return value.getArray()->values[i].getDouble();
+    bool at(int position) {
+        return value.getArray()->values[position].getDouble();
     }
 
-    void at(int i, bool boolValue) {
-        value.getArray()->values[i] = Value(boolValue, VALUE_TYPE_BOOLEAN);
+    void at(int position, bool boolValue) {
+        value.getArray()->values[position] = Value(boolValue, VALUE_TYPE_BOOLEAN);
     }
 };
 
 struct ArrayOfString {
     Value value;
 
-    ArrayOfString(uint32_t size) {
-        value = Value::makeArrayRef(size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
+    ArrayOfString(size_t size) {
+        value = Value::makeArrayRef((uint32_t)size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
     }
 
     ArrayOfString(Value value) : value(value) {}
 
-    uint32_t size() {
-        return value.getArray()->arraySize;
+    size_t size() {
+        return (size_t)value.getArray()->arraySize;
     }
 
-    const char *at(int i) {
-        return value.getArray()->values[i].getString();
+    const char *at(int position) {
+        return value.getArray()->values[position].getString();
     }
 
-    void at(int i, const char *stringValue) {
-        value.getArray()->values[i] = Value(stringValue, VALUE_TYPE_STRING);
+    void at(int position, const char *stringValue) {
+        value.getArray()->values[position] = Value(stringValue, VALUE_TYPE_STRING);
     }
 };
 
