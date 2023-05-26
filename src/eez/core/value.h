@@ -377,7 +377,7 @@ struct Value {
 		return int64Value;
 	}
 
-	uint32_t getUInt64() const {
+	uint64_t getUInt64() const {
         return uint64Value;
     }
 
