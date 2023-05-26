@@ -86,8 +86,8 @@ Value op_add(const Value& a1, const Value& b1) {
         return Value(a.toInt64() + b.toInt64(), VALUE_TYPE_INT64);
     }
 
-        return Value((int)(a.int32Value + b.int32Value), VALUE_TYPE_INT32);
-    }
+    return Value((int)(a.int32Value + b.int32Value), VALUE_TYPE_INT32);
+}
 
 Value op_sub(const Value& a1, const Value& b1) {
     if (a1.isError()) {
@@ -121,7 +121,7 @@ Value op_sub(const Value& a1, const Value& b1) {
         return Value(a.toInt64() - b.toInt64(), VALUE_TYPE_INT64);
     }
 
-        return Value((int)(a.int32Value - b.int32Value), VALUE_TYPE_INT32);
+    return Value((int)(a.int32Value - b.int32Value), VALUE_TYPE_INT32);
 }
 
 Value op_mul(const Value& a1, const Value& b1) {
@@ -156,7 +156,7 @@ Value op_mul(const Value& a1, const Value& b1) {
         return Value(a.toInt64() * b.toInt64(), VALUE_TYPE_INT64);
     }
 
-        return Value((int)(a.int32Value * b.int32Value), VALUE_TYPE_INT32);
+    return Value((int)(a.int32Value * b.int32Value), VALUE_TYPE_INT32);
 }
 
 Value op_div(const Value& a1, const Value& b1) {
@@ -191,7 +191,7 @@ Value op_div(const Value& a1, const Value& b1) {
         auto d = b.toInt64();
         if (d == 0) {
             return Value::makeError();
-    }
+        }
 
         return Value(1.0 * a.toInt64() / d, VALUE_TYPE_DOUBLE);
     }
@@ -244,7 +244,7 @@ Value op_mod(const Value& a1, const Value& b1) {
         return Value::makeError();
     }
 
-    return Value(a.int32Value % b.int32Value, VALUE_TYPE_DOUBLE);
+    return Value((int)(a.int32Value % b.int32Value), VALUE_TYPE_INT32);
 }
 
 Value op_left_shift(const Value& a1, const Value& b1) {

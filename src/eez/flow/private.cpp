@@ -428,7 +428,7 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
         if (dstValue.getType() == VALUE_TYPE_ARRAY_ELEMENT_VALUE) {
             auto arrayElementValue = (ArrayElementValue *)dstValue.refValue;
             auto array = arrayElementValue->arrayValue.getArray();
-            if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= array->arraySize) {
+            if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= (int)array->arraySize) {
                 throwError(flowState, componentIndex, "Can not assign, array element index out of bounds\n");
                 return;
             }

@@ -584,7 +584,7 @@ inline Value Value::getValue() const {
     if (type == VALUE_TYPE_ARRAY_ELEMENT_VALUE) {
         auto arrayElementValue = (ArrayElementValue *)refValue;
         auto array = arrayElementValue->arrayValue.getArray();
-        if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= array->arraySize) {
+        if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= (int)array->arraySize) {
             return Value();
         }
         return array->values[arrayElementValue->elementIndex];
@@ -608,7 +608,7 @@ Value MakeEnumDefinitionValue(uint8_t enumValue, uint8_t enumDefinition);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-inline Value IntegerValue(int32_t value) { return Value(value, VALUE_TYPE_INT32); }
+inline Value IntegerValue(int32_t value) { return Value((int)value, VALUE_TYPE_INT32); }
 inline Value FloatValue(float value) { return Value(value, VALUE_TYPE_FLOAT); }
 inline Value DoubleValue(double value) { return Value(value, VALUE_TYPE_DOUBLE); }
 inline Value BooleanValue(bool value) { return Value(value, VALUE_TYPE_BOOLEAN); }

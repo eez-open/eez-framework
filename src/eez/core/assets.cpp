@@ -233,7 +233,7 @@ int getThemesCount() {
 }
 
 Theme *getTheme(int i) {
-    if (i < 0 || i >= g_mainAssets->colorsDefinition->themes.count) {
+    if (i < 0 || i >= (int)g_mainAssets->colorsDefinition->themes.count) {
         return nullptr;
     }
     return g_mainAssets->colorsDefinition->themes[i];
