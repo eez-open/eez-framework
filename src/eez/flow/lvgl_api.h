@@ -49,6 +49,8 @@ void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj_t **object
 
 void eez_flow_tick();
 
+bool eez_flow_is_stopped();
+
 extern int16_t g_currentScreen;
 
 void loadScreen(int index);

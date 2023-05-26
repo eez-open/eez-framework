@@ -109,6 +109,10 @@ extern "C" void eez_flow_tick() {
     eez::flow::tick();
 }
 
+extern "C" bool eez_flow_is_stopped() {
+    return eez::flow::isFlowStopped();
+}
+
 namespace eez {
 ActionExecFunc g_actionExecFunctions[] = { 0 };
 }

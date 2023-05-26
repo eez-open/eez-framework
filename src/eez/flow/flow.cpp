@@ -53,7 +53,10 @@ int g_selectedLanguage = 0;
 FlowState *g_firstFlowState;
 FlowState *g_lastFlowState;
 
+static bool g_isStopping = false;
 static bool g_isStopped = true;
+
+static void doStop();
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -78,6 +81,11 @@ void tick() {
 	if (isFlowStopped()) {
 		return;
 	}
+
+    if (g_isStopping) {
+        doStop();
+        return;
+    }
 
 	uint32_t startTickCount = millis();
 
@@ -117,7 +125,7 @@ void tick() {
             }
         }
 
-        if (isFlowStopped()) {
+        if (isFlowStopped() || g_isStopping) {
             break;
         }
 
@@ -148,6 +156,10 @@ void freeAllChildrenFlowStates(FlowState *firstChildFlowState) {
 }
 
 void stop() {
+    g_isStopping = true;
+}
+
+void doStop() {
     freeAllChildrenFlowStates(g_firstFlowState);
     g_firstFlowState = nullptr;
     g_lastFlowState = nullptr;
