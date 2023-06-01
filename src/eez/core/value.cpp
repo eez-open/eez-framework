@@ -732,9 +732,9 @@ ArrayValueRef::~ArrayValueRef() {
 
 bool assignValue(Value &dstValue, const Value &srcValue) {
     if (dstValue.isBoolean()) {
-        dstValue = srcValue.toBool();
+        dstValue.int32Value = srcValue.toBool();
     } else if (dstValue.isInt32OrLess()) {
-        dstValue = srcValue.toInt32();
+        dstValue.int32Value = srcValue.toInt32();
     } else if (dstValue.isFloat()) {
         dstValue.floatValue = srcValue.toFloat();
     } else if (dstValue.isDouble()) {
