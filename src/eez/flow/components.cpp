@@ -29,7 +29,7 @@
 #include <eez/flow/queue.h>
 #include <eez/flow/hooks.h>
 
-#if defined(__EMSCRIPTEN__)
+#if defined(EEZ_DASHBOARD_API)
 #include <eez/flow/dashboard_api.h>
 #endif
 
@@ -138,11 +138,11 @@ void executeComponent(FlowState *flowState, unsigned componentIndex) {
 	auto component = flowState->flow->components[componentIndex];
 
 	if (component->type >= defs_v3::FIRST_DASHBOARD_COMPONENT_TYPE) {
-#if defined(__EMSCRIPTEN__)
+#if defined(EEZ_DASHBOARD_API)
         if (executeDashboardComponentHook) {
             executeDashboardComponentHook(component->type, getFlowStateIndex(flowState), componentIndex);
         }
-#endif // __EMSCRIPTEN__
+#endif // EEZ_DASHBOARD_API
         return;
     } else if (component->type >= defs_v3::COMPONENT_TYPE_START_ACTION) {
 		auto executeComponentFunction = g_executeComponentFunctions[component->type - defs_v3::COMPONENT_TYPE_START_ACTION];

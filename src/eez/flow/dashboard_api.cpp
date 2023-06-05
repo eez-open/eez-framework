@@ -18,7 +18,7 @@
 
 #include <eez/conf-internal.h>
 
-#if defined(__EMSCRIPTEN__)
+#if defined(EEZ_DASHBOARD_API)
 
 #include <emscripten.h>
 
@@ -433,4 +433,4 @@ EM_PORT_API(bool) isRTL() {
 }
 #endif
 
-#endif // __EMSCRIPTEN__
+#endif // EEZ_DASHBOARD_API
