@@ -91,7 +91,8 @@ enum DebuggerState {
 };
 
 bool g_debuggerIsConnected;
-bool g_sendMinimalDebuggerMessages;
+static uint32_t g_messageSubsciptionFilter = 0xFFFFFFFF;
+
 static DebuggerState g_debuggerState;
 static bool g_skipNextBreakpoint;
 
@@ -102,13 +103,25 @@ int g_debuggerMode = DEBUGGER_MODE_RUN;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void setDebuggerMessageSubsciptionFilter(uint32_t filter) {
+    g_messageSubsciptionFilter = filter;
+}
+
+bool isSubscribedTo(MessagesToDebugger messageType) {
+    if (g_debuggerIsConnected && (g_messageSubsciptionFilter & (1 << messageType)) != 0) {
+        startToDebuggerMessageHook();
+        return true;
+    }
+    return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 static void setDebuggerState(DebuggerState newState) {
 	if (newState != g_debuggerState) {
 		g_debuggerState = newState;
 
-		if (g_debuggerIsConnected) {
-			startToDebuggerMessageHook();
-
+		if (isSubscribedTo(MESSAGE_TO_DEBUGGER_STATE_CHANGED)) {
 			char buffer[256];
 			snprintf(buffer, sizeof(buffer), "%d\t%d\n",
 				MESSAGE_TO_DEBUGGER_STATE_CHANGED,
@@ -128,8 +141,6 @@ void onDebuggerClientConnected() {
 	g_inputFromDebuggerPosition = 0;
 
     setDebuggerState(DEBUGGER_STATE_PAUSED);
-
-    // g_sendMinimalDebuggerMessages = true;
 }
 
 void onDebuggerClientDisconnected() {
@@ -421,9 +432,7 @@ void writeValue(const Value &value) {
 ////////////////////////////////////////////////////////////////////////////////
 
 void onStarted(Assets *assets) {
-    if (g_debuggerIsConnected && !g_sendMinimalDebuggerMessages) {
-		startToDebuggerMessageHook();
-
+    if (isSubscribedTo(MESSAGE_TO_DEBUGGER_GLOBAL_VARIABLE_INIT)) {
 		auto flowDefinition = static_cast<FlowDefinition *>(assets->flowDefinition);
 
 		for (uint32_t i = 0; i < flowDefinition->globalVariables.count; i++) {
@@ -447,9 +456,7 @@ void onStopped() {
 }
 
 void onAddToQueue(FlowState *flowState, int sourceComponentIndex, int sourceOutputIndex, unsigned targetComponentIndex, int targetInputIndex) {
-    if (g_debuggerIsConnected && !g_sendMinimalDebuggerMessages) {
-		startToDebuggerMessageHook();
-
+    if (isSubscribedTo(MESSAGE_TO_DEBUGGER_ADD_TO_QUEUE)) {
         uint32_t free;
         uint32_t alloc;
         getAllocInfo(free, alloc);
@@ -470,9 +477,7 @@ void onAddToQueue(FlowState *flowState, int sourceComponentIndex, int sourceOutp
 }
 
 void onRemoveFromQueue() {
-    if (g_debuggerIsConnected && !g_sendMinimalDebuggerMessages) {
-		startToDebuggerMessageHook();
-
+    if (isSubscribedTo(MESSAGE_TO_DEBUGGER_REMOVE_FROM_QUEUE)) {
         char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\n",
 			MESSAGE_TO_DEBUGGER_REMOVE_FROM_QUEUE
@@ -482,9 +487,7 @@ void onRemoveFromQueue() {
 }
 
 void onValueChanged(const Value *pValue) {
-    if (g_debuggerIsConnected && !g_sendMinimalDebuggerMessages) {
-		startToDebuggerMessageHook();
-
+    if (isSubscribedTo(MESSAGE_TO_DEBUGGER_VALUE_CHANGED)) {
         char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%p\t",
 			MESSAGE_TO_DEBUGGER_VALUE_CHANGED,
@@ -497,9 +500,7 @@ void onValueChanged(const Value *pValue) {
 }
 
 void onFlowStateCreated(FlowState *flowState) {
-    if (g_debuggerIsConnected) {
-		startToDebuggerMessageHook();
-
+    if (isSubscribedTo(MESSAGE_TO_DEBUGGER_FLOW_STATE_CREATED)) {
         char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%d\t%d\n",
 			MESSAGE_TO_DEBUGGER_FLOW_STATE_CREATED,
@@ -509,7 +510,9 @@ void onFlowStateCreated(FlowState *flowState) {
 			(int)flowState->parentComponentIndex
 		);
         writeDebuggerBufferHook(buffer, strlen(buffer));
+    }
 
+    if (isSubscribedTo(MESSAGE_TO_DEBUGGER_LOCAL_VARIABLE_INIT)) {
 		auto flow = flowState->flow;
 
 		for (uint32_t i = 0; i < flow->localVariables.count; i++) {
@@ -526,6 +529,10 @@ void onFlowStateCreated(FlowState *flowState) {
 
 			writeValue(*pValue);
         }
+    }
+
+    if (isSubscribedTo(MESSAGE_TO_DEBUGGER_COMPONENT_INPUT_INIT)) {
+		auto flow = flowState->flow;
 
 		for (uint32_t i = 0; i < flow->componentInputs.count; i++) {
 			//auto &input = flow->componentInputs[i];
@@ -548,9 +555,7 @@ void onFlowStateCreated(FlowState *flowState) {
 }
 
 void onFlowStateDestroyed(FlowState *flowState) {
-	if (g_debuggerIsConnected) {
-		startToDebuggerMessageHook();
-
+	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_FLOW_STATE_DESTROYED)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\n",
 			MESSAGE_TO_DEBUGGER_FLOW_STATE_DESTROYED,
@@ -561,9 +566,7 @@ void onFlowStateDestroyed(FlowState *flowState) {
 }
 
 void onFlowStateTimelineChanged(FlowState *flowState) {
-	if (g_debuggerIsConnected) {
-		startToDebuggerMessageHook();
-
+	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_FLOW_STATE_TIMELINE_CHANGED)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\t%g\n",
 			MESSAGE_TO_DEBUGGER_FLOW_STATE_TIMELINE_CHANGED,
@@ -575,9 +578,7 @@ void onFlowStateTimelineChanged(FlowState *flowState) {
 }
 
 void onFlowError(FlowState *flowState, int componentIndex, const char *errorMessage) {
-	if (g_debuggerIsConnected) {
-		startToDebuggerMessageHook();
-
+	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_FLOW_STATE_ERROR)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t",
 			MESSAGE_TO_DEBUGGER_FLOW_STATE_ERROR,
@@ -590,9 +591,7 @@ void onFlowError(FlowState *flowState, int componentIndex, const char *errorMess
 }
 
 void onComponentExecutionStateChanged(FlowState *flowState, int componentIndex) {
-	if (g_debuggerIsConnected) {
-		startToDebuggerMessageHook();
-
+	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_COMPONENT_EXECUTION_STATE_CHANGED)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%d\n",
 			MESSAGE_TO_DEBUGGER_COMPONENT_EXECUTION_STATE_CHANGED,
@@ -606,9 +605,7 @@ void onComponentExecutionStateChanged(FlowState *flowState, int componentIndex) 
 }
 
 void onComponentAsyncStateChanged(FlowState *flowState, int componentIndex) {
-	if (g_debuggerIsConnected) {
-		startToDebuggerMessageHook();
-
+	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_COMPONENT_ASYNC_STATE_CHANGED)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%d\n",
 			MESSAGE_TO_DEBUGGER_COMPONENT_ASYNC_STATE_CHANGED,
@@ -656,9 +653,7 @@ void writeLogMessage(const char *str, size_t len) {
 }
 
 void logInfo(FlowState *flowState, unsigned componentIndex, const char *message) {
-	if (g_debuggerIsConnected && !g_sendMinimalDebuggerMessages) {
-		startToDebuggerMessageHook();
-
+	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_LOG)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%d\t",
 			MESSAGE_TO_DEBUGGER_LOG,
@@ -672,9 +667,7 @@ void logInfo(FlowState *flowState, unsigned componentIndex, const char *message)
 }
 
 void logScpiCommand(FlowState *flowState, unsigned componentIndex, const char *cmd) {
-	if (g_debuggerIsConnected && !g_sendMinimalDebuggerMessages) {
-		startToDebuggerMessageHook();
-
+	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_LOG)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%d\tSCPI COMMAND: ",
 			MESSAGE_TO_DEBUGGER_LOG,
@@ -688,9 +681,7 @@ void logScpiCommand(FlowState *flowState, unsigned componentIndex, const char *c
 }
 
 void logScpiQuery(FlowState *flowState, unsigned componentIndex, const char *query) {
-	if (g_debuggerIsConnected && !g_sendMinimalDebuggerMessages) {
-		startToDebuggerMessageHook();
-
+	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_LOG)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%d\tSCPI QUERY: ",
 			MESSAGE_TO_DEBUGGER_LOG,
@@ -704,9 +695,7 @@ void logScpiQuery(FlowState *flowState, unsigned componentIndex, const char *que
 }
 
 void logScpiQueryResult(FlowState *flowState, unsigned componentIndex, const char *resultText, size_t resultTextLen) {
-	if (g_debuggerIsConnected && !g_sendMinimalDebuggerMessages) {
-		startToDebuggerMessageHook();
-
+	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_LOG)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer) - 1, "%d\t%d\t%d\t%d\tSCPI QUERY RESULT: ",
 			MESSAGE_TO_DEBUGGER_LOG,
@@ -757,9 +746,7 @@ void onPageChanged(int previousPageId, int activePageId, bool activePageIsFromSt
         }
     }
 
-    if (g_debuggerIsConnected) {
-        startToDebuggerMessageHook();
-
+	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_PAGE_CHANGED)) {
         char buffer[256];
         snprintf(buffer, sizeof(buffer), "%d\t%d\n",
             MESSAGE_TO_DEBUGGER_PAGE_CHANGED,
@@ -796,9 +783,7 @@ void onPageChanged(int previousPageId, int activePageId, bool activePageIsFromSt
         }
     }
 
-    if (g_debuggerIsConnected) {
-        startToDebuggerMessageHook();
-
+	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_PAGE_CHANGED)) {
         char buffer[256];
         snprintf(buffer, sizeof(buffer), "%d\t%d\n",
             MESSAGE_TO_DEBUGGER_PAGE_CHANGED,

@@ -423,8 +423,8 @@ EM_PORT_API(int) getFlowStateFlowIndex(int flowStateIndex) {
     return flowState->flowIndex;
 }
 
-EM_PORT_API(void) setSendMinimalDebuggerMessages(bool sendMinimalDebuggerMessages) {
-    g_sendMinimalDebuggerMessages = sendMinimalDebuggerMessages;
+EM_PORT_API(void) setDebuggerMessageSubsciptionFilter(uint32_t filter) {
+    eez::flow::setDebuggerMessageSubsciptionFilter(filter);
 }
 
 #if EEZ_OPTION_GUI
