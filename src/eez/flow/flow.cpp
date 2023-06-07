@@ -168,6 +168,7 @@ void doStop() {
 
 	queueReset();
     onStopped();
+    finishToDebuggerMessageHook();
 }
 
 bool isFlowStopped() {
