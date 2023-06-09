@@ -160,6 +160,10 @@ void stop() {
 }
 
 void doStop() {
+    onStopped();
+    finishToDebuggerMessageHook();
+    g_debuggerIsConnected = false;
+
     freeAllChildrenFlowStates(g_firstFlowState);
     g_firstFlowState = nullptr;
     g_lastFlowState = nullptr;
@@ -167,8 +171,6 @@ void doStop() {
     g_isStopped = true;
 
 	queueReset();
-    onStopped();
-    finishToDebuggerMessageHook();
 }
 
 bool isFlowStopped() {
