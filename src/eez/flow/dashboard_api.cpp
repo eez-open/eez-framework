@@ -374,6 +374,11 @@ EM_PORT_API(void) executeCallAction(int flowStateIndex, int componentIndex, int 
     eez::flow::executeCallAction(flowState, componentIndex, flowIndex);
 }
 
+EM_PORT_API(void) onEvent(int flowStateIndex, FlowEvent flowEvent, Value *flowValue) {
+    auto flowState = getFlowStateFromFlowStateIndex(flowStateIndex);
+    eez::flow::onEvent(flowState, flowEvent, *flowValue);
+}
+
 EM_PORT_API(void) logInfo(int flowStateIndex, int componentIndex, const char *infoMessage) {
     auto flowState = getFlowStateFromFlowStateIndex(flowStateIndex);
     eez::flow::logInfo(flowState, componentIndex, infoMessage);

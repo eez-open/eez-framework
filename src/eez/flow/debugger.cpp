@@ -209,6 +209,10 @@ bool canExecuteStep(FlowState *&flowState, unsigned &componentIndex) {
         return true;
     }
 
+    if (!isSubscribedTo(MESSAGE_TO_DEBUGGER_ADD_TO_QUEUE)) {
+        return true;
+    }
+
     if (g_debuggerState == DEBUGGER_STATE_PAUSED) {
         return false;
     }
@@ -722,12 +726,12 @@ void onPageChanged(int previousPageId, int activePageId, bool activePageIsFromSt
         if (previousPageId > 0 && previousPageId < FIRST_INTERNAL_PAGE_ID) {
             auto flowState = getPageFlowState(g_mainAssets, previousPageId - 1, WidgetCursor());
             if (flowState) {
-                onEvent(flowState, FLOW_EVENT_CLOSE_PAGE);
+                onEvent(flowState, FLOW_EVENT_CLOSE_PAGE, Value());
             }
         } else if (previousPageId < 0) {
             auto flowState = getPageFlowState(g_externalAssets, -previousPageId - 1, WidgetCursor());
             if (flowState) {
-                onEvent(flowState, FLOW_EVENT_CLOSE_PAGE);
+                onEvent(flowState, FLOW_EVENT_CLOSE_PAGE, Value());
             }
         }
     }
@@ -736,12 +740,12 @@ void onPageChanged(int previousPageId, int activePageId, bool activePageIsFromSt
         if (activePageId > 0 && activePageId < FIRST_INTERNAL_PAGE_ID) {
             auto flowState = getPageFlowState(g_mainAssets, activePageId - 1, WidgetCursor());
             if (flowState) {
-                onEvent(flowState, FLOW_EVENT_OPEN_PAGE);
+                onEvent(flowState, FLOW_EVENT_OPEN_PAGE, Value());
             }
         } else if (activePageId < 0) {
             auto flowState = getPageFlowState(g_externalAssets, -activePageId - 1, WidgetCursor());
             if (flowState) {
-                onEvent(flowState, FLOW_EVENT_OPEN_PAGE);
+                onEvent(flowState, FLOW_EVENT_OPEN_PAGE, Value());
             }
         }
     }
@@ -769,7 +773,7 @@ void onPageChanged(int previousPageId, int activePageId, bool activePageIsFromSt
         if (previousPageId > 0) {
             auto flowState = getPageFlowState(g_mainAssets, previousPageId - 1);
             if (flowState) {
-                onEvent(flowState, FLOW_EVENT_CLOSE_PAGE);
+                onEvent(flowState, FLOW_EVENT_CLOSE_PAGE, Value());
             }
         }
     }
@@ -778,7 +782,7 @@ void onPageChanged(int previousPageId, int activePageId, bool activePageIsFromSt
         if (activePageId > 0) {
             auto flowState = getPageFlowState(g_mainAssets, activePageId - 1);
             if (flowState) {
-                onEvent(flowState, FLOW_EVENT_OPEN_PAGE);
+                onEvent(flowState, FLOW_EVENT_OPEN_PAGE, Value());
             }
         }
     }
