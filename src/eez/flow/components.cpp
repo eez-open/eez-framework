@@ -77,6 +77,14 @@ void executeLineChartWidgetComponent(FlowState *flowState, unsigned componentInd
 void executeRollerWidgetComponent(FlowState *flowState, unsigned componentIndex);
 #endif
 
+void executeMQTTInitComponent(FlowState *flowState, unsigned componentIndex);
+void executeMQTTConnectComponent(FlowState *flowState, unsigned componentIndex);
+void executeMQTTDisconnectComponent(FlowState *flowState, unsigned componentIndex);
+void executeMQTTEventComponent(FlowState *flowState, unsigned componentIndex);
+void executeMQTTSubscribeComponent(FlowState *flowState, unsigned componentIndex);
+void executeMQTTUnsubscribeComponent(FlowState *flowState, unsigned componentIndex);
+void executeMQTTPublishComponent(FlowState *flowState, unsigned componentIndex);
+
 typedef void (*ExecuteComponentFunctionType)(FlowState *flowState, unsigned componentIndex);
 
 static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
@@ -99,7 +107,7 @@ static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
 	executeCounterComponent, // COMPONENT_TYPE_COUNTER_ACTION
 	executeLoopComponent,
 	executeShowPageComponent,
-	nullptr, // COMPONENT_TYPE_SCPIACTION
+	nullptr, // COMPONENT_TYPE_SCPI_ACTION
 #if EEZ_OPTION_GUI
 	executeShowMessageBoxComponent,
 	executeShowKeyboardComponent,
@@ -119,15 +127,23 @@ static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
 #endif
     executeAnimateComponent, // COMPONENT_TYPE_ANIMATE_ACTION
     executeOnEventComponent, // COMPONENT_TYPE_ON_EVENT_ACTION,
-    executeLVGLComponent, // COMPONENT_TYPE_LVGLACTION
+    executeLVGLComponent, // COMPONENT_TYPE_LVGL_ACTION
 #if EEZ_OPTION_GUI
     executeOverrideStyleComponent, // COMPONENT_TYPE_OVERRIDE_STYLE_ACTION
 #else
     nullptr,
 #endif
     executeSortArrayComponent, // COMPONENT_TYPE_SORT_ARRAY_ACTION
-    executeLVGLUserWidgetComponent, // COMPONENT_TYPE_LVGL_USER_WIDGET,
-    executeTestAndSetComponent, // COMPONENT_TYPE_TEST_AND_SET_ACTION
+    executeLVGLUserWidgetComponent, // COMPONENT_TYPE_LVGL_USER_WIDGET_WIDGET,
+    executeTestAndSetComponent, // COMPONENT_TYPE_TEST_AND_SET_ACTION,
+
+    executeMQTTInitComponent, // COMPONENT_TYPE_MQTT_INIT_ACTION,
+    executeMQTTConnectComponent, // COMPONENT_TYPE_MQTT_CONNECT_ACTION,
+    executeMQTTDisconnectComponent, // COMPONENT_TYPE_MQTT_DISCONNECT_ACTION,
+    executeMQTTEventComponent, // COMPONENT_TYPE_MQTT_EVENT_ACTION,
+    executeMQTTSubscribeComponent, // COMPONENT_TYPE_MQTT_SUBSCRIBE_ACTION,
+    executeMQTTUnsubscribeComponent, // COMPONENT_TYPE_MQTT_UNSUBSCRIBE_ACTION,
+    executeMQTTPublishComponent, // COMPONENT_TYPE_MQTT_PUBLISH_ACTION,
 };
 
 void registerComponent(ComponentTypes componentType, ExecuteComponentFunctionType executeComponentFunction) {

@@ -63,6 +63,9 @@ void setDebuggerMessageSubsciptionFilter(uint32_t filter);
 void onDebuggerClientConnected();
 void onDebuggerClientDisconnected();
 
+void onArrayValueFree(ArrayValue *arrayValue);
+void onFreeMQTTConnection(ArrayValue *mqttConnectionValue);
+
 void executeScpi();
 void flushToDebuggerMessage();
 

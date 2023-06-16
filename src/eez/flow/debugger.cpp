@@ -419,6 +419,10 @@ void writeValue(const Value &value) {
 		writeHex(tempStr + 1, (uint8_t *)&value.doubleValue, sizeof(double));
 		break;
 
+    case VALUE_TYPE_POINTER:
+        snprintf(tempStr, sizeof(tempStr) - 1, "%" PRIu64 "", (uint64_t)value.getVoidPointer());
+		break;
+
 	default:
 		tempStr[0] = 0;
 		break;

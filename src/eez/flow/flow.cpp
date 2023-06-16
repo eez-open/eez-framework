@@ -490,5 +490,15 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCurs
 
 #endif // EEZ_OPTION_GUI
 
+void onArrayValueFree(ArrayValue *arrayValue) {
+    if (arrayValue->arrayType == defs_v3::OBJECT_TYPE_MQTT_CONNECTION) {
+        onFreeMQTTConnection(arrayValue);
+    }
+
+    if (eez::flow::onArrayValueFreeHook) {
+        eez::flow::onArrayValueFreeHook(arrayValue);
+    }
+}
+
 } // namespace flow
 } // namespace eez

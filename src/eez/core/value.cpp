@@ -28,6 +28,7 @@
 #include <eez/core/value.h>
 #include <eez/core/vars.h>
 
+#include <eez/flow/flow.h>
 #include <eez/flow/hooks.h>
 #include <eez/flow/date.h>
 
@@ -720,9 +721,7 @@ ValueTypeNameFunction g_valueTypeNames[] = {
 ////////////////////////////////////////////////////////////////////////////////
 
 ArrayValueRef::~ArrayValueRef() {
-    if (eez::flow::onArrayValueFreeHook) {
-        eez::flow::onArrayValueFreeHook(&arrayValue);
-    }
+    eez::flow::onArrayValueFree(&arrayValue);
     for (uint32_t i = 1; i < arrayValue.arraySize; i++) {
         (arrayValue.values + i)->~Value();
     }
