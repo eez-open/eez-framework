@@ -27,6 +27,7 @@
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/expression.h>
 #include <eez/flow/debugger.h>
+#include <eez/flow/queue.h>
 
 #include <eez/flow/components/mqtt.h>
 
@@ -45,11 +46,46 @@ struct MQTTEventActionComponenent : public Component {
     int16_t messageEventOutputIndex;
 };
 
+struct MQTTEvent {
+    int16_t outputIndex;
+    Value value;
+    MQTTEvent *next;
+};
+
 struct MQTTEventActionComponenentExecutionState : public ComponenentExecutionState {
 	FlowState *flowState;
     unsigned componentIndex;
+    MQTTEvent *firstEvent;
+    MQTTEvent *lastEvent;
+
+    MQTTEventActionComponenentExecutionState() : firstEvent(nullptr), lastEvent(nullptr) {}
 
     virtual ~MQTTEventActionComponenentExecutionState() override;
+
+    void addEvent(int16_t outputIndex, Value value = Value(VALUE_TYPE_NULL)) {
+        auto event = ObjectAllocator<MQTTEvent>::allocate(0xe1b95933);
+        event->outputIndex = outputIndex;
+        event->value = value;
+        event->next = nullptr;
+        if (!firstEvent) {
+            firstEvent = event;
+            lastEvent = event;
+        } else {
+            lastEvent->next = event;
+            lastEvent = event;
+        }
+    }
+
+    MQTTEvent *removeEvent() {
+        auto event = firstEvent;
+        if (event) {
+            firstEvent = event->next;
+            if (!firstEvent) {
+                lastEvent = nullptr;
+            }
+        }
+        return event;
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -195,33 +231,35 @@ void eez_mqtt_on_event_callback(void *handle, EEZ_MQTT_Event event, void *eventD
 
     for (auto eventHandler = connection->firstEventHandler; eventHandler; eventHandler = eventHandler->next) {
         auto componentExecutionState = eventHandler->componentExecutionState;
+
         auto flowState = componentExecutionState->flowState;
         auto componentIndex = componentExecutionState->componentIndex;
 
         auto component = (MQTTEventActionComponenent *)flowState->flow->components[componentIndex];
+
         if (event == EEZ_MQTT_EVENT_CONNECT) {
             if (component->connectEventOutputIndex >= 0) {
-                propagateValue(flowState, componentIndex, component->connectEventOutputIndex);
+                componentExecutionState->addEvent(component->connectEventOutputIndex);
             }
         } else if (event == EEZ_MQTT_EVENT_RECONNECT) {
             if (component->reconnectEventOutputIndex >= 0) {
-                propagateValue(flowState, componentIndex, component->reconnectEventOutputIndex);
+                componentExecutionState->addEvent(component->reconnectEventOutputIndex);
             }
         } else if (event == EEZ_MQTT_EVENT_CLOSE) {
             if (component->closeEventOutputIndex >= 0) {
-                propagateValue(flowState, componentIndex, component->closeEventOutputIndex);
+                componentExecutionState->addEvent(component->closeEventOutputIndex);
             }
         } else if (event == EEZ_MQTT_EVENT_DISCONNECT) {
             if (component->disconnectEventOutputIndex >= 0) {
-                propagateValue(flowState, componentIndex, component->disconnectEventOutputIndex);
+                componentExecutionState->addEvent(component->disconnectEventOutputIndex);
             }
         } else if (event == EEZ_MQTT_EVENT_OFFLINE) {
             if (component->offlineEventOutputIndex >= 0) {
-                propagateValue(flowState, componentIndex, component->offlineEventOutputIndex);
+                componentExecutionState->addEvent(component->offlineEventOutputIndex);
             }
         } else if (event == EEZ_MQTT_EVENT_ERROR) {
             if (component->errorEventOutputIndex >= 0) {
-                propagateValue(flowState, componentIndex, component->errorEventOutputIndex, Value((const char *)eventData, VALUE_TYPE_STRING));
+                componentExecutionState->addEvent(component->errorEventOutputIndex, Value::makeStringRef((const char *)eventData, -1, 0x2b7ac31a));
             }
         } else if (event == EEZ_MQTT_EVENT_MESSAGE) {
             if (component->messageEventOutputIndex >= 0) {
@@ -232,7 +270,7 @@ void eez_mqtt_on_event_callback(void *handle, EEZ_MQTT_Event event, void *eventD
                 messageArray->values[defs_v3::SYSTEM_STRUCTURE_MQTT_MESSAGE_FIELD_TOPIC] = Value::makeStringRef(messageEvent->topic, -1, 0x5bdff567);
                 messageArray->values[defs_v3::SYSTEM_STRUCTURE_MQTT_MESSAGE_FIELD_PAYLOAD] = Value::makeStringRef(messageEvent->payload, -1, 0xcfa25e4f);
 
-                propagateValue(flowState, componentIndex, component->messageEventOutputIndex, messageValue);
+                componentExecutionState->addEvent(component->messageEventOutputIndex, messageValue);
             }
         }
     }
@@ -245,6 +283,11 @@ void onFreeMQTTConnection(ArrayValue *mqttConnectionValue) {
 
 MQTTEventActionComponenentExecutionState::~MQTTEventActionComponenentExecutionState() {
     removeEventHandler(this);
+
+    while (firstEvent) {
+        auto event = removeEvent();
+        ObjectAllocator<MQTTEvent>::deallocate(event);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -259,7 +302,7 @@ void executeMQTTInitComponent(FlowState *flowState, unsigned componentIndex) {
     if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_INIT_ACTION_COMPONENT_PROPERTY_PROTOCOL, protocolValue, "Failed to evaluate Protocol in MQTTInit")) {
         return;
     }
-    if (protocolValue.getType() != VALUE_TYPE_STRING) {
+    if (!protocolValue.isString()) {
         throwError(flowState, componentIndex, "Protocol must be a string");
         return;
     }
@@ -268,7 +311,7 @@ void executeMQTTInitComponent(FlowState *flowState, unsigned componentIndex) {
     if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_INIT_ACTION_COMPONENT_PROPERTY_HOST, hostValue, "Failed to evaluate Host in MQTTInit")) {
         return;
     }
-    if (hostValue.getType() != VALUE_TYPE_STRING) {
+    if (!hostValue.isString()) {
         throwError(flowState, componentIndex, "Host must be a string");
         return;
     }
@@ -286,7 +329,7 @@ void executeMQTTInitComponent(FlowState *flowState, unsigned componentIndex) {
     if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_INIT_ACTION_COMPONENT_PROPERTY_USER_NAME, usernameValue, "Failed to evaluate Username in MQTTInit")) {
         return;
     }
-    if (usernameValue.getType() != VALUE_TYPE_UNDEFINED && usernameValue.getType() != VALUE_TYPE_STRING) {
+    if (usernameValue.getType() != VALUE_TYPE_UNDEFINED && !usernameValue.isString()) {
         throwError(flowState, componentIndex, "Username must be a string");
         return;
     }
@@ -295,7 +338,7 @@ void executeMQTTInitComponent(FlowState *flowState, unsigned componentIndex) {
     if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_INIT_ACTION_COMPONENT_PROPERTY_PASSWORD, passwordValue, "Failed to evaluate Password in MQTTInit")) {
         return;
     }
-    if (passwordValue.getType() != VALUE_TYPE_UNDEFINED && passwordValue.getType() != VALUE_TYPE_STRING) {
+    if (passwordValue.getType() != VALUE_TYPE_UNDEFINED && !passwordValue.isString()) {
         throwError(flowState, componentIndex, "Password must be a string");
         return;
     }
@@ -389,10 +432,6 @@ void executeMQTTDisconnectComponent(FlowState *flowState, unsigned componentInde
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void on_event_callback(void *param, EEZ_MQTT_Event event, void *eventData) {
-    auto componentExecutionState = (MQTTEventActionComponenentExecutionState *)param;
-}
-
 void executeMQTTEventComponent(FlowState *flowState, unsigned componentIndex) {
     Value connectionValue;
     if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_EVENT_ACTION_COMPONENT_PROPERTY_CONNECTION, connectionValue, "Failed to evaluate Connection in MQTTEvent")) {
@@ -404,18 +443,25 @@ void executeMQTTEventComponent(FlowState *flowState, unsigned componentIndex) {
     }
 
     auto componentExecutionState = (MQTTEventActionComponenentExecutionState *)flowState->componenentExecutionStates[componentIndex];
-    if (componentExecutionState) {
-        deallocateComponentExecutionState(flowState, componentIndex);
+    if (!componentExecutionState) {
+        componentExecutionState = allocateComponentExecutionState<MQTTEventActionComponenentExecutionState>(flowState, componentIndex);
+        componentExecutionState->flowState = flowState;
+        componentExecutionState->componentIndex = componentIndex;
+
+        auto connectionArray = connectionValue.getArray();
+        void *handle = connectionArray->values[defs_v3::OBJECT_TYPE_MQTT_CONNECTION_FIELD_ID].getVoidPointer();
+        addConnectionEventHandler(handle, componentExecutionState);
+
+	    propagateValueThroughSeqout(flowState, componentIndex);
+    } else {
+        auto event = componentExecutionState->removeEvent();
+        if (event) {
+            propagateValue(flowState, componentIndex, event->outputIndex, event->value);
+            ObjectAllocator<MQTTEvent>::deallocate(event);
+        }
     }
-    componentExecutionState = allocateComponentExecutionState<MQTTEventActionComponenentExecutionState>(flowState, componentIndex);
-    componentExecutionState->flowState = flowState;
-    componentExecutionState->componentIndex = componentIndex;
 
-    auto connectionArray = connectionValue.getArray();
-    void *handle = connectionArray->values[defs_v3::OBJECT_TYPE_MQTT_CONNECTION_FIELD_ID].getVoidPointer();
-    addConnectionEventHandler(handle, componentExecutionState);
-
-	propagateValueThroughSeqout(flowState, componentIndex);
+    addToQueue(flowState, componentIndex, -1, -1, -1, true);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -434,7 +480,7 @@ void executeMQTTSubscribeComponent(FlowState *flowState, unsigned componentIndex
     if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_SUBSCRIBE_ACTION_COMPONENT_PROPERTY_TOPIC, topicValue, "Failed to evaluate Topic in MQTTSubscribe")) {
         return;
     }
-    if (topicValue.getType() != VALUE_TYPE_STRING) {
+    if (!topicValue.isString()) {
         throwError(flowState, componentIndex, "Topic must be a string");
         return;
     }
@@ -469,7 +515,7 @@ void executeMQTTUnsubscribeComponent(FlowState *flowState, unsigned componentInd
     if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_UNSUBSCRIBE_ACTION_COMPONENT_PROPERTY_TOPIC, topicValue, "Failed to evaluate Topic in MQTTUnsubscribe")) {
         return;
     }
-    if (topicValue.getType() != VALUE_TYPE_STRING) {
+    if (!topicValue.isString()) {
         throwError(flowState, componentIndex, "Topic must be a string");
         return;
     }
@@ -504,7 +550,7 @@ void executeMQTTPublishComponent(FlowState *flowState, unsigned componentIndex) 
     if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_PUBLISH_ACTION_COMPONENT_PROPERTY_TOPIC, topicValue, "Failed to evaluate Topic in MQTTPublish")) {
         return;
     }
-    if (topicValue.getType() != VALUE_TYPE_STRING) {
+    if (!topicValue.isString()) {
         throwError(flowState, componentIndex, "Topic must be a string");
         return;
     }
@@ -513,7 +559,7 @@ void executeMQTTPublishComponent(FlowState *flowState, unsigned componentIndex) 
     if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_PUBLISH_ACTION_COMPONENT_PROPERTY_PAYLOAD, payloadValue, "Failed to evaluate Payload in MQTTPublish")) {
         return;
     }
-    if (payloadValue.getType() != VALUE_TYPE_STRING) {
+    if (!payloadValue.isString()) {
         throwError(flowState, componentIndex, "Topic must be a string");
         return;
     }
