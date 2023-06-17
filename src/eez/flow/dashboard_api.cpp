@@ -40,6 +40,8 @@ using namespace eez::flow;
 namespace eez {
 namespace flow {
 
+bool g_dashboardValueFree = false;
+
 int getFlowStateIndex(FlowState *flowState) {
     return (int)((uint8_t *)flowState - ALLOC_BUFFER);
 }
@@ -135,7 +137,14 @@ EM_PORT_API(void) arrayValueSetElementValue(Value *arrayValuePtr, int elementInd
 }
 
 EM_PORT_API(void) valueFree(Value *valuePtr) {
+    eez::flow::g_dashboardValueFree = true;
     ObjectAllocator<Value>::deallocate(valuePtr);
+    eez::flow::g_dashboardValueFree = false;
+}
+
+EM_PORT_API(Value *) getGlobalVariable(int globalVariableIndex) {
+    auto flowDefinition = static_cast<FlowDefinition *>(eez::g_mainAssets->flowDefinition);
+    return flowDefinition->globalVariables[globalVariableIndex];
 }
 
 EM_PORT_API(void) setGlobalVariable(int globalVariableIndex, Value *valuePtr) {

@@ -40,6 +40,10 @@
 using namespace eez::gui;
 #endif
 
+#if defined(EEZ_DASHBOARD_API)
+#include <eez/flow/dashboard_api.h>
+#endif
+
 namespace eez {
 namespace flow {
 
@@ -491,6 +495,12 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCurs
 #endif // EEZ_OPTION_GUI
 
 void onArrayValueFree(ArrayValue *arrayValue) {
+#if defined(EEZ_DASHBOARD_API)
+    if (g_dashboardValueFree) {
+        return;
+    }
+#endif
+
     if (arrayValue->arrayType == defs_v3::OBJECT_TYPE_MQTT_CONNECTION) {
         onFreeMQTTConnection(arrayValue);
     }
