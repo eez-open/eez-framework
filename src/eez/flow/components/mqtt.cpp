@@ -458,15 +458,17 @@ void executeMQTTEventComponent(FlowState *flowState, unsigned componentIndex) {
         addConnectionEventHandler(handle, componentExecutionState);
 
 	    propagateValueThroughSeqout(flowState, componentIndex);
+
+        addToQueue(flowState, componentIndex, -1, -1, -1, true);
     } else {
         auto event = componentExecutionState->removeEvent();
         if (event) {
             propagateValue(flowState, componentIndex, event->outputIndex, event->value);
             ObjectAllocator<MQTTEvent>::deallocate(event);
+        } else {
+            addToQueue(flowState, componentIndex, -1, -1, -1, true);
         }
     }
-
-    addToQueue(flowState, componentIndex, -1, -1, -1, true);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
