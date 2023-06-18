@@ -47,8 +47,9 @@ typedef enum {
     EEZ_MQTT_EVENT_CLOSE = 2, // eventData is null
     EEZ_MQTT_EVENT_DISCONNECT = 3, // eventData is null
     EEZ_MQTT_EVENT_OFFLINE = 4, // eventData is null
-    EEZ_MQTT_EVENT_ERROR = 5, // eventData is char *, i.e. error message
-    EEZ_MQTT_EVENT_MESSAGE = 6 // eventData is EEZ_MQTT_MessageEvent *
+    EEZ_MQTT_EVENT_END = 5, // eventData is null
+    EEZ_MQTT_EVENT_ERROR = 6, // eventData is char *, i.e. error message
+    EEZ_MQTT_EVENT_MESSAGE = 7 // eventData is EEZ_MQTT_MessageEvent *
 } EEZ_MQTT_Event;
 
 typedef struct {

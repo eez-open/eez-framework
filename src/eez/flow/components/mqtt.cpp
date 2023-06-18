@@ -42,6 +42,7 @@ struct MQTTEventActionComponenent : public Component {
     int16_t closeEventOutputIndex;
     int16_t disconnectEventOutputIndex;
     int16_t offlineEventOutputIndex;
+    int16_t endEventOutputIndex;
     int16_t errorEventOutputIndex;
     int16_t messageEventOutputIndex;
 };
@@ -256,6 +257,10 @@ void eez_mqtt_on_event_callback(void *handle, EEZ_MQTT_Event event, void *eventD
         } else if (event == EEZ_MQTT_EVENT_OFFLINE) {
             if (component->offlineEventOutputIndex >= 0) {
                 componentExecutionState->addEvent(component->offlineEventOutputIndex);
+            }
+        } else if (event == EEZ_MQTT_EVENT_END) {
+            if (component->endEventOutputIndex >= 0) {
+                componentExecutionState->addEvent(component->endEventOutputIndex);
             }
         } else if (event == EEZ_MQTT_EVENT_ERROR) {
             if (component->errorEventOutputIndex >= 0) {
