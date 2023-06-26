@@ -984,7 +984,6 @@ void QuestionPage::init(AppContext *appContext, const Value &message, const Valu
         m_buttonTextWidgets[i].text = buttonsArray->values[i].getString();
         m_buttonTextWidgets[i].flags = 0;
         TextWidget_autoSize(m_buttonTextWidgets[i]);
-        m_buttonTextWidgets[i].height = m_buttonTextWidgets[i].height * 3 / 2;
     }
 
     m_numButtonTextWidgets = buttonsArray->arraySize;
