@@ -1317,6 +1317,35 @@ Value Value::makeBlobRef(const uint8_t *blob, uint32_t len, uint32_t id) {
 	return value;
 }
 
+Value Value::makeBlobRef(const uint8_t *blob1, uint32_t len1, const uint8_t *blob2, uint32_t len2, uint32_t id) {
+    auto blobRef = ObjectAllocator<BlobRef>::allocate(id);
+	if (blobRef == nullptr) {
+		return Value(0, VALUE_TYPE_NULL);
+	}
+
+	blobRef->blob = (uint8_t *)alloc(len1 + len2, id + 1);
+    if (blobRef->blob == nullptr) {
+        ObjectAllocator<BlobRef>::deallocate(blobRef);
+        return Value(0, VALUE_TYPE_NULL);
+    }
+    blobRef->len = len1 + len2;
+
+    memcpy(blobRef->blob, blob1, len1);
+    memcpy(blobRef->blob + len1, blob2, len2);
+
+    blobRef->refCounter = 1;
+
+    Value value;
+
+    value.type = VALUE_TYPE_BLOB_REF;
+    value.unit = 0;
+    value.options = VALUE_OPTIONS_REF;
+    value.reserved = 0;
+    value.refValue = blobRef;
+
+	return value;
+}
+
 Value Value::clone() {
     if (isArray()) {
         auto array = getArray();
