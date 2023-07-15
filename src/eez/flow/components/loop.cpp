@@ -29,6 +29,8 @@ namespace flow {
 struct LoopComponenentExecutionState : public ComponenentExecutionState {
     Value dstValue;
     Value toValue;
+
+    Value currentValue;
 };
 
 void executeLoopComponent(FlowState *flowState, unsigned componentIndex) {
@@ -79,10 +81,18 @@ void executeLoopComponent(FlowState *flowState, unsigned componentIndex) {
 
 		currentValue = fromValue;
     } else {
-        currentValue = op_add(loopComponentExecutionState->dstValue, stepValue);
+        if (loopComponentExecutionState->dstValue.getType() == VALUE_TYPE_FLOW_OUTPUT) {
+            currentValue = op_add(loopComponentExecutionState->currentValue, stepValue);
+        } else {
+            currentValue = op_add(loopComponentExecutionState->dstValue, stepValue);
+        }
     }
 
-    assignValue(flowState, componentIndex, loopComponentExecutionState->dstValue, currentValue);
+    if (loopComponentExecutionState->dstValue.getType() == VALUE_TYPE_FLOW_OUTPUT) {
+        loopComponentExecutionState->currentValue = currentValue;
+    } else {
+        assignValue(flowState, componentIndex, loopComponentExecutionState->dstValue, currentValue);
+    }
 
     bool condition;
     if (stepValue.getInt() > 0) {
@@ -94,8 +104,11 @@ void executeLoopComponent(FlowState *flowState, unsigned componentIndex) {
     if (condition) {
         // done
         deallocateComponentExecutionState(flowState, componentIndex);
-        propagateValue(flowState, componentIndex, component->outputs.count - 1);
+        propagateValue(flowState, componentIndex, 1);
     } else {
+        if (loopComponentExecutionState->dstValue.getType() == VALUE_TYPE_FLOW_OUTPUT) {
+            assignValue(flowState, componentIndex, loopComponentExecutionState->dstValue, currentValue);
+        }
         propagateValueThroughSeqout(flowState, componentIndex);
     }
 }
