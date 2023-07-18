@@ -26,6 +26,7 @@
 #include <eez/core/debug.h>
 #include <eez/core/os.h>
 #include <eez/core/util.h>
+#include <eez/core/utf8.h>
 
 #include <eez/flow/flow.h>
 #include <eez/flow/private.h>
@@ -273,20 +274,32 @@ void writeValueAddr(const void *pValue) {
 void writeString(const char *str) {
 	WRITE_TO_OUTPUT_BUFFER('"');
 
-	for (const char *p = str; *p; p++) {
-		if (*p == '"') {
+    while (true) {
+        utf8_int32_t cp;
+        str = utf8codepoint(str, &cp);
+        if (!cp) {
+            break;
+        }
+
+        if (cp == '"') {
 			WRITE_TO_OUTPUT_BUFFER('\\');
 			WRITE_TO_OUTPUT_BUFFER('"');
-		} else if (*p == '\t') {
+		} else if (cp == '\t') {
 			WRITE_TO_OUTPUT_BUFFER('\\');
 			WRITE_TO_OUTPUT_BUFFER('t');
-		} else if (*p == '\n') {
+		} else if (cp == '\n') {
 			WRITE_TO_OUTPUT_BUFFER('\\');
 			WRITE_TO_OUTPUT_BUFFER('n');
-		} else {
-			WRITE_TO_OUTPUT_BUFFER(*p);
-		}
-	}
+		} else if (cp >= 32 && cp < 127) {
+			WRITE_TO_OUTPUT_BUFFER(cp);
+        } else {
+            char temp[32];
+            snprintf(temp, sizeof(temp), "\\u%04x", (int)cp);
+            for (size_t i = 0; i < strlen(temp); i++) {
+			    WRITE_TO_OUTPUT_BUFFER(temp[i]);
+            }
+        }
+    }
 
 	WRITE_TO_OUTPUT_BUFFER('"');
 	WRITE_TO_OUTPUT_BUFFER('\n');
