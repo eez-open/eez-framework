@@ -28,6 +28,8 @@
 
 #else
 
+#include <string.h>
+
 typedef char utf8_int8_t;
 typedef int32_t utf8_int32_t;
 
@@ -37,5 +39,7 @@ inline const utf8_int8_t* utf8codepoint(const utf8_int8_t *str, utf8_int32_t *ou
 }
 
 #define utf8len strlen
+#define utf8cmp strcmp
+#define utf8casecmp stricmp
 
 #endif
