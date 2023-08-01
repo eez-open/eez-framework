@@ -363,15 +363,6 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCurs
 				value = 0;
 			}
 		}
-#if OPTION_KEYPAD
-		else if (operation == DATA_OPERATION_GET_TEXT_CURSOR_POSITION) {
-
-			Keypad *keypad = getActiveKeypad();
-			if (keypad) {
-				value = keypad->getCursorPosition();
-			}
-		}
-#endif
 		else if (operation == DATA_OPERATION_GET_MIN) {
 			if (component->type == WIDGET_TYPE_INPUT) {
 				value = getInputWidgetMin(widgetCursor);
@@ -486,6 +477,12 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCurs
         } else if (operation == DATA_OPERATION_GET_TEXT_REFRESH_RATE) {
             getValue(flowDataId, operation, widgetCursor, value);
         }
+#if OPTION_KEYPAD
+		else if (operation == DATA_OPERATION_GET_TEXT_CURSOR_POSITION) {
+            getValue(flowDataId, operation, widgetCursor, value);
+		}
+#endif
+
 	} else {
 		// TODO this shouldn't happen
 		value = Value();
