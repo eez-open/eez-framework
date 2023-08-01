@@ -40,6 +40,11 @@ inline const utf8_int8_t* utf8codepoint(const utf8_int8_t *str, utf8_int32_t *ou
 
 #define utf8len strlen
 #define utf8cmp strcmp
+
+#ifdef _MSC_VER
+#define utf8casecmp _stricmp
+#else
 #define utf8casecmp stricmp
+#endif
 
 #endif
