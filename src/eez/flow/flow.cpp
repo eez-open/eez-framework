@@ -476,6 +476,8 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCurs
             }
         } else if (operation == DATA_OPERATION_GET_TEXT_REFRESH_RATE) {
             getValue(flowDataId, operation, widgetCursor, value);
+        } else if (operation == DATA_OPERATION_GET_BITMAP_IMAGE) {
+            getValue(flowDataId, operation, widgetCursor, value);
         }
 #if OPTION_KEYPAD
 		else if (operation == DATA_OPERATION_GET_TEXT_CURSOR_POSITION) {
