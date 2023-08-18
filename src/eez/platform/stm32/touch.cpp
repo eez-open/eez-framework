@@ -31,8 +31,13 @@
 #include <eez/gui/gui.h>
 #include <eez/gui/touch.h>
 
+#ifdef EEZ_PLATFORM_STM32F746G_DISCO
+#include "stm32746g_discovery_ts.h"
+
 #ifdef EEZ_PLATFORM_STM32F469I_DISCO
 #include "stm32469i_discovery_ts.h"
+
+#if defined(EEZ_PLATFORM_STM32F469I_DISCO) || defined(EEZ_PLATFORM_STM32F746G_DISCO)
 #else
 #define TSC2007IPW
 //#define AR1021
@@ -144,7 +149,7 @@ void touchMeasure() {
     }
 #endif
 
-#if defined(EEZ_PLATFORM_STM32F469I_DISCO)
+#if defined(EEZ_PLATFORM_STM32F469I_DISCO) || defined(EEZ_PLATFORM_STM32F746G_DISCO)
     TS_StateTypeDef TS_State;
     if (BSP_TS_GetState(&TS_State) == TS_OK) {
     	if (TS_State.touchDetected) {

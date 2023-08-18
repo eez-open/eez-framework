@@ -38,6 +38,14 @@ extern "C" DMA2D_HandleTypeDef hdma2d_eval;
 #define hdma2d hdma2d_eval
 #endif
 
+#ifdef EEZ_PLATFORM_STM32F746G_DISCO
+#include "stm32746g_discovery_lcd.h"
+extern "C" LTDC_HandleTypeDef hltdc_eval;
+extern "C" DMA2D_HandleTypeDef hdma2d_eval;
+#define hltdc hltdc
+#define hdma2d hdma2d
+#endif
+
 #include <eez/core/util.h>
 #include <eez/core/memory.h>
 #include <eez/core/os.h>
@@ -171,7 +179,7 @@ void bitBlt(void *src, int srcBpp, uint32_t srcLineOffset, uint16_t *dst, int x,
         hdma2d.LayerCfg[1].InputAlpha = 0;
     } else if (srcBpp == 24) {
         hdma2d.Init.Mode = DMA2D_M2M_PFC;
-#ifndef EEZ_PLATFORM_STM32F469I_DISCO
+#if !defined(EEZ_PLATFORM_STM32F469I_DISCO) && !defined(EEZ_PLATFORM_STM32F7)
         hdma2d.Init.RedBlueSwap = DMA2D_RB_SWAP;
 #endif
 
@@ -203,7 +211,7 @@ void bitBlt(void *src, int srcBpp, uint32_t srcLineOffset, uint16_t *dst, int x,
     g_waitDMA = true;
 
     if (srcBpp == 24) {
-#ifndef EEZ_PLATFORM_STM32F469I_DISCO
+#if !defined(EEZ_PLATFORM_STM32F469I_DISCO) && !defined(EEZ_PLATFORM_STM32F7)
         hdma2d.Init.RedBlueSwap = DMA2D_RB_REGULAR;
 #endif
     }
@@ -236,7 +244,7 @@ static void bitBltRGB888(uint16_t *src, uint8_t *dst, int x, int y, int width, i
     hdma2d.Init.Mode = DMA2D_M2M_PFC;
     hdma2d.Init.ColorMode = DMA2D_OUTPUT_RGB888;
     hdma2d.Init.OutputOffset = DISPLAY_WIDTH - width;
-#ifndef EEZ_PLATFORM_STM32F469I_DISCO
+#if !defined(EEZ_PLATFORM_STM32F469I_DISCO) && !defined(EEZ_PLATFORM_STM32F7)
     hdma2d.Init.RedBlueSwap = DMA2D_RB_SWAP;
 #endif
 
@@ -252,7 +260,7 @@ static void bitBltRGB888(uint16_t *src, uint8_t *dst, int x, int y, int width, i
     HAL_DMA2D_Start(&hdma2d, vramOffset(src, x, y), vramOffsetRGB888(dst, x, y), width, height);
     g_waitDMA = true;
 
-#ifndef EEZ_PLATFORM_STM32F469I_DISCO
+#if !defined(EEZ_PLATFORM_STM32F469I_DISCO) && !defined(EEZ_PLATFORM_STM32F7)
     hdma2d.Init.RedBlueSwap = DMA2D_RB_REGULAR;
 #endif
 }

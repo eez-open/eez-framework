@@ -36,7 +36,7 @@
 #endif
 
 #if defined(EEZ_PLATFORM_STM32)
-#ifdef EEZ_PLATFORM_STM32F469I_DISCO
+#if defined(EEZ_PLATFORM_STM32F469I_DISCO) || defined(EEZ_PLATFORM_STM32F746G_DISCO)
 #else
 #include <i2c.h>
 #endif
@@ -79,7 +79,7 @@ const int MAX_READ_CHUNK_SIZE = 16;
 const int MAX_WRITE_CHUNK_SIZE = 16;
 
 bool readFromEEPROM(uint8_t *buffer, uint16_t bufferSize, uint16_t address) {
-#ifdef EEZ_PLATFORM_STM32F469I_DISCO
+#if defined(EEZ_PLATFORM_STM32F469I_DISCO) || defined(EEZ_PLATFORM_STM32F746G_DISCO)
     return false;
 #else
     for (uint16_t i = 0; i < bufferSize; i += MAX_READ_CHUNK_SIZE) {
@@ -112,7 +112,7 @@ bool readFromEEPROM(uint8_t *buffer, uint16_t bufferSize, uint16_t address) {
 }
 
 bool writeToEEPROM(const uint8_t *buffer, uint16_t bufferSize, uint16_t address) {
-#ifdef EEZ_PLATFORM_STM32F469I_DISCO
+#if defined(EEZ_PLATFORM_STM32F469I_DISCO) || defined(EEZ_PLATFORM_STM32F746G_DISCO)
     return false;
 #else
     for (uint16_t i = 0; i < bufferSize; i += MAX_WRITE_CHUNK_SIZE) {
