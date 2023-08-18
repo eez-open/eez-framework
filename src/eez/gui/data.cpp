@@ -60,7 +60,7 @@ void data_none(DataOperationEnum operation, const WidgetCursor &widgetCursor, Va
 int count(const WidgetCursor &widgetCursor, int16_t id) {
     Value countValue = 0;
     DATA_OPERATION_FUNCTION(id, DATA_OPERATION_COUNT, widgetCursor, countValue);
-    return countValue.getInt();
+    return countValue.toInt32();
 }
 
 void select(WidgetCursor &widgetCursor, int16_t id, int index, Value &oldValue) {

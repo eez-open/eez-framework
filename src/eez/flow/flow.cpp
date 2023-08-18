@@ -360,8 +360,8 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCurs
 				    value = array->arraySize;
                 }
 			} else {
-				value = 0;
-			}
+                value = arrayValue;
+            }
 		}
 		else if (operation == DATA_OPERATION_GET_MIN) {
 			if (component->type == WIDGET_TYPE_INPUT) {
