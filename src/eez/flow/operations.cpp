@@ -1060,7 +1060,7 @@ void do_OPERATION_TYPE_FLOW_TO_INTEGER(EvalStack &stack) {
     stack.push(Value(value, VALUE_TYPE_INT32));
 }
 
-void do_OPERATION_TYPE_FLOW_GET_BITMAP(EvalStack &stack) {
+void do_OPERATION_TYPE_FLOW_GET_BITMAP_INDEX(EvalStack &stack) {
 #if EEZ_OPTION_GUI
     auto a = stack.pop().getValue();
     if (a.isError()) {
@@ -2200,7 +2200,7 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_DATE_MAKE,
     do_OPERATION_TYPE_MATH_POW,
     do_OPERATION_TYPE_LVGL_METER_TICK_INDEX,
-    do_OPERATION_TYPE_FLOW_GET_BITMAP,
+    do_OPERATION_TYPE_FLOW_GET_BITMAP_INDEX,
     do_OPERATION_TYPE_FLOW_TO_INTEGER,
 };
 
