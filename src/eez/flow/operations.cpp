@@ -1051,7 +1051,7 @@ void do_OPERATION_TYPE_FLOW_TO_INTEGER(EvalStack &stack) {
     }
 
     int err;
-    auto value = str.toInt32(&err);
+    int value = str.toInt32(&err);
     if (err) {
         stack.push(Value::makeError());
         return;

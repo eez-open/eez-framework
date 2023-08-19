@@ -108,7 +108,7 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 			if (color != TRANSPARENT_COLOR_INDEX) {
 				display::setColor(color, ignoreLuminocity);
 				auto savedOpacity = display::setOpacity(backgroundStyle.style->opacity);
-                if (x2 > x1 && y2 > y1) {
+                if (x2 >= x1 && y2 >= y1) {
                     display::fillRect(x1, y1, x2, y2);
                 }
 				display::setOpacity(savedOpacity);
@@ -243,7 +243,7 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 	if (color != TRANSPARENT_COLOR_INDEX) {
 		display::setColor(color, ignoreLuminocity);
 		auto savedOpacity = display::setOpacity(style->opacity);
-        if (x2 > x1 && y2 > y1) {
+        if (x2 >= x1 && y2 >= y1) {
 		    display::fillRect(x1, y1, x2, y2);
         }
 		display::setOpacity(savedOpacity);
