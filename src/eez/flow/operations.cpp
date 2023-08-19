@@ -1057,7 +1057,8 @@ void do_OPERATION_TYPE_FLOW_TO_INTEGER(EvalStack &stack) {
         return;
     }
 
-    stack.push(Value(value, VALUE_TYPE_INT32));
+    //stack.push(Value(value, VALUE_TYPE_INT32));
+    stack.push(Value(value)); // Goran - I was getting compile errors
 }
 
 void do_OPERATION_TYPE_FLOW_GET_BITMAP_INDEX(EvalStack &stack) {
