@@ -33,9 +33,11 @@
 
 #ifdef EEZ_PLATFORM_STM32F746G_DISCO
 #include "stm32746g_discovery_ts.h"
+#endif
 
 #ifdef EEZ_PLATFORM_STM32F469I_DISCO
 #include "stm32469i_discovery_ts.h"
+#endif
 
 #if defined(EEZ_PLATFORM_STM32F469I_DISCO) || defined(EEZ_PLATFORM_STM32F746G_DISCO)
 #else

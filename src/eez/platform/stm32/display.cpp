@@ -40,8 +40,8 @@ extern "C" DMA2D_HandleTypeDef hdma2d_eval;
 
 #ifdef EEZ_PLATFORM_STM32F746G_DISCO
 #include "stm32746g_discovery_lcd.h"
-extern "C" LTDC_HandleTypeDef hltdc_eval;
-extern "C" DMA2D_HandleTypeDef hdma2d_eval;
+extern "C" LTDC_HandleTypeDef hltdc;
+extern "C" DMA2D_HandleTypeDef hdma2d;
 #define hltdc hltdc
 #define hdma2d hdma2d
 #endif
