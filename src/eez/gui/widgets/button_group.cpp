@@ -72,8 +72,6 @@ void drawButtons(const WidgetCursor &widgetCursor, const Style *style, const Sty
         int labelHeight = MIN(w, h);
         int yOffset = (h - labelHeight) / 2;
 
-		WidgetCursor widgetCursor;
-
 		for (Cursor i = 0; i < count; i++) {
             if (yOffset > 0) {
                 display::setColor(style->backgroundColor);
