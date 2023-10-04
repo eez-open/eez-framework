@@ -27,6 +27,7 @@
 #include <eez/core/os.h>
 #include <eez/core/value.h>
 #include <eez/core/util.h>
+#include <eez/core/utf8.h>
 
 #include <eez/flow/flow.h>
 #include <eez/flow/operations.h>
@@ -946,7 +947,13 @@ void do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE(EvalStack &stack) {
     }
 
     int arrayType = arrayTypeValue.getInt();
-    int arraySize = arraySizeValue.getInt();
+
+    int err;
+    int arraySize = arraySizeValue.toInt32(&err);
+    if (err) {
+        stack.push(Value::makeError());
+        return;
+    }
 
     auto arrayValue = Value::makeArrayRef(arraySize, arrayType, 0x837260d4);
 
@@ -976,7 +983,12 @@ void do_OPERATION_TYPE_FLOW_LANGUAGES(EvalStack &stack) {
 void do_OPERATION_TYPE_FLOW_TRANSLATE(EvalStack &stack) {
     auto textResourceIndexValue = stack.pop();
 
-    int textResourceIndex = textResourceIndexValue.getInt();
+    int err;
+    int textResourceIndex = textResourceIndexValue.toInt32(&err);
+    if (err) {
+        stack.push(Value::makeError());
+        return;
+    }
 
     int languageIndex = g_selectedLanguage;
 
@@ -1909,6 +1921,29 @@ void do_OPERATION_TYPE_STRING_SPLIT(EvalStack &stack) {
     stack.push(arrayValue);
 }
 
+void do_OPERATION_TYPE_STRING_FROM_CHAR_CODE(EvalStack &stack) {
+    Value charCodeValue = stack.pop().getValue();
+    if (charCodeValue.isError()) {
+        stack.push(charCodeValue);
+        return;
+    }
+
+    int err = 0;
+    int32_t charCode = charCodeValue.toInt32(&err);
+    if (err != 0) {
+        stack.push(Value::makeError());
+        return;
+    }
+
+    char str[16] = {0};
+
+    utf8catcodepoint(str, charCode, sizeof(str));
+
+    Value resultValue = Value::makeStringRef(str, strlen(str), 0x02c2e778);
+    stack.push(resultValue);
+    return;
+}
+
 void do_OPERATION_TYPE_ARRAY_LENGTH(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
@@ -1937,7 +1972,12 @@ void do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
         stack.push(fromValue);
         return;
     }
-    auto from = fromValue.getInt();
+    int err;
+    auto from = fromValue.toInt32(&err);
+    if (err) {
+        stack.push(Value::makeError());
+        return;
+    }
 
     int to = -1;
     if (numArgs > 2) {
@@ -1946,7 +1986,12 @@ void do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
             stack.push(toValue);
             return;
         }
-        to = toValue.getInt();
+        int err;
+        to = toValue.toInt32(&err);
+        if (err) {
+            stack.push(Value::makeError());
+            return;
+        }
     }
 
     if (!arrayValue.isArray()) {
@@ -1991,7 +2036,12 @@ void do_OPERATION_TYPE_ARRAY_ALLOCATE(EvalStack &stack) {
         stack.push(sizeValue);
         return;
     }
-    auto size = sizeValue.getInt();
+    int err;
+    auto size = sizeValue.toInt32(&err);
+    if (err) {
+        stack.push(Value::makeError());
+        return;
+    }
 
     auto resultArrayValue = Value::makeArrayRef(size, defs_v3::ARRAY_TYPE_ANY, 0xe2d78c65);
 
@@ -2202,6 +2252,7 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_LVGL_METER_TICK_INDEX,
     do_OPERATION_TYPE_FLOW_GET_BITMAP_INDEX,
     do_OPERATION_TYPE_FLOW_TO_INTEGER,
+    do_OPERATION_TYPE_STRING_FROM_CHAR_CODE,
 };
 
 } // namespace flow
