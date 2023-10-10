@@ -946,10 +946,22 @@ void do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE(EvalStack &stack) {
         return;
     }
 
+    auto numInitElementsValue = stack.pop();
+    if (numInitElementsValue.isError()) {
+        stack.push(numInitElementsValue);
+        return;
+    }
+
     int arrayType = arrayTypeValue.getInt();
 
     int err;
     int arraySize = arraySizeValue.toInt32(&err);
+    if (err) {
+        stack.push(Value::makeError());
+        return;
+    }
+
+    int numInitElements = numInitElementsValue.toInt32(&err);
     if (err) {
         stack.push(Value::makeError());
         return;
@@ -960,7 +972,11 @@ void do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE(EvalStack &stack) {
     auto array = arrayValue.getArray();
 
     for (int i = 0; i < arraySize; i++) {
-        array->values[i] = stack.pop().getValue();
+        if (i < numInitElements) {
+            array->values[i] = stack.pop().getValue();
+        } else {
+            array->values[i] = Value();
+        }
     }
 
     stack.push(arrayValue);

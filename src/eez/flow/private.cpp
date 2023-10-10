@@ -249,6 +249,14 @@ bool canFreeFlowState(FlowState *flowState, bool includingWatchVariable) {
         }
     }
 
+    auto childFlowState = flowState->firstChild;
+    while (childFlowState != nullptr) {
+        if (!canFreeFlowState(childFlowState, false)) {
+            return false;
+        }
+        childFlowState = childFlowState->nextSibling;
+    }
+
     return true;
 }
 
@@ -295,9 +303,21 @@ void freeFlowState(FlowState *flowState) {
         deallocateComponentExecutionState(flowState, i);
 	}
 
+    freeAllChildrenFlowStates(flowState->firstChild);
+
 	onFlowStateDestroyed(flowState);
 
 	free(flowState);
+}
+
+void freeAllChildrenFlowStates(FlowState *firstChildFlowState) {
+    auto flowState = firstChildFlowState;
+    while (flowState != nullptr) {
+        auto nextFlowState = flowState->nextSibling;
+        freeAllChildrenFlowStates(flowState->firstChild);
+        freeFlowState(flowState);
+        flowState = nextFlowState;
+    }
 }
 
 void deallocateComponentExecutionState(FlowState *flowState, unsigned componentIndex) {
