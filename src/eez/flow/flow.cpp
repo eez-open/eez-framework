@@ -71,6 +71,7 @@ unsigned start(Assets *assets) {
 	}
 
     g_isStopped = false;
+    g_isStopping = false;
 
 	queueReset();
 
