@@ -1116,6 +1116,10 @@ bool Value::toBool(int *err) const {
 		return uint64Value != 0;
 	}
 
+	if (type == VALUE_TYPE_DATE) {
+		return doubleValue != 0;
+	}
+
 	if (isString()) {
 		const char *str = getString();
 		return str && *str;
