@@ -246,11 +246,11 @@ Value op_mod(const Value& a1, const Value& b1) {
     }
 
     if (a.isDouble() || b.isDouble()) {
-        Value(a.toDouble() - floor(a.toDouble() / b.toDouble()) * b.toDouble(), VALUE_TYPE_DOUBLE);
+        return Value(a.toDouble() - floor(a.toDouble() / b.toDouble()) * b.toDouble(), VALUE_TYPE_DOUBLE);
     }
 
     if (a.isFloat() || b.isFloat()) {
-        Value(a.toFloat() - floor(a.toFloat() / b.toFloat()) * b.toFloat(), VALUE_TYPE_FLOAT);
+        return Value(a.toFloat() - floor(a.toFloat() / b.toFloat()) * b.toFloat(), VALUE_TYPE_FLOAT);
     }
 
     if (a.isInt64() || b.isInt64()) {
