@@ -1937,7 +1937,7 @@ void do_OPERATION_TYPE_STRING_SPLIT(EvalStack &stack) {
     stack.push(arrayValue);
 }
 
-void do_OPERATION_TYPE_STRING_FROM_CHAR_CODE(EvalStack &stack) {
+void do_OPERATION_TYPE_STRING_FROM_CODE_POINT(EvalStack &stack) {
     Value charCodeValue = stack.pop().getValue();
     if (charCodeValue.isError()) {
         stack.push(charCodeValue);
@@ -1960,6 +1960,36 @@ void do_OPERATION_TYPE_STRING_FROM_CHAR_CODE(EvalStack &stack) {
     return;
 }
 
+void do_OPERATION_TYPE_STRING_CODE_POINT_AT(EvalStack &stack) {
+    auto strValue = stack.pop().getValue();
+    if (strValue.isError()) {
+        stack.push(strValue);
+        return;
+    }
+
+    Value indexValue = stack.pop().getValue();
+    if (indexValue.isError()) {
+        stack.push(indexValue);
+        return;
+    }
+
+    utf8_int32_t codePoint = 0;
+
+    const char *str = strValue.getString();
+    if (str) {
+        int index = indexValue.toInt32();
+        if (index >= 0) {
+            do {
+                str = utf8codepoint(str, &codePoint);
+            } while (codePoint && --index >= 0);
+        }
+    }
+
+    stack.push(Value((int)codePoint, VALUE_TYPE_INT32));
+
+    return;
+}
+
 void do_OPERATION_TYPE_ARRAY_LENGTH(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
@@ -1978,24 +2008,41 @@ void do_OPERATION_TYPE_ARRAY_LENGTH(EvalStack &stack) {
 
 void do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
     auto numArgs = stack.pop().getInt();
+
     auto arrayValue = stack.pop().getValue();
     if (arrayValue.isError()) {
         stack.push(arrayValue);
         return;
     }
-    auto fromValue = stack.pop().getValue();
-    if (fromValue.isError()) {
-        stack.push(fromValue);
-        return;
-    }
-    int err;
-    auto from = fromValue.toInt32(&err);
-    if (err) {
+    if (!arrayValue.isArray()) {
         stack.push(Value::makeError());
         return;
     }
+    auto array = arrayValue.getArray();
 
-    int to = -1;
+    int from;
+    if (numArgs > 1) {
+        auto fromValue = stack.pop().getValue();
+        if (fromValue.isError()) {
+            stack.push(fromValue);
+            return;
+        }
+
+        int err;
+        from = fromValue.toInt32(&err);
+        if (err) {
+            stack.push(Value::makeError());
+            return;
+        }
+
+        if (from < 0) {
+            from = 0;
+        }
+    } else {
+        from = 0;
+    }
+
+    int to;
     if (numArgs > 2) {
         auto toValue = stack.pop().getValue();
         if (toValue.isError()) {
@@ -2008,25 +2055,12 @@ void do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
             stack.push(Value::makeError());
             return;
         }
-    }
 
-    if (!arrayValue.isArray()) {
-        stack.push(Value::makeError());
-        return;
-    }
-    auto array = arrayValue.getArray();
-
-    if (from < 0 || from >= (int)array->arraySize) {
-        stack.push(Value::makeError());
-        return;
-    }
-
-    if (numArgs <= 2) {
+        if (to < 0) {
+            to = 0;
+        }
+    } else {
         to = array->arraySize;
-    }
-    if (to < 0 || to >= (int)array->arraySize) {
-        stack.push(Value::makeError());
-        return;
     }
 
     if (from > to) {
@@ -2037,9 +2071,9 @@ void do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
     auto size = to - from;
 
     auto resultArrayValue = Value::makeArrayRef(size, array->arrayType, 0xe2d78c65);
-    auto resultArray = array;
+    auto resultArray = resultArrayValue.getArray();
 
-    for (int elementIndex = from; elementIndex < to; elementIndex++) {
+    for (int elementIndex = from; elementIndex < to && elementIndex < (int)array->arraySize; elementIndex++) {
         resultArray->values[elementIndex - from] = array->values[elementIndex];
     }
 
@@ -2268,7 +2302,8 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_LVGL_METER_TICK_INDEX,
     do_OPERATION_TYPE_FLOW_GET_BITMAP_INDEX,
     do_OPERATION_TYPE_FLOW_TO_INTEGER,
-    do_OPERATION_TYPE_STRING_FROM_CHAR_CODE,
+    do_OPERATION_TYPE_STRING_FROM_CODE_POINT,
+    do_OPERATION_TYPE_STRING_CODE_POINT_AT,
 };
 
 } // namespace flow

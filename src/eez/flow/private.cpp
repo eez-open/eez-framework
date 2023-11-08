@@ -35,6 +35,7 @@ using namespace eez::gui;
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/hooks.h>
 #include <eez/flow/components/call_action.h>
+#include <eez/flow/components/on_event.h>
 
 namespace eez {
 namespace flow {
@@ -508,9 +509,6 @@ void onEvent(FlowState *flowState, FlowEvent flowEvent, Value eventValue) {
 	for (unsigned componentIndex = 0; componentIndex < flowState->flow->components.count; componentIndex++) {
 		auto component = flowState->flow->components[componentIndex];
 		if (component->type == defs_v3::COMPONENT_TYPE_ON_EVENT_ACTION) {
-            struct OnEventComponent : public Component {
-                uint8_t event;
-            };
             auto onEventComponent = (OnEventComponent *)component;
             if (onEventComponent->event == flowEvent) {
                 flowState->eventValue = eventValue;
@@ -520,6 +518,12 @@ void onEvent(FlowState *flowState, FlowEvent flowEvent, Value eventValue) {
             }
 		}
 	}
+
+    if (flowEvent == FLOW_EVENT_KEYDOWN) {
+        for (auto childFlowState = flowState->firstChild; childFlowState != nullptr; childFlowState = childFlowState->nextSibling) {
+            onEvent(childFlowState, flowEvent, eventValue);
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -537,6 +541,12 @@ bool findCatchErrorComponent(FlowState *flowState, FlowState *&catchErrorFlowSta
 			return true;
 		}
 	}
+
+    if (flowState->parentFlowState && flowState->parentComponent && flowState->parentComponent->errorCatchOutput != -1) {
+        catchErrorFlowState = flowState->parentFlowState;
+        catchErrorComponentIndex = flowState->parentComponentIndex;
+        return true;
+    }
 
     return findCatchErrorComponent(flowState->parentFlowState, catchErrorFlowState, catchErrorComponentIndex);
 }
@@ -573,13 +583,24 @@ void throwError(FlowState *flowState, int componentIndex, const char *errorMessa
                 fs->error = true;
             }
 
-			auto catchErrorComponentExecutionState = allocateComponentExecutionState<CatchErrorComponenentExecutionState>(catchErrorFlowState, catchErrorComponentIndex);
-			catchErrorComponentExecutionState->message = Value::makeStringRef(errorMessage, strlen(errorMessage), 0x9473eef2);
+            auto component = catchErrorFlowState->flow->components[catchErrorComponentIndex];
 
-			if (!addToQueue(catchErrorFlowState, catchErrorComponentIndex, -1, -1, -1, false)) {
-			    onFlowError(flowState, componentIndex, errorMessage);
-				stopScriptHook();
-			}
+            if (component->type == defs_v3::COMPONENT_TYPE_CATCH_ERROR_ACTION) {
+                auto catchErrorComponentExecutionState = allocateComponentExecutionState<CatchErrorComponenentExecutionState>(catchErrorFlowState, catchErrorComponentIndex);
+                catchErrorComponentExecutionState->message = Value::makeStringRef(errorMessage, strlen(errorMessage), 0x9473eef2);
+
+                if (!addToQueue(catchErrorFlowState, catchErrorComponentIndex, -1, -1, -1, false)) {
+                    onFlowError(flowState, componentIndex, errorMessage);
+                    stopScriptHook();
+                }
+            } else {
+                propagateValue(
+                    catchErrorFlowState,
+                    catchErrorComponentIndex,
+                    component->errorCatchOutput,
+                    Value::makeStringRef(errorMessage, strlen(errorMessage), 0x9473eef3)
+                );
+            }
 		} else {
 			onFlowError(flowState, componentIndex, errorMessage);
 			stopScriptHook();
