@@ -448,12 +448,35 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
 		Value *pDstValue;
         if (dstValue.getType() == VALUE_TYPE_ARRAY_ELEMENT_VALUE) {
             auto arrayElementValue = (ArrayElementValue *)dstValue.refValue;
-            auto array = arrayElementValue->arrayValue.getArray();
-            if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= (int)array->arraySize) {
-                throwError(flowState, componentIndex, "Can not assign, array element index out of bounds\n");
+            if (arrayElementValue->arrayValue.isBlob()) {
+                auto blobRef = arrayElementValue->arrayValue.getBlob();
+                if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= (int)blobRef->len) {
+                    throwError(flowState, componentIndex, "Can not assign, blob element index out of bounds\n");
+                    return;
+                }
+
+                int err;
+                int32_t elementValue = srcValue.toInt32(&err);
+                if (err != 0) {
+                    char errorMessage[100];
+                    snprintf(errorMessage, sizeof(errorMessage), "Can not non-integer to blob");
+                } else if (elementValue < 0 || elementValue > 255) {
+                    char errorMessage[100];
+                    snprintf(errorMessage, sizeof(errorMessage), "Can not assign %d to blob", (int)elementValue);
+                    throwError(flowState, componentIndex, errorMessage);
+                } else {
+                    blobRef->blob[arrayElementValue->elementIndex] = elementValue;
+                    // TODO: onValueChanged
+                }
                 return;
+            } else {
+                auto array = arrayElementValue->arrayValue.getArray();
+                if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= (int)array->arraySize) {
+                    throwError(flowState, componentIndex, "Can not assign, array element index out of bounds\n");
+                    return;
+                }
+                pDstValue = &array->values[arrayElementValue->elementIndex];
             }
-            pDstValue = &array->values[arrayElementValue->elementIndex];
         } else {
             pDstValue = dstValue.pValueValue;
         }

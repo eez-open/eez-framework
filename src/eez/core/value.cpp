@@ -1125,6 +1125,11 @@ bool Value::toBool(int *err) const {
 		return str && *str;
 	}
 
+	if (isBlob()) {
+		auto blobRef = getBlob();
+		return blobRef->len > 0;
+	}
+
 	if (isArray()) {
 		auto arrayValue = getArray();
         return arrayValue->arraySize != 0;

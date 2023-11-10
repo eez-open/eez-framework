@@ -34,6 +34,10 @@
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/date.h>
 
+extern "C" {
+#include <eez/libs/sha256/sha256.h>
+}
+
 #if EEZ_OPTION_GUI
 #include <eez/gui/gui.h>
 using namespace eez::gui;
@@ -428,6 +432,22 @@ bool is_equal(const Value& a1, const Value& b1) {
             return false;
         }
         return strcmp(aStr, bStr) == 0;
+    }
+
+    if (a.isBlob() && b.isBlob()) {
+        auto aBlobRef = a.getBlob();
+        auto bBlobRef = b.getBlob();
+        if (!aBlobRef && !aBlobRef) {
+            return true;
+        }
+        if (!aBlobRef || !bBlobRef) {
+            return false;
+        }
+        if (aBlobRef->len != bBlobRef->len) {
+            return false;
+        }
+        return memcmp(aBlobRef->blob, bBlobRef->blob, aBlobRef->len) == 0;
+
     }
 
     return a.toDouble() == b.toDouble();
@@ -1997,13 +2017,16 @@ void do_OPERATION_TYPE_ARRAY_LENGTH(EvalStack &stack) {
         return;
     }
 
-    if (!a.isArray()) {
+    if (a.isArray()) {
+        auto array = a.getArray();
+        stack.push(Value(array->arraySize, VALUE_TYPE_UINT32));
+    } else if (a.isBlob()) {
+        auto blobRef = a.getBlob();
+        stack.push(Value(blobRef->len, VALUE_TYPE_UINT32));
+    } else {
         stack.push(Value::makeError());
         return;
     }
-
-    auto array = a.getArray();
-    stack.push(Value(array->arraySize, VALUE_TYPE_UINT32));
 }
 
 void do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
@@ -2229,6 +2252,40 @@ void do_OPERATION_TYPE_LVGL_METER_TICK_INDEX(EvalStack &stack) {
     stack.push(g_eezFlowLvlgMeterTickIndex);
 }
 
+void do_OPERATION_TYPE_CRYPTO_SHA256(EvalStack &stack) {
+    auto value = stack.pop().getValue();
+    if (value.isError()) {
+        stack.push(value);
+        return;
+    }
+
+    const uint8_t *data;
+    uint32_t dataLen;
+
+    if (value.isString()) {
+        const char *str = value.getString();
+        data = (uint8_t *)str;
+        dataLen = strlen(str);
+    } else if (value.isBlob()) {
+        auto blobRef = value.getBlob();
+        data = blobRef->blob;
+        dataLen = blobRef->len;
+    } else {
+        stack.push(Value::makeError());
+        return;
+    }
+
+    BYTE buf[SHA256_BLOCK_SIZE];
+    SHA256_CTX ctx;
+    sha256_init(&ctx);
+	sha256_update(&ctx, data, dataLen);
+	sha256_final(&ctx, buf);
+
+    auto result = Value::makeBlobRef(buf, SHA256_BLOCK_SIZE, 0x1f0c0c0c);
+
+    stack.push(result);
+}
+
 EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_ADD,
     do_OPERATION_TYPE_SUB,
@@ -2304,6 +2361,7 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_FLOW_TO_INTEGER,
     do_OPERATION_TYPE_STRING_FROM_CODE_POINT,
     do_OPERATION_TYPE_STRING_CODE_POINT_AT,
+    do_OPERATION_TYPE_CRYPTO_SHA256,
 };
 
 } // namespace flow
