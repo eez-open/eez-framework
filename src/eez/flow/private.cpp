@@ -535,8 +535,11 @@ void onEvent(FlowState *flowState, FlowEvent flowEvent, Value eventValue) {
             auto onEventComponent = (OnEventComponent *)component;
             if (onEventComponent->event == flowEvent) {
                 flowState->eventValue = eventValue;
-                if (!addToQueue(flowState, componentIndex, -1, -1, -1, false)) {
-                    return;
+
+                if (!isInQueue(flowState, componentIndex)) {
+                    if (!addToQueue(flowState, componentIndex, -1, -1, -1, false)) {
+                        return;
+                    }
                 }
             }
 		}
