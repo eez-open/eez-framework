@@ -168,6 +168,18 @@ bool isGuiThread() {
     return osThreadGetId() == g_guiTaskHandle;
 }
 
+void suspendGuiThread() {
+#ifndef EEZ_PLATFORM_SIMULATOR
+	vTaskSuspend((TaskHandle_t)g_guiTaskHandle);
+#endif
+}
+
+void resumeGuiThread() {
+#ifndef EEZ_PLATFORM_SIMULATOR
+	vTaskResume((TaskHandle_t)g_guiTaskHandle);
+#endif
+}
+
 } // namespace gui
 } // namespace eez
 

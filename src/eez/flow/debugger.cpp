@@ -614,11 +614,11 @@ void onFlowError(FlowState *flowState, int componentIndex, const char *errorMess
 void onComponentExecutionStateChanged(FlowState *flowState, int componentIndex) {
 	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_COMPONENT_EXECUTION_STATE_CHANGED)) {
 		char buffer[256];
-		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%d\n",
+		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%p\n",
 			MESSAGE_TO_DEBUGGER_COMPONENT_EXECUTION_STATE_CHANGED,
 			(int)flowState->flowStateIndex,
 			componentIndex,
-            (int)flowState->componenentExecutionStates[componentIndex]
+            flowState->componenentExecutionStates[componentIndex]
 		);
 
         writeDebuggerBufferHook(buffer, strlen(buffer));

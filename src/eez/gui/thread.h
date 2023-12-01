@@ -64,5 +64,8 @@ bool isGuiThread();
 
 void processGuiQueue(uint32_t timeoutMillisec);
 
+void suspendGuiThread();
+void resumeGuiThread();
+
 } // namespace gui
 } // namespace eez
