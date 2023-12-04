@@ -169,13 +169,13 @@ bool isGuiThread() {
 }
 
 void suspendGuiThread() {
-#ifndef EEZ_PLATFORM_SIMULATOR
+#if !defined(EEZ_PLATFORM_SIMULATOR) && !defined(__EMSCRIPTEN__)
 	vTaskSuspend((TaskHandle_t)g_guiTaskHandle);
 #endif
 }
 
 void resumeGuiThread() {
-#ifndef EEZ_PLATFORM_SIMULATOR
+#if !defined(EEZ_PLATFORM_SIMULATOR) && !defined(__EMSCRIPTEN__)
 	vTaskResume((TaskHandle_t)g_guiTaskHandle);
 #endif
 }
