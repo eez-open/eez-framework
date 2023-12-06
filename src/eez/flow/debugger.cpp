@@ -609,6 +609,10 @@ void onFlowError(FlowState *flowState, int componentIndex, const char *errorMess
 		writeDebuggerBufferHook(buffer, strlen(buffer));
 		writeString(errorMessage);
 	}
+
+    if (onFlowErrorHook) {
+        onFlowErrorHook(flowState, componentIndex, errorMessage);
+    }
 }
 
 void onComponentExecutionStateChanged(FlowState *flowState, int componentIndex) {

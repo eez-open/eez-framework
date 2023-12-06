@@ -106,6 +106,8 @@ double getDateNowDefaultImplementation() {
 
 double (*getDateNowHook)() = getDateNowDefaultImplementation;
 
+void (*onFlowErrorHook)(FlowState *flowState, int componentIndex, const char *errorMessage) = nullptr;
+
 } // namespace flow
 } // namespace eez
 

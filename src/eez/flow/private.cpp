@@ -55,7 +55,7 @@ bool isComponentReadyToRun(FlowState *flowState, unsigned componentIndex) {
         return false;
     }
 
-    if (component->type < defs_v3::COMPONENT_TYPE_START_ACTION) {
+    if (component->type < defs_v3::COMPONENT_TYPE_START_ACTION || component->type >= defs_v3::FIRST_DASHBOARD_WIDGET_COMPONENT_TYPE) {
         // always execute widget
         return true;
     }

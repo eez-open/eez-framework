@@ -155,7 +155,7 @@ void registerComponent(ComponentTypes componentType, ExecuteComponentFunctionTyp
 void executeComponent(FlowState *flowState, unsigned componentIndex) {
 	auto component = flowState->flow->components[componentIndex];
 
-	if (component->type >= defs_v3::FIRST_DASHBOARD_COMPONENT_TYPE) {
+	if (component->type >= defs_v3::FIRST_DASHBOARD_ACTION_COMPONENT_TYPE) {
 #if defined(EEZ_DASHBOARD_API)
         if (executeDashboardComponentHook) {
             executeDashboardComponentHook(component->type, getFlowStateIndex(flowState), componentIndex);

@@ -59,5 +59,7 @@ extern void (*executeLvglActionHook)(int actionIndex);
 
 extern double (*getDateNowHook)();
 
+extern void (*onFlowErrorHook)(FlowState *flowState, int componentIndex, const char *errorMessage);
+
 } // flow
 } // eez
