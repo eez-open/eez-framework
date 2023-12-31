@@ -1311,7 +1311,11 @@ Value Value::makeBlobRef(const uint8_t *blob, uint32_t len, uint32_t id) {
     }
     blobRef->len = len;
 
-    memcpy(blobRef->blob, blob, len);
+    if (blob) {
+        memcpy(blobRef->blob, blob, len);
+    } else {
+        memset(blobRef->blob, 0, len);
+    }
 
     blobRef->refCounter = 1;
 

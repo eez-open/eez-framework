@@ -38,12 +38,18 @@
 //#define AR1021
 #endif
 
+#ifndef TOUCH_DEVICE_ADDRESS
 #if defined(TSC2007IPW)
-const uint16_t TOUCH_DEVICE_ADDRESS = 0x90;
+#define TOUCH_DEVICE_ADDRESS (0x48 << 1)
 #endif
 
 #if defined(AR1021)
-const uint16_t TOUCH_DEVICE_ADDRESS = 0x9A;
+#define TOUCH_DEVICE_ADDRESS (0x4D << 1)
+#endif
+#endif
+
+#ifndef TOUCH_DEVICE_HANDLE
+#define TOUCH_DEVICE_HANDLE hi2c1
 #endif
 
 namespace eez {
@@ -88,27 +94,27 @@ void touchMeasure() {
 
     uint8_t result[4];
 
-    if (HAL_I2C_Master_Transmit(&hi2c1, TOUCH_DEVICE_ADDRESS, (uint8_t *)&Z1_DATA_ID, 1, 5) != HAL_OK) {
+    if (HAL_I2C_Master_Transmit(&TOUCH_DEVICE_HANDLE, TOUCH_DEVICE_ADDRESS, (uint8_t *)&Z1_DATA_ID, 1, 5) != HAL_OK) {
         isError = true;
     }
-    if (HAL_I2C_Master_Receive(&hi2c1, TOUCH_DEVICE_ADDRESS, result, 2, 5) != HAL_OK) {
+    if (HAL_I2C_Master_Receive(&TOUCH_DEVICE_HANDLE, TOUCH_DEVICE_ADDRESS, result, 2, 5) != HAL_OK) {
         isError = true;
     }
 
     g_lastZ1Data = (((int16_t)result[0]) << 3) | ((int16_t)result[1]);
 
     if (g_lastZ1Data > CONF_TOUCH_Z1_THRESHOLD) {
-        if (HAL_I2C_Master_Transmit(&hi2c1, TOUCH_DEVICE_ADDRESS, (uint8_t *)&X_DATA_ID, 1, 5) != HAL_OK) {
+        if (HAL_I2C_Master_Transmit(&TOUCH_DEVICE_HANDLE, TOUCH_DEVICE_ADDRESS, (uint8_t *)&X_DATA_ID, 1, 5) != HAL_OK) {
             isError = true;
         }
-        if (HAL_I2C_Master_Receive(&hi2c1, TOUCH_DEVICE_ADDRESS, result, 2, 5) != HAL_OK) {
+        if (HAL_I2C_Master_Receive(&TOUCH_DEVICE_HANDLE, TOUCH_DEVICE_ADDRESS, result, 2, 5) != HAL_OK) {
             isError = true;
         }
 
-        if (HAL_I2C_Master_Transmit(&hi2c1, TOUCH_DEVICE_ADDRESS, (uint8_t *)&Y_DATA_ID, 1, 5) != HAL_OK) {
+        if (HAL_I2C_Master_Transmit(&TOUCH_DEVICE_HANDLE, TOUCH_DEVICE_ADDRESS, (uint8_t *)&Y_DATA_ID, 1, 5) != HAL_OK) {
             isError = true;
         }
-        if (HAL_I2C_Master_Receive(&hi2c1, TOUCH_DEVICE_ADDRESS, result + 2, 2, 5) != HAL_OK) {
+        if (HAL_I2C_Master_Receive(&TOUCH_DEVICE_HANDLE, TOUCH_DEVICE_ADDRESS, result + 2, 2, 5) != HAL_OK) {
             isError = true;
         }
     }
@@ -133,7 +139,7 @@ void touchMeasure() {
 
     uint8_t result[5];
     memset(result, 0, 5);
-    HAL_I2C_Master_Receive(&hi2c1, TOUCH_DEVICE_ADDRESS, result, 5, 5);
+    HAL_I2C_Master_Receive(&TOUCH_DEVICE_HANDLE, TOUCH_DEVICE_ADDRESS, result, 5, 5);
 
     xTaskResumeAll();
 

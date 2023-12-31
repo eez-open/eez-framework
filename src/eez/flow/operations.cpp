@@ -2286,6 +2286,24 @@ void do_OPERATION_TYPE_CRYPTO_SHA256(EvalStack &stack) {
     stack.push(result);
 }
 
+void do_OPERATION_TYPE_BLOB_ALLOCATE(EvalStack &stack) {
+    auto sizeValue = stack.pop();
+    if (sizeValue.isError()) {
+        stack.push(sizeValue);
+        return;
+    }
+    int err;
+    auto size = sizeValue.toInt32(&err);
+    if (err) {
+        stack.push(Value::makeError());
+        return;
+    }
+
+    auto result = Value::makeBlobRef(nullptr, size, 0xd3de43f1);
+
+    stack.push(result);
+}
+
 EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_ADD,
     do_OPERATION_TYPE_SUB,
@@ -2362,6 +2380,7 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_STRING_FROM_CODE_POINT,
     do_OPERATION_TYPE_STRING_CODE_POINT_AT,
     do_OPERATION_TYPE_CRYPTO_SHA256,
+    do_OPERATION_TYPE_BLOB_ALLOCATE,
 };
 
 } // namespace flow

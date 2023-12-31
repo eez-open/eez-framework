@@ -66,7 +66,14 @@ static const uint8_t WRITE = 2;
 // I2C-Compatible (2-Wire) Serial EEPROM
 // 256-Kbit (32,768 x 8)
 // http://ww1.microchip.com/downloads/en/devicedoc/atmel-8568-seeprom-at24c256c-datasheet.pdf
-static const uint16_t EEPROM_ADDRESS = 0b10100000;
+#ifndef EEPROM_I2C_ADDRESS
+#define EEPROM_I2C_ADDRESS (0x50 << 1)
+#endif
+
+#ifndef EEPROM_I2C_HANDLE
+#define EEPROM_I2C_HANDLE hi2c1
+#endif
+
 #endif
 
 TestResult g_testResult = TEST_FAILED;
@@ -95,12 +102,12 @@ bool readFromEEPROM(uint8_t *buffer, uint16_t bufferSize, uint16_t address) {
         HAL_StatusTypeDef returnValue;
 
         vTaskSuspendAll();
-        returnValue = HAL_I2C_Master_Transmit(&hi2c1, EEPROM_ADDRESS, data, 2, HAL_MAX_DELAY);
+        returnValue = HAL_I2C_Master_Transmit(&EEPROM_I2C_HANDLE, EEPROM_I2C_ADDRESS, data, 2, HAL_MAX_DELAY);
         if (returnValue != HAL_OK) {
             xTaskResumeAll();
             return false;
         }
-        returnValue = HAL_I2C_Master_Receive(&hi2c1, EEPROM_ADDRESS, buffer + i, chunkSize, HAL_MAX_DELAY);
+        returnValue = HAL_I2C_Master_Receive(&EEPROM_I2C_HANDLE, EEPROM_I2C_ADDRESS, buffer + i, chunkSize, HAL_MAX_DELAY);
         xTaskResumeAll();
         if (returnValue != HAL_OK) {
             return false;
@@ -123,7 +130,7 @@ bool writeToEEPROM(const uint8_t *buffer, uint16_t bufferSize, uint16_t address)
         HAL_StatusTypeDef returnValue;
 
         vTaskSuspendAll();
-        returnValue = HAL_I2C_Mem_Write(&hi2c1, EEPROM_ADDRESS, chunkAddress, I2C_MEMADD_SIZE_16BIT, (uint8_t *)buffer + i, chunkSize, HAL_MAX_DELAY);
+        returnValue = HAL_I2C_Mem_Write(&EEPROM_I2C_HANDLE, EEPROM_I2C_ADDRESS, chunkAddress, I2C_MEMADD_SIZE_16BIT, (uint8_t *)buffer + i, chunkSize, HAL_MAX_DELAY);
         xTaskResumeAll();
 
         if (returnValue != HAL_OK) {
@@ -141,12 +148,12 @@ bool writeToEEPROM(const uint8_t *buffer, uint16_t bufferSize, uint16_t address)
         };
 
         vTaskSuspendAll();
-        returnValue = HAL_I2C_Master_Transmit(&hi2c1, EEPROM_ADDRESS, data, 2, HAL_MAX_DELAY);
+        returnValue = HAL_I2C_Master_Transmit(&EEPROM_I2C_HANDLE, EEPROM_I2C_ADDRESS, data, 2, HAL_MAX_DELAY);
         if (returnValue != HAL_OK) {
             xTaskResumeAll();
             return false;
         }
-        returnValue = HAL_I2C_Master_Receive(&hi2c1, EEPROM_ADDRESS, verify, chunkSize, HAL_MAX_DELAY);
+        returnValue = HAL_I2C_Master_Receive(&EEPROM_I2C_HANDLE, EEPROM_I2C_ADDRESS, verify, chunkSize, HAL_MAX_DELAY);
         xTaskResumeAll();
         if (returnValue != HAL_OK) {
             return false;

@@ -54,9 +54,11 @@ static bool g_wasBlinkTime;
 ////////////////////////////////////////////////////////////////////////////////
 
 void guiInit() {
+#ifndef GUI_SKIP_LOAD_MAIN_ASSETS
     if (!g_isMainAssetsLoaded) {
         loadMainAssets(assets, sizeof(assets));
     }
+#endif
 
     if (g_mainAssets->flowDefinition) {
         flow::start(g_mainAssets);

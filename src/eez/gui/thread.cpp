@@ -33,7 +33,11 @@ namespace gui {
 
 void mainLoop(void *);
 
-EEZ_THREAD_DECLARE(gui, Normal, 12 * 1024);
+#ifndef GUI_THREAD_STACK_SIZE
+#define GUI_THREAD_STACK_SIZE 12 * 1024
+#endif
+
+EEZ_THREAD_DECLARE(gui, Normal, GUI_THREAD_STACK_SIZE);
 
 EEZ_MESSAGE_QUEUE_DECLARE(gui, {
     uint8_t type;
