@@ -134,6 +134,7 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
 	flowState->flowIndex = flowIndex;
 	flowState->error = false;
 	flowState->numAsyncComponents = 0;
+    flowState->numWatchComponents = 0;
 	flowState->parentFlowState = parentFlowState;
 
     flowState->executingComponentIndex = NO_COMPONENT_INDEX;
@@ -233,7 +234,11 @@ bool canFreeFlowState(FlowState *flowState, bool includingWatchVariable) {
         return false;
     }
 
-    if (isThereAnyTaskInQueueForFlowState(flowState, includingWatchVariable)) {
+    if (includingWatchVariable && flowState->numWatchComponents > 0) {
+        return false;
+    }
+
+    if (isThereAnyTaskInQueueForFlowState(flowState)) {
         return false;
     }
 
@@ -243,7 +248,7 @@ bool canFreeFlowState(FlowState *flowState, bool includingWatchVariable) {
             component->type != defs_v3::COMPONENT_TYPE_INPUT_ACTION &&
             component->type != defs_v3::COMPONENT_TYPE_LOOP_ACTION &&
             component->type != defs_v3::COMPONENT_TYPE_COUNTER_ACTION &&
-            (includingWatchVariable || component->type != defs_v3::COMPONENT_TYPE_WATCH_VARIABLE_ACTION) &&
+            component->type != defs_v3::COMPONENT_TYPE_WATCH_VARIABLE_ACTION &&
             flowState->componenentExecutionStates[componentIndex]
         ) {
             return false;

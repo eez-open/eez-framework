@@ -23,18 +23,12 @@
 namespace eez {
 namespace flow {
 
-void queueReset();
-size_t getQueueSize();
-extern unsigned g_numContinuousTaskInQueue;
-bool addToQueue(FlowState *flowState, unsigned componentIndex,
-    int sourceComponentIndex, int sourceOutputIndex, int targetInputIndex,
-    bool continuousTask);
-bool peekNextTaskFromQueue(FlowState *&flowState, unsigned &componentIndex, bool &continuousTask);
-void removeNextTaskFromQueue();
+struct WatchListNode;
 
-bool isInQueue(FlowState *flowState, unsigned componentIndex);
-
-bool isThereAnyTaskInQueueForFlowState(FlowState *flowState);
+WatchListNode *watchListAdd(FlowState *flowState, unsigned componentIndex);
+void watchListRemove(WatchListNode *node);
+void visitWatchList();
+void watchListReset();
 
 } // flow
 } // eez

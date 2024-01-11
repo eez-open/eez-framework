@@ -126,7 +126,7 @@ bool isInQueue(FlowState *flowState, unsigned componentIndex) {
     return false;
 }
 
-bool isThereAnyTaskInQueueForFlowState(FlowState *flowState, bool includingWatchVariable) {
+bool isThereAnyTaskInQueueForFlowState(FlowState *flowState) {
 	if (g_queueHead == g_queueTail && !g_queueIsFull) {
 		return false;
 	}
@@ -135,9 +135,7 @@ bool isThereAnyTaskInQueueForFlowState(FlowState *flowState, bool includingWatch
     while (true) {
 		if (g_queue[it].flowState == flowState) {
             auto component = flowState->flow->components[g_queue[it].componentIndex];
-            if (includingWatchVariable || component->type != defs_v3::COMPONENT_TYPE_WATCH_VARIABLE_ACTION) {
-			    return true;
-            }
+            return true;
 		}
 
         it = (it + 1) % QUEUE_SIZE;

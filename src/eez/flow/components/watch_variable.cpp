@@ -27,12 +27,14 @@
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/expression.h>
 #include <eez/flow/queue.h>
+#include <eez/flow/watch_list.h>
 
 namespace eez {
 namespace flow {
 
 struct WatchVariableComponenentExecutionState : public ComponenentExecutionState {
 	Value value;
+    WatchListNode *node;
 };
 
 void executeWatchVariableComponent(FlowState *flowState, unsigned componentIndex) {
@@ -46,25 +48,14 @@ void executeWatchVariableComponent(FlowState *flowState, unsigned componentIndex
 	if (!watchVariableComponentExecutionState) {
         watchVariableComponentExecutionState = allocateComponentExecutionState<WatchVariableComponenentExecutionState>(flowState, componentIndex);
         watchVariableComponentExecutionState->value = value;
+        watchVariableComponentExecutionState->node = watchListAdd(flowState, componentIndex);
 
         propagateValue(flowState, componentIndex, 1, value);
-
-		if (!addToQueue(flowState, componentIndex, -1, -1, -1, true)) {
-			return;
-		}
 	} else {
 		if (value != watchVariableComponentExecutionState->value) {
             watchVariableComponentExecutionState->value = value;
 			propagateValue(flowState, componentIndex, 1, value);
 		}
-
-        if (canFreeFlowState(flowState, false)) {
-            deallocateComponentExecutionState(flowState, componentIndex);
-        } else {
-            if (!addToQueue(flowState, componentIndex, -1, -1, -1, true)) {
-                return;
-            }
-        }
 	}
 }
 

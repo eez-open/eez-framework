@@ -31,6 +31,7 @@
 #include <eez/flow/debugger.h>
 #include <eez/flow/hooks.h>
 #include <eez/flow/components/lvgl_user_widget.h>
+#include <eez/flow/watch_list.h>
 
 #if EEZ_OPTION_GUI
 #include <eez/gui/gui.h>
@@ -74,6 +75,7 @@ unsigned start(Assets *assets) {
     g_isStopping = false;
 
 	queueReset();
+    watchListReset();
 
 	scpiComponentInitHook();
 
@@ -147,6 +149,8 @@ void tick() {
         }
 	}
 
+    visitWatchList();
+
 	finishToDebuggerMessageHook();
 }
 
@@ -166,6 +170,7 @@ void doStop() {
     g_isStopped = true;
 
 	queueReset();
+    watchListReset();
 }
 
 bool isFlowStopped() {
