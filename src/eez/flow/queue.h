@@ -34,7 +34,5 @@ void removeNextTaskFromQueue();
 
 bool isInQueue(FlowState *flowState, unsigned componentIndex);
 
-bool isThereAnyTaskInQueueForFlowState(FlowState *flowState);
-
 } // flow
 } // eez

@@ -33,6 +33,14 @@ namespace flow {
 static const int UNDEFINED_VALUE_INDEX = 0;
 static const int NULL_VALUE_INDEX = 1;
 
+#define TRACK_REF_COUNTER_FOR_COMPONENT_STATE(component) \
+    !( \
+        component->type == defs_v3::COMPONENT_TYPE_INPUT_ACTION || \
+        component->type == defs_v3::COMPONENT_TYPE_LOOP_ACTION || \
+        component->type == defs_v3::COMPONENT_TYPE_COUNTER_ACTION || \
+        component->type == defs_v3::COMPONENT_TYPE_WATCH_VARIABLE_ACTION \
+    ) \
+
 struct ComponenentExecutionState {
     uint32_t lastExecutedTime;
     ComponenentExecutionState() : lastExecutedTime(millis()) {}
@@ -51,9 +59,16 @@ struct FlowState {
 	uint16_t flowIndex;
 	bool isAction;
 	bool error;
-	uint32_t numAsyncComponents;
-    uint32_t numWatchComponents;
-	FlowState *parentFlowState;
+
+    // Used for freeing flow state. While this is greater than 0, flow state cannot be freed
+    // because it is still active. It is active if:
+    //   - there is component in the queue
+    //   - there is async component
+    //   - there is component with execution state (not all components are tracked, check TRACK_REF_COUNTER_FOR_COMPONENT_STATE)
+    //   - there is watch component in watch_list
+    uint32_t refCounter;
+
+    FlowState *parentFlowState;
 	Component *parentComponent;
 	int parentComponentIndex;
 	Value *values;
@@ -79,7 +94,10 @@ extern FlowState *g_lastFlowState;
 FlowState *initActionFlowState(int flowIndex, FlowState *parentFlowState, int parentComponentIndex);
 FlowState *initPageFlowState(Assets *assets, int flowIndex, FlowState *parentFlowState, int parentComponentIndex);
 
-bool canFreeFlowState(FlowState *flowState, bool includingWatchVariable = true);
+void incRefCounterForFlowState(FlowState *flowState);
+void decRefCounterForFlowState(FlowState *flowState);
+
+bool canFreeFlowState(FlowState *flowState);
 void freeFlowState(FlowState *flowState);
 void freeAllChildrenFlowStates(FlowState *flowState);
 
@@ -93,6 +111,12 @@ T *allocateComponentExecutionState(FlowState *flowState, unsigned componentIndex
     }
     auto executionState = ObjectAllocator<T>::allocate(0x72dc3bf4);
     flowState->componenentExecutionStates[componentIndex] = executionState;
+
+    auto component = flowState->flow->components[componentIndex];
+    if (TRACK_REF_COUNTER_FOR_COMPONENT_STATE(component)) {
+        incRefCounterForFlowState(flowState);
+    }
+
     onComponentExecutionStateChanged(flowState, componentIndex);
     return executionState;
 }

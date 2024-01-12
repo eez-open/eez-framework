@@ -59,7 +59,7 @@ WatchListNode *watchListAdd(FlowState *flowState, unsigned componentIndex) {
     node->flowState = flowState;
     node->componentIndex = componentIndex;
 
-    flowState->numWatchComponents++;
+    incRefCounterForFlowState(flowState);
 
     return node;
 }
@@ -77,25 +77,26 @@ void watchListRemove(WatchListNode *node) {
         g_watchList.last = node->prev;
     }
 
-    node->flowState->numWatchComponents--;
-
     free(node);
 }
 
 void visitWatchList() {
-    for (auto node = g_watchList.first; node; node = node->next) {
+    for (auto node = g_watchList.first; node; ) {
+        auto nextNode = node->next;
+
         executeWatchVariableComponent(node->flowState, node->componentIndex);
 
-        if (canFreeFlowState(node->flowState, false)) {
-            deallocateComponentExecutionState(node->flowState, node->componentIndex);
-
-            auto nextNode = node->next;
+        // If the only reason why flow state is still active is because of this watch then we can remove it.
+        decRefCounterForFlowState(node->flowState);
+        if (canFreeFlowState(node->flowState)) {
+            // remove this watch
+            freeFlowState(node->flowState);
             watchListRemove(node);
-            node = nextNode;
-            if (!node) {
-                break;
-            }
+        } else {
+            incRefCounterForFlowState(node->flowState);
         }
+
+        node = nextNode;
     }
 }
 

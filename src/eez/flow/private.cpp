@@ -133,8 +133,7 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
 	flowState->flow = flowDefinition->flows[flowIndex];
 	flowState->flowIndex = flowIndex;
 	flowState->error = false;
-	flowState->numAsyncComponents = 0;
-    flowState->numWatchComponents = 0;
+	flowState->refCounter = 0;
 	flowState->parentFlowState = parentFlowState;
 
     flowState->executingComponentIndex = NO_COMPONENT_INDEX;
@@ -225,42 +224,27 @@ FlowState *initPageFlowState(Assets *assets, int flowIndex, FlowState *parentFlo
 	return flowState;
 }
 
-bool canFreeFlowState(FlowState *flowState, bool includingWatchVariable) {
+void incRefCounterForFlowState(FlowState *flowState) {
+    flowState->refCounter++;
+    for (auto parent = flowState->parentFlowState; parent; parent = parent->parentFlowState) {
+        parent->refCounter++;
+    }
+}
+
+void decRefCounterForFlowState(FlowState *flowState) {
+    flowState->refCounter--;
+    for (auto parent = flowState->parentFlowState; parent; parent = parent->parentFlowState) {
+        parent->refCounter--;
+    }
+}
+
+bool canFreeFlowState(FlowState *flowState) {
     if (!flowState->isAction) {
         return false;
     }
 
-    if (flowState->numAsyncComponents > 0) {
+    if (flowState->refCounter > 0) {
         return false;
-    }
-
-    if (includingWatchVariable && flowState->numWatchComponents > 0) {
-        return false;
-    }
-
-    if (isThereAnyTaskInQueueForFlowState(flowState)) {
-        return false;
-    }
-
-    for (uint32_t componentIndex = 0; componentIndex < flowState->flow->components.count; componentIndex++) {
-        auto component = flowState->flow->components[componentIndex];
-        if (
-            component->type != defs_v3::COMPONENT_TYPE_INPUT_ACTION &&
-            component->type != defs_v3::COMPONENT_TYPE_LOOP_ACTION &&
-            component->type != defs_v3::COMPONENT_TYPE_COUNTER_ACTION &&
-            component->type != defs_v3::COMPONENT_TYPE_WATCH_VARIABLE_ACTION &&
-            flowState->componenentExecutionStates[componentIndex]
-        ) {
-            return false;
-        }
-    }
-
-    auto childFlowState = flowState->firstChild;
-    while (childFlowState != nullptr) {
-        if (!canFreeFlowState(childFlowState, false)) {
-            return false;
-        }
-        childFlowState = childFlowState->nextSibling;
     }
 
     return true;
@@ -268,10 +252,10 @@ bool canFreeFlowState(FlowState *flowState, bool includingWatchVariable) {
 
 void freeFlowState(FlowState *flowState) {
     auto parentFlowState = flowState->parentFlowState;
-    if (flowState->parentFlowState) {
-        auto componentExecutionState = flowState->parentFlowState->componenentExecutionStates[flowState->parentComponentIndex];
+    if (parentFlowState) {
+        auto componentExecutionState = parentFlowState->componenentExecutionStates[flowState->parentComponentIndex];
         if (componentExecutionState) {
-            deallocateComponentExecutionState(flowState->parentFlowState, flowState->parentComponentIndex);
+            deallocateComponentExecutionState(parentFlowState, flowState->parentComponentIndex);
             return;
         }
 
@@ -329,6 +313,11 @@ void freeAllChildrenFlowStates(FlowState *firstChildFlowState) {
 void deallocateComponentExecutionState(FlowState *flowState, unsigned componentIndex) {
     auto executionState = flowState->componenentExecutionStates[componentIndex];
     if (executionState) {
+        auto component = flowState->flow->components[componentIndex];
+        if (TRACK_REF_COUNTER_FOR_COMPONENT_STATE(component)) {
+            decRefCounterForFlowState(flowState);
+        }
+
         flowState->componenentExecutionStates[componentIndex] = nullptr;
         onComponentExecutionStateChanged(flowState, componentIndex);
         ObjectAllocator<ComponenentExecutionState>::deallocate(executionState);
@@ -512,12 +501,13 @@ void startAsyncExecution(FlowState *flowState, int componentIndex) {
         flowState->componenentAsyncStates[componentIndex] = true;
         onComponentAsyncStateChanged(flowState, componentIndex);
 
-	    flowState->numAsyncComponents++;
+	    incRefCounterForFlowState(flowState);
     }
 }
 
 void endAsyncExecution(FlowState *flowState, int componentIndex) {
     if (!g_firstFlowState) {
+        // flow engine is stopped
         return;
     }
 
@@ -525,11 +515,14 @@ void endAsyncExecution(FlowState *flowState, int componentIndex) {
         flowState->componenentAsyncStates[componentIndex] = false;
         onComponentAsyncStateChanged(flowState, componentIndex);
 
-        flowState->numAsyncComponents--;
-
-        if (canFreeFlowState(flowState)) {
+        decRefCounterForFlowState(flowState);
+        do {
+            if (!canFreeFlowState(flowState)) {
+                break;
+            }
             freeFlowState(flowState);
-        }
+            flowState = flowState->parentFlowState;
+        } while (flowState);
     }
 }
 

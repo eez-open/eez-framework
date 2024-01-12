@@ -79,6 +79,8 @@ bool addToQueue(FlowState *flowState, unsigned componentIndex, int sourceCompone
 	    onAddToQueue(flowState, sourceComponentIndex, sourceOutputIndex, componentIndex, targetInputIndex);
     }
 
+    incRefCounterForFlowState(flowState);
+
 	return true;
 }
 
@@ -95,6 +97,9 @@ bool peekNextTaskFromQueue(FlowState *&flowState, unsigned &componentIndex, bool
 }
 
 void removeNextTaskFromQueue() {
+	auto flowState = g_queue[g_queueHead].flowState;
+    decRefCounterForFlowState(flowState);
+
     auto continuousTask = g_queue[g_queueHead].continuousTask;
 
 	g_queueHead = (g_queueHead + 1) % QUEUE_SIZE;
@@ -114,27 +119,6 @@ bool isInQueue(FlowState *flowState, unsigned componentIndex) {
     unsigned int it = g_queueHead;
     while (true) {
 		if (g_queue[it].flowState == flowState && g_queue[it].componentIndex == componentIndex) {
-            return true;
-		}
-
-        it = (it + 1) % QUEUE_SIZE;
-        if (it == g_queueTail) {
-            break;
-        }
-	}
-
-    return false;
-}
-
-bool isThereAnyTaskInQueueForFlowState(FlowState *flowState) {
-	if (g_queueHead == g_queueTail && !g_queueIsFull) {
-		return false;
-	}
-
-    unsigned int it = g_queueHead;
-    while (true) {
-		if (g_queue[it].flowState == flowState) {
-            auto component = flowState->flow->components[g_queue[it].componentIndex];
             return true;
 		}
 
