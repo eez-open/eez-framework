@@ -520,8 +520,9 @@ void endAsyncExecution(FlowState *flowState, int componentIndex) {
             if (!canFreeFlowState(flowState)) {
                 break;
             }
+            auto temp = flowState->parentFlowState;
             freeFlowState(flowState);
-            flowState = flowState->parentFlowState;
+            flowState = temp;
         } while (flowState);
     }
 }
