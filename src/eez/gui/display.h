@@ -30,7 +30,10 @@
 	typedef uint32_t *VideoBuffer;
 #endif
 
+#if EEZ_OPTION_GUI_ANIMATIONS
 #include <eez/gui/animation.h>
+#endif
+
 #include <eez/gui/font.h>
 #include <eez/gui/geometry.h>
 #include <eez/gui/image.h>
@@ -70,7 +73,9 @@ void updateBrightness();
 
 void update();
 
+#if EEZ_OPTION_GUI_ANIMATIONS
 void animate(Buffer startBuffer, void (*callback)(float t, VideoBuffer bufferOld, VideoBuffer bufferNew, VideoBuffer bufferDst), float duration = -1);
+#endif
 
 void beginRendering();
 int beginBufferRendering();
@@ -84,9 +89,7 @@ void releaseScreenshot();
 
 #ifdef GUI_CALC_FPS
 extern bool g_calcFpsEnabled;
-#if defined(STYLE_ID_FPS_GRAPH)
 extern bool g_drawFpsGraphEnabled;
-#endif
 extern uint32_t g_fpsAvg;
 void drawFpsGraph(int x, int y, int w, int h, const Style *style);
 #endif
@@ -113,6 +116,8 @@ uint16_t getBackColor();
 uint8_t setOpacity(uint8_t opacity);
 uint8_t getOpacity();
 
+void getPixel(int x, int y, uint8_t *r, uint8_t *g, uint8_t *b);
+
 // these are the basic drawing operations
 void startPixelsDraw();
 void drawPixel(int x, int y);
@@ -136,6 +141,12 @@ void drawFocusFrame(int x, int y, int w, int h);
 
 // AGG based drawing
 struct AggDrawing {
+    AggDrawing() {
+        startPixelsDraw();
+    }
+    ~AggDrawing() {
+        endPixelsDraw();
+    }
     agg::rendering_buffer rbuf;
 	Agg2D graphics;
 };
@@ -144,29 +155,29 @@ void aggInit(AggDrawing& aggDrawing);
 
 void drawRoundedRect(
 	AggDrawing &aggDrawing,
-	double x1, double y1, double x2, double y2,
-	double lineWidth,
-	double rtlx, double rtly, double rtrx, double rtry,
-	double rbrx, double rbry, double rblx, double rbly
+	int x1, int y1, int x2, int y2,
+	int lineWidth,
+	int rtlx, int rtly, int rtrx, int rtry,
+	int rbrx, int rbry, int rblx, int rbly
 );
 
 void fillRoundedRect(
 	AggDrawing &aggDrawing,
-	double x1, double y1, double x2, double y2,
-	double lineWidth,
-	double rtlx, double rtly, double rtrx, double rtry,
-	double rbrx, double rbry, double rblx, double rbly,
+	int x1, int y1, int x2, int y2,
+	int lineWidth,
+	int rtlx, int rtly, int rtrx, int rtry,
+	int rbrx, int rbry, int rblx, int rbly,
 	bool drawLine, bool fill,
-	double clip_x1 = -1, double clip_y1 = -1, double clip_x2 = -1, double clip_y2 = -1
+	int clip_x1 = -1, int clip_y1 = -1, int clip_x2 = -1, int clip_y2 = -1
 );
 
 void fillRoundedRect(
 	AggDrawing &aggDrawing,
-	double x1, double y1, double x2, double y2,
-	double lineWidth,
-	double r,
+	int x1, int y1, int x2, int y2,
+	int lineWidth,
+	int r,
 	bool drawLine, bool fill,
-	double clip_x1 = -1, double clip_y1 = -1, double clip_x2 = -1, double clip_y2 = -1
+	int clip_x1 = -1, int clip_y1 = -1, int clip_x2 = -1, int clip_y2 = -1
 );
 
 void drawStr(const char *text, int textLength, int x, int y, int clip_x1, int clip_y1, int clip_x2, int clip_y2, gui::font::Font &font, int cursorPosition);

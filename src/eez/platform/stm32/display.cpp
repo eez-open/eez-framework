@@ -329,6 +329,14 @@ void bitBlt(void *src, void *dst, int sx, int sy, int sw, int sh, int dx, int dy
     }
 }
 
+void getPixel(int x, int y, uint8_t *r, uint8_t *g, uint8_t *b) {
+    auto dest = g_renderBuffer + y * DISPLAY_WIDTH + x;
+    auto dest_c = *dest;
+    *r = COLOR_TO_R(dest_c);
+    *g = COLOR_TO_G(dest_c);
+    *b = COLOR_TO_B(dest_c);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void startPixelsDraw() {
@@ -354,7 +362,17 @@ void endPixelsDraw() {
 }
 
 void fillRect(int x1, int y1, int x2, int y2) {
-    fillRect(g_renderBuffer, x1, y1, x2 - x1 + 1, y2 - y1 + 1, g_fc);
+    auto width = x2 - x1 + 1;
+    if (width <= 0) {
+        return;
+    }
+
+    auto height = y2 - y1 + 1;
+    if (height <= 0) {
+        return;
+    }
+
+    fillRect(g_renderBuffer, x1, y1, width, height, g_fc);
 
     setDirty();
 }

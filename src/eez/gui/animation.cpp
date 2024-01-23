@@ -22,6 +22,8 @@
 
 #include <eez/gui/gui.h>
 
+#if EEZ_OPTION_GUI_ANIMATIONS
+
 namespace eez {
 namespace gui {
 
@@ -371,5 +373,7 @@ void animateRects(AppContext *appContext, Buffer startBuffer, int numRects, floa
 
 } // gui
 } // eez
+
+#endif // EEZ_OPTION_GUI_ANIMATIONS
 
 #endif // EEZ_OPTION_GUI

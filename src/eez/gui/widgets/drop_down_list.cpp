@@ -81,6 +81,7 @@ void DropDownListWidgetState::render() {
 		true
 	);
 
+    // drow V icon on the right
     x += w - h;
     w = h;
 

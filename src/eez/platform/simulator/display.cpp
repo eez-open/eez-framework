@@ -181,6 +181,13 @@ void copySyncedBufferToScreenshotBuffer() {
     }
 }
 
+void getPixel(int x, int y, uint8_t *r, uint8_t *g, uint8_t *b) {
+    uint8_t *dest = (uint8_t *)(g_renderBuffer + y * DISPLAY_WIDTH + x);
+    *r = dest[0];
+    *g = dest[1];
+    *b = dest[2];
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void startPixelsDraw() {
@@ -207,7 +214,13 @@ void fillRect(int x1, int y1, int x2, int y2) {
 
 	uint32_t *dst = g_renderBuffer + y1 * DISPLAY_WIDTH + x1;
     int width = x2 - x1 + 1;
+    if (width <= 0) {
+        return;
+    }
     int height = y2 - y1 + 1;
+    if (height <= 0) {
+        return;
+    }
     int nl = DISPLAY_WIDTH - width;
     if (g_opacity == 255) {
         for (uint32_t *dstEnd = dst + height * DISPLAY_WIDTH; dst != dstEnd; dst += nl) {

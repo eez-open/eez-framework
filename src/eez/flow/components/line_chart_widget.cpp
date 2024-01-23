@@ -181,6 +181,8 @@ void executeLineChartWidgetComponent(FlowState *flowState, unsigned componentInd
         if (inputValue.isArray() && inputValue.getArray()->arrayType == defs_v3::ARRAY_TYPE_ANY) {
             auto array = inputValue.getArray();
             bool updated = false;
+            executionState->startPointIndex = 0;
+            executionState->numPoints = 0;
             for (uint32_t elementIndex = 0; elementIndex < array->arraySize; elementIndex++) {
                 flowState->values[valueInputIndexInFlow] = array->values[elementIndex];
                 if (executionState->onInputValue(flowState, componentIndex)) {

@@ -51,38 +51,40 @@ void SliderWidgetState::render() {
 		false
 	);
 
-    double x = widgetCursor.x + style->paddingLeft;
-    double y = widgetCursor.y + style->paddingTop;
-    double w = widgetCursor.w - style->paddingLeft - style->paddingRight;
-    double h = widgetCursor.h - style->paddingTop - style->paddingBottom;
+    auto x = widgetCursor.x + style->paddingLeft;
+    auto y = widgetCursor.y + style->paddingTop;
+    auto w = widgetCursor.w - style->paddingLeft - style->paddingRight;
+    auto h = widgetCursor.h - style->paddingTop - style->paddingBottom;
 
-    double barX = x + h / 2.0;
-    double barW = w - h;
-    double barH = (h * 8.0) / 20.0;
-	double barY = y + (h - barH) / 2;
-	double barBorderRadius = barH / 2.0;
+    auto barX = x + h / 2;
+    auto barW = w - h;
+    auto barH = (h * 8) / 20;
+	auto barY = y + (h - barH) / 2;
+	auto barBorderRadius = barH / 2;
 
     double knobRelativePosition = (value.toDouble() - minValue.toDouble()) / (maxValue.toDouble() - minValue.toDouble());
     if (knobRelativePosition < 0) knobRelativePosition = 0;
     else if (knobRelativePosition > 1.0f) knobRelativePosition = 1.0f;
 
-	double knobPosition = barX + knobRelativePosition * (barW - 1);
+	int knobPosition = (int)round(barX + knobRelativePosition * (barW - 1));
 
-    double knobRadius = h / 2;
-    double knobX = knobPosition;
-    double knobY = y;
-    double knobW = h;
-    double knobH = h;
+    auto knobRadius = h / 2;
+    auto knobX = knobPosition;
+    auto knobY = y;
+    auto knobW = h;
+    auto knobH = h;
 
 	display::setColor(style->borderColor);
 
     display::AggDrawing aggDrawing;
     display::aggInit(aggDrawing);
 
+    // render bar
     display::setBackColor(style->backgroundColor);
 	display::fillRoundedRect(aggDrawing, barX - barBorderRadius, barY, barX + barW + barBorderRadius - 1, barY + barH - 1, style->borderSizeLeft, barBorderRadius, false, true,
-		x, y, x + w -1, y + h - 1);
+		x, y, x + w - 1, y + h - 1);
 
+    // render knob
 	display::setBackColor(style->color);
 	display::fillRoundedRect(aggDrawing, knobX - knobRadius, knobY, knobX - knobRadius + knobW - 1, knobY + knobH - 1, style->borderSizeLeft, knobRadius, false, true,
 		x, y, x + w - 1, y + h - 1);

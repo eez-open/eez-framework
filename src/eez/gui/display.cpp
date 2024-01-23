@@ -53,12 +53,14 @@ DisplayState g_displayState;
 VideoBuffer g_renderBuffer1;
 VideoBuffer g_renderBuffer2;
 
-VideoBuffer g_animationBuffer1;
-VideoBuffer g_animationBuffer2;
-
 VideoBuffer g_syncedBuffer;
 VideoBuffer g_renderBuffer;
+
+#if EEZ_OPTION_GUI_ANIMATIONS
+VideoBuffer g_animationBuffer1;
+VideoBuffer g_animationBuffer2;
 VideoBuffer g_animationBuffer;
+#endif
 
 bool g_takeScreenshot;
 
@@ -94,15 +96,14 @@ void init() {
     g_renderBuffer1 = (VideoBuffer)VRAM_BUFFER1_START_ADDRESS;
     g_renderBuffer2 = (VideoBuffer)VRAM_BUFFER2_START_ADDRESS;
 
+#if EEZ_OPTION_GUI_ANIMATIONS
     g_animationBuffer1 = (VideoBuffer)VRAM_ANIMATION_BUFFER1_START_ADDRESS;
     g_animationBuffer2 = (VideoBuffer)VRAM_ANIMATION_BUFFER2_START_ADDRESS;
+#endif
 
-    g_renderBuffers[0].bufferPointer = (VideoBuffer)(VRAM_AUX_BUFFER1_START_ADDRESS);
-	g_renderBuffers[1].bufferPointer = (VideoBuffer)(VRAM_AUX_BUFFER2_START_ADDRESS);
-	g_renderBuffers[2].bufferPointer = (VideoBuffer)(VRAM_AUX_BUFFER3_START_ADDRESS);
-	g_renderBuffers[3].bufferPointer = (VideoBuffer)(VRAM_AUX_BUFFER4_START_ADDRESS);
-	g_renderBuffers[4].bufferPointer = (VideoBuffer)(VRAM_AUX_BUFFER5_START_ADDRESS);
-	g_renderBuffers[5].bufferPointer = (VideoBuffer)(VRAM_AUX_BUFFER6_START_ADDRESS);
+    for (size_t i = 0; i < NUM_AUX_BUFFERS; i++) {
+        g_renderBuffers[i].bufferPointer = (VideoBuffer)(VRAM_AUX_BUFFER_START_ADDRESSES[i]);
+    }
 
     initDriver();
 
@@ -113,7 +114,9 @@ void init() {
     g_renderBuffer = g_renderBuffer2;
     fillRect(0, 0, getDisplayWidth() - 1, getDisplayHeight() - 1);
 
+#if EEZ_OPTION_GUI_ANIMATIONS
     g_animationBuffer = g_animationBuffer1;
+#endif
 
     g_syncedBuffer = g_renderBuffer1;
     syncBuffer();
@@ -139,9 +142,7 @@ void turnOff() {
 
 #ifdef GUI_CALC_FPS
 bool g_calcFpsEnabled;
-#if defined(STYLE_ID_FPS_GRAPH)
 bool g_drawFpsGraphEnabled;
-#endif
 uint32_t g_fpsValues[NUM_FPS_VALUES];
 uint32_t g_fpsAvg;
 static uint32_t g_fpsTotal;
@@ -158,7 +159,7 @@ void calcFPS() {
 	uint32_t time = millis();
 	auto diff = time - g_lastTimeFPS;
 
-	auto fps = 1000 / diff;
+	auto fps = diff ? 1000 / diff : 0;
     if (fps > 60) {
         fps = 60;
     }
@@ -209,6 +210,7 @@ void drawFpsGraph(int x, int y, int w, int h, const Style *style) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#if EEZ_OPTION_GUI_ANIMATIONS
 static void finishAnimation() {
     g_animationState.enabled = false;
 
@@ -223,7 +225,9 @@ static void finishAnimation() {
     g_syncedBuffer = g_renderBuffer1;
     syncBuffer();
 }
+#endif
 
+#if EEZ_OPTION_GUI_ANIMATIONS
 void animate(Buffer startBuffer, void (*callback)(float t, VideoBuffer bufferOld, VideoBuffer bufferNew, VideoBuffer bufferDst), float duration) {
     if (g_animationState.enabled) {
         display::finishAnimation();
@@ -266,6 +270,7 @@ static void animateStep() {
     	finishAnimation();
     }
 }
+#endif
 
 void update() {
     if (g_displayState == TURNING_ON) {
@@ -273,9 +278,11 @@ void update() {
     } else if (g_displayState == TURNING_OFF) {
 		g_hooks.turnOffDisplayTick();
     } else if (g_displayState == OFF) {
+#if EEZ_OPTION_GUI_ANIMATIONS
         if (g_animationState.enabled) {
             display::finishAnimation();
         }
+#endif
         osDelay(16);
         sendMessageToGuiThread(GUI_QUEUE_MESSAGE_TYPE_DISPLAY_VSYNC, 0, 0);
         return;
@@ -295,9 +302,11 @@ void update() {
     }
 #endif
 
+#if EEZ_OPTION_GUI_ANIMATIONS
     if (!g_screenshotAllocated && g_animationState.enabled) {
         animateStep();
     } else {
+#endif
         g_syncedBuffer = g_renderBuffer;
 		syncBuffer();
 
@@ -307,7 +316,9 @@ void update() {
             g_takeScreenshot = false;
             g_screenshotAllocated = true;
         }
+#if EEZ_OPTION_GUI_ANIMATIONS
     }
+#endif
 }
 
 const uint8_t *takeScreenshot() {
@@ -355,8 +366,14 @@ void beginRendering() {
     g_numBuffersToDraw = 0;
 }
 
+static int g_maxNumBuffersToDraw = 0;
+
 int beginBufferRendering() {
     int bufferIndex = g_numBuffersToDraw++;
+    if (g_numBuffersToDraw > g_maxNumBuffersToDraw) {
+        g_maxNumBuffersToDraw = g_numBuffersToDraw;
+        printf("maxNumBuffersToDraw %d\n", g_maxNumBuffersToDraw);
+    }
 	g_renderBuffers[bufferIndex].previousBuffer = getBufferPointer();
     setBufferPointer(g_renderBuffers[bufferIndex].bufferPointer);
     return bufferIndex;
@@ -393,7 +410,7 @@ void endRendering() {
     }
 #endif
 
-#if defined(GUI_CALC_FPS) && defined(STYLE_ID_FPS_GRAPH)
+#if defined(GUI_CALC_FPS)
     if (g_drawFpsGraphEnabled) {
 	    setDirty();
     }
@@ -426,7 +443,7 @@ void endRendering() {
             bitBlt(g_renderBuffers[bufferIndex].bufferPointer, nullptr, sx, sy, x2 - x1 + 1, y2 - y1 + 1, x1, y1, renderBuffer.opacity);
         }
 
-#if defined(GUI_CALC_FPS) && defined(STYLE_ID_FPS_GRAPH)
+#if defined(GUI_CALC_FPS)
         if (g_drawFpsGraphEnabled) {
             drawFpsGraph(getDisplayWidth() - 64 - 4, 4, 64, 32, getStyle(STYLE_ID_FPS_GRAPH));
         }
@@ -726,10 +743,10 @@ void aggInit(AggDrawing& aggDrawing) {
 
 void drawRoundedRect(
     AggDrawing& aggDrawing,
-    double x1, double y1, double x2, double y2,
-    double lineWidth,
-	double rtlx, double rtly, double rtrx, double rtry,
-	double rbrx, double rbry, double rblx, double rbly
+    int x1, int y1, int x2, int y2,
+    int lineWidth,
+	int rtlx, int rtly, int rtrx, int rtry,
+	int rbrx, int rbry, int rblx, int rbly
 ) {
     fillRoundedRect(
         aggDrawing,
@@ -741,53 +758,196 @@ void drawRoundedRect(
     );
 }
 
-void fillRoundedRect(
-    AggDrawing& aggDrawing,
-	double x1, double y1, double x2, double y2,
-	double lineWidth,
-	double rtlx, double rtly, double rtrx, double rtry,
-	double rbrx, double rbry, double rblx, double rbly,
-	bool drawLine, bool fill,
-	double clip_x1, double clip_y1, double clip_x2, double clip_y2
+void fillRect(
+    int x1, int y1, int x2, int y2,
+    int clip_x1, int clip_y1, int clip_x2, int clip_y2
 ) {
-    auto &graphics = aggDrawing.graphics;
-
-	if (clip_x1 != -1) {
-		graphics.clipBox(clip_x1, clip_y1, clip_x2 + 1, clip_y2 + 1);
-	} else {
-		graphics.clipBox(x1, y1, x2 + 1, y2 + 1);
-	}
-    graphics.masterAlpha(g_opacity / 255.0);
-	graphics.translate(x1, y1);
-    graphics.lineWidth(lineWidth);
-    if (lineWidth > 0 && drawLine) {
-	    graphics.lineColor(COLOR_TO_R(g_fc), COLOR_TO_G(g_fc), COLOR_TO_B(g_fc));
-    } else {
-        graphics.noLine();
+    if (clip_x1 != -1) {
+        x1 = MAX(x1, clip_x1);
+        x2 = MIN(x2, clip_x2);
+        y1 = MAX(y1, clip_y1);
+        y2 = MIN(y2, clip_y2);
     }
-    if (fill) {
-        graphics.fillColor(COLOR_TO_R(g_bc), COLOR_TO_G(g_bc), COLOR_TO_B(g_bc));
-    } else {
-        graphics.noFill();
-    }
-	auto w = x2 - x1 + 1;
-	auto h = y2 - y1 + 1;
-	graphics.roundedRect(
-		lineWidth / 2.0, lineWidth / 2.0, w - lineWidth, h - lineWidth,
-		rtlx, rtly, rtrx, rtry, rbrx, rbry, rblx, rbly
-	);
-
-	graphics.translate(-x1, -y1);
-	graphics.clipBox(0, 0, aggDrawing.rbuf.width(), aggDrawing.rbuf.height());
+    fillRect(x1, y1, x2, y2);
 }
 
 void fillRoundedRect(
     AggDrawing& aggDrawing,
-	double x1, double y1, double x2, double y2,
-	double lineWidth,
-	double r,
+    int x1, int y1, int x2, int y2,
+    int lineWidth,
+    int rtlx, int rtly, int rtrx, int rtry,
+    int rbrx, int rbry, int rblx, int rbly,
+    bool drawLine, bool fill,
+    int clip_x1, int clip_y1, int clip_x2, int clip_y2
+) {
+#ifdef CONF_FAST_ROUND_RECT
+	if (
+		rtlx == rtly && rtly == rtrx && rtrx == rtry && rtry == rbrx && rbrx == rbry && rbry == rblx && rblx == rbly // all radiuses are the same
+		// && clip_x1 == -1 // no clipping
+	) {
+		int r = rtlx;
+		int border = lineWidth;
+
+		if (border == 0) {
+			drawLine = 0;
+		}
+
+		int w = x2 - x1 + 1;
+		int h = y2 - y1 + 1;
+
+		int x = MIN(w, h);
+		if (r > x / 2.0f) {
+			r = floorf(x / 2.0f);
+		}
+
+		int r_inner = r - border;
+
+		int xc1 = x2 - r + 1;
+		int yc1 = y1 + r;
+
+		int xc2 = x1 + r;
+		int yc2 = y1 + r;
+
+		int xc3 = x1 + r;
+		int yc3 = y2 - r + 1;
+
+		int xc4 = x2 - r + 1;
+		int yc4 = y2 - r + 1;
+
+		auto fc_save = g_fc;
+
+		uint8_t fc[3] = { COLOR_TO_R(g_fc), COLOR_TO_G(g_fc), COLOR_TO_B(g_fc) };
+		uint8_t bc[3] = { COLOR_TO_R(g_bc), COLOR_TO_G(g_bc), COLOR_TO_B(g_bc) };
+
+		float op = g_opacity / 255.0f;
+		float a1_op;
+		float a2_op;
+		float a3_op;
+		float r1, g1, b1;
+		uint8_t dest_r, dest_g, dest_b;
+
+		#define DRAW_PIXEL(x, y, c1, a1, c2, a2) \
+			getPixel(x, y, &dest_r, &dest_g, &dest_b); \
+			a1_op = a1 * op; \
+			a2_op = a2 * op; \
+			a3_op = 1 - (a1 + a2); \
+			r1 = (c1)[0] * a1_op + (c2)[0] * a2_op + dest_r * a3_op; \
+			g1 = (c1)[1] * a1_op + (c2)[1] * a2_op + dest_g * a3_op; \
+			b1 = (c1)[2] * a1_op + (c2)[2] * a2_op + dest_b * a3_op; \
+			g_fc = RGB_TO_COLOR((int)r1, (int)g1, (int)b1); \
+			if (clip_x1 == -1 || (x >= clip_x1 && x <= clip_x2 && y >= clip_y1 && y <= clip_y2)) drawPixel(x, y) \
+
+		#define DRAW_4(x, y, a1, a2) \
+			DRAW_PIXEL(xc1  + (x)     , yc1 -  (y)     , drawLine ? fc : bc, a1, bc, a2); \
+			DRAW_PIXEL(xc2 - ((x) + 1), yc2 -  (y)     , drawLine ? fc : bc, a1, bc, a2); \
+			DRAW_PIXEL(xc3 - ((x) + 1), yc3 + ((y) - 1), drawLine ? fc : bc, a1, bc, a2); \
+			DRAW_PIXEL(xc4  + (x)     , yc4 + ((y) - 1), drawLine ? fc : bc, a1, bc, a2); \
+
+		display::startPixelsDraw();
+
+		int ffd = roundf(r / sqrtf(2.0f));
+		for (int x = 0; x < ffd; x++) {
+			float yr = sqrtf(r * r - (x + 0.5f) * (x + 0.5f));
+			int y = ceilf(yr);
+			float a1 = 1 - (y - yr);
+
+			float yr_inner =
+				drawLine && x < r_inner
+					? sqrtf(r_inner * r_inner - (x + 0.5f) * (x + 0.5f))
+					: 0;
+			int y_inner = ceilf(yr_inner);
+			float a2 = 1 - (y_inner - yr_inner);
+
+			if (y > 0) { DRAW_4(x, y, a1, 0); }
+			DRAW_4(y - 1, x + 1, a1, 0);
+
+			for (y = y - 1; y > y_inner; y--) {
+				if (y > 0) { DRAW_4(x, y, 1.0, 0); }
+				DRAW_4(y - 1, x + 1, 1.0, 0);
+			}
+
+			if (fill && y > 0) {
+				DRAW_4(x, y, 1 - a2, a2);
+				DRAW_4(y - 1, x + 1, 1 - a2, a2);
+
+				for (y = y - 1; y > 0; y--) {
+					if (y > 0) { DRAW_4(x, y, 0.0, 1.0); }
+					DRAW_4(y - 1, x + 1, 0.0, 1.0);
+				}
+			}
+		}
+
+		display::endPixelsDraw();
+
+		g_fc = g_bc;
+
+		// background
+		if (fill) {
+			if (drawLine) {
+				fillRect(x1 + r, y1 + border, x2 - r, y2 - border, clip_x1, clip_y1, clip_x2, clip_y2); // from top to bottom
+				fillRect(x1 + border, y1 + r, x1 + r - 1, y2 - r, clip_x1, clip_y1, clip_x2, clip_y2); // left
+				fillRect(x2 - r + 1, y1 + r, x2 - border, y2 - r, clip_x1, clip_y1, clip_x2, clip_y2); // right
+			} else {
+				fillRect(x1 + r, y1, x2 - r, y2); // from top to bottom
+				fillRect(x1, y1 + r, x1 + r - 1, y2 - r, clip_x1, clip_y1, clip_x2, clip_y2); // left
+				fillRect(x2 - r + 1, y1 + r, x2, y2 - r, clip_x1, clip_y1, clip_x2, clip_y2); // right
+			}
+		}
+
+		g_fc = fc_save;
+
+		// border
+		if (drawLine) {
+			fillRect(x1 + r, y1, x2 - r, y1 + border - 1, clip_x1, clip_y1, clip_x2, clip_y2); // top
+			fillRect(x1 + r, y2 - border + 1, x2 - r, y2, clip_x1, clip_y1, clip_x2, clip_y2); // bottom
+			fillRect(x1, y1 + r, x1 + border - 1, y2 - r, clip_x1, clip_y1, clip_x2, clip_y2); // left
+			fillRect(x2 - border + 1, y1 + r, x2, y2 - r, clip_x1, clip_y1, clip_x2, clip_y2); // right
+		}
+	} else {
+#endif
+        // use AGG, slower
+
+        auto &graphics = aggDrawing.graphics;
+
+        if (clip_x1 != -1) {
+            graphics.clipBox(clip_x1, clip_y1, clip_x2 + 1, clip_y2 + 1);
+        } else {
+            graphics.clipBox(x1, y1, x2 + 1, y2 + 1);
+        }
+        graphics.masterAlpha(g_opacity / 255.0);
+        graphics.translate(x1, y1);
+        graphics.lineWidth(lineWidth);
+        if (lineWidth > 0 && drawLine) {
+            graphics.lineColor(COLOR_TO_R(g_fc), COLOR_TO_G(g_fc), COLOR_TO_B(g_fc));
+        } else {
+            graphics.noLine();
+        }
+        if (fill) {
+            graphics.fillColor(COLOR_TO_R(g_bc), COLOR_TO_G(g_bc), COLOR_TO_B(g_bc));
+        } else {
+            graphics.noFill();
+        }
+        auto w = x2 - x1 + 1;
+        auto h = y2 - y1 + 1;
+        graphics.roundedRect(
+            lineWidth / 2.0, lineWidth / 2.0, w - lineWidth, h - lineWidth,
+            rtlx, rtly, rtrx, rtry, rbrx, rbry, rblx, rbly
+        );
+
+        graphics.translate(-x1, -y1);
+        graphics.clipBox(0, 0, aggDrawing.rbuf.width(), aggDrawing.rbuf.height());
+#ifdef CONF_FAST_ROUND_RECT
+    }
+#endif
+}
+
+void fillRoundedRect(
+    AggDrawing& aggDrawing,
+	int x1, int y1, int x2, int y2,
+	int lineWidth,
+	int r,
 	bool drawLine, bool fill,
-	double clip_x1, double clip_y1, double clip_x2, double clip_y2
+	int clip_x1, int clip_y1, int clip_x2, int clip_y2
 ) {
 	fillRoundedRect(aggDrawing, x1, y1, x2, y2, lineWidth, r, r, r, r, r, r, r, r, drawLine, fill, clip_x1, clip_y1, clip_x2, clip_y2);
 }

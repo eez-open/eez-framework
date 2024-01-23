@@ -36,3 +36,7 @@
         #endif
     #endif
 #endif
+
+#ifndef EEZ_OPTION_GUI_ANIMATIONS
+    #define EEZ_OPTION_GUI_ANIMATIONS 1
+#endif

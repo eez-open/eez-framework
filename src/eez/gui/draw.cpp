@@ -65,6 +65,10 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 			style->borderRadiusTLX > 0 || style->borderRadiusTLY > 0 || style->borderRadiusTRX > 0 || style->borderRadiusTRY > 0 ||
 			style->borderRadiusBRX > 0 || style->borderRadiusBRY > 0 || style->borderRadiusBLX > 0 || style->borderRadiusBLY > 0;
 
+
+		// TODO: @mvladic
+		// hasBorderRadius = 0;
+
 		if (color != TRANSPARENT_COLOR_INDEX && style && style->opacity == 255 && !(hasBorder && hasBorderRadius)) {
 			// non-transparent color
 			isTransparent = false;

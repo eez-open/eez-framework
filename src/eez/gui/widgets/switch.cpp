@@ -73,13 +73,13 @@ void SwitchWidgetState::render() {
 		t = enabled ? 1.0f : 0;
 	}
 
-    double x = widgetCursor.x + style->paddingLeft;
-	double y = widgetCursor.y + style->paddingTop;
-	double w =
+    auto x = widgetCursor.x + style->paddingLeft;
+	auto y = widgetCursor.y + style->paddingTop;
+	auto w =
         widgetCursor.w -
         style->paddingLeft -
         style->paddingRight;
-	double h =
+	auto h =
         widgetCursor.h -
         style->paddingTop -
         style->paddingBottom;
@@ -89,12 +89,14 @@ void SwitchWidgetState::render() {
 
     display::setColor(style->borderColor);
 
+    int pos = (int)floorf(x + t * (w - 1));
+
 	display::setBackColor(style->backgroundColor);
     display::fillRoundedRect(
 		aggDrawing,
 		x, y, x + w - 1, y + h - 1,
 		style->borderSizeLeft, h, true, true,
-		x + t * (w - 1), y, x + w - 1, y + h - 1
+        pos, y, x + w - 1, y + h - 1
 	);
 
 	display::setBackColor(style->activeBackgroundColor);
@@ -102,15 +104,16 @@ void SwitchWidgetState::render() {
 		aggDrawing,
 		x, y, x + w - 1, y + h - 1,
 		style->borderSizeLeft, h, true, true,
-		x, y, x + t * (w - 1), y + h - 1
+		x, y, pos - 1, y + h - 1
 	);
 
+    // draw knob
 	y += 2 + style->borderSizeLeft;
 	h -= 2 * (2 + style->borderSizeLeft);
 
 	auto xDisabled = x + 1 + style->borderSizeLeft;
 	auto xEnabled = x + w - h - (1 + style->borderSizeLeft);
-    x = xDisabled + t * (xEnabled - xDisabled);
+    x = (int)round(xDisabled + t * (xEnabled - xDisabled));
 
     w = h;
 
