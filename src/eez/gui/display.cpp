@@ -838,10 +838,10 @@ void fillRoundedRect(
 			if (clip_x1 == -1 || (x >= clip_x1 && x <= clip_x2 && y >= clip_y1 && y <= clip_y2)) drawPixel(x, y) \
 
 		#define DRAW_4(x, y, a1, a2) \
-			DRAW_PIXEL(xc1  + (x)     , yc1 -  (y)     , drawLine ? fc : bc, a1, bc, a2); \
-			DRAW_PIXEL(xc2 - ((x) + 1), yc2 -  (y)     , drawLine ? fc : bc, a1, bc, a2); \
-			DRAW_PIXEL(xc3 - ((x) + 1), yc3 + ((y) - 1), drawLine ? fc : bc, a1, bc, a2); \
-			DRAW_PIXEL(xc4  + (x)     , yc4 + ((y) - 1), drawLine ? fc : bc, a1, bc, a2); \
+			DRAW_PIXEL(xc1  + (x)     , yc1 -  (y)     , drawLine ? fc : bc, (a1), bc, (a2)); \
+			DRAW_PIXEL(xc2 - ((x) + 1), yc2 -  (y)     , drawLine ? fc : bc, (a1), bc, (a2)); \
+			DRAW_PIXEL(xc3 - ((x) + 1), yc3 + ((y) - 1), drawLine ? fc : bc, (a1), bc, (a2)); \
+			DRAW_PIXEL(xc4  + (x)     , yc4 + ((y) - 1), drawLine ? fc : bc, (a1), bc, (a2)); \
 
 		display::startPixelsDraw();
 
@@ -851,29 +851,30 @@ void fillRoundedRect(
 			int y = ceilf(yr);
 			float a1 = 1 - (y - yr);
 
-			float yr_inner =
-				drawLine && x < r_inner
-					? sqrtf(r_inner * r_inner - (x + 0.5f) * (x + 0.5f))
-					: 0;
+			float yr_inner = drawLine && x < r_inner ? sqrtf(r_inner * r_inner - (x + 0.5f) * (x + 0.5f)) : 0;
 			int y_inner = ceilf(yr_inner);
 			float a2 = 1 - (y_inner - yr_inner);
 
-			if (y > 0) { DRAW_4(x, y, a1, 0); }
+			if (y > 0) {
+                DRAW_4(x, y, a1, 0);
+            }
 			DRAW_4(y - 1, x + 1, a1, 0);
 
 			for (y = y - 1; y > y_inner; y--) {
-				if (y > 0) { DRAW_4(x, y, 1.0, 0); }
+				DRAW_4(x, y, 1.0, 0);
 				DRAW_4(y - 1, x + 1, 1.0, 0);
 			}
 
-			if (fill && y > 0) {
-				DRAW_4(x, y, 1 - a2, a2);
-				DRAW_4(y - 1, x + 1, 1 - a2, a2);
+			if (y > 0) {
+				DRAW_4(x, y, 1 - a2, fill ? a2 : 0);
+				DRAW_4(y - 1, x + 1, 1 - a2, fill ? a2 : 0);
 
-				for (y = y - 1; y > 0; y--) {
-					if (y > 0) { DRAW_4(x, y, 0.0, 1.0); }
-					DRAW_4(y - 1, x + 1, 0.0, 1.0);
-				}
+                if (fill) {
+                    for (y = y - 1; y > 0; y--) {
+                        DRAW_4(x, y, 0.0, 1.0);
+                        DRAW_4(y - 1, x + 1, 0.0, 1.0);
+                    }
+                }
 			}
 		}
 
