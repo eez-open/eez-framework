@@ -119,13 +119,15 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
 
 	auto nValues = flow->componentInputs.count + flow->localVariables.count;
 
-	FlowState *flowState = (FlowState *)alloc(
-		sizeof(FlowState) +
-        nValues * sizeof(Value) +
-        flow->components.count * sizeof(ComponenentExecutionState *) +
-        flow->components.count * sizeof(bool),
-		0x4c3b6ef5
-	);
+	FlowState *flowState = new (
+		alloc(
+			sizeof(FlowState) +
+			nValues * sizeof(Value) +
+			flow->components.count * sizeof(ComponenentExecutionState *) +
+			flow->components.count * sizeof(bool),
+			0x4c3b6ef5
+		)
+	) FlowState;
 
 	flowState->flowStateIndex = (int)((uint8_t *)flowState - ALLOC_BUFFER);
 	flowState->assets = assets;
@@ -297,6 +299,7 @@ void freeFlowState(FlowState *flowState) {
 
 	onFlowStateDestroyed(flowState);
 
+	flowState->~FlowState();
 	free(flowState);
 }
 

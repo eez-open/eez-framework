@@ -347,6 +347,8 @@ void LineChartWidgetState::render() {
                 y + (legendLineHeight - 2) / 2 + 2
             );
 
+            startPixelsDraw();
+
             auto color16 = getColor16FromIndex(color);
             graphics.fillColor(COLOR_TO_R(color16), COLOR_TO_G(color16), COLOR_TO_B(color16));
             graphics.noLine();
@@ -560,6 +562,8 @@ void LineChartWidgetState::render() {
 	    // graphics.translate(-widgetCursor.x, -widgetCursor.y);
         // graphics.clipBox(widgetCursor.x + gridRect.x, widgetCursor.x + gridRect.y, widgetCursor.x + gridRect.x + gridRect.w, widgetCursor.x + gridRect.y + gridRect.h);
 	    // graphics.translate(widgetCursor.x, widgetCursor.y);
+
+    	startPixelsDraw();
 
         for (uint32_t lineIndex = 0; lineIndex < executionState->numLines; lineIndex++) {
             graphics.resetPath();

@@ -71,6 +71,9 @@ void initDriver() {
 
 void syncBuffer() {
     DMA2D_WAIT;
+#ifdef EEZ_CONF_DCACHE_ENABLED
+    SCB_CleanDCache();
+#endif
     static const uint32_t LINE_INTERRUPT_POSITION = (LTDC->AWCR & 0x7FF) - 1;
     HAL_LTDC_ProgramLineEvent(&hltdc, LINE_INTERRUPT_POSITION);
 }
