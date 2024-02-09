@@ -20,6 +20,7 @@
 
 #include <eez/flow/watch_list.h>
 #include <eez/flow/components.h>
+#include <eez/flow/debugger.h>
 
 namespace eez {
 namespace flow {
@@ -84,7 +85,9 @@ void visitWatchList() {
     for (auto node = g_watchList.first; node; ) {
         auto nextNode = node->next;
 
-        executeWatchVariableComponent(node->flowState, node->componentIndex);
+        if (canExecuteStep(node->flowState, node->componentIndex)) {
+            executeWatchVariableComponent(node->flowState, node->componentIndex);
+        }
 
         // If the only reason why flow state is still active is because of this watch then we can remove it.
         decRefCounterForFlowState(node->flowState);
