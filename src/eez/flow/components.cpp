@@ -85,6 +85,10 @@ void executeMQTTSubscribeComponent(FlowState *flowState, unsigned componentIndex
 void executeMQTTUnsubscribeComponent(FlowState *flowState, unsigned componentIndex);
 void executeMQTTPublishComponent(FlowState *flowState, unsigned componentIndex);
 
+void executeLabelInComponent(FlowState *flowState, unsigned componentIndex);
+void executeLabelOutComponent(FlowState *flowState, unsigned componentIndex);
+
+
 typedef void (*ExecuteComponentFunctionType)(FlowState *flowState, unsigned componentIndex);
 
 static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
@@ -144,6 +148,9 @@ static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
     executeMQTTSubscribeComponent, // COMPONENT_TYPE_MQTT_SUBSCRIBE_ACTION,
     executeMQTTUnsubscribeComponent, // COMPONENT_TYPE_MQTT_UNSUBSCRIBE_ACTION,
     executeMQTTPublishComponent, // COMPONENT_TYPE_MQTT_PUBLISH_ACTION,
+
+    executeLabelInComponent, // COMPONENT_TYPE_LABEL_IN_ACTION
+    executeLabelOutComponent, // COMPONENT_TYPE_LABEL_OUT_ACTION
 };
 
 void registerComponent(ComponentTypes componentType, ExecuteComponentFunctionType executeComponentFunction) {
