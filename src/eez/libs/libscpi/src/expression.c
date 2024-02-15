@@ -36,7 +36,7 @@
 
 #include <eez/conf-internal.h>
 
-#if !defined(EEZ_FOR_LVGL)
+#if !defined(EEZ_FOR_LVGL) && !defined(EEZ_DISABLE_SCPI_PARSER)
 
 #include "scpi/expression.h"
 #include "scpi/error.h"
