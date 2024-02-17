@@ -26,6 +26,10 @@
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/date.h>
 
+#if defined(EEZ_FOR_LVGL)
+#include <eez/flow/lvgl_api.h>
+#endif
+
 extern "C" {
 #include <eez/libs/sha256/sha256.h>
 }
@@ -936,6 +940,9 @@ void do_OPERATION_TYPE_FLOW_IS_PAGE_ACTIVE(EvalStack &stack) {
     }
 
     stack.push(Value(isActive, VALUE_TYPE_BOOLEAN));
+#elif defined(EEZ_FOR_LVGL)
+    auto pageIndex = getPageIndex(stack.flowState);
+    stack.push(Value(pageIndex == g_currentScreen, VALUE_TYPE_BOOLEAN));
 #else
     stack.push(Value::makeError());
 #endif // EEZ_OPTION_GUI
