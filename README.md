@@ -29,4 +29,4 @@ For all other build systems:
 
 -   define `EEZ_FOR_LVGL` globally
 -   add `<path-to-eez-framework>/src` to include directories
--   compile all _.cpp and _.c files from this repository together with your source files
+-   compile all `cpp` and `c` files from this repository together with your source files
