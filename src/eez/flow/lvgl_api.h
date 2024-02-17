@@ -47,6 +47,10 @@ extern int16_t g_currentScreen;
 
 void loadScreen(int index);
 
+void eez_flow_set_screen(int16_t screenId, lv_scr_load_anim_t animType, uint32_t speed, uint32_t delay);
+void eez_flow_push_screen(int16_t screenId, lv_scr_load_anim_t animType, uint32_t speed, uint32_t delay);
+void eez_flow_pop_screen(lv_scr_load_anim_t animType, uint32_t speed, uint32_t delay);
+
 void flowOnPageLoaded(unsigned pageIndex);
 
 // if flowState is nullptr then userWidgetComponentIndexOrPageIndex is page index

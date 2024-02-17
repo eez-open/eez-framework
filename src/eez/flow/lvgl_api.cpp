@@ -75,6 +75,38 @@ extern "C" void loadScreen(int index) {
     lv_scr_load_anim(screen, LV_SCR_LOAD_ANIM_FADE_IN, 200, 0, false);
 }
 
+#if !defined(EEZ_LVGL_SCREEN_STACK_SIZE)
+#define EEZ_LVGL_SCREEN_STACK_SIZE 10
+#endif
+
+int16_t g_screenStack[EEZ_LVGL_SCREEN_STACK_SIZE];
+unsigned g_scrrenStackPosition = 0;
+
+extern "C" void eez_flow_set_screen(int16_t screenId, lv_scr_load_anim_t animType, uint32_t speed, uint32_t delay) {
+    g_scrrenStackPosition = 0;
+    eez::flow::replacePageHook(screenId, animType, speed, delay);
+}
+
+extern "C" void eez_flow_push_screen(int16_t screenId, lv_scr_load_anim_t animType, uint32_t speed, uint32_t delay) {
+    // remove the oldest screen from the stack if the stack is full
+    if (g_scrrenStackPosition == EEZ_LVGL_SCREEN_STACK_SIZE) {
+        for (unsigned i = 1; i < EEZ_LVGL_SCREEN_STACK_SIZE; i++) {
+            g_screenStack[i - 1] = g_screenStack[i];
+        }
+        g_scrrenStackPosition--;
+    }
+
+    g_screenStack[g_scrrenStackPosition++] = g_currentScreen + 1;
+
+    eez::flow::replacePageHook(screenId, animType, speed, delay);
+}
+
+extern "C" void eez_flow_pop_screen(lv_scr_load_anim_t animType, uint32_t speed, uint32_t delay) {
+    if (g_scrrenStackPosition > 0) {
+        eez::flow::replacePageHook(g_screenStack[--g_scrrenStackPosition], animType, speed, delay);
+    }
+}
+
 extern "C" void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj_t **objects, size_t numObjects, const ext_img_desc_t *images, size_t numImages, ActionExecFunc *actions) {
     g_objects = objects;
     g_numObjects = numObjects;
