@@ -80,30 +80,35 @@ extern "C" void loadScreen(int index) {
 #endif
 
 int16_t g_screenStack[EEZ_LVGL_SCREEN_STACK_SIZE];
-unsigned g_scrrenStackPosition = 0;
+unsigned g_screenStackPosition = 0;
+
+extern "C" int16_t eez_flow_get_current_screen() {
+    return g_currentScreen + 1;
+}
 
 extern "C" void eez_flow_set_screen(int16_t screenId, lv_scr_load_anim_t animType, uint32_t speed, uint32_t delay) {
-    g_scrrenStackPosition = 0;
+    g_screenStackPosition = 0;
     eez::flow::replacePageHook(screenId, animType, speed, delay);
 }
 
 extern "C" void eez_flow_push_screen(int16_t screenId, lv_scr_load_anim_t animType, uint32_t speed, uint32_t delay) {
     // remove the oldest screen from the stack if the stack is full
-    if (g_scrrenStackPosition == EEZ_LVGL_SCREEN_STACK_SIZE) {
+    if (g_screenStackPosition == EEZ_LVGL_SCREEN_STACK_SIZE) {
         for (unsigned i = 1; i < EEZ_LVGL_SCREEN_STACK_SIZE; i++) {
             g_screenStack[i - 1] = g_screenStack[i];
         }
-        g_scrrenStackPosition--;
+        g_screenStackPosition--;
     }
 
-    g_screenStack[g_scrrenStackPosition++] = g_currentScreen + 1;
+    g_screenStack[g_screenStackPosition++] = g_currentScreen + 1;
 
     eez::flow::replacePageHook(screenId, animType, speed, delay);
 }
 
 extern "C" void eez_flow_pop_screen(lv_scr_load_anim_t animType, uint32_t speed, uint32_t delay) {
-    if (g_scrrenStackPosition > 0) {
-        eez::flow::replacePageHook(g_screenStack[--g_scrrenStackPosition], animType, speed, delay);
+    if (g_screenStackPosition > 0) {
+        g_screenStackPosition--;
+        eez::flow::replacePageHook(g_screenStack[g_screenStackPosition], animType, speed, delay);
     }
 }
 
