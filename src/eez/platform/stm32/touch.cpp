@@ -57,6 +57,8 @@ static const uint8_t  X_DATA_ID = 0b11000010;
 static const uint8_t  Y_DATA_ID = 0b11010010;
 static const uint8_t Z1_DATA_ID = 0b11100010;
 
+static const uint8_t SETUP = 0b10110000;
+
 enum State {
     STATE_NOT_PRESSED,
     STATE_PRESSED,
@@ -80,50 +82,54 @@ static int16_t g_lastZ1Data = 0;
 void touchMeasure() {
 #if defined(TSC2007IPW)
     static int g_errorCounter = 0;
-    bool isError = false;
 
     vTaskSuspendAll();
 
     uint8_t result[4];
 
     if (HAL_I2C_Master_Transmit(&TOUCH_DEVICE_HANDLE, TOUCH_DEVICE_ADDRESS, (uint8_t *)&Z1_DATA_ID, 1, 5) != HAL_OK) {
-        isError = true;
+        goto Error;
     }
     if (HAL_I2C_Master_Receive(&TOUCH_DEVICE_HANDLE, TOUCH_DEVICE_ADDRESS, result, 2, 5) != HAL_OK) {
-        isError = true;
+    	goto Error;
     }
 
     g_lastZ1Data = (((int16_t)result[0]) << 3) | ((int16_t)result[1]);
 
     if (g_lastZ1Data > CONF_TOUCH_Z1_THRESHOLD) {
         if (HAL_I2C_Master_Transmit(&TOUCH_DEVICE_HANDLE, TOUCH_DEVICE_ADDRESS, (uint8_t *)&X_DATA_ID, 1, 5) != HAL_OK) {
-            isError = true;
+        	goto Error;
         }
         if (HAL_I2C_Master_Receive(&TOUCH_DEVICE_HANDLE, TOUCH_DEVICE_ADDRESS, result, 2, 5) != HAL_OK) {
-            isError = true;
+        	goto Error;
         }
 
         if (HAL_I2C_Master_Transmit(&TOUCH_DEVICE_HANDLE, TOUCH_DEVICE_ADDRESS, (uint8_t *)&Y_DATA_ID, 1, 5) != HAL_OK) {
-            isError = true;
+        	goto Error;
         }
         if (HAL_I2C_Master_Receive(&TOUCH_DEVICE_HANDLE, TOUCH_DEVICE_ADDRESS, result + 2, 2, 5) != HAL_OK) {
-            isError = true;
+        	goto Error;
         }
     }
 
     xTaskResumeAll();
 
-    if (isError) {
-        if (g_errorCounter < 5) {
-            g_errorCounter++;
-            DebugTrace("Touch controller error detected\n");
-        }
-    }
+    g_errorCounter = 0;
 
     if (g_lastZ1Data > CONF_TOUCH_Z1_THRESHOLD) {
         g_lastXData  = (((int16_t)result[0]) << 3) | ((int16_t)result[1]);
         g_lastYData  = (((int16_t)result[2]) << 3) | ((int16_t)result[3]);
     }
+
+    return;
+
+Error:
+	xTaskResumeAll();
+
+	if (g_errorCounter < 5) {
+		g_errorCounter++;
+		DebugTrace("Touch controller error detected\n");
+	}
 #endif
 
 #if defined(AR1021)
