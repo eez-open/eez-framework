@@ -77,11 +77,10 @@ Value op_add(const Value& a1, const Value& b1) {
         return Value::makeBlobRef(aBlob->blob, aBlob->len, bBlob->blob, bBlob->len, 0xc622dd24);
     }
 
-    if (!(a.isString() || a.isDouble() || a.isFloat() || a.isInt64() || a.isInt32OrLess())) {
-        return Value::makeError();
-    }
+    auto a_valid = a.isString() || a.isDouble() || a.isFloat() || a.isInt64() || a.isInt32OrLess();
+    auto b_valid = b.isString() || b.isDouble() || b.isFloat() || b.isInt64() || b.isInt32OrLess();
 
-    if (!(b.isString() || b.isDouble() || b.isFloat() || b.isInt64() || b.isInt32OrLess())) {
+    if (!a_valid && !b_valid) {
         return Value::makeError();
     }
 
