@@ -24,6 +24,11 @@
 #endif
 #endif
 
+#if LVGL_VERSION_MAJOR >= 9
+#define lv_scr_load_anim_t lv_screen_load_anim_t
+#define lv_scr_load_anim lv_screen_load_anim
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

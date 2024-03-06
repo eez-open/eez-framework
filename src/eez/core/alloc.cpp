@@ -34,16 +34,28 @@ void initAllocHeap(uint8_t *heap, size_t heapSize) {
 }
 
 void *alloc(size_t size, uint32_t id) {
+#if LVGL_VERSION_MAJOR >= 9
+    return lv_malloc(size);
+#else
     return lv_mem_alloc(size);
+#endif
 }
 
 void free(void *ptr) {
+#if LVGL_VERSION_MAJOR >= 9
+    lv_free(ptr);
+#else
     lv_mem_free(ptr);
+#endif
 }
 
 template<typename T> void freeObject(T *ptr) {
 	ptr->~T();
+#if LVGL_VERSION_MAJOR >= 9
+    lv_free(ptr);
+#else
 	lv_mem_free(ptr);
+#endif
 }
 
 void getAllocInfo(uint32_t &free, uint32_t &alloc) {
