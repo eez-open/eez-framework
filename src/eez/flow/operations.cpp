@@ -2220,18 +2220,24 @@ void do_OPERATION_TYPE_ARRAY_REMOVE(EvalStack &stack) {
     }
 
     auto array = arrayValue.getArray();
-    auto resultArrayValue = Value::makeArrayRef(array->arraySize - 1, array->arrayType, 0x40e9bb4b);
-    auto resultArray = resultArrayValue.getArray();
 
-    for (uint32_t elementIndex = 0; (int)elementIndex < position; elementIndex++) {
-        resultArray->values[elementIndex] = array->values[elementIndex];
+    if (position >= 0 && position < array->arraySize) {
+        auto resultArrayValue = Value::makeArrayRef(array->arraySize - 1, array->arrayType, 0x40e9bb4b);
+        auto resultArray = resultArrayValue.getArray();
+
+        for (uint32_t elementIndex = 0; (int)elementIndex < position; elementIndex++) {
+            resultArray->values[elementIndex] = array->values[elementIndex];
+        }
+
+        for (uint32_t elementIndex = position + 1; elementIndex < array->arraySize; elementIndex++) {
+            resultArray->values[elementIndex - 1] = array->values[elementIndex];
+        }
+
+        stack.push(resultArrayValue);
+    } else {
+        // out of bounds error
+        stack.push(Value::makeError());
     }
-
-    for (uint32_t elementIndex = position + 1; elementIndex < array->arraySize; elementIndex++) {
-        resultArray->values[elementIndex - 1] = array->values[elementIndex];
-    }
-
-    stack.push(resultArrayValue);
 }
 
 void do_OPERATION_TYPE_ARRAY_CLONE(EvalStack &stack) {
