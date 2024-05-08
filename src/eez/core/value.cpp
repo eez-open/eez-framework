@@ -465,6 +465,18 @@ const char *STREAM_value_type_name(const Value &value) {
     return "stream";
 }
 
+bool compare_WIDGET_value(const Value &a, const Value &b) {
+    return a.int32Value == b.int32Value;
+}
+
+void WIDGET_value_to_text(const Value &value, char *text, int count) {
+    snprintf(text, count, "widget (id=%d)", value.getInt());
+}
+
+const char *WIDGET_value_type_name(const Value &value) {
+    return "widget";
+}
+
 bool compare_DATE_value(const Value &a, const Value &b) {
     return a.doubleValue == b.doubleValue;
 }
