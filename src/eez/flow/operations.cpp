@@ -2221,7 +2221,7 @@ void do_OPERATION_TYPE_ARRAY_REMOVE(EvalStack &stack) {
 
     auto array = arrayValue.getArray();
 
-    if (position >= 0 && position < array->arraySize) {
+    if (position >= 0 && position < (int32_t)array->arraySize) {
         auto resultArrayValue = Value::makeArrayRef(array->arraySize - 1, array->arrayType, 0x40e9bb4b);
         auto resultArray = resultArrayValue.getArray();
 
