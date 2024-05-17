@@ -110,6 +110,8 @@ float getTimelinePosition(void *flowState);
 
 extern int g_eezFlowLvlgMeterTickIndex;
 
+bool compareRollerOptions(lv_roller_t *roller, const char *new_val, const char *cur_val, lv_roller_mode_t mode);
+
 #ifdef __cplusplus
 }
 #endif

@@ -287,4 +287,26 @@ void *getFlowState(void *flowState, unsigned userWidgetComponentIndexOrPageIndex
     return executionState->flowState;
 }
 
+bool compareRollerOptions(lv_roller_t *roller, const char *new_val, const char *cur_val, lv_roller_mode_t mode) {
+    if (mode == LV_ROLLER_MODE_NORMAL) {
+        return strcmp(new_val, cur_val) != 0;
+    }
+
+    auto n = strlen(new_val);
+
+#if LVGL_VERSION_MAJOR >= 9
+    int numPages = roller->inf_page_cnt;
+#else
+    int numPages = LV_ROLLER_INF_PAGES;
+#endif
+
+    for (int i = 0; i < numPages * (n + 1); i += n + 1) {
+        if (strncmp(new_val, cur_val + i, n) != 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 #endif // EEZ_FOR_LVGL
