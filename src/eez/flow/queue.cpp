@@ -17,7 +17,10 @@
 namespace eez {
 namespace flow {
 
-static const unsigned QUEUE_SIZE = 1000;
+#if !defined(EEZ_FLOW_QUEUE_SIZE)
+#define EEZ_FLOW_QUEUE_SIZE 1000
+#endif
+static const unsigned QUEUE_SIZE = EEZ_FLOW_QUEUE_SIZE;
 static struct {
 	FlowState *flowState;
 	unsigned componentIndex;
