@@ -69,12 +69,6 @@ static void executeLvglAction(int actionIndex) {
     g_actions[actionIndex](0);
 }
 
-extern "C" void loadScreen(int index) {
-    g_currentScreen = index;
-    lv_obj_t *screen = getLvglObjectFromIndex(index);
-    lv_scr_load_anim(screen, LV_SCR_LOAD_ANIM_FADE_IN, 200, 0, false);
-}
-
 #if !defined(EEZ_LVGL_SCREEN_STACK_SIZE)
 #define EEZ_LVGL_SCREEN_STACK_SIZE 10
 #endif
