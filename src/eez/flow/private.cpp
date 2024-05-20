@@ -55,7 +55,7 @@ void initGlobalVariables(Assets *assets) {
 
     for (uint32_t i = 0; i < numVars; i++) {
 		new (g_globalVariables->values + i) Value();
-        g_globalVariables->values[i] = *flowDefinition->globalVariables[i];
+        g_globalVariables->values[i] = flowDefinition->globalVariables[i]->clone();
 	}
 }
 
