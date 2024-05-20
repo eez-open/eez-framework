@@ -28,12 +28,14 @@ static struct {
 } g_queue[QUEUE_SIZE];
 static unsigned g_queueHead;
 static unsigned g_queueTail;
+static unsigned g_queueMax;
 static bool g_queueIsFull = false;
 unsigned g_numContinuousTaskInQueue;
 
 void queueReset() {
 	g_queueHead = 0;
 	g_queueTail = 0;
+	g_queueMax  = 0;
 	g_queueIsFull = false;
     g_numContinuousTaskInQueue = 0;
 }
@@ -53,6 +55,10 @@ size_t getQueueSize() {
 	return QUEUE_SIZE - g_queueHead + g_queueTail;
 }
 
+size_t getMaxQueueSize() {
+	return g_queueMax;
+}
+
 bool addToQueue(FlowState *flowState, unsigned componentIndex, int sourceComponentIndex, int sourceOutputIndex, int targetInputIndex, bool continuousTask) {
 	if (g_queueIsFull) {
         throwError(flowState, componentIndex, "Execution queue is full\n");
@@ -68,6 +74,9 @@ bool addToQueue(FlowState *flowState, unsigned componentIndex, int sourceCompone
 	if (g_queueHead == g_queueTail) {
 		g_queueIsFull = true;
 	}
+
+	size_t queueSize = getQueueSize();
+	g_queueMax = g_queueMax < queueSize ? queueSize : g_queueMax;
 
     if (!continuousTask) {
         ++g_numContinuousTaskInQueue;
