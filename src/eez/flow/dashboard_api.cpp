@@ -141,19 +141,26 @@ EM_PORT_API(void) valueFree(Value *valuePtr) {
 
 EM_PORT_API(Value *) getGlobalVariable(int globalVariableIndex) {
     auto flowDefinition = static_cast<FlowDefinition *>(eez::g_mainAssets->flowDefinition);
+    if (g_globalVariables) {
+        return g_globalVariables->values + globalVariableIndex;
+    }
     return flowDefinition->globalVariables[globalVariableIndex];
 }
 
 EM_PORT_API(void) setGlobalVariable(int globalVariableIndex, Value *valuePtr) {
     auto flowDefinition = static_cast<FlowDefinition *>(eez::g_mainAssets->flowDefinition);
-    Value *globalVariableValuePtr = flowDefinition->globalVariables[globalVariableIndex];
+    Value *globalVariableValuePtr = g_globalVariables
+        ? g_globalVariables->values + globalVariableIndex
+        : flowDefinition->globalVariables[globalVariableIndex];
     *globalVariableValuePtr = *valuePtr;
     onValueChanged(globalVariableValuePtr);
 }
 
 EM_PORT_API(void) updateGlobalVariable(int globalVariableIndex, Value *valuePtr) {
     auto flowDefinition = static_cast<FlowDefinition *>(eez::g_mainAssets->flowDefinition);
-    Value *globalVariableValuePtr = flowDefinition->globalVariables[globalVariableIndex];
+    Value *globalVariableValuePtr = g_globalVariables
+        ? g_globalVariables->values + globalVariableIndex
+        : flowDefinition->globalVariables[globalVariableIndex];
     updateArrayValue(globalVariableValuePtr->getArray(), valuePtr->getArray());
 }
 

@@ -17,7 +17,8 @@
 
 namespace eez {
 
-static const uint32_t HEADER_TAG = 0x7A65657E;
+static const uint32_t HEADER_TAG = 0x5A45457E; // "~EEZ"
+static const uint32_t HEADER_TAG_COMPRESSED = 0x7A65657E; // "~eez"
 
 static const uint8_t PROJECT_VERSION_V2 = 2;
 static const uint8_t PROJECT_VERSION_V3 = 3;
@@ -29,7 +30,7 @@ static const uint8_t ASSETS_TYPE_APPLET = 4;
 static const uint8_t ASSETS_TYPE_DASHBOARD = 5;
 
 struct Header {
-	uint32_t tag; // HEADER_TAG
+	uint32_t tag; // HEADER_TAG or HEADER_TAG_COMPRESSED
 	uint8_t projectMajorVersion;
 	uint8_t projectMinorVersion;
 	uint8_t assetsType;
@@ -40,6 +41,7 @@ struct Header {
 extern bool g_isMainAssetsLoaded;
 struct Assets;
 extern Assets *g_mainAssets;
+extern bool g_mainAssetsUncompressed;
 extern Assets *g_externalAssets;
 
 ////////////////////////////////////////////////////////////////////////////////

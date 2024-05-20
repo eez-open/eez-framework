@@ -66,6 +66,8 @@ unsigned start(Assets *assets) {
     g_isStopped = false;
     g_isStopping = false;
 
+    initGlobalVariables(assets);
+
 	queueReset();
     watchListReset();
 
@@ -246,7 +248,7 @@ Value getGlobalVariable(uint32_t globalVariableIndex) {
 
 Value getGlobalVariable(Assets *assets, uint32_t globalVariableIndex) {
     if (globalVariableIndex >= 0 && globalVariableIndex < assets->flowDefinition->globalVariables.count) {
-        return *assets->flowDefinition->globalVariables[globalVariableIndex];
+        return g_globalVariables ? g_globalVariables->values[globalVariableIndex] : *assets->flowDefinition->globalVariables[globalVariableIndex];
     }
     return Value();
 }
@@ -257,7 +259,11 @@ void setGlobalVariable(uint32_t globalVariableIndex, const Value &value) {
 
 void setGlobalVariable(Assets *assets, uint32_t globalVariableIndex, const Value &value) {
     if (globalVariableIndex >= 0 && globalVariableIndex < assets->flowDefinition->globalVariables.count) {
-        *assets->flowDefinition->globalVariables[globalVariableIndex] = value;
+        if (g_globalVariables) {
+            g_globalVariables->values[globalVariableIndex] = value;
+        } else {
+            *assets->flowDefinition->globalVariables[globalVariableIndex] = value;
+        }
     }
 }
 

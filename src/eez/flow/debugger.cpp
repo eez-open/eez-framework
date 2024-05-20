@@ -448,18 +448,34 @@ void onStarted(Assets *assets) {
     if (isSubscribedTo(MESSAGE_TO_DEBUGGER_GLOBAL_VARIABLE_INIT)) {
 		auto flowDefinition = static_cast<FlowDefinition *>(assets->flowDefinition);
 
-		for (uint32_t i = 0; i < flowDefinition->globalVariables.count; i++) {
-			auto pValue = flowDefinition->globalVariables[i];
+        if (g_globalVariables) {
+            for (uint32_t i = 0; i < g_globalVariables->count; i++) {
+                auto pValue = g_globalVariables->values + i;
 
-            char buffer[256];
-            snprintf(buffer, sizeof(buffer), "%d\t%d\t%p\t",
-                MESSAGE_TO_DEBUGGER_GLOBAL_VARIABLE_INIT,
-				(int)i,
-                (const void *)pValue
-            );
-            writeDebuggerBufferHook(buffer, strlen(buffer));
+                char buffer[256];
+                snprintf(buffer, sizeof(buffer), "%d\t%d\t%p\t",
+                    MESSAGE_TO_DEBUGGER_GLOBAL_VARIABLE_INIT,
+                    (int)i,
+                    (const void *)pValue
+                );
+                writeDebuggerBufferHook(buffer, strlen(buffer));
 
-			writeValue(*pValue);
+                writeValue(*pValue);
+            }
+        } else {
+            for (uint32_t i = 0; i < flowDefinition->globalVariables.count; i++) {
+                auto pValue = flowDefinition->globalVariables[i];
+
+                char buffer[256];
+                snprintf(buffer, sizeof(buffer), "%d\t%d\t%p\t",
+                    MESSAGE_TO_DEBUGGER_GLOBAL_VARIABLE_INIT,
+                    (int)i,
+                    (const void *)pValue
+                );
+                writeDebuggerBufferHook(buffer, strlen(buffer));
+
+                writeValue(*pValue);
+            }
         }
     }
 }

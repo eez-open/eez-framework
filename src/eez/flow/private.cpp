@@ -32,9 +32,32 @@ using namespace eez::gui;
 namespace eez {
 namespace flow {
 
+GlobalVariables *g_globalVariables = nullptr;
+
 static const unsigned NO_COMPONENT_INDEX = 0xFFFFFFFF;
 
 static bool g_enableThrowError = true;
+
+void initGlobalVariables(Assets *assets) {
+    if (!g_mainAssetsUncompressed) {
+        return;
+    }
+
+	auto flowDefinition = static_cast<FlowDefinition *>(assets->flowDefinition);
+
+    auto numVars = flowDefinition->globalVariables.count;
+
+    g_globalVariables = (GlobalVariables *) alloc(
+        sizeof(GlobalVariables) +
+        (numVars > 0 ? numVars - 1 : 0) * sizeof(Value),
+        0xcc34ca8e
+    );
+
+    for (uint32_t i = 0; i < numVars; i++) {
+		new (g_globalVariables->values + i) Value();
+        g_globalVariables->values[i] = *flowDefinition->globalVariables[i];
+	}
+}
 
 bool isComponentReadyToRun(FlowState *flowState, unsigned componentIndex) {
 	auto component = flowState->flow->components[componentIndex];

@@ -40,6 +40,7 @@ namespace eez {
 
 bool g_isMainAssetsLoaded;
 Assets *g_mainAssets;
+bool g_mainAssetsUncompressed;
 Assets *g_externalAssets;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -52,7 +53,7 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 
 	auto header = (Header *)assetsData;
 
-	if (header->tag == HEADER_TAG) {
+	if (header->tag == HEADER_TAG_COMPRESSED) {
 		decompressedAssets->projectMajorVersion = header->projectMajorVersion;
 		decompressedAssets->projectMinorVersion = header->projectMinorVersion;
         decompressedAssets->assetsType = header->assetsType;
@@ -120,9 +121,8 @@ void allocMemoryForDecompressedAssets(const uint8_t *assetsData, uint32_t assets
 #pragma GCC diagnostic pop
 #endif
 
-
     auto header = (Header *)assetsData;
-    assert (header->tag == HEADER_TAG);
+    assert (header->tag == HEADER_TAG_COMPRESSED);
     uint32_t decompressedSize = header->decompressedSize;
 
     decompressedAssetsMemoryBufferSize = decompressedDataOffset + decompressedSize;
@@ -131,15 +131,22 @@ void allocMemoryForDecompressedAssets(const uint8_t *assetsData, uint32_t assets
 }
 
 void loadMainAssets(const uint8_t *assets, uint32_t assetsSize) {
+    auto header = (Header *)assets;
+    if (header->tag == HEADER_TAG) {
+        g_mainAssets = (Assets *)(assets + sizeof(uint32_t)/* skip HEADER_TAG*/);
+        g_mainAssetsUncompressed = true;
+    } else {
 #if defined(EEZ_FOR_LVGL)
-    uint8_t *DECOMPRESSED_ASSETS_START_ADDRESS = 0;
-    uint32_t MAX_DECOMPRESSED_ASSETS_SIZE = 0;
-    allocMemoryForDecompressedAssets(assets, assetsSize, DECOMPRESSED_ASSETS_START_ADDRESS, MAX_DECOMPRESSED_ASSETS_SIZE);
+        uint8_t *DECOMPRESSED_ASSETS_START_ADDRESS = 0;
+        uint32_t MAX_DECOMPRESSED_ASSETS_SIZE = 0;
+        allocMemoryForDecompressedAssets(assets, assetsSize, DECOMPRESSED_ASSETS_START_ADDRESS, MAX_DECOMPRESSED_ASSETS_SIZE);
 #endif
-    g_mainAssets = (Assets *)DECOMPRESSED_ASSETS_START_ADDRESS;
-    g_mainAssets->external = false;
-    auto decompressedSize = decompressAssetsData(assets, assetsSize, g_mainAssets, MAX_DECOMPRESSED_ASSETS_SIZE, nullptr);
-    assert(decompressedSize);
+        g_mainAssets = (Assets *)DECOMPRESSED_ASSETS_START_ADDRESS;
+        g_mainAssetsUncompressed = false;
+        g_mainAssets->external = false;
+        auto decompressedSize = decompressAssetsData(assets, assetsSize, g_mainAssets, MAX_DECOMPRESSED_ASSETS_SIZE, nullptr);
+        assert(decompressedSize);
+    }
     g_isMainAssetsLoaded = true;
 }
 

@@ -22,6 +22,15 @@ using namespace eez::gui;
 namespace eez {
 namespace flow {
 
+struct GlobalVariables {
+    uint32_t count;
+    Value values[1];
+};
+
+extern struct GlobalVariables *g_globalVariables;
+
+void initGlobalVariables(Assets *assets);
+
 static const int UNDEFINED_VALUE_INDEX = 0;
 static const int NULL_VALUE_INDEX = 1;
 

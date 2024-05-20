@@ -43,7 +43,11 @@ static void evalExpression(FlowState *flowState, const uint8_t *instructions, in
 			g_stack.push(&flowState->values[flow->componentInputs.count + instructionArg]);
 		} else if (instructionType == EXPR_EVAL_INSTRUCTION_TYPE_PUSH_GLOBAL_VAR) {
 			if ((uint32_t)instructionArg < flowDefinition->globalVariables.count) {
-				g_stack.push(flowDefinition->globalVariables[instructionArg]);
+                if (g_globalVariables) {
+				    g_stack.push(g_globalVariables->values + instructionArg);
+                } else {
+                    g_stack.push(flowDefinition->globalVariables[instructionArg]);
+                }
 			} else {
 				// native variable
 				g_stack.push(Value((int)(instructionArg - flowDefinition->globalVariables.count + 1), VALUE_TYPE_NATIVE_VARIABLE));
