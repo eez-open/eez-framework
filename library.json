@@ -15,6 +15,6 @@
     "platforms": "*",
     "headers": "eez-framework.h",
     "dependencies": {
-        "lvgl/lvgl": "8.3.0"
+        "lvgl/lvgl": ">=8.3.0"
     }
 }
