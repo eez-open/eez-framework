@@ -285,7 +285,7 @@ struct Value {
     }
 
     bool isIndirectValueType() const {
-        return type == VALUE_TYPE_VALUE_PTR || type == VALUE_TYPE_NATIVE_VARIABLE || type == VALUE_TYPE_ARRAY_ELEMENT_VALUE;
+        return type == VALUE_TYPE_VALUE_PTR || type == VALUE_TYPE_NATIVE_VARIABLE || type == VALUE_TYPE_ARRAY_ELEMENT_VALUE || type == VALUE_TYPE_JSON_MEMBER_VALUE;
     }
 
     Value getValue() const;
@@ -336,6 +336,10 @@ struct Value {
 
 	bool isBlob() const {
         return type == VALUE_TYPE_BLOB_REF;
+    }
+
+	bool isJson() const {
+        return type == VALUE_TYPE_JSON;
     }
 
     bool isError() const {
@@ -483,6 +487,7 @@ struct Value {
 
     static Value makeArrayRef(int arraySize, int arrayType, uint32_t id);
     static Value makeArrayElementRef(Value arrayValue, int elementIndex, uint32_t id);
+    static Value makeJsonMemberRef(Value jsonValue, Value propertyName, uint32_t id);
 
     static Value makeBlobRef(const uint8_t *blob, uint32_t len, uint32_t id);
     static Value makeBlobRef(const uint8_t *blob1, uint32_t len1, const uint8_t *blob2, uint32_t len2, uint32_t id);
@@ -564,6 +569,11 @@ struct ArrayElementValue : public Ref {
     int elementIndex;
 };
 
+struct JsonMemberValue : public Ref {
+	Value jsonValue;
+    Value propertyName;
+};
+
 #if EEZ_OPTION_GUI
 namespace gui {
     struct WidgetCursor;
@@ -574,6 +584,10 @@ namespace gui {
 Value getVar(int16_t id);
 void setVar(int16_t id, const Value& value);
 #endif
+
+namespace flow {
+    extern Value (*operationJsonGetHook)(int json, const char *property);
+}
 
 inline Value Value::getValue() const {
     if (type == VALUE_TYPE_VALUE_PTR) {
@@ -602,6 +616,9 @@ inline Value Value::getValue() const {
             }
             return array->values[arrayElementValue->elementIndex];
         }
+    } else if (type == VALUE_TYPE_JSON_MEMBER_VALUE) {
+        auto jsonMemberValue = (JsonMemberValue *)refValue;
+        return flow::operationJsonGetHook(jsonMemberValue->jsonValue.getInt(), jsonMemberValue->propertyName.getString());
     }
     return *this;
 }

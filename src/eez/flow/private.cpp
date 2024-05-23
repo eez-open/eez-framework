@@ -493,6 +493,13 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
                 }
                 pDstValue = &array->values[arrayElementValue->elementIndex];
             }
+        } else if (dstValue.getType() == VALUE_TYPE_JSON_MEMBER_VALUE) {
+            auto jsonMemberValue = (JsonMemberValue *)dstValue.refValue;
+            int err = operationJsonSetHook(jsonMemberValue->jsonValue.getInt(), jsonMemberValue->propertyName.getString(), &srcValue);
+            if (err) {
+                throwError(flowState, componentIndex, "Can not assign to JSON member");
+            }
+            return;
         } else {
             pDstValue = dstValue.pValueValue;
         }

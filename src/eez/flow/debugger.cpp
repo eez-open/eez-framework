@@ -419,6 +419,10 @@ void writeValue(const Value &value) {
 		snprintf(tempStr, sizeof(tempStr) - 1, ">%d", (int)(value.int32Value));
 		break;
 
+	case VALUE_TYPE_JSON:
+		snprintf(tempStr, sizeof(tempStr) - 1, "#%d", (int)(value.int32Value));
+		break;
+
 	case VALUE_TYPE_DATE:
         tempStr[0] = '!';
 		writeHex(tempStr + 1, (uint8_t *)&value.doubleValue, sizeof(double));

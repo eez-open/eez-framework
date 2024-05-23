@@ -477,6 +477,31 @@ const char *WIDGET_value_type_name(const Value &value) {
     return "widget";
 }
 
+bool compare_JSON_value(const Value &a, const Value &b) {
+    return a.int32Value == b.int32Value;
+}
+
+void JSON_value_to_text(const Value &value, char *text, int count) {
+    snprintf(text, count, "json (id=%d)", value.getInt());
+}
+
+const char *JSON_value_type_name(const Value &value) {
+    return "json";
+}
+
+bool compare_JSON_MEMBER_VALUE_value(const Value &a, const Value &b) {
+	return a.getValue() == b.getValue();
+}
+
+void JSON_MEMBER_VALUE_value_to_text(const Value &value, char *text, int count) {
+	value.getValue().toText(text, count);
+}
+
+const char *JSON_MEMBER_VALUE_value_type_name(const Value &value) {
+    auto value2 = value.getValue();
+    return g_valueTypeNames[value2.type](value2);
+}
+
 bool compare_DATE_value(const Value &a, const Value &b) {
     return a.doubleValue == b.doubleValue;
 }
@@ -1139,6 +1164,10 @@ bool Value::toBool(int *err) const {
         return arrayValue->arraySize != 0;
 	}
 
+    if (isJson()) {
+        return int32Value != 0;
+    }
+
     if (err) {
         *err = 1;
     }
@@ -1298,6 +1327,28 @@ Value Value::makeArrayElementRef(Value arrayValue, int elementIndex, uint32_t id
     value.options = VALUE_OPTIONS_REF;
     value.reserved = 0;
     value.refValue = arrayElementValueRef;
+
+	return value;
+}
+
+Value Value::makeJsonMemberRef(Value jsonValue, Value propertyName, uint32_t id) {
+    auto jsonMemberValueRef = ObjectAllocator<JsonMemberValue>::allocate(id);
+	if (jsonMemberValueRef == nullptr) {
+		return Value(0, VALUE_TYPE_NULL);
+	}
+
+    jsonMemberValueRef->jsonValue = jsonValue;
+    jsonMemberValueRef->propertyName = propertyName;
+
+    jsonMemberValueRef->refCounter = 1;
+
+    Value value;
+
+    value.type = VALUE_TYPE_JSON_MEMBER_VALUE;
+    value.unit = 0;
+    value.options = VALUE_OPTIONS_REF;
+    value.reserved = 0;
+    value.refValue = jsonMemberValueRef;
 
 	return value;
 }

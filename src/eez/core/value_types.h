@@ -48,6 +48,8 @@
     VALUE_TYPE(TIME_ZONE)                          /* 32 */ \
     VALUE_TYPE(YT_DATA_GET_VALUE_FUNCTION_POINTER) /* 33 */ \
     VALUE_TYPE(WIDGET)                             /* 34 */ \
+    VALUE_TYPE(JSON)                               /* 35 */ \
+    VALUE_TYPE(JSON_MEMBER_VALUE)                  /* 36 */ \
     CUSTOM_VALUE_TYPES
 
 namespace eez {

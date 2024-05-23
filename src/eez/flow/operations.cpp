@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <inttypes.h>
 
 #include <string>
 
@@ -25,6 +26,7 @@
 #include <eez/flow/operations.h>
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/date.h>
+#include <eez/flow/hooks.h>
 
 #if defined(EEZ_FOR_LVGL)
 #include <eez/flow/lvgl_api.h>
@@ -2018,13 +2020,24 @@ void do_OPERATION_TYPE_ARRAY_LENGTH(EvalStack &stack) {
     if (a.isArray()) {
         auto array = a.getArray();
         stack.push(Value(array->arraySize, VALUE_TYPE_UINT32));
-    } else if (a.isBlob()) {
-        auto blobRef = a.getBlob();
-        stack.push(Value(blobRef->len, VALUE_TYPE_UINT32));
-    } else {
-        stack.push(Value::makeError());
         return;
     }
+
+    if (a.isBlob()) {
+        auto blobRef = a.getBlob();
+        stack.push(Value(blobRef->len, VALUE_TYPE_UINT32));
+        return;
+    }
+
+    if (a.isJson()) {
+        int length = operationJsonArrayLengthHook(a.getInt());
+        if (length >= 0) {
+            stack.push(Value(length, VALUE_TYPE_UINT32));
+            return;
+        }
+    }
+
+    stack.push(Value::makeError());
 }
 
 void do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
@@ -2308,6 +2321,52 @@ void do_OPERATION_TYPE_BLOB_ALLOCATE(EvalStack &stack) {
     stack.push(result);
 }
 
+void do_OPERATION_TYPE_JSON_GET(EvalStack &stack) {
+#if defined(EEZ_DASHBOARD_API)
+    auto jsonValue = stack.pop().getValue();
+    auto propertyValue = stack.pop();
+
+    if (jsonValue.isError()) {
+        stack.push(jsonValue);
+        return;
+    }
+
+    if (jsonValue.type != VALUE_TYPE_JSON) {
+        stack.push(Value::makeError());
+        return;
+    }
+
+    if (propertyValue.isError()) {
+        stack.push(propertyValue);
+        return;
+    }
+
+    stack.push(Value::makeJsonMemberRef(jsonValue, propertyValue.toString(0xc73d02e7), 0xebcc230a));
+#else
+    stack.push(Value::makeError());
+#endif
+}
+
+void do_OPERATION_TYPE_JSON_CLONE(EvalStack &stack) {
+#if defined(EEZ_DASHBOARD_API)
+    auto jsonValue = stack.pop().getValue();
+
+    if (jsonValue.isError()) {
+        stack.push(jsonValue);
+        return;
+    }
+
+    if (jsonValue.type != VALUE_TYPE_JSON) {
+        stack.push(Value::makeError());
+        return;
+    }
+
+    stack.push(operationJsonCloneHook(jsonValue.getInt()));
+#else
+    stack.push(Value::makeError());
+#endif
+}
+
 EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_ADD,
     do_OPERATION_TYPE_SUB,
@@ -2385,6 +2444,8 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_STRING_CODE_POINT_AT,
     do_OPERATION_TYPE_CRYPTO_SHA256,
     do_OPERATION_TYPE_BLOB_ALLOCATE,
+    do_OPERATION_TYPE_JSON_GET,
+    do_OPERATION_TYPE_JSON_CLONE,
 };
 
 } // namespace flow

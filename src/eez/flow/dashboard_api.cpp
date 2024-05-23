@@ -128,6 +128,12 @@ EM_PORT_API(Value *) createBlobValue(const uint8_t *buffer, uint32_t bufferLen) 
     return pValue;
 }
 
+EM_PORT_API(Value *) createJsonValue(int value) {
+    auto pValue = ObjectAllocator<Value>::allocate(0x734f514c);
+    *pValue = Value(value, VALUE_TYPE_JSON);
+    return pValue;
+}
+
 EM_PORT_API(void) arrayValueSetElementValue(Value *arrayValuePtr, int elementIndex, Value *valuePtr) {
     auto array = arrayValuePtr->getArray();
     array->values[elementIndex] = *valuePtr;

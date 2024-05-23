@@ -41,6 +41,11 @@ extern void (*onDebuggerInputAvailableHook)();
 
 extern void (*executeDashboardComponentHook)(uint16_t componentType, int flowStateIndex, int componentIndex);
 
+extern Value (*operationJsonGetHook)(int json, const char *property);
+extern int (*operationJsonSetHook)(int json, const char *property, const Value *valuePtr);
+extern int (*operationJsonArrayLengthHook)(int json);
+extern Value (*operationJsonCloneHook)(int json);
+
 extern void (*onArrayValueFreeHook)(ArrayValue *arrayValue);
 
 #if defined(EEZ_FOR_LVGL)
