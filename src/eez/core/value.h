@@ -585,9 +585,11 @@ Value getVar(int16_t id);
 void setVar(int16_t id, const Value& value);
 #endif
 
+#if defined(EEZ_DASHBOARD_API)
 namespace flow {
-    extern Value (*operationJsonGetHook)(int json, const char *property);
+    extern Value operationJsonGet(int json, const char *property);
 }
+#endif
 
 inline Value Value::getValue() const {
     if (type == VALUE_TYPE_VALUE_PTR) {
@@ -616,10 +618,15 @@ inline Value Value::getValue() const {
             }
             return array->values[arrayElementValue->elementIndex];
         }
-    } else if (type == VALUE_TYPE_JSON_MEMBER_VALUE) {
-        auto jsonMemberValue = (JsonMemberValue *)refValue;
-        return flow::operationJsonGetHook(jsonMemberValue->jsonValue.getInt(), jsonMemberValue->propertyName.getString());
     }
+
+#if defined(EEZ_DASHBOARD_API)
+    else if (type == VALUE_TYPE_JSON_MEMBER_VALUE) {
+        auto jsonMemberValue = (JsonMemberValue *)refValue;
+        return flow::operationJsonGet(jsonMemberValue->jsonValue.getInt(), jsonMemberValue->propertyName.getString());
+    }
+#endif
+
     return *this;
 }
 

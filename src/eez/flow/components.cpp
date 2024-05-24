@@ -156,9 +156,7 @@ void executeComponent(FlowState *flowState, unsigned componentIndex) {
 
 	if (component->type >= defs_v3::FIRST_DASHBOARD_ACTION_COMPONENT_TYPE) {
 #if defined(EEZ_DASHBOARD_API)
-        if (executeDashboardComponentHook) {
-            executeDashboardComponentHook(component->type, getFlowStateIndex(flowState), componentIndex);
-        }
+        executeDashboardComponent(component->type, getFlowStateIndex(flowState), componentIndex);
 #endif // EEZ_DASHBOARD_API
         return;
     } else if (component->type >= defs_v3::COMPONENT_TYPE_START_ACTION) {

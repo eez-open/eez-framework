@@ -12,8 +12,6 @@
 
 #if defined(EEZ_DASHBOARD_API)
 
-#include <emscripten.h>
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -49,6 +47,54 @@ struct DashboardComponentExecutionState : public ComponenentExecutionState {
         }, g_wasmModuleId, this);
     }
 };
+
+void executeDashboardComponent(uint16_t componentType, int flowStateIndex, int componentIndex) {
+    EM_ASM({
+        executeDashboardComponent($0, $1, $2, $3);
+    }, g_wasmModuleId, componentType, flowStateIndex, componentIndex);
+}
+
+Value operationJsonGet(int json, const char *property) {
+    auto valuePtr = (Value *)EM_ASM_INT({
+        return operationJsonGet($0, $1, UTF8ToString($2));
+    }, g_wasmModuleId, json, property);
+
+    Value result = *valuePtr;
+
+    ObjectAllocator<Value>::deallocate(valuePtr);
+
+    return result;
+}
+
+int operationJsonSet(int json, const char *property, const Value *valuePtr) {
+    return EM_ASM_INT({
+        return operationJsonSet($0, $1, UTF8ToString($2), $3);
+    }, g_wasmModuleId, json, property, valuePtr);
+}
+
+int operationJsonArrayLength(int json) {
+    return EM_ASM_INT({
+        return operationJsonArrayLength($0, $1);
+    }, g_wasmModuleId, json);
+}
+
+Value operationJsonClone(int json) {
+    auto valuePtr = (Value *)EM_ASM_INT({
+        return operationJsonClone($0, $1);
+    }, g_wasmModuleId, json);
+
+    Value result = *valuePtr;
+
+    ObjectAllocator<Value>::deallocate(valuePtr);
+
+    return result;
+}
+
+void onObjectArrayValueFree(ArrayValue *arrayValue) {
+    EM_ASM({
+        onObjectArrayValueFree($0, $1);
+    }, g_wasmModuleId, arrayValue);
+}
 
 } // flow
 } // eez

@@ -28,6 +28,10 @@
 #include <eez/flow/date.h>
 #include <eez/flow/hooks.h>
 
+#if defined(EEZ_DASHBOARD_API)
+#include <eez/flow/dashboard_api.h>
+#endif
+
 #if defined(EEZ_FOR_LVGL)
 #include <eez/flow/lvgl_api.h>
 #endif
@@ -2029,13 +2033,15 @@ void do_OPERATION_TYPE_ARRAY_LENGTH(EvalStack &stack) {
         return;
     }
 
+#if defined(EEZ_DASHBOARD_API)
     if (a.isJson()) {
-        int length = operationJsonArrayLengthHook(a.getInt());
+        int length = operationJsonArrayLength(a.getInt());
         if (length >= 0) {
             stack.push(Value(length, VALUE_TYPE_UINT32));
             return;
         }
     }
+#endif
 
     stack.push(Value::makeError());
 }
@@ -2361,7 +2367,7 @@ void do_OPERATION_TYPE_JSON_CLONE(EvalStack &stack) {
         return;
     }
 
-    stack.push(operationJsonCloneHook(jsonValue.getInt()));
+    stack.push(operationJsonClone(jsonValue.getInt()));
 #else
     stack.push(Value::makeError());
 #endif

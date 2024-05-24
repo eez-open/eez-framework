@@ -39,15 +39,6 @@ extern void (*writeDebuggerBufferHook)(const char *buffer, uint32_t length);
 extern void (*finishToDebuggerMessageHook)();
 extern void (*onDebuggerInputAvailableHook)();
 
-extern void (*executeDashboardComponentHook)(uint16_t componentType, int flowStateIndex, int componentIndex);
-
-extern Value (*operationJsonGetHook)(int json, const char *property);
-extern int (*operationJsonSetHook)(int json, const char *property, const Value *valuePtr);
-extern int (*operationJsonArrayLengthHook)(int json);
-extern Value (*operationJsonCloneHook)(int json);
-
-extern void (*onArrayValueFreeHook)(ArrayValue *arrayValue);
-
 #if defined(EEZ_FOR_LVGL)
 extern lv_obj_t *(*getLvglObjectFromIndexHook)(int32_t index);
 extern const void *(*getLvglImageByNameHook)(const char *name);

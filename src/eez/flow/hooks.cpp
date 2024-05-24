@@ -69,15 +69,6 @@ void (*writeDebuggerBufferHook)(const char *buffer, uint32_t length) = writeDebu
 void (*finishToDebuggerMessageHook)() = finishToDebuggerMessage;
 void (*onDebuggerInputAvailableHook)() = onDebuggerInputAvailable;
 
-void (*executeDashboardComponentHook)(uint16_t componentType, int flowStateIndex, int componentIndex) = nullptr;
-
-Value (*operationJsonGetHook)(int json, const char *property) = nullptr;
-int (*operationJsonSetHook)(int json, const char *property, const Value *valuePtr) = nullptr;
-int (*operationJsonArrayLengthHook)(int json) = nullptr;
-Value (*operationJsonCloneHook)(int json) = nullptr;
-
-void (*onArrayValueFreeHook)(ArrayValue *arrayValue) = nullptr;
-
 #if defined(EEZ_FOR_LVGL)
 static lv_obj_t *getLvglObjectFromIndex(int32_t index) {
     return 0;

@@ -502,12 +502,12 @@ void onArrayValueFree(ArrayValue *arrayValue) {
     const uint32_t CATEGORY_MASK = 0x7;
     const uint32_t CATEGORY_OBJECT = 5;
 
-    if (eez::flow::onArrayValueFreeHook) {
-        if (((arrayValue->arrayType >> CATEGORY_SHIFT) & CATEGORY_MASK) == CATEGORY_OBJECT) {
-            // call only for object types
-            eez::flow::onArrayValueFreeHook(arrayValue);
-        }
+#if defined(EEZ_DASHBOARD_API)
+    if (((arrayValue->arrayType >> CATEGORY_SHIFT) & CATEGORY_MASK) == CATEGORY_OBJECT) {
+        // call only for object types
+        eez::flow::onObjectArrayValueFree(arrayValue);
     }
+#endif
 }
 
 } // namespace flow

@@ -29,6 +29,10 @@ using namespace eez::gui;
 #include <eez/flow/components/call_action.h>
 #include <eez/flow/components/on_event.h>
 
+#if defined(EEZ_DASHBOARD_API)
+#include <eez/flow/dashboard_api.h>
+#endif
+
 namespace eez {
 namespace flow {
 
@@ -493,14 +497,18 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
                 }
                 pDstValue = &array->values[arrayElementValue->elementIndex];
             }
-        } else if (dstValue.getType() == VALUE_TYPE_JSON_MEMBER_VALUE) {
+        }
+#if defined(EEZ_DASHBOARD_API)
+        else if (dstValue.getType() == VALUE_TYPE_JSON_MEMBER_VALUE) {
             auto jsonMemberValue = (JsonMemberValue *)dstValue.refValue;
-            int err = operationJsonSetHook(jsonMemberValue->jsonValue.getInt(), jsonMemberValue->propertyName.getString(), &srcValue);
+            int err = operationJsonSet(jsonMemberValue->jsonValue.getInt(), jsonMemberValue->propertyName.getString(), &srcValue);
             if (err) {
                 throwError(flowState, componentIndex, "Can not assign to JSON member");
             }
             return;
-        } else {
+        }
+#endif
+        else {
             pDstValue = dstValue.pValueValue;
         }
 

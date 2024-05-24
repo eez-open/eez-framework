@@ -10,14 +10,31 @@
 
 #pragma once
 
-#include <eez/flow/private.h>
+#if defined(EEZ_DASHBOARD_API)
+
+#include <emscripten.h>
+
+#include <eez/core/value.h>
 
 namespace eez {
 namespace flow {
+
+struct FlowState;
 
 extern bool g_dashboardValueFree;
 
 int getFlowStateIndex(FlowState *flowState);
 
+void executeDashboardComponent(uint16_t componentType, int flowStateIndex, int componentIndex);
+
+Value operationJsonGet(int json, const char *property);
+int operationJsonSet(int json, const char *property, const Value *valuePtr);
+int operationJsonArrayLength(int json);
+Value operationJsonClone(int json);
+
+void onObjectArrayValueFree(ArrayValue *arrayValue);
+
 } // flow
 } // eez
+
+#endif
