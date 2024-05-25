@@ -90,6 +90,18 @@ Value operationJsonClone(int json) {
     return result;
 }
 
+void dashboardObjectValueIncRef(int json) {
+    EM_ASM({
+        dashboardObjectValueIncRef($0, $1);
+    }, g_wasmModuleId, json);
+}
+
+void dashboardObjectValueDecRef(int json) {
+    EM_ASM({
+        dashboardObjectValueDecRef($0, $1);
+    }, g_wasmModuleId, json);
+}
+
 void onObjectArrayValueFree(ArrayValue *arrayValue) {
     EM_ASM({
         onObjectArrayValueFree($0, $1);
@@ -157,6 +169,7 @@ EM_PORT_API(Value *) createArrayValue(int arraySize, int arrayType) {
 }
 
 EM_PORT_API(Value *) createStreamValue(int value) {
+    dashboardObjectValueIncRef(value);
     auto pValue = ObjectAllocator<Value>::allocate(0x53a2e660);
     *pValue = Value(value, VALUE_TYPE_STREAM);
     return pValue;
@@ -175,6 +188,7 @@ EM_PORT_API(Value *) createBlobValue(const uint8_t *buffer, uint32_t bufferLen) 
 }
 
 EM_PORT_API(Value *) createJsonValue(int value) {
+    dashboardObjectValueIncRef(value);
     auto pValue = ObjectAllocator<Value>::allocate(0x734f514c);
     *pValue = Value(value, VALUE_TYPE_JSON);
     return pValue;

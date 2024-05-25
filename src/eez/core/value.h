@@ -91,6 +91,13 @@ struct ArrayValue;
 struct ArrayElementValue;
 struct BlobRef;
 
+#if defined(EEZ_DASHBOARD_API)
+namespace flow {
+    extern void dashboardObjectValueIncRef(int json);
+    extern void dashboardObjectValueDecRef(int json);
+}
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 
 struct Value {
@@ -238,6 +245,12 @@ struct Value {
                 }
             }
         }*/
+
+#if defined(EEZ_DASHBOARD_API)
+        if (type == VALUE_TYPE_JSON || type == VALUE_TYPE_STREAM) {
+            flow::dashboardObjectValueDecRef(int32Value);;
+        }
+#endif
     }
 
     Value& operator = (const Value &value) {
@@ -266,6 +279,12 @@ struct Value {
                     pValueValue->refValue->refCounter++;
                 }
             }*/
+
+#if defined(EEZ_DASHBOARD_API)
+            if (type == VALUE_TYPE_JSON || type == VALUE_TYPE_STREAM) {
+                flow::dashboardObjectValueIncRef(value.int32Value);;
+            }
+#endif
         }
 
         return *this;
