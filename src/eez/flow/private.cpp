@@ -624,6 +624,10 @@ void throwError(FlowState *flowState, int componentIndex, const char *errorMessa
     printf("throwError: %s\n", errorMessage);
 #endif
 
+#if defined(EEZ_FOR_LVGL)
+    LV_LOG_ERROR("EEZ-FLOW error: %s", errorMessage);
+#endif
+
 	if (component->errorCatchOutput != -1) {
 		propagateValue(
 			flowState,

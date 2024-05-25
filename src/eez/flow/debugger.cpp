@@ -690,6 +690,10 @@ void writeLogMessage(const char *str, size_t len) {
 }
 
 void logInfo(FlowState *flowState, unsigned componentIndex, const char *message) {
+#if defined(EEZ_FOR_LVGL)
+    LV_LOG_USER("EEZ-FLOW: %s", message);
+#endif
+
 	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_LOG)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%d\t",
