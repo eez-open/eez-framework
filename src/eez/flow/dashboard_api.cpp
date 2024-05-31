@@ -78,6 +78,42 @@ int operationJsonArrayLength(int json) {
     }, g_wasmModuleId, json);
 }
 
+Value operationJsonArrayAppend(int json, const Value *valuePtr) {
+    auto resultValuePtr = (Value *)EM_ASM_INT({
+        return operationJsonArrayAppend($0, $1, $2);
+    }, g_wasmModuleId, json, valuePtr);
+
+    Value result = *resultValuePtr;
+
+    ObjectAllocator<Value>::deallocate(resultValuePtr);
+
+    return result;
+}
+
+Value operationJsonArrayInsert(int json, int32_t position, const Value *valuePtr) {
+    auto resultValuePtr = (Value *)EM_ASM_INT({
+        return operationJsonArrayInsert($0, $1, $2, $3);
+    }, g_wasmModuleId, json, position, valuePtr);
+
+    Value result = *resultValuePtr;
+
+    ObjectAllocator<Value>::deallocate(resultValuePtr);
+
+    return result;
+}
+
+Value operationJsonArrayRemove(int json, int32_t position) {
+    auto resultValuePtr = (Value *)EM_ASM_INT({
+        return operationJsonArrayRemove($0, $1, $2);
+    }, g_wasmModuleId, json, position);
+
+    Value result = *resultValuePtr;
+
+    ObjectAllocator<Value>::deallocate(resultValuePtr);
+
+    return result;
+}
+
 Value operationJsonClone(int json) {
     auto valuePtr = (Value *)EM_ASM_INT({
         return operationJsonClone($0, $1);
@@ -203,6 +239,12 @@ EM_PORT_API(Value *) createJsonValue(int value) {
     dashboardObjectValueIncRef(value);
     auto pValue = ObjectAllocator<Value>::allocate(0x734f514c);
     *pValue = Value(value, VALUE_TYPE_JSON);
+    return pValue;
+}
+
+EM_PORT_API(Value *) createErrorValue() {
+    auto pValue = ObjectAllocator<Value>::allocate(0x5ad2f119);
+    *pValue = Value::makeError();
     return pValue;
 }
 

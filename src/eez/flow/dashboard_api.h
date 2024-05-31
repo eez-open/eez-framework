@@ -30,6 +30,9 @@ void executeDashboardComponent(uint16_t componentType, int flowStateIndex, int c
 Value operationJsonGet(int json, const char *property);
 int operationJsonSet(int json, const char *property, const Value *valuePtr);
 int operationJsonArrayLength(int json);
+Value operationJsonArrayAppend(int json, const Value *valuePtr);
+Value operationJsonArrayInsert(int json, int32_t position, const Value *valuePtr);
+Value operationJsonArrayRemove(int json, int32_t position);
 Value operationJsonClone(int json);
 
 Value operationJsonMake();

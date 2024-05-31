@@ -2176,6 +2176,13 @@ void do_OPERATION_TYPE_ARRAY_APPEND(EvalStack &stack) {
         return;
     }
 
+#if defined(EEZ_DASHBOARD_API)
+    if (arrayValue.isJson()) {
+        stack.push(operationJsonArrayAppend(arrayValue.getInt(), &value));
+        return;
+    }
+#endif
+
     if (!arrayValue.isArray()) {
         stack.push(Value::makeError());
         return;
@@ -2211,14 +2218,20 @@ void do_OPERATION_TYPE_ARRAY_INSERT(EvalStack &stack) {
         return;
     }
 
-    if (!arrayValue.isArray()) {
-        stack.push(Value::makeError());
-        return;
-    }
-
     int err;
     auto position = positionValue.toInt32(&err);
     if (err != 0) {
+        stack.push(Value::makeError());
+        return;
+    }
+#if defined(EEZ_DASHBOARD_API)
+    if (arrayValue.isJson()) {
+        stack.push(operationJsonArrayInsert(arrayValue.getInt(), position, &value));
+        return;
+    }
+#endif
+
+    if (!arrayValue.isArray()) {
         stack.push(Value::makeError());
         return;
     }
@@ -2226,6 +2239,12 @@ void do_OPERATION_TYPE_ARRAY_INSERT(EvalStack &stack) {
     auto array = arrayValue.getArray();
     auto resultArrayValue = Value::makeArrayRef(array->arraySize + 1, array->arrayType, 0xc4fa9cd9);
     auto resultArray = resultArrayValue.getArray();
+
+    if (position < 0) {
+        position = 0;
+    } else if (position > array->arraySize) {
+        position = array->arraySize;
+    }
 
     for (uint32_t elementIndex = 0; (int)elementIndex < position; elementIndex++) {
         resultArray->values[elementIndex] = array->values[elementIndex];
@@ -2252,14 +2271,21 @@ void do_OPERATION_TYPE_ARRAY_REMOVE(EvalStack &stack) {
         return;
     }
 
-    if (!arrayValue.isArray()) {
+    int err;
+    auto position = positionValue.toInt32(&err);
+    if (err != 0) {
         stack.push(Value::makeError());
         return;
     }
 
-    int err;
-    auto position = positionValue.toInt32(&err);
-    if (err != 0) {
+#if defined(EEZ_DASHBOARD_API)
+    if (arrayValue.isJson()) {
+        stack.push(operationJsonArrayRemove(arrayValue.getInt(), position));
+        return;
+    }
+#endif
+
+    if (!arrayValue.isArray()) {
         stack.push(Value::makeError());
         return;
     }
