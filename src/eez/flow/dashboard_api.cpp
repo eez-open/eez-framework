@@ -90,6 +90,18 @@ Value operationJsonClone(int json) {
     return result;
 }
 
+Value operationJsonMake() {
+    auto valuePtr = (Value *)EM_ASM_INT({
+        return operationJsonMake($0);
+    }, g_wasmModuleId);
+
+    Value result = *valuePtr;
+
+    ObjectAllocator<Value>::deallocate(valuePtr);
+
+    return result;
+}
+
 void dashboardObjectValueIncRef(int json) {
     EM_ASM({
         dashboardObjectValueIncRef($0, $1);

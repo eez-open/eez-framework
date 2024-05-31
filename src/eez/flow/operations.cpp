@@ -991,6 +991,32 @@ void do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE(EvalStack &stack) {
         return;
     }
 
+#if defined(EEZ_DASHBOARD_API)
+    if (arrayType == VALUE_TYPE_JSON) {
+        Value jsonValue = operationJsonMake();
+
+        for (int i = 0; i < arraySize; i += 2) {
+            Value propertyName = stack.pop().getValue();
+            if (!propertyName.isString()) {
+                stack.push(Value::makeError());
+                return;
+            }
+
+            Value propertyValue = stack.pop().getValue();
+            if (propertyValue.isError()) {
+                stack.push(propertyValue);
+                return;
+            }
+
+            operationJsonSet(jsonValue.getInt(), propertyName.getString(), &propertyValue);
+        }
+
+        stack.push(jsonValue);
+
+        return;
+    }
+#endif
+
     auto arrayValue = Value::makeArrayRef(arraySize, arrayType, 0x837260d4);
 
     auto array = arrayValue.getArray();

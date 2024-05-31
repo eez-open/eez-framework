@@ -32,6 +32,8 @@ int operationJsonSet(int json, const char *property, const Value *valuePtr);
 int operationJsonArrayLength(int json);
 Value operationJsonClone(int json);
 
+Value operationJsonMake();
+
 void dashboardObjectValueIncRef(int json);
 void dashboardObjectValueDecRef(int json);
 
