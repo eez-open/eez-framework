@@ -435,6 +435,8 @@ struct Assets {
     uint8_t assetsType;
     uint8_t external;
 
+    uint32_t reserved;
+
     AssetsPtr<Settings> settings;
 #if EEZ_OPTION_GUI
 	ListOfAssetsPtr<gui::PageAsset> pages;
