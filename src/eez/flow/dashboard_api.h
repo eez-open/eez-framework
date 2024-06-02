@@ -37,6 +37,9 @@ Value operationJsonClone(int json);
 
 Value operationJsonMake();
 
+Value convertFromJson(int json, uint32_t toType);
+Value convertToJson(const Value *arrayValuePtr);
+
 void dashboardObjectValueIncRef(int json);
 void dashboardObjectValueDecRef(int json);
 

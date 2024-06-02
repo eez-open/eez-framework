@@ -102,8 +102,25 @@ static void evalExpression(FlowState *flowState, const uint8_t *instructions, in
 		} else if (instructionType == EXPR_EVAL_INSTRUCTION_TYPE_OPERATION) {
 			g_evalOperations[instructionArg](g_stack);
 		} else {
-			i += 2;
-			break;
+            if (instruction == EXPR_EVAL_INSTRUCTION_TYPE_END_WITH_DST_VALUE_TYPE) {
+    			i += 2;
+                if (g_stack.sp == 1) {
+                    auto finalResult = g_stack.pop();
+                    if (finalResult.getType() == VALUE_TYPE_VALUE_PTR) {
+                        finalResult.dstValueType =
+                            instructions[i] +
+                            (instructions[i + 1] << 8) +
+                            (instructions[i + 2] << 16) +
+                            (instructions[i + 3] << 24);
+                    }
+                    g_stack.push(finalResult);
+                }
+                i += 4;
+                break;
+            } else {
+			    i += 2;
+			    break;
+            }
 		}
 
 		i += 2;

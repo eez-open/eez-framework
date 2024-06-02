@@ -138,6 +138,30 @@ Value operationJsonMake() {
     return result;
 }
 
+Value convertFromJson(int json, uint32_t toType) {
+    auto valuePtr = (Value *)EM_ASM_INT({
+        return convertFromJson($0, $1, $2);
+    }, g_wasmModuleId, json, toType);
+
+    Value result = *valuePtr;
+
+    ObjectAllocator<Value>::deallocate(valuePtr);
+
+    return result;
+}
+
+Value convertToJson(const Value *arrayValuePtr) {
+    auto valuePtr = (Value *)EM_ASM_INT({
+        return convertToJson($0, $1);
+    }, g_wasmModuleId, arrayValuePtr);
+
+    Value result = *valuePtr;
+
+    ObjectAllocator<Value>::deallocate(valuePtr);
+
+    return result;
+}
+
 void dashboardObjectValueIncRef(int json) {
     EM_ASM({
         dashboardObjectValueIncRef($0, $1);

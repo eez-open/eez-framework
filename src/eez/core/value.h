@@ -103,27 +103,27 @@ namespace flow {
 struct Value {
   public:
     Value()
-        : type(VALUE_TYPE_UNDEFINED), unit(UNIT_UNKNOWN), options(0), uint64Value(0)
+        : type(VALUE_TYPE_UNDEFINED), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint64Value(0)
     {
     }
 
 	Value(int value)
-        : type(VALUE_TYPE_INT32), unit(UNIT_UNKNOWN), options(0), int32Value(value)
+        : type(VALUE_TYPE_INT32), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int32Value(value)
     {
     }
 
 	Value(const char *str)
-        : type(VALUE_TYPE_STRING), unit(UNIT_UNKNOWN), options(0), strValue(str)
+        : type(VALUE_TYPE_STRING), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), strValue(str)
     {
     }
 
 	Value(uint8_t version, const char *str)
-        : type(VALUE_TYPE_VERSIONED_STRING), unit(version), options(0), strValue(str)
+        : type(VALUE_TYPE_VERSIONED_STRING), unit(version), options(0), dstValueType(VALUE_TYPE_UNDEFINED), strValue(str)
     {
     }
 
 	Value(Value *pValue)
-		: type(VALUE_TYPE_VALUE_PTR), unit(UNIT_UNKNOWN), options(0), pValueValue(pValue)
+		: type(VALUE_TYPE_VALUE_PTR), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), pValueValue(pValue)
     {
         // if (pValue->options & VALUE_OPTIONS_REF) {
 		// 	pValue->refValue->refCounter++;
@@ -131,100 +131,100 @@ struct Value {
 	}
 
     Value(const char *str, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), strValue(str)
+        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), strValue(str)
     {
     }
 
     Value(int value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), int32Value(value)
+        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int32Value(value)
     {
     }
 
     Value(int value, ValueType type, uint16_t options)
-        : type(type), unit(UNIT_UNKNOWN), options(options), int32Value(value)
+        : type(type), unit(UNIT_UNKNOWN), options(options), dstValueType(VALUE_TYPE_UNDEFINED), int32Value(value)
     {
     }
 
     Value(int8_t value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), int8Value(value)
+        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int8Value(value)
     {
     }
 
     Value(uint8_t value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), uint8Value(value)
+        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint8Value(value)
     {
     }
 
     Value(int16_t value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), int16Value(value)
+        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int16Value(value)
     {
     }
 
     Value(uint16_t value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), uint16Value(value)
+        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint16Value(value)
     {
     }
 
     Value(uint32_t value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), uint32Value(value)
+        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint32Value(value)
     {
     }
 
     Value(int64_t value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), int64Value(value)
+        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int64Value(value)
     {
     }
 
     Value(uint64_t value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), uint64Value(value)
+        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint64Value(value)
     {
     }
 
     Value(float value, Unit unit)
-        : type(VALUE_TYPE_FLOAT), unit(unit), options(0), floatValue(value)
+        : type(VALUE_TYPE_FLOAT), unit(unit), options(0), dstValueType(VALUE_TYPE_UNDEFINED), floatValue(value)
     {
     }
 
     Value(float value, Unit unit, uint16_t options)
-        : type(VALUE_TYPE_FLOAT), unit(unit), options(options), floatValue(value)
+        : type(VALUE_TYPE_FLOAT), unit(unit), options(options), dstValueType(VALUE_TYPE_UNDEFINED), floatValue(value)
     {
     }
 
     Value(float value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), floatValue(value)
+        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), floatValue(value)
     {
     }
 
 	Value(double value, ValueType type)
-		: type(type), unit(UNIT_UNKNOWN), options(0), doubleValue(value) {
+		: type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), doubleValue(value) {
 	}
 
 	Value(const char *value, ValueType type, uint16_t options)
-        : type(type), unit(UNIT_UNKNOWN), options(options), strValue(value)
+        : type(type), unit(UNIT_UNKNOWN), options(options), dstValueType(VALUE_TYPE_UNDEFINED), strValue(value)
     {
     }
 
     Value(void *value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), pVoidValue(value)
+        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), pVoidValue(value)
     {
     }
 
     typedef float (*YtDataGetValueFunctionPointer)(uint32_t rowIndex, uint8_t columnIndex, float *max);
 
     Value(YtDataGetValueFunctionPointer ytDataGetValueFunctionPointer)
-        : type(VALUE_TYPE_YT_DATA_GET_VALUE_FUNCTION_POINTER), unit(UNIT_UNKNOWN), options(0), pVoidValue((void *)ytDataGetValueFunctionPointer)
+        : type(VALUE_TYPE_YT_DATA_GET_VALUE_FUNCTION_POINTER), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), pVoidValue((void *)ytDataGetValueFunctionPointer)
     {
     }
 
 	Value(const Value& value)
-		: type(VALUE_TYPE_UNDEFINED), unit(UNIT_UNKNOWN), options(0), uint64Value(0)
+		: type(VALUE_TYPE_UNDEFINED), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint64Value(0)
 	{
 		*this = value;
 	}
 
 #if EEZ_OPTION_GUI
     Value(AppContext *appContext)
-        : type(VALUE_TYPE_POINTER), unit(UNIT_UNKNOWN), options(0), pVoidValue(appContext)
+        : type(VALUE_TYPE_POINTER), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), pVoidValue(appContext)
     {
     }
 #endif
@@ -270,6 +270,7 @@ struct Value {
             type = value.type;
             unit = value.unit;
             options = value.options;
+            dstValueType = value.dstValueType;
             memcpy((void *)&int64Value, (const void *)&value.int64Value, sizeof(int64_t));
 
             if (options & VALUE_OPTIONS_REF) {
@@ -521,7 +522,8 @@ struct Value {
 	uint8_t type;
 	uint8_t unit;
 	uint16_t options;
-	uint32_t reserved;
+
+    uint32_t dstValueType;
 
     union {
 		int8_t int8Value;
@@ -651,7 +653,7 @@ inline Value Value::getValue() const {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool assignValue(Value &dstValue, const Value &srcValue);
+bool assignValue(Value &dstValue, const Value &srcValue, uint32_t dstValueType = VALUE_TYPE_UNDEFINED);
 
 ////////////////////////////////////////////////////////////////////////////////
 

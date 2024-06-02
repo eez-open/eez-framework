@@ -466,6 +466,8 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
 #endif
 	} else {
 		Value *pDstValue;
+        uint32_t dstValueType = VALUE_TYPE_UNDEFINED;
+
         if (dstValue.getType() == VALUE_TYPE_ARRAY_ELEMENT_VALUE) {
             auto arrayElementValue = (ArrayElementValue *)dstValue.refValue;
             if (arrayElementValue->arrayValue.isBlob()) {
@@ -510,9 +512,10 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
 #endif
         else {
             pDstValue = dstValue.pValueValue;
+            dstValueType = dstValue.dstValueType;
         }
 
-        if (assignValue(*pDstValue, srcValue)) {
+        if (assignValue(*pDstValue, srcValue, dstValueType)) {
             onValueChanged(pDstValue);
         } else {
             char errorMessage[100];

@@ -24,6 +24,10 @@
 #include <eez/flow/hooks.h>
 #include <eez/flow/date.h>
 
+#if defined(EEZ_DASHBOARD_API)
+#include <eez/flow/dashboard_api.h>
+#endif
+
 namespace eez {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -758,7 +762,7 @@ ArrayValueRef::~ArrayValueRef() {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool assignValue(Value &dstValue, const Value &srcValue) {
+bool assignValue(Value &dstValue, const Value &srcValue, uint32_t dstValueType) {
     if (dstValue.isBoolean()) {
         dstValue.int32Value = srcValue.toBool();
     } else if (dstValue.isInt32OrLess()) {
@@ -770,7 +774,17 @@ bool assignValue(Value &dstValue, const Value &srcValue) {
     } else if (dstValue.isString()) {
         dstValue = srcValue.toString(0x30a91156);
     } else {
-        dstValue = srcValue;
+#if defined(EEZ_DASHBOARD_API)
+        if (dstValueType == VALUE_TYPE_JSON && !srcValue.isJson()) {
+            dstValue = flow::convertToJson(&srcValue);
+        } else if (srcValue.isJson() && dstValueType != VALUE_TYPE_JSON) {
+            dstValue = flow::convertFromJson(srcValue.getInt(), dstValueType);
+        } else {
+#endif
+            dstValue = srcValue;
+#if defined(EEZ_DASHBOARD_API)
+        }
+#endif
     }
     return true;
 }
@@ -1246,9 +1260,7 @@ Value Value::makeStringRef(const char *str, int len, uint32_t id) {
     Value value;
 
     value.type = VALUE_TYPE_STRING_REF;
-    value.unit = 0;
     value.options = VALUE_OPTIONS_REF;
-    value.reserved = 0;
     value.refValue = stringRef;
 
 	return value;
@@ -1275,9 +1287,7 @@ Value Value::concatenateString(const Value &str1, const Value &str2) {
     Value value;
 
     value.type = VALUE_TYPE_STRING_REF;
-    value.unit = 0;
     value.options = VALUE_OPTIONS_REF;
-    value.reserved = 0;
     value.refValue = stringRef;
 
 	return value;
@@ -1301,9 +1311,7 @@ Value Value::makeArrayRef(int arraySize, int arrayType, uint32_t id) {
     Value value;
 
     value.type = VALUE_TYPE_ARRAY_REF;
-    value.unit = 0;
     value.options = VALUE_OPTIONS_REF;
-    value.reserved = 0;
     value.refValue = arrayRef;
 
 	return value;
@@ -1323,9 +1331,7 @@ Value Value::makeArrayElementRef(Value arrayValue, int elementIndex, uint32_t id
     Value value;
 
     value.type = VALUE_TYPE_ARRAY_ELEMENT_VALUE;
-    value.unit = 0;
     value.options = VALUE_OPTIONS_REF;
-    value.reserved = 0;
     value.refValue = arrayElementValueRef;
 
 	return value;
@@ -1345,9 +1351,7 @@ Value Value::makeJsonMemberRef(Value jsonValue, Value propertyName, uint32_t id)
     Value value;
 
     value.type = VALUE_TYPE_JSON_MEMBER_VALUE;
-    value.unit = 0;
     value.options = VALUE_OPTIONS_REF;
-    value.reserved = 0;
     value.refValue = jsonMemberValueRef;
 
 	return value;
@@ -1377,9 +1381,7 @@ Value Value::makeBlobRef(const uint8_t *blob, uint32_t len, uint32_t id) {
     Value value;
 
     value.type = VALUE_TYPE_BLOB_REF;
-    value.unit = 0;
     value.options = VALUE_OPTIONS_REF;
-    value.reserved = 0;
     value.refValue = blobRef;
 
 	return value;
@@ -1406,9 +1408,7 @@ Value Value::makeBlobRef(const uint8_t *blob1, uint32_t len1, const uint8_t *blo
     Value value;
 
     value.type = VALUE_TYPE_BLOB_REF;
-    value.unit = 0;
     value.options = VALUE_OPTIONS_REF;
-    value.reserved = 0;
     value.refValue = blobRef;
 
 	return value;

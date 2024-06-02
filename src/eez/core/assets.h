@@ -349,14 +349,15 @@ struct Colors {
 static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_MASK  = 0x0007 << 13;
 static const uint16_t EXPR_EVAL_INSTRUCTION_PARAM_MASK = 0xFFFF >> 3;
 
-static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_PUSH_CONSTANT   = (0 << 13);
-static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_PUSH_INPUT      = (1 << 13);
-static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_PUSH_LOCAL_VAR  = (2 << 13);
-static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_PUSH_GLOBAL_VAR = (3 << 13);
-static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_PUSH_OUTPUT     = (4 << 13);
-static const uint16_t EXPR_EVAL_INSTRUCTION_ARRAY_ELEMENT        = (5 << 13);
-static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_OPERATION       = (6 << 13);
-static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_END             = (7 << 13);
+static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_PUSH_CONSTANT           = (0 << 13);
+static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_PUSH_INPUT              = (1 << 13);
+static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_PUSH_LOCAL_VAR          = (2 << 13);
+static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_PUSH_GLOBAL_VAR         = (3 << 13);
+static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_PUSH_OUTPUT             = (4 << 13);
+static const uint16_t EXPR_EVAL_INSTRUCTION_ARRAY_ELEMENT                = (5 << 13);
+static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_OPERATION               = (6 << 13);
+static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_END                     = (7 << 13);
+static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_END_WITH_DST_VALUE_TYPE = (7 << 13) | (1 << 12);
 
 struct Property {
 	uint8_t evalInstructions[1];
