@@ -45,6 +45,8 @@ void dashboardObjectValueDecRef(int json);
 
 void onObjectArrayValueFree(ArrayValue *arrayValue);
 
+Value getBitmapAsDataURL(const char *bitmapName);
+
 } // flow
 } // eez
 

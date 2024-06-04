@@ -180,6 +180,18 @@ void onObjectArrayValueFree(ArrayValue *arrayValue) {
     }, g_wasmModuleId, arrayValue);
 }
 
+Value getBitmapAsDataURL(const char *bitmapName) {
+    auto valuePtr = (Value *)EM_ASM_INT({
+        return getBitmapAsDataURL($0, UTF8ToString($1));
+    }, g_wasmModuleId, bitmapName);
+
+    Value result = *valuePtr;
+
+    ObjectAllocator<Value>::deallocate(valuePtr);
+
+    return result;
+}
+
 } // flow
 } // eez
 

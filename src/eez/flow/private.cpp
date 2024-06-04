@@ -42,6 +42,16 @@ static const unsigned NO_COMPONENT_INDEX = 0xFFFFFFFF;
 
 static bool g_enableThrowError = true;
 
+inline bool isInputEmpty(const Value& inputValue) {
+    return inputValue.type == VALUE_TYPE_UNDEFINED && inputValue.int32Value > 0;
+}
+
+inline Value getEmptyInputValue() {
+    Value emptyInputValue;
+    emptyInputValue.int32Value = 1;
+    return emptyInputValue;
+}
+
 void initGlobalVariables(Assets *assets) {
     if (!g_mainAssetsUncompressed) {
         return;
@@ -106,13 +116,13 @@ bool isComponentReadyToRun(FlowState *flowState, unsigned componentIndex) {
 		if (input & COMPONENT_INPUT_FLAG_IS_SEQ_INPUT) {
 			numSeqInputs++;
 			auto &value = flowState->values[inputValueIndex];
-			if (value.type != VALUE_TYPE_UNDEFINED) {
+			if (!isInputEmpty(value)) {
 				numDefinedSeqInputs++;
 			}
 		} else {
 			if (!(input & COMPONENT_INPUT_FLAG_IS_OPTIONAL)) {
 				auto &value = flowState->values[inputValueIndex];
-				if (value.type == VALUE_TYPE_UNDEFINED) {
+				if (isInputEmpty(value)) {
 					// non optional data input is undefined
 					return false;
 				}
@@ -209,9 +219,11 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
 		new (flowState->values + i) Value();
 	}
 
-	auto &undefinedValue = *flowDefinition->constants[UNDEFINED_VALUE_INDEX];
+    // empty input is VALUE_TYPE_UNDEFINED, but with int value greater than zero, so
+    // we can differentiate it from undefined value
+	Value emptyInputValue = getEmptyInputValue();
 	for (unsigned i = 0; i < flow->componentInputs.count; i++) {
-		flowState->values[i] = undefinedValue;
+		flowState->values[i] = emptyInputValue;
 	}
 
 	for (unsigned i = 0; i < flow->localVariables.count; i++) {
@@ -360,8 +372,8 @@ void resetSequenceInputs(FlowState *flowState) {
                 auto inputIndex = component->inputs[i];
                 if (flowState->flow->componentInputs[inputIndex] & COMPONENT_INPUT_FLAG_IS_SEQ_INPUT) {
                     auto pValue = &flowState->values[inputIndex];
-                    if (pValue->getType() != VALUE_TYPE_UNDEFINED) {
-                        *pValue = Value();
+                    if (!isInputEmpty(*pValue)) {
+                        *pValue = getEmptyInputValue();
                         onValueChanged(pValue);
                     }
                 }

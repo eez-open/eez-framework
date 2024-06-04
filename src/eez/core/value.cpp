@@ -33,7 +33,7 @@ namespace eez {
 ////////////////////////////////////////////////////////////////////////////////
 
 bool compare_UNDEFINED_value(const Value &a, const Value &b) {
-    return true;
+    return b.type == VALUE_TYPE_UNDEFINED && a.int32Value == b.int32Value;
 }
 
 void UNDEFINED_value_to_text(const Value &value, char *text, int count) {
@@ -45,7 +45,7 @@ const char *UNDEFINED_value_type_name(const Value &value) {
 }
 
 bool compare_NULL_value(const Value &a, const Value &b) {
-    return true;
+    return b.type == VALUE_TYPE_NULL;
 }
 
 void NULL_value_to_text(const Value &value, char *text, int count) {

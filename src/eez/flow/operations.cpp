@@ -1156,6 +1156,21 @@ void do_OPERATION_TYPE_FLOW_GET_BITMAP_INDEX(EvalStack &stack) {
 #endif // EEZ_OPTION_GUI
 }
 
+void do_OPERATION_TYPE_FLOW_GET_BITMAP_AS_DATA_URL(EvalStack &stack) {
+#if defined(EEZ_DASHBOARD_API)
+    auto a = stack.pop().getValue();
+    if (a.isError()) {
+        stack.push(a);
+        return;
+    }
+
+    Value bitmapName = a.toString(0xcdc34cc3);
+    stack.push(getBitmapAsDataURL(bitmapName.getString()));
+#else
+    stack.push(Value::makeError());
+#endif // EEZ_OPTION_GUI
+}
+
 void do_OPERATION_TYPE_DATE_NOW(EvalStack &stack) {
     stack.push(Value((double)date::now(), VALUE_TYPE_DATE));
 }
@@ -2504,6 +2519,7 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_BLOB_ALLOCATE,
     do_OPERATION_TYPE_JSON_GET,
     do_OPERATION_TYPE_JSON_CLONE,
+    do_OPERATION_TYPE_FLOW_GET_BITMAP_AS_DATA_URL,
 };
 
 } // namespace flow
