@@ -2095,13 +2095,8 @@ void do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
         stack.push(arrayValue);
         return;
     }
-    if (!arrayValue.isArray()) {
-        stack.push(Value::makeError());
-        return;
-    }
-    auto array = arrayValue.getArray();
 
-    int from;
+    int from = 0;
     if (numArgs > 1) {
         auto fromValue = stack.pop().getValue();
         if (fromValue.isError()) {
@@ -2119,11 +2114,9 @@ void do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
         if (from < 0) {
             from = 0;
         }
-    } else {
-        from = 0;
     }
 
-    int to;
+    int to = -1;
     if (numArgs > 2) {
         auto toValue = stack.pop().getValue();
         if (toValue.isError()) {
@@ -2140,7 +2133,22 @@ void do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
         if (to < 0) {
             to = 0;
         }
-    } else {
+    }
+
+#if defined(EEZ_DASHBOARD_API)
+    if (arrayValue.isJson()) {
+        stack.push(operationJsonArraySlice(arrayValue.getInt(), from, to));
+        return;
+    }
+#endif
+
+    if (!arrayValue.isArray()) {
+        stack.push(Value::makeError());
+        return;
+    }
+    auto array = arrayValue.getArray();
+
+    if (to == -1) {
         to = array->arraySize;
     }
 

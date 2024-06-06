@@ -78,6 +78,18 @@ int operationJsonArrayLength(int json) {
     }, g_wasmModuleId, json);
 }
 
+Value operationJsonArraySlice(int json, int from, int to) {
+    auto resultValuePtr = (Value *)EM_ASM_INT({
+        return operationJsonArraySlice($0, $1, $2, $3);
+    }, g_wasmModuleId, json, from, to);
+
+    Value result = *resultValuePtr;
+
+    ObjectAllocator<Value>::deallocate(resultValuePtr);
+
+    return result;
+}
+
 Value operationJsonArrayAppend(int json, const Value *valuePtr) {
     auto resultValuePtr = (Value *)EM_ASM_INT({
         return operationJsonArrayAppend($0, $1, $2);
