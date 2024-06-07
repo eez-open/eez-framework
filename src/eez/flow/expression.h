@@ -16,7 +16,15 @@
 namespace eez {
 namespace flow {
 
-static const size_t STACK_SIZE = 20;
+#if !defined(EEZ_FLOW_EVAL_STACK_SIZE)
+#if defined(EEZ_DASHBOARD_API)
+#define EEZ_FLOW_EVAL_STACK_SIZE 10000
+#else
+#define EEZ_FLOW_EVAL_STACK_SIZE 20
+#endif
+#endif
+
+static const size_t STACK_SIZE = EEZ_FLOW_EVAL_STACK_SIZE;
 
 struct EvalStack {
 	FlowState *flowState;
