@@ -1,3 +1,5 @@
+#include <eez/conf-internal.h>
+#if EEZ_FOR_LVGL_LZ4_OPTION
 /*
    LZ4 - Fast LZ compression algorithm
    Copyright (C) 2011-2017, Yann Collet.
@@ -2120,3 +2122,4 @@ char *LZ4_slideInputBuffer(void *state) {
 }
 
 #endif /* LZ4_COMMONDEFS_ONLY */
+#endif /* EEZ_FOR_LVGL_LZ4_OPTION */
