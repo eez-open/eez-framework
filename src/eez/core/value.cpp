@@ -1434,7 +1434,9 @@ Value Value::clone() {
     return *this;
 }
 
-#if defined(EEZ_OPTION_GUI) && !EEZ_OPTION_GUI
+#if defined(EEZ_OPTION_GUI)
+
+#if !EEZ_OPTION_GUI
 
 Value getVar(int16_t id) {
     auto native_var = native_vars[id];
@@ -1496,6 +1498,8 @@ void setVar(int16_t id, const Value& value) {
     }
 }
 
-#endif // defined(EEZ_OPTION_GUI) && !EEZ_OPTION_GUI
+#endif // !EEZ_OPTION_GUI
+
+#endif // defined(EEZ_OPTION_GUI)
 
 } // namespace eez

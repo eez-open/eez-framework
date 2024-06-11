@@ -36,9 +36,11 @@
 #include <eez/flow/lvgl_api.h>
 #endif
 
+#if EEZ_FOR_LVGL_SHA256_OPTION
 extern "C" {
 #include <eez/libs/sha256/sha256.h>
 }
+#endif
 
 #if EEZ_OPTION_GUI
 #include <eez/gui/gui.h>
@@ -2373,6 +2375,7 @@ void do_OPERATION_TYPE_CRYPTO_SHA256(EvalStack &stack) {
         return;
     }
 
+#if EEZ_FOR_LVGL_SHA256_OPTION
     BYTE buf[SHA256_BLOCK_SIZE];
     SHA256_CTX ctx;
     sha256_init(&ctx);
@@ -2382,6 +2385,9 @@ void do_OPERATION_TYPE_CRYPTO_SHA256(EvalStack &stack) {
     auto result = Value::makeBlobRef(buf, SHA256_BLOCK_SIZE, 0x1f0c0c0c);
 
     stack.push(result);
+#else
+    stack.push(Value::makeError());
+#endif
 }
 
 void do_OPERATION_TYPE_BLOB_ALLOCATE(EvalStack &stack) {

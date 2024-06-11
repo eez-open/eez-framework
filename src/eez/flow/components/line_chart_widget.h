@@ -71,7 +71,7 @@ private:
     void *data;
 };
 
-#endif // EEZ_OPTION_GUI || !defined(EEZ_OPTION_GUI)
+#endif // EEZ_OPTION_GUI
 
 } // flow
 } // eez

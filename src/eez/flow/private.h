@@ -40,7 +40,7 @@ static const int NULL_VALUE_INDEX = 1;
         component->type == defs_v3::COMPONENT_TYPE_LOOP_ACTION || \
         component->type == defs_v3::COMPONENT_TYPE_COUNTER_ACTION || \
         component->type == defs_v3::COMPONENT_TYPE_WATCH_VARIABLE_ACTION \
-    ) \
+    )
 
 struct ComponenentExecutionState {
     uint32_t lastExecutedTime;

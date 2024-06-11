@@ -21,7 +21,9 @@
 #include <eez/core/assets.h>
 #include <eez/flow/flow.h>
 
+#if EEZ_FOR_LVGL_LZ4_OPTION
 #include <eez/libs/lz4/lz4.h>
+#endif
 
 #if EEZ_OPTION_GUI
 #include <eez/gui/gui.h>
@@ -91,6 +93,7 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 
 	int compressedSize = assetsDataSize - compressedDataOffset;
 
+#if EEZ_FOR_LVGL_LZ4_OPTION
     int decompressResult = LZ4_decompress_safe(
 		(const char *)(assetsData + compressedDataOffset),
 		(char *)decompressedAssets + decompressedDataOffset,
@@ -104,8 +107,11 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 		}
 		return false;
 	}
-
 	return true;
+#else
+    *err = -1;
+    return false;
+#endif
 }
 
 void allocMemoryForDecompressedAssets(const uint8_t *assetsData, uint32_t assetsDataSize, uint8_t *&decompressedAssetsMemoryBuffer, uint32_t &decompressedAssetsMemoryBufferSize) {
