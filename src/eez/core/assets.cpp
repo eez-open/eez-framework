@@ -142,7 +142,7 @@ void loadMainAssets(const uint8_t *assets, uint32_t assetsSize) {
         g_mainAssets = (Assets *)(assets + sizeof(uint32_t)/* skip HEADER_TAG*/);
         g_mainAssetsUncompressed = true;
     } else {
-#if defined(EEZ_FOR_LVGL)
+#if defined(EEZ_FOR_LVGL) || defined(EEZ_DASHBOARD_API)
         uint8_t *DECOMPRESSED_ASSETS_START_ADDRESS = 0;
         uint32_t MAX_DECOMPRESSED_ASSETS_SIZE = 0;
         allocMemoryForDecompressedAssets(assets, assetsSize, DECOMPRESSED_ASSETS_START_ADDRESS, MAX_DECOMPRESSED_ASSETS_SIZE);

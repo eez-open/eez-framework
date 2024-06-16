@@ -24,7 +24,7 @@
 
 namespace eez {
 
-#if (defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)) && !defined(EEZ_FOR_LVGL)
+#if (defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)) && !defined(EEZ_FOR_LVGL) && !defined(EEZ_DASHBOARD_API)
 uint8_t g_memory[MEMORY_SIZE] = { 0 };
 #endif
 
@@ -55,11 +55,17 @@ void initMemory() {
     initOtherMemory();
 }
 
+#if defined(EEZ_DASHBOARD_API)
+#include <emscripten/heap.h>
+#endif
+
 void initAssetsMemory() {
 #if defined(EEZ_FOR_LVGL)
 #if defined(LV_MEM_SIZE)
     ALLOC_BUFFER_SIZE = LV_MEM_SIZE;
 #endif
+#elif defined(EEZ_DASHBOARD_API)
+    ALLOC_BUFFER_SIZE = emscripten_get_heap_max();
 #else
     ALLOC_BUFFER = MEMORY_BEGIN;
     ALLOC_BUFFER_SIZE = MEMORY_SIZE;
@@ -68,7 +74,7 @@ void initAssetsMemory() {
 }
 
 void initOtherMemory() {
-#if !defined(EEZ_FOR_LVGL)
+#if !defined(EEZ_FOR_LVGL) && !defined(EEZ_DASHBOARD_API)
     FLOW_TO_DEBUGGER_MESSAGE_BUFFER = allocBuffer(FLOW_TO_DEBUGGER_MESSAGE_BUFFER_SIZE);
 #endif
 
@@ -101,6 +107,8 @@ uint8_t *allocBuffer(uint32_t size) {
 #else
     return (uint8_t *)lv_mem_alloc(size);
 #endif
+#elif defined(EEZ_DASHBOARD_API)
+    return (uint8_t *)::malloc(size);
 #else
     size = ((size + 1023) / 1024) * 1024;
 

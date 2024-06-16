@@ -65,7 +65,9 @@ void getAllocInfo(uint32_t &free, uint32_t &alloc) {
 	alloc = mon.total_size - mon.free_size;
 }
 
-#elif 0 && defined(__EMSCRIPTEN__)
+#elif defined(EEZ_DASHBOARD_API)
+
+#include <emscripten/heap.h>
 
 void initAllocHeap(uint8_t *heap, size_t heapSize) {
 }
@@ -84,8 +86,8 @@ template<typename T> void freeObject(T *ptr) {
 }
 
 void getAllocInfo(uint32_t &free, uint32_t &alloc) {
-	free = 0;
-	alloc = 0;
+	free = emscripten_get_heap_max() - emscripten_get_heap_size();
+	alloc = emscripten_get_heap_size();
 }
 
 #else

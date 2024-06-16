@@ -499,15 +499,15 @@ void onAddToQueue(FlowState *flowState, int sourceComponentIndex, int sourceOutp
         getAllocInfo(free, alloc);
 
         char buffer[256];
-		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
+		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%d\t%d\t%d\t%u\t%u\n",
 			MESSAGE_TO_DEBUGGER_ADD_TO_QUEUE,
 			(int)flowState->flowStateIndex,
 			sourceComponentIndex,
 			sourceOutputIndex,
 			targetComponentIndex,
 			targetInputIndex,
-            (int)free,
-            (int)ALLOC_BUFFER_SIZE
+            free,
+            ALLOC_BUFFER_SIZE
 		);
         writeDebuggerBufferHook(buffer, strlen(buffer));
     }
