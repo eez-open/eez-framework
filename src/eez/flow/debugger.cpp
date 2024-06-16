@@ -28,6 +28,8 @@
 namespace eez {
 namespace flow {
 
+#define MAX_ARRAY_SIZE_TRANSFERRED_IN_DEBUGGER 1000
+
 enum MessagesToDebugger {
     MESSAGE_TO_DEBUGGER_STATE_CHANGED, // STATE
 
@@ -324,7 +326,9 @@ void writeArray(const ArrayValue *arrayValue) {
 	WRITE_TO_OUTPUT_BUFFER('\n');
 	FLUSH_OUTPUT_BUFFER();
 
-    for (uint32_t i = 0; i < arrayValue->arraySize; i++) {
+    auto transferredSize = arrayValue->arraySize > MAX_ARRAY_SIZE_TRANSFERRED_IN_DEBUGGER ? MAX_ARRAY_SIZE_TRANSFERRED_IN_DEBUGGER : arrayValue->arraySize;
+
+    for (uint32_t i = 0; i < transferredSize; i++) {
         onValueChanged(&arrayValue->values[i]);
     }
 }
