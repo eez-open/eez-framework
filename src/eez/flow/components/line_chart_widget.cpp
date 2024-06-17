@@ -36,7 +36,7 @@ LineChartWidgetComponenentExecutionState::~LineChartWidgetComponenentExecutionSt
         eez::free(data);
     }
 
-    for (uint32_t i = 0; i < maxPoints; i++) {
+    for (uint32_t i = 0; i < numLines; i++) {
 		(lineLabels + i)->~Value();
 	}
     eez::free(lineLabels);
@@ -56,7 +56,7 @@ void LineChartWidgetComponenentExecutionState::init(uint32_t numLines_, uint32_t
     numPoints = 0;
     startPointIndex = 0;
 
-    lineLabels = (Value *)eez::alloc(numLines * sizeof(Value *), 0xe8afd215);
+    lineLabels = (Value *)eez::alloc(numLines * sizeof(Value), 0xe8afd215);
     for (uint32_t i = 0; i < numLines; i++) {
 		new (lineLabels + i) Value();
 	}

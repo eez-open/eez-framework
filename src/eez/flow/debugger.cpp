@@ -315,9 +315,14 @@ void writeArray(const ArrayValue *arrayValue) {
 	writeValueAddr(arrayValue);
 
     WRITE_TO_OUTPUT_BUFFER(',');
+    writeArrayType(arrayValue->arraySize);
+
+    WRITE_TO_OUTPUT_BUFFER(',');
     writeArrayType(arrayValue->arrayType);
 
-	for (uint32_t i = 0; i < arrayValue->arraySize; i++) {
+    auto transferredSize = arrayValue->arraySize > MAX_ARRAY_SIZE_TRANSFERRED_IN_DEBUGGER ? MAX_ARRAY_SIZE_TRANSFERRED_IN_DEBUGGER : arrayValue->arraySize;
+
+	for (uint32_t i = 0; i < transferredSize; i++) {
 		WRITE_TO_OUTPUT_BUFFER(',');
 		writeValueAddr(&arrayValue->values[i]);
 	}
@@ -325,8 +330,6 @@ void writeArray(const ArrayValue *arrayValue) {
 	WRITE_TO_OUTPUT_BUFFER('}');
 	WRITE_TO_OUTPUT_BUFFER('\n');
 	FLUSH_OUTPUT_BUFFER();
-
-    auto transferredSize = arrayValue->arraySize > MAX_ARRAY_SIZE_TRANSFERRED_IN_DEBUGGER ? MAX_ARRAY_SIZE_TRANSFERRED_IN_DEBUGGER : arrayValue->arraySize;
 
     for (uint32_t i = 0; i < transferredSize; i++) {
         onValueChanged(&arrayValue->values[i]);
