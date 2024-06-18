@@ -106,13 +106,15 @@ static void evalExpression(FlowState *flowState, const uint8_t *instructions, in
     			i += 2;
                 if (g_stack.sp == 1) {
                     auto finalResult = g_stack.pop();
+
+                    #define VALUE_TYPE (instructions[i] + (instructions[i + 1] << 8) + (instructions[i + 2] << 16) + (instructions[i + 3] << 24))
                     if (finalResult.getType() == VALUE_TYPE_VALUE_PTR) {
-                        finalResult.dstValueType =
-                            instructions[i] +
-                            (instructions[i + 1] << 8) +
-                            (instructions[i + 2] << 16) +
-                            (instructions[i + 3] << 24);
+                        finalResult.dstValueType = VALUE_TYPE;
+                    } else if (finalResult.getType() == VALUE_TYPE_ARRAY_ELEMENT_VALUE) {
+                        auto arrayElementValue = (ArrayElementValue *)finalResult.refValue;
+                        arrayElementValue->dstValueType = VALUE_TYPE;
                     }
+
                     g_stack.push(finalResult);
                 }
                 i += 4;

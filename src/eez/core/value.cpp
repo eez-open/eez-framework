@@ -763,7 +763,35 @@ ArrayValueRef::~ArrayValueRef() {
 ////////////////////////////////////////////////////////////////////////////////
 
 bool assignValue(Value &dstValue, const Value &srcValue, uint32_t dstValueType) {
-    if (dstValue.isBoolean()) {
+    // if (srcValue.type != dstValue.type) {
+    //     printf("%s (%d) <- %s (%d)\n", dstValue.toString(0).getString(), dstValue.type, srcValue.toString(0).getString(), srcValue.type);
+    // }
+
+    if (dstValueType == VALUE_TYPE_BOOLEAN) {
+        dstValue = Value(srcValue.toBool(), VALUE_TYPE_BOOLEAN);
+    } else if (Value::isInt32OrLess(dstValueType)) {
+        dstValue = Value(srcValue.toInt32(), (ValueType)dstValueType);
+    } else if (dstValueType == VALUE_TYPE_FLOAT) {
+        dstValue = Value(srcValue.toFloat(), VALUE_TYPE_FLOAT);
+    } else if (dstValueType == VALUE_TYPE_DOUBLE) {
+        dstValue = Value(srcValue.toDouble(), VALUE_TYPE_DOUBLE);
+    } else if (dstValueType == VALUE_TYPE_STRING) {
+        dstValue = srcValue.toString(0x30a91156);
+#if defined(EEZ_DASHBOARD_API)
+    } else if (dstValueType == VALUE_TYPE_JSON) {
+        if (srcValue.isJson()) {
+            dstValue = srcValue;
+        } else {
+            dstValue = flow::convertToJson(&srcValue);
+        }
+    } else if (srcValue.isJson()) {
+        if (dstValueType == VALUE_TYPE_JSON) {
+            dstValue = srcValue;
+        }  else {
+            dstValue = flow::convertFromJson(srcValue.getInt(), dstValueType);
+        }
+#endif
+    } else if (dstValue.isBoolean()) {
         dstValue.int32Value = srcValue.toBool();
     } else if (dstValue.isInt32OrLess()) {
         dstValue.int32Value = srcValue.toInt32();
@@ -774,18 +802,9 @@ bool assignValue(Value &dstValue, const Value &srcValue, uint32_t dstValueType) 
     } else if (dstValue.isString()) {
         dstValue = srcValue.toString(0x30a91156);
     } else {
-#if defined(EEZ_DASHBOARD_API)
-        if (dstValueType == VALUE_TYPE_JSON && !srcValue.isJson()) {
-            dstValue = flow::convertToJson(&srcValue);
-        } else if (srcValue.isJson() && dstValueType != VALUE_TYPE_JSON) {
-            dstValue = flow::convertFromJson(srcValue.getInt(), dstValueType);
-        } else {
-#endif
-            dstValue = srcValue;
-#if defined(EEZ_DASHBOARD_API)
-        }
-#endif
+        dstValue = srcValue;
     }
+
     return true;
 }
 

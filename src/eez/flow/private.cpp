@@ -510,6 +510,7 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
                     return;
                 }
                 pDstValue = &array->values[arrayElementValue->elementIndex];
+                dstValueType = arrayElementValue->dstValueType;
             }
         }
 #if defined(EEZ_DASHBOARD_API)

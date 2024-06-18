@@ -314,6 +314,10 @@ struct Value {
         return type == VALUE_TYPE_UNDEFINED || type == VALUE_TYPE_NULL;
     }
 
+	static bool isInt32OrLess(int type) {
+		return (type >= VALUE_TYPE_INT8 && type <= VALUE_TYPE_UINT32) || type == VALUE_TYPE_BOOLEAN;
+	}
+
 	bool isInt32OrLess() const {
 		return (type >= VALUE_TYPE_INT8 && type <= VALUE_TYPE_UINT32) || type == VALUE_TYPE_BOOLEAN;
 	}
@@ -588,6 +592,7 @@ struct BlobRef : public Ref {
 struct ArrayElementValue : public Ref {
 	Value arrayValue;
     int elementIndex;
+    uint32_t dstValueType;
 };
 
 struct JsonMemberValue : public Ref {
