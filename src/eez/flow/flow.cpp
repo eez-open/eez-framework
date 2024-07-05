@@ -498,11 +498,11 @@ void onArrayValueFree(ArrayValue *arrayValue) {
         onFreeMQTTConnection(arrayValue);
     }
 
+#if defined(EEZ_DASHBOARD_API)
     const uint32_t CATEGORY_SHIFT = 13;
     const uint32_t CATEGORY_MASK = 0x7;
     const uint32_t CATEGORY_OBJECT = 5;
 
-#if defined(EEZ_DASHBOARD_API)
     if (((arrayValue->arrayType >> CATEGORY_SHIFT) & CATEGORY_MASK) == CATEGORY_OBJECT) {
         // call only for object types
         eez::flow::onObjectArrayValueFree(arrayValue);

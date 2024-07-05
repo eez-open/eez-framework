@@ -770,7 +770,7 @@ bool assignValue(Value &dstValue, const Value &srcValue, uint32_t dstValueType) 
     if (dstValueType == VALUE_TYPE_BOOLEAN) {
         dstValue = Value(srcValue.toBool(), VALUE_TYPE_BOOLEAN);
     } else if (Value::isInt32OrLess(dstValueType)) {
-        dstValue = Value(srcValue.toInt32(), (ValueType)dstValueType);
+        dstValue = Value((int)srcValue.toInt32(), (ValueType)dstValueType);
     } else if (dstValueType == VALUE_TYPE_FLOAT) {
         dstValue = Value(srcValue.toFloat(), VALUE_TYPE_FLOAT);
     } else if (dstValueType == VALUE_TYPE_DOUBLE) {

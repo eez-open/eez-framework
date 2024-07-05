@@ -2267,7 +2267,7 @@ void do_OPERATION_TYPE_ARRAY_INSERT(EvalStack &stack) {
 
     if (position < 0) {
         position = 0;
-    } else if (position > array->arraySize) {
+    } else if ((uint32_t)position > array->arraySize) {
         position = array->arraySize;
     }
 
