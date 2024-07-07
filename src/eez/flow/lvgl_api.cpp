@@ -156,7 +156,7 @@ extern "C" void flowPropagateValue(void *flowState, unsigned componentIndex, uns
 }
 
 extern "C" void flowPropagateValueInt32(void *flowState, unsigned componentIndex, unsigned outputIndex, int32_t value) {
-    eez::flow::propagateValue((eez::flow::FlowState *)flowState, componentIndex, outputIndex, eez::Value(value, eez::VALUE_TYPE_INT32));
+    eez::flow::propagateValue((eez::flow::FlowState *)flowState, componentIndex, outputIndex, eez::Value((int)value, eez::VALUE_TYPE_INT32));
 }
 
 extern "C" void flowPropagateValueUint32(void *flowState, unsigned componentIndex, unsigned outputIndex, uint32_t value) {
