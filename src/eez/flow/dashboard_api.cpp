@@ -150,6 +150,18 @@ Value operationJsonMake() {
     return result;
 }
 
+Value operationStringFormat(const char *format, const Value *paramPtr) {
+    auto valuePtr = (Value *)EM_ASM_INT({
+        return operationStringFormat($0, UTF8ToString($1), $2);
+    }, g_wasmModuleId, format, paramPtr);
+
+    Value result = *valuePtr;
+
+    ObjectAllocator<Value>::deallocate(valuePtr);
+
+    return result;
+}
+
 Value convertFromJson(int json, uint32_t toType) {
     auto valuePtr = (Value *)EM_ASM_INT({
         return convertFromJson($0, $1, $2);

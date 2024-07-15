@@ -38,6 +38,8 @@ Value operationJsonClone(int json);
 
 Value operationJsonMake();
 
+Value operationStringFormat(const char *format, const Value *paramPtr);
+
 Value convertFromJson(int json, uint32_t toType);
 Value convertToJson(const Value *arrayValuePtr);
 

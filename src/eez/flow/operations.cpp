@@ -1890,6 +1890,166 @@ void do_OPERATION_TYPE_STRING_FIND(EvalStack &stack) {
     stack.push(Value(-1, VALUE_TYPE_INT32));
 }
 
+void do_OPERATION_TYPE_STRING_FORMAT(EvalStack &stack) {
+    auto a = stack.pop().getValue();
+    if (a.isError()) {
+        stack.push(a);
+        return;
+    }
+
+    auto b = stack.pop().getValue();
+    if (b.isError()) {
+        stack.push(b);
+        return;
+    }
+
+    if (!a.isString()) {
+        stack.push(Value::makeError());
+        return;
+    }
+
+#if defined(EEZ_DASHBOARD_API)
+    stack.push(operationStringFormat(a.getString(), &b));
+#else
+    const char *format = a.getString();
+    size_t formatLength = strlen(format);
+    if (formatLength == 0) {
+        stack.push(Value::makeError());
+        return;
+    }
+
+    char specifier = format[formatLength-1];
+
+    char l1 = formatLength > 1 ? format[formatLength-2] : 0;
+    char l2 = formatLength > 2 ? format[formatLength-3] : 0;
+    enum {
+        length_none,
+        length_hh,
+        length_h,
+        length_l,
+        length_ll,
+        length_j,
+        length_z,
+        length_t,
+        length_L
+    } length = length_none;
+    if (l1 == 'h' && l2 == 'h') length = length_hh;
+    else if (l1 == 'h') length = length_h;
+    else if (l1 == 'l') length = length_l;
+    else if (l1 == 'l' && l2 == 'l') length = length_ll;
+    else if (l1 == 'j') length = length_j;
+    else if (l1 == 'z') length = length_z;
+    else if (l1 == 't') length = length_t;
+    else if (l1 == 'L') length = length_L;
+
+    enum {
+        type_int,
+        type_signed_char,
+        type_short_int,
+        type_long_int,
+        type_long_long_int,
+        type_intmax_t,
+
+        type_size_t,
+
+        type_unsigned_int,
+        type_unsigned_char,
+        type_unsigned_short_int,
+        type_unsigned_long_int,
+        type_unsigned_long_long_int,
+        type_uintmax_t,
+
+        type_double,
+
+        type_string
+    } type = type_int;
+
+    if (specifier == 'd' || specifier == 'i') {
+        if (length == length_none) {
+            type = type_int;
+        } if (length == length_hh) {
+            type = type_signed_char;
+        } else if (length == length_h) {
+            type = type_short_int;
+        } else if (length == length_l) {
+            type = type_long_int;
+        } else if (length == length_ll) {
+            type = type_long_long_int;
+        } else if (length == length_j) {
+            type = type_intmax_t;
+        } else if (length == length_z) {
+            type = type_size_t;
+        } else {
+            stack.push(Value::makeError());
+            return;
+        }
+    } else if (specifier == 'u' || specifier == 'o' || specifier == 'x' || specifier == 'X') {
+        if (length == length_none) {
+            type = type_unsigned_int;
+        } if (length == length_hh) {
+            type = type_unsigned_char;
+        } else if (length == length_h) {
+            type = type_unsigned_short_int;
+        } else if (length == length_l) {
+            type = type_unsigned_long_int;
+        } else if (length == length_ll) {
+            type = type_unsigned_long_long_int;
+        } else if (length == length_j) {
+            type = type_uintmax_t;
+        } else if (length == length_z) {
+            type = type_size_t;
+        } else {
+            stack.push(Value::makeError());
+            return;
+        }
+    } else if (specifier == 'f' || specifier == 'F' || specifier == 'e' || specifier == 'E' || specifier == 'g' || specifier == 'G' || specifier == 'a' || specifier == 'A') {
+        type = type_double;
+    } else if (specifier == 'c') {
+        type = type_int;
+    } else if (specifier == 's') {
+        type = type_string;
+    } else {
+        stack.push(Value::makeError());
+        return;
+    }
+
+    char result[1024];
+
+    if (type == type_int) snprintf(result, sizeof(result), format, (int)b.getInt());
+    else if (type == type_signed_char) snprintf(result, sizeof(result), format, (signed char)b.getInt32());
+    else if (type == type_short_int) snprintf(result, sizeof(result), format, (short int)b.getInt32());
+    else if (type == type_long_int) snprintf(result, sizeof(result), format, (long int)b.getInt64());
+    else if (type == type_long_long_int) snprintf(result, sizeof(result), format, (long long int)b.getInt64());
+    else if (type == type_intmax_t) snprintf(result, sizeof(result), format, (intmax_t)b.getInt64());
+
+    else if (type == type_size_t) snprintf(result, sizeof(result), format, (size_t)b.getInt64());
+
+    else if (type == type_unsigned_int) snprintf(result, sizeof(result), format, (unsigned int)b.getUInt32());
+    else if (type == type_unsigned_char) snprintf(result, sizeof(result), format, (unsigned char)b.getUInt32());
+    else if (type == type_unsigned_short_int) snprintf(result, sizeof(result), format, (unsigned short int)b.getUInt32());
+    else if (type == type_unsigned_long_int) snprintf(result, sizeof(result), format, (unsigned long int)b.getUInt64());
+    else if (type == type_unsigned_long_long_int) snprintf(result, sizeof(result), format, (unsigned long long int)b.getUInt64());
+    else if (type == type_uintmax_t) snprintf(result, sizeof(result), format, (uintmax_t)b.getUInt64());
+
+    else if (type == type_double) {
+        if (b.isDouble()) {
+            snprintf(result, sizeof(result), format, b.getDouble());
+        } else {
+            float f = b.toFloat();
+            snprintf(result, sizeof(result), format, f);
+        }
+    }
+
+    else {
+        snprintf(result, sizeof(result), format, b.getString());
+    }
+
+    result[sizeof(result) - 1] = 0;
+
+    stack.push(Value::makeStringRef(result, -1, 0x1e1227fd));
+#endif
+}
+
 void do_OPERATION_TYPE_STRING_PAD_START(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
@@ -2534,6 +2694,7 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_JSON_GET,
     do_OPERATION_TYPE_JSON_CLONE,
     do_OPERATION_TYPE_FLOW_GET_BITMAP_AS_DATA_URL,
+    do_OPERATION_TYPE_STRING_FORMAT,
 };
 
 } // namespace flow
