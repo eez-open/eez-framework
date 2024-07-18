@@ -2050,6 +2050,38 @@ void do_OPERATION_TYPE_STRING_FORMAT(EvalStack &stack) {
 #endif
 }
 
+void do_OPERATION_TYPE_STRING_FORMAT_PREFIX(EvalStack &stack) {
+    auto a = stack.pop().getValue();
+    if (a.isError()) {
+        stack.push(a);
+        return;
+    }
+
+    auto b = stack.pop().getValue();
+    if (b.isError()) {
+        stack.push(b);
+        return;
+    }
+
+    auto c = stack.pop().getValue();
+    if (c.isError()) {
+        stack.push(c);
+        return;
+    }
+
+    if (!a.isString()) {
+        stack.push(Value::makeError());
+        return;
+    }
+
+#if defined(EEZ_DASHBOARD_API)
+    stack.push(operationStringFormatPrefix(a.getString(), &b, &c));
+#else
+    stack.push(Value::makeError());
+    return;
+#endif
+}
+
 void do_OPERATION_TYPE_STRING_PAD_START(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
@@ -2695,6 +2727,7 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_JSON_CLONE,
     do_OPERATION_TYPE_FLOW_GET_BITMAP_AS_DATA_URL,
     do_OPERATION_TYPE_STRING_FORMAT,
+    do_OPERATION_TYPE_STRING_FORMAT_PREFIX,
 };
 
 } // namespace flow

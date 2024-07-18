@@ -151,13 +151,25 @@ Value operationJsonMake() {
 }
 
 Value operationStringFormat(const char *format, const Value *paramPtr) {
-    auto valuePtr = (Value *)EM_ASM_INT({
+    auto resultPtr = (Value *)EM_ASM_INT({
         return operationStringFormat($0, UTF8ToString($1), $2);
     }, g_wasmModuleId, format, paramPtr);
 
-    Value result = *valuePtr;
+    Value result = *resultPtr;
 
-    ObjectAllocator<Value>::deallocate(valuePtr);
+    ObjectAllocator<Value>::deallocate(resultPtr);
+
+    return result;
+}
+
+Value operationStringFormatPrefix(const char *format, const Value *valuePtr, const Value *paramPtr) {
+    auto resultPtr = (Value *)EM_ASM_INT({
+        return operationStringFormatPrefix($0, UTF8ToString($1), $2, $3);
+    }, g_wasmModuleId, format, valuePtr, paramPtr);
+
+    Value result = *resultPtr;
+
+    ObjectAllocator<Value>::deallocate(resultPtr);
 
     return result;
 }
