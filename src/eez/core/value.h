@@ -292,7 +292,7 @@ struct Value {
     }
 
     bool operator==(const Value &other) const {
-		return type == other.type && g_valueTypeCompareFunctions[type](*this, other);
+		return g_valueTypeCompareFunctions[type](*this, other);
 	}
 
 

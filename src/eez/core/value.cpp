@@ -57,7 +57,7 @@ const char *NULL_value_type_name(const Value &value) {
 }
 
 bool compare_BOOLEAN_value(const Value &a, const Value &b) {
-    return a.getInt() == b.getInt();
+    return a.type == b.type && a.getInt() == b.getInt();
 }
 
 void BOOLEAN_value_to_text(const Value &value, char *text, int count) {
@@ -73,7 +73,7 @@ const char *BOOLEAN_value_type_name(const Value &value) {
 }
 
 bool compare_INT8_value(const Value &a, const Value &b) {
-    return a.getInt8() == b.getInt8();
+    return a.type == b.type && a.getInt8() == b.getInt8();
 }
 
 void INT8_value_to_text(const Value &value, char *text, int count) {
@@ -85,7 +85,7 @@ const char *INT8_value_type_name(const Value &value) {
 }
 
 bool compare_UINT8_value(const Value &a, const Value &b) {
-    return a.getUInt8() == b.getUInt8();
+    return a.type == b.type && a.getUInt8() == b.getUInt8();
 }
 
 void UINT8_value_to_text(const Value &value, char *text, int count) {
@@ -97,7 +97,7 @@ const char *UINT8_value_type_name(const Value &value) {
 }
 
 bool compare_INT16_value(const Value &a, const Value &b) {
-    return a.getInt16() == b.getInt16();
+    return a.type == b.type && a.getInt16() == b.getInt16();
 }
 
 void INT16_value_to_text(const Value &value, char *text, int count) {
@@ -109,7 +109,7 @@ const char *INT16_value_type_name(const Value &value) {
 }
 
 bool compare_UINT16_value(const Value &a, const Value &b) {
-    return a.getUInt16() == b.getUInt16();
+    return a.type == b.type && a.getUInt16() == b.getUInt16();
 }
 
 void UINT16_value_to_text(const Value &value, char *text, int count) {
@@ -121,7 +121,7 @@ const char *UINT16_value_type_name(const Value &value) {
 }
 
 bool compare_INT32_value(const Value &a, const Value &b) {
-    return a.getInt32() == b.getInt32();
+    return a.type == b.type && a.getInt32() == b.getInt32();
 }
 
 void INT32_value_to_text(const Value &value, char *text, int count) {
@@ -133,7 +133,7 @@ const char *INT32_value_type_name(const Value &value) {
 }
 
 bool compare_UINT32_value(const Value &a, const Value &b) {
-    return a.getUInt32() == b.getUInt32();
+    return a.type == b.type && a.getUInt32() == b.getUInt32();
 }
 
 void UINT32_value_to_text(const Value &value, char *text, int count) {
@@ -145,7 +145,7 @@ const char *UINT32_value_type_name(const Value &value) {
 }
 
 bool compare_INT64_value(const Value &a, const Value &b) {
-    return a.getInt64() == b.getInt64();
+    return a.type == b.type && a.getInt64() == b.getInt64();
 }
 
 void INT64_value_to_text(const Value &value, char *text, int count) {
@@ -157,7 +157,7 @@ const char *INT64_value_type_name(const Value &value) {
 }
 
 bool compare_UINT64_value(const Value &a, const Value &b) {
-    return a.getUInt64() == b.getUInt64();
+    return a.type == b.type && a.getUInt64() == b.getUInt64();
 }
 
 void UINT64_value_to_text(const Value &value, char *text, int count) {
@@ -169,7 +169,7 @@ const char *UINT64_value_type_name(const Value &value) {
 }
 
 bool compare_FLOAT_value(const Value &a, const Value &b) {
-    return a.getUnit() == b.getUnit() && a.getFloat() == b.getFloat() && a.getOptions() == b.getOptions();
+    return a.type == b.type && a.getUnit() == b.getUnit() && a.getFloat() == b.getFloat() && a.getOptions() == b.getOptions();
 }
 
 void FLOAT_value_to_text(const Value &value, char *text, int count) {
@@ -265,7 +265,7 @@ const char *FLOAT_value_type_name(const Value &value) {
 }
 
 bool compare_DOUBLE_value(const Value &a, const Value &b) {
-    return a.getUnit() == b.getUnit() && a.getDouble() == b.getDouble() && a.getOptions() == b.getOptions();
+    return a.type == b.type && a.getUnit() == b.getUnit() && a.getDouble() == b.getDouble() && a.getOptions() == b.getOptions();
 }
 
 void DOUBLE_value_to_text(const Value &value, char *text, int count) {
@@ -361,6 +361,9 @@ const char *DOUBLE_value_type_name(const Value &value) {
 }
 
 bool compare_STRING_value(const Value &a, const Value &b) {
+    if (!b.isString()) {
+        return false;
+    }
     const char *astr = a.getString();
     const char *bstr = b.getString();
     if (!astr && !bstr) {
@@ -398,7 +401,7 @@ const char *STRING_ASSET_value_type_name(const Value &value) {
 }
 
 bool compare_ARRAY_value(const Value &a, const Value &b) {
-    return a.arrayValue == b.arrayValue;
+    return a.type == b.type && a.arrayValue == b.arrayValue;
 }
 
 void ARRAY_value_to_text(const Value &value, char *text, int count) {
@@ -410,7 +413,7 @@ const char *ARRAY_value_type_name(const Value &value) {
 }
 
 bool compare_ARRAY_ASSET_value(const Value &a, const Value &b) {
-    return a.int32Value == b.int32Value;
+    return a.type == b.type && a.int32Value == b.int32Value;
 }
 
 void ARRAY_ASSET_value_to_text(const Value &value, char *text, int count) {
@@ -422,7 +425,7 @@ const char *ARRAY_ASSET_value_type_name(const Value &value) {
 }
 
 bool compare_ARRAY_REF_value(const Value &a, const Value &b) {
-    return a.refValue == b.refValue;
+    return a.type == b.type && a.refValue == b.refValue;
 }
 
 void ARRAY_REF_value_to_text(const Value &value, char *text, int count) {
@@ -446,7 +449,7 @@ const char *STRING_REF_value_type_name(const Value &value) {
 }
 
 bool compare_BLOB_REF_value(const Value &a, const Value &b) {
-    return a.refValue == b.refValue;
+    return a.type == b.type && a.refValue == b.refValue;
 }
 
 void BLOB_REF_value_to_text(const Value &value, char *text, int count) {
@@ -458,7 +461,7 @@ const char *BLOB_REF_value_type_name(const Value &value) {
 }
 
 bool compare_STREAM_value(const Value &a, const Value &b) {
-    return a.int32Value == b.int32Value;
+    return a.type == b.type && a.int32Value == b.int32Value;
 }
 
 void STREAM_value_to_text(const Value &value, char *text, int count) {
@@ -470,7 +473,7 @@ const char *STREAM_value_type_name(const Value &value) {
 }
 
 bool compare_WIDGET_value(const Value &a, const Value &b) {
-    return a.int32Value == b.int32Value;
+    return a.type == b.type && a.int32Value == b.int32Value;
 }
 
 void WIDGET_value_to_text(const Value &value, char *text, int count) {
@@ -482,7 +485,7 @@ const char *WIDGET_value_type_name(const Value &value) {
 }
 
 bool compare_JSON_value(const Value &a, const Value &b) {
-    return a.int32Value == b.int32Value;
+    return a.type == b.type && a.int32Value == b.int32Value;
 }
 
 void JSON_value_to_text(const Value &value, char *text, int count) {
@@ -507,7 +510,7 @@ const char *JSON_MEMBER_VALUE_value_type_name(const Value &value) {
 }
 
 bool compare_DATE_value(const Value &a, const Value &b) {
-    return a.doubleValue == b.doubleValue;
+    return a.type == b.type && a.doubleValue == b.doubleValue;
 }
 
 void DATE_value_to_text(const Value &value, char *text, int count) {
@@ -519,7 +522,7 @@ const char *DATE_value_type_name(const Value &value) {
 }
 
 bool compare_VERSIONED_STRING_value(const Value &a, const Value &b) {
-    return a.unit == b.unit; // here unit is used as string version
+    return a.type == b.type && a.unit == b.unit; // here unit is used as string version
 }
 
 void VERSIONED_STRING_value_to_text(const Value &value, char *text, int count) {
@@ -536,7 +539,7 @@ const char *VERSIONED_STRING_value_type_name(const Value &value) {
 }
 
 bool compare_VALUE_PTR_value(const Value &a, const Value &b) {
-	return a.pValueValue == b.pValueValue || (a.pValueValue && b.pValueValue && *a.pValueValue == *b.pValueValue);
+	return a.type == b.type && (a.pValueValue == b.pValueValue || (a.pValueValue && b.pValueValue && *a.pValueValue == *b.pValueValue));
 }
 
 void VALUE_PTR_value_to_text(const Value &value, char *text, int count) {
@@ -569,7 +572,7 @@ const char *ARRAY_ELEMENT_VALUE_value_type_name(const Value &value) {
 }
 
 bool compare_FLOW_OUTPUT_value(const Value &a, const Value &b) {
-	return a.getUInt16() == b.getUInt16();
+	return a.type == b.type && a.getUInt16() == b.getUInt16();
 }
 
 void FLOW_OUTPUT_value_to_text(const Value &value, char *text, int count) {
@@ -624,7 +627,7 @@ const char *ERROR_value_type_name(const Value &value) {
 }
 
 bool compare_RANGE_value(const Value &a, const Value &b) {
-    return a.getUInt32() == b.getUInt32();
+    return a.type == b.type && a.getUInt32() == b.getUInt32();
 }
 
 void RANGE_value_to_text(const Value &value, char *text, int count) {
@@ -636,7 +639,7 @@ const char *RANGE_value_type_name(const Value &value) {
 }
 
 bool compare_POINTER_value(const Value &a, const Value &b) {
-    return a.getVoidPointer() == b.getVoidPointer();
+    return a.type == b.type && a.getVoidPointer() == b.getVoidPointer();
 }
 
 void POINTER_value_to_text(const Value &value, char *text, int count) {
@@ -650,7 +653,7 @@ const char *POINTER_value_type_name(const Value &value) {
 #if EEZ_OPTION_GUI
 using namespace gui;
 bool compare_ENUM_value(const Value &a, const Value &b) {
-    return a.getEnum().enumDefinition == b.getEnum().enumDefinition &&
+    return a.type == b.type && a.getEnum().enumDefinition == b.getEnum().enumDefinition &&
            a.getEnum().enumValue == b.getEnum().enumValue;
 }
 
@@ -687,11 +690,11 @@ const char *ENUM_value_type_name(const Value &value) {
 #endif // EEZ_OPTION_GUI
 
 bool compare_YT_DATA_GET_VALUE_FUNCTION_POINTER_value(const Value &a, const Value &b) {
-    return a.getUInt32() == b.getUInt32();
+    return a.type == b.type && a.getUInt32() == b.getUInt32();
 }
 
 bool compare_IP_ADDRESS_value(const Value &a, const Value &b) {
-    return a.getUInt32() == b.getUInt32();
+    return a.type == b.type && a.getUInt32() == b.getUInt32();
 }
 
 void IP_ADDRESS_value_to_text(const Value &value, char *text, int count) {
@@ -703,7 +706,7 @@ const char *IP_ADDRESS_value_type_name(const Value &value) {
 }
 
 bool compare_TIME_ZONE_value(const Value &a, const Value &b) {
-    return a.getInt16() == b.getInt16();
+    return a.type == b.type && a.getInt16() == b.getInt16();
 }
 
 void TIME_ZONE_value_to_text(const Value &value, char *text, int count) {
@@ -1448,6 +1451,8 @@ Value Value::clone() {
         }
 
         return resultArrayValue;
+    } else if (isString()) {
+        return makeStringRef(getString(), -1, 0x91846ff3);
     }
 
     return *this;
