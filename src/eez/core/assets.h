@@ -48,8 +48,8 @@ extern Assets *g_externalAssets;
 
 template<typename T>
 struct AssetsPtr {
-    AssetsPtr<T>() : offset(0) {}
-    AssetsPtr<T>(const AssetsPtr<T> &rhs) = delete;
+    AssetsPtr() : offset(0) {}
+    AssetsPtr(const AssetsPtr<T> &rhs) = delete;
 
 	void operator=(T* ptr) {
 		if (ptr != nullptr) {
