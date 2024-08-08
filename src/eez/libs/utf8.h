@@ -87,7 +87,7 @@ extern "C" {
 #define utf8_null 0
 #endif
 
-#if !defined(ESP32) && (defined(__cplusplus) && __cplusplus >= 201402L)
+#if !defined(RENESAS) && !defined(ESP32) && (defined(__cplusplus) && __cplusplus >= 201402L)
 #define utf8_constexpr14 constexpr
 #define utf8_constexpr14_impl constexpr
 #else
@@ -96,7 +96,7 @@ extern "C" {
 #define utf8_constexpr14_impl
 #endif
 
-#if !defined(ESP32) && defined(__cplusplus) && __cplusplus >= 202002L
+#if !defined(RENESAS) && !defined(ESP32) && defined(__cplusplus) && __cplusplus >= 202002L
 using utf8_int8_t = char8_t; /* Introduced in C++20 */
 #else
 typedef char utf8_int8_t;
