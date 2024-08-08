@@ -509,8 +509,8 @@ void onAddToQueue(FlowState *flowState, int sourceComponentIndex, int sourceOutp
 			sourceOutputIndex,
 			targetComponentIndex,
 			targetInputIndex,
-            free,
-            ALLOC_BUFFER_SIZE
+            (unsigned int)free,
+            (unsigned int)ALLOC_BUFFER_SIZE
 		);
         writeDebuggerBufferHook(buffer, strlen(buffer));
     }
