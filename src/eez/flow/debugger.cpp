@@ -391,11 +391,19 @@ void writeValue(const Value &value) {
 		break;
 
 	case VALUE_TYPE_INT64:
+#ifdef PRId64
 		snprintf(tempStr, sizeof(tempStr) - 1, "%" PRId64 "", value.int64Value);
+#else
+		snprintf(tempStr, sizeof(tempStr) - 1, "%" PRId32 "", (int32_t)value.int64Value);
+#endif
 		break;
 
 	case VALUE_TYPE_UINT64:
+#ifdef PRIu64
 		snprintf(tempStr, sizeof(tempStr) - 1, "%" PRIu64 "", value.uint64Value);
+#else
+		snprintf(tempStr, sizeof(tempStr) - 1, "%" PRIu32 "", (uint32_t)value.uint64Value);
+#endif
 		break;
 
 	case VALUE_TYPE_DOUBLE:
@@ -436,7 +444,11 @@ void writeValue(const Value &value) {
 		break;
 
     case VALUE_TYPE_POINTER:
+#ifdef PRIu64
         snprintf(tempStr, sizeof(tempStr) - 1, "%" PRIu64 "", (uint64_t)value.getVoidPointer());
+#else
+        snprintf(tempStr, sizeof(tempStr) - 1, "%" PRIu32 "", (uint32_t)value.getVoidPointer());
+#endif
 		break;
 
 	default:

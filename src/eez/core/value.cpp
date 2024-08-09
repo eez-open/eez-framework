@@ -1244,9 +1244,17 @@ Value Value::toString(uint32_t id) const {
     } else if (type == VALUE_TYPE_UINT32) {
         snprintf(tempStr, sizeof(tempStr), "%" PRIu32 "", uint32Value);
     } else if (type == VALUE_TYPE_INT64) {
+#ifdef PRId64
         snprintf(tempStr, sizeof(tempStr), "%" PRId64 "", int64Value);
+#else
+        snprintf(tempStr, sizeof(tempStr), "%" PRId32 "", (int32_t)int64Value);
+#endif
     } else if (type == VALUE_TYPE_UINT64) {
+#ifdef PRIu64
         snprintf(tempStr, sizeof(tempStr), "%" PRIu64 "", uint64Value);
+#else
+        snprintf(tempStr, sizeof(tempStr), "%" PRIu32 "", (uint32_t)uint64Value);
+#endif
     } else {
         toText(tempStr, sizeof(tempStr));
     }

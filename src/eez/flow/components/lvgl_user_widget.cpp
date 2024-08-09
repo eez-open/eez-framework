@@ -42,7 +42,7 @@ LVGLUserWidgetExecutionState *createUserWidgetFlowState(FlowState *flowState, un
 }
 
 void executeLVGLUserWidgetComponent(FlowState *flowState, unsigned componentIndex) {
-    auto component = (LVGLUserWidgetComponent *)flowState->flow->components[componentIndex];
+    //auto component = (LVGLUserWidgetComponent *)flowState->flow->components[componentIndex];
 
     auto userWidgetWidgetExecutionState = (LVGLUserWidgetExecutionState *)flowState->componenentExecutionStates[componentIndex];
     if (!userWidgetWidgetExecutionState) {
