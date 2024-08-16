@@ -1506,22 +1506,22 @@ void setVar(int16_t id, const Value& value) {
 
     if (native_var.type == NATIVE_VAR_TYPE_INTEGER) {
         auto set = (void (*)(int32_t))native_var.set;
-        set(value.getInt32());
+        set(value.toInt32(nullptr));
     }
 
     if (native_var.type == NATIVE_VAR_TYPE_BOOLEAN) {
         auto set = (void (*)(bool))native_var.set;
-        set(value.getBoolean());
+        set(value.toBool(nullptr));
     }
 
     if (native_var.type == NATIVE_VAR_TYPE_FLOAT) {
         auto set = (void (*)(float))native_var.set;
-        set(value.getFloat());
+        set(value.toFloat(nullptr));
     }
 
     if (native_var.type == NATIVE_VAR_TYPE_DOUBLE) {
         auto set = (void (*)(double))native_var.set;
-        set(value.getDouble());
+        set(value.toDouble(nullptr));
     }
 
     if (native_var.type == NATIVE_VAR_TYPE_STRING) {
