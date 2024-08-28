@@ -81,9 +81,17 @@ static const void *getLvglImageByName(const char *name) {
 static void executeLvglAction(int actionIndex) {
 }
 
+static void lvglObjAddStyle(lv_obj_t *object, int32_t styleIndex) {
+}
+
+static void lvglObjRemoveStyle(lv_obj_t *object, int32_t styleIndex) {
+}
+
 lv_obj_t *(*getLvglObjectFromIndexHook)(int32_t index) = getLvglObjectFromIndex;
 const void *(*getLvglImageByNameHook)(const char *name) = getLvglImageByName;
 void (*executeLvglActionHook)(int actionIndex) = executeLvglAction;
+void (*lvglObjAddStyleHook)(lv_obj_t *object, int32_t styleIndex) = lvglObjAddStyle;
+void (*lvglObjRemoveStyleHook)(lv_obj_t *object, int32_t styleIndex) = lvglObjRemoveStyle;
 #endif
 
 double getDateNowDefaultImplementation() {

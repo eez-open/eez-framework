@@ -43,6 +43,9 @@ extern void (*onDebuggerInputAvailableHook)();
 extern lv_obj_t *(*getLvglObjectFromIndexHook)(int32_t index);
 extern const void *(*getLvglImageByNameHook)(const char *name);
 extern void (*executeLvglActionHook)(int actionIndex);
+extern void (*lvglObjAddStyleHook)(lv_obj_t *object, int32_t styleIndex);
+extern void (*lvglObjRemoveStyleHook)(lv_obj_t *object, int32_t styleIndex);
+
 #endif
 
 extern double (*getDateNowHook)();

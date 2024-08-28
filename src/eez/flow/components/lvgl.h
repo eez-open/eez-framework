@@ -20,7 +20,9 @@ namespace flow {
 enum LVGL_ACTIONS {
     CHANGE_SCREEN,
     PLAY_ANIMATION,
-    SET_PROPERTY
+    SET_PROPERTY,
+    ADD_STYLE,
+    REMOVE_STYLE
 };
 
 struct LVGLComponent_ActionType {
@@ -76,6 +78,22 @@ struct LVGLComponent_SetProperty_ActionType : public LVGLComponent_ActionType {
     int32_t textarea;
     uint32_t animated;
 };
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct LVGLComponent_AddStyle_ActionType : public LVGLComponent_ActionType {
+    int32_t target;
+    int32_t style;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct LVGLComponent_RemoveStyle_ActionType : public LVGLComponent_ActionType {
+    int32_t target;
+    int32_t style;
+};
+
+////////////////////////////////////////////////////////////////////////////////
 
 struct LVGLComponent : public Component {
     ListOfAssetsPtr<LVGLComponent_ActionType> actions;

@@ -219,7 +219,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                         return;
                     }
 
-                    lv_state_t flag = LV_OBJ_FLAG_HIDDEN;
+                    lv_obj_flag_t flag = LV_OBJ_FLAG_HIDDEN;
 
                     if (booleanValue) lv_obj_add_flag(target, flag);
                     else lv_obj_clear_flag(target, flag);
@@ -272,9 +272,17 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                     }
                 }
             }
-
             lv_obj_update_layout(target);
+        } else if (general->action == ADD_STYLE) {
+            auto specific = (LVGLComponent_AddStyle_ActionType *)general;
+            auto target = getLvglObjectFromIndexHook(flowState->lvglWidgetStartIndex + specific->target);
+            lvglObjAddStyleHook(target, specific->style);
+        } else if (general->action == REMOVE_STYLE) {
+            auto specific = (LVGLComponent_RemoveStyle_ActionType *)general;
+            auto target = getLvglObjectFromIndexHook(flowState->lvglWidgetStartIndex + specific->target);
+            lvglObjRemoveStyleHook(target, specific->style);
         }
+
     }
 
     propagateValueThroughSeqout(flowState, componentIndex);
