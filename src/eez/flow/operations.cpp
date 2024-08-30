@@ -2646,6 +2646,111 @@ void do_OPERATION_TYPE_JSON_CLONE(EvalStack &stack) {
 #endif
 }
 
+void do_OPERATION_TYPE_EVENT_GET_CODE(EvalStack &stack) {
+#if defined(EEZ_FOR_LVGL)
+    auto eventValue = stack.pop().getValue();
+    if (eventValue.type != VALUE_TYPE_EVENT) {
+        stack.push(Value::makeError());
+        return;
+    }
+    auto event = eventValue.getLVGLEventRef();
+
+    stack.push(Value(event->code, VALUE_TYPE_UINT32));
+#else
+    stack.push(Value::makeError());
+#endif
+}
+
+void do_OPERATION_TYPE_EVENT_GET_CURRENT_TARGET(EvalStack &stack) {
+#if defined(EEZ_FOR_LVGL)
+    auto eventValue = stack.pop().getValue();
+    if (eventValue.type != VALUE_TYPE_EVENT) {
+        stack.push(Value::makeError());
+        return;
+    }
+    auto event = eventValue.getLVGLEventRef();
+
+    stack.push(Value(event->currentTarget, VALUE_TYPE_WIDGET));
+#else
+    stack.push(Value::makeError());
+#endif
+}
+
+void do_OPERATION_TYPE_EVENT_GET_TARGET(EvalStack &stack) {
+#if defined(EEZ_FOR_LVGL)
+    auto eventValue = stack.pop().getValue();
+    if (eventValue.type != VALUE_TYPE_EVENT) {
+        stack.push(Value::makeError());
+        return;
+    }
+    auto event = eventValue.getLVGLEventRef();
+
+    stack.push(Value(event->target, VALUE_TYPE_WIDGET));
+#else
+    stack.push(Value::makeError());
+#endif
+}
+
+void do_OPERATION_TYPE_EVENT_GET_USER_DATA(EvalStack &stack) {
+#if defined(EEZ_FOR_LVGL)
+    auto eventValue = stack.pop().getValue();
+    if (eventValue.type != VALUE_TYPE_EVENT) {
+        stack.push(Value::makeError());
+        return;
+    }
+    auto event = eventValue.getLVGLEventRef();
+
+    stack.push(Value((int)event->userData, VALUE_TYPE_INT32));
+#else
+    stack.push(Value::makeError());
+#endif
+}
+
+void do_OPERATION_TYPE_EVENT_GET_KEY(EvalStack &stack) {
+#if defined(EEZ_FOR_LVGL)
+    auto eventValue = stack.pop().getValue();
+    if (eventValue.type != VALUE_TYPE_EVENT) {
+        stack.push(Value::makeError());
+        return;
+    }
+    auto event = eventValue.getLVGLEventRef();
+
+    stack.push(Value(event->key, VALUE_TYPE_UINT32));
+#else
+    stack.push(Value::makeError());
+#endif
+}
+
+void do_OPERATION_TYPE_EVENT_GET_GESTURE_DIR(EvalStack &stack) {
+#if defined(EEZ_FOR_LVGL)
+    auto eventValue = stack.pop().getValue();
+    if (eventValue.type != VALUE_TYPE_EVENT) {
+        stack.push(Value::makeError());
+        return;
+    }
+    auto event = eventValue.getLVGLEventRef();
+
+    stack.push(Value((int)event->gestureDir, VALUE_TYPE_INT32));
+#else
+    stack.push(Value::makeError());
+#endif
+}
+
+void do_OPERATION_TYPE_EVENT_GET_ROTARY_DIFF(EvalStack &stack) {
+#if defined(EEZ_FOR_LVGL)
+    auto eventValue = stack.pop().getValue();
+    if (eventValue.type != VALUE_TYPE_EVENT) {
+        stack.push(Value::makeError());
+        return;
+    }
+    auto event = eventValue.getLVGLEventRef();
+
+    stack.push(Value((int)event->rotaryDiff, VALUE_TYPE_INT32));
+#else
+    stack.push(Value::makeError());
+#endif
+}
+
 EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_ADD,
     do_OPERATION_TYPE_SUB,
@@ -2728,6 +2833,13 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_FLOW_GET_BITMAP_AS_DATA_URL,
     do_OPERATION_TYPE_STRING_FORMAT,
     do_OPERATION_TYPE_STRING_FORMAT_PREFIX,
+    do_OPERATION_TYPE_EVENT_GET_CODE,
+    do_OPERATION_TYPE_EVENT_GET_CURRENT_TARGET,
+    do_OPERATION_TYPE_EVENT_GET_TARGET,
+    do_OPERATION_TYPE_EVENT_GET_USER_DATA,
+    do_OPERATION_TYPE_EVENT_GET_KEY,
+    do_OPERATION_TYPE_EVENT_GET_GESTURE_DIR,
+    do_OPERATION_TYPE_EVENT_GET_ROTARY_DIFF,
 };
 
 } // namespace flow

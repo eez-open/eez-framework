@@ -451,6 +451,18 @@ void writeValue(const Value &value) {
 #endif
 		break;
 
+	case VALUE_TYPE_WIDGET:
+#if defined(EEZ_FOR_LVGL)
+		snprintf(tempStr, sizeof(tempStr) - 1, "*p%p", value.getVoidPointer());
+#else
+        snprintf(tempStr, sizeof(tempStr) - 1, "*n%d", (int)(value.int32Value));
+#endif
+		break;
+
+	case VALUE_TYPE_EVENT:
+		snprintf(tempStr, sizeof(tempStr) - 1, "!%p", value.getVoidPointer());
+		break;
+
 	default:
 		tempStr[0] = 0;
 		break;

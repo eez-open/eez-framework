@@ -68,6 +68,7 @@ void *getFlowState(void *flowState, unsigned userWidgetComponentIndexOrPageIndex
 void flowPropagateValue(void *flowState, unsigned componentIndex, unsigned outputIndex);
 void flowPropagateValueInt32(void *flowState, unsigned componentIndex, unsigned outputIndex, int32_t value);
 void flowPropagateValueUint32(void *flowState, unsigned componentIndex, unsigned outputIndex, uint32_t value);
+void flowPropagateValueLVGLEvent(void *flowState, unsigned componentIndex, unsigned outputIndex, lv_event_t *event);
 
 const char *evalTextProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage);
 int32_t evalIntegerProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage);

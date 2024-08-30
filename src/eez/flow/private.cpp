@@ -146,7 +146,7 @@ static bool pingComponent(FlowState *flowState, unsigned componentIndex, int sou
 }
 
 
-static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parentFlowState, int parentComponentIndex) {
+static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parentFlowState, int parentComponentIndex, const Value& inputValue) {
 	auto flowDefinition = static_cast<FlowDefinition *>(assets->flowDefinition);
 	auto flow = flowDefinition->flows[flowIndex];
 
@@ -191,7 +191,7 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
         }
 
 		flowState->parentComponentIndex = parentComponentIndex;
-		flowState->parentComponent = parentFlowState->flow->components[parentComponentIndex];
+		flowState->parentComponent = parentComponentIndex == -1 ? nullptr : parentFlowState->flow->components[parentComponentIndex];
 	} else {
         if (g_lastFlowState) {
             g_lastFlowState->nextSibling = flowState;
@@ -206,6 +206,8 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
 		flowState->parentComponentIndex = -1;
 		flowState->parentComponent = nullptr;
 	}
+
+    flowState->inputValue = inputValue;
 
     flowState->firstChild = nullptr;
     flowState->lastChild = nullptr;
@@ -245,8 +247,8 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
 	return flowState;
 }
 
-FlowState *initActionFlowState(int flowIndex, FlowState *parentFlowState, int parentComponentIndex) {
-	auto flowState = initFlowState(parentFlowState->assets, flowIndex, parentFlowState, parentComponentIndex);
+FlowState *initActionFlowState(int flowIndex, FlowState *parentFlowState, int parentComponentIndex, const Value &inputValue) {
+	auto flowState = initFlowState(parentFlowState->assets, flowIndex, parentFlowState, parentComponentIndex, inputValue);
 	if (flowState) {
 		flowState->isAction = true;
 	}
@@ -254,7 +256,7 @@ FlowState *initActionFlowState(int flowIndex, FlowState *parentFlowState, int pa
 }
 
 FlowState *initPageFlowState(Assets *assets, int flowIndex, FlowState *parentFlowState, int parentComponentIndex) {
-	auto flowState = initFlowState(assets, flowIndex, parentFlowState, parentComponentIndex);
+	auto flowState = initFlowState(assets, flowIndex, parentFlowState, parentComponentIndex, Value());
 	if (flowState) {
 		flowState->isAction = false;
 	}
@@ -386,7 +388,7 @@ void propagateValue(FlowState *flowState, unsigned componentIndex, unsigned outp
     if ((int)componentIndex == -1) {
         // call action flow directly
         auto flowIndex = outputIndex;
-        executeCallAction(flowState, -1, flowIndex);
+        executeCallAction(flowState, -1, flowIndex, value);
         return;
     }
 

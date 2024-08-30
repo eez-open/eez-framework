@@ -28,6 +28,10 @@ bool getCallActionValue(FlowState *flowState, unsigned componentIndex, Value &va
 	}
 
 	if (!flowState->parentComponent) {
+        if (flowState->parentComponentIndex == -1) {
+            value = flowState->inputValue;
+            return true;
+        }
 		throwError(flowState, componentIndex, "No parentComponent in Input\n");
 		return false;
 	}

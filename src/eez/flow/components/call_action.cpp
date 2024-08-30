@@ -22,7 +22,7 @@
 namespace eez {
 namespace flow {
 
-void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIndex) {
+void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIndex, const Value& inputValue) {
     // if componentIndex == -1 then execute flow at flowIndex without CallAction component
 
 	if (flowIndex >= (int)flowState->flowDefinition->flows.count) {
@@ -32,7 +32,7 @@ void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIn
 		return;
 	}
 
-	FlowState *actionFlowState = initActionFlowState(flowIndex, flowState, componentIndex);
+	FlowState *actionFlowState = initActionFlowState(flowIndex, flowState, componentIndex, inputValue);
 
 	if (canFreeFlowState(actionFlowState)) {
         freeFlowState(actionFlowState);
@@ -51,7 +51,7 @@ void executeCallActionComponent(FlowState *flowState, unsigned componentIndex) {
 		return;
 	}
 
-    executeCallAction(flowState, componentIndex, flowIndex);
+    executeCallAction(flowState, componentIndex, flowIndex, Value());
 }
 
 } // namespace flow

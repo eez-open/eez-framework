@@ -91,6 +91,10 @@ struct ArrayValue;
 struct ArrayElementValue;
 struct BlobRef;
 
+#if defined(EEZ_FOR_LVGL)
+struct LVGLEventRef;
+#endif
+
 #if defined(EEZ_DASHBOARD_API)
 namespace flow {
     extern void dashboardObjectValueIncRef(int json);
@@ -481,6 +485,12 @@ struct Value {
         return (BlobRef *)refValue;
     }
 
+#if defined(EEZ_FOR_LVGL)
+    LVGLEventRef *getLVGLEventRef() const {
+        return (LVGLEventRef *)refValue;
+    }
+#endif
+
     void toText(char *text, int count) const {
 		*text = 0;
 		g_valueTypeToTextFunctions[type](*this, text, count);
@@ -515,6 +525,10 @@ struct Value {
 
     static Value makeBlobRef(const uint8_t *blob, uint32_t len, uint32_t id);
     static Value makeBlobRef(const uint8_t *blob1, uint32_t len1, const uint8_t *blob2, uint32_t len2, uint32_t id);
+
+#if defined(EEZ_FOR_LVGL)
+    static Value makeLVGLEventRef(uint32_t code, void *currentTarget, void *target, int32_t userData, uint32_t key, int32_t gestureDir, int32_t rotaryDiff, uint32_t id);
+#endif
 
     static Value makeError() { return Value(0, VALUE_TYPE_ERROR); }
 
@@ -588,6 +602,18 @@ struct BlobRef : public Ref {
 	uint8_t *blob;
     uint32_t len;
 };
+
+#if defined(EEZ_FOR_LVGL)
+struct LVGLEventRef : public Ref {
+	uint32_t code;
+    void *currentTarget;
+    void *target;
+    int32_t userData;
+    uint32_t key;
+    int32_t gestureDir;
+    int32_t rotaryDiff;
+};
+#endif
 
 struct ArrayElementValue : public Ref {
 	Value arrayValue;

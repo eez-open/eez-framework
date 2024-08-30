@@ -473,11 +473,19 @@ const char *STREAM_value_type_name(const Value &value) {
 }
 
 bool compare_WIDGET_value(const Value &a, const Value &b) {
+#if defined(EEZ_FOR_LVGL)
+    return a.type == b.type && a.getVoidPointer() == b.getVoidPointer();
+#else
     return a.type == b.type && a.int32Value == b.int32Value;
+#endif
 }
 
 void WIDGET_value_to_text(const Value &value, char *text, int count) {
+#if defined(EEZ_FOR_LVGL)
+    snprintf(text, count, "widget (%p)", value.getVoidPointer());
+#else
     snprintf(text, count, "widget (id=%d)", value.getInt());
+#endif
 }
 
 const char *WIDGET_value_type_name(const Value &value) {
@@ -507,6 +515,18 @@ void JSON_MEMBER_VALUE_value_to_text(const Value &value, char *text, int count) 
 const char *JSON_MEMBER_VALUE_value_type_name(const Value &value) {
     auto value2 = value.getValue();
     return g_valueTypeNames[value2.type](value2);
+}
+
+bool compare_EVENT_value(const Value &a, const Value &b) {
+    return a.type == b.type && a.getVoidPointer() == b.getVoidPointer();
+}
+
+void EVENT_value_to_text(const Value &value, char *text, int count) {
+    snprintf(text, count, "event (%p)", value.getVoidPointer());
+}
+
+const char *EVENT_value_type_name(const Value &value) {
+    return "event";
 }
 
 bool compare_DATE_value(const Value &a, const Value &b) {
@@ -1443,6 +1463,33 @@ Value Value::makeBlobRef(const uint8_t *blob1, uint32_t len1, const uint8_t *blo
 
 	return value;
 }
+
+#if defined(EEZ_FOR_LVGL)
+Value Value::makeLVGLEventRef(uint32_t code, void *currentTarget, void *target, int32_t userData, uint32_t key, int32_t gestureDir, int32_t rotaryDiff, uint32_t id) {
+    auto lvglEventRef = ObjectAllocator<LVGLEventRef>::allocate(id);
+	if (lvglEventRef == nullptr) {
+		return Value(0, VALUE_TYPE_NULL);
+	}
+
+	lvglEventRef->code = code;
+    lvglEventRef->currentTarget = currentTarget;
+    lvglEventRef->target = target;
+    lvglEventRef->userData = userData;
+    lvglEventRef->key = key;
+    lvglEventRef->gestureDir = gestureDir;
+    lvglEventRef->rotaryDiff = rotaryDiff;
+
+    lvglEventRef->refCounter = 1;
+
+    Value value;
+
+    value.type = VALUE_TYPE_EVENT;
+    value.options = VALUE_OPTIONS_REF;
+    value.refValue = lvglEventRef;
+
+	return value;
+}
+#endif
 
 Value Value::clone() {
     if (isArray()) {

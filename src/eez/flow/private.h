@@ -72,7 +72,11 @@ struct FlowState {
     FlowState *parentFlowState;
 	Component *parentComponent;
 	int parentComponentIndex;
-	Value *values;
+
+    // in case of action flow state, this is the input value that was passed to all action inputs, if such exists
+    Value inputValue;
+
+    Value *values;
 	ComponenentExecutionState **componenentExecutionStates;
     bool *componenentAsyncStates;
     unsigned executingComponentIndex;
@@ -92,7 +96,7 @@ extern int g_selectedLanguage;
 extern FlowState *g_firstFlowState;
 extern FlowState *g_lastFlowState;
 
-FlowState *initActionFlowState(int flowIndex, FlowState *parentFlowState, int parentComponentIndex);
+FlowState *initActionFlowState(int flowIndex, FlowState *parentFlowState, int parentComponentIndex, const Value &value);
 FlowState *initPageFlowState(Assets *assets, int flowIndex, FlowState *parentFlowState, int parentComponentIndex);
 
 void incRefCounterForFlowState(FlowState *flowState);
@@ -140,7 +144,7 @@ void clearInputValue(FlowState *flowState, int inputIndex);
 void startAsyncExecution(FlowState *flowState, int componentIndex);
 void endAsyncExecution(FlowState *flowState, int componentIndex);
 
-void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIndex);
+void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIndex, const Value& value);
 
 enum FlowEvent {
     FLOW_EVENT_OPEN_PAGE,

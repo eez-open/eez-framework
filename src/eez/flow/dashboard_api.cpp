@@ -582,7 +582,7 @@ EM_PORT_API(void) endAsyncExecution(int flowStateIndex, int componentIndex) {
 
 EM_PORT_API(void) executeCallAction(int flowStateIndex, int componentIndex, int flowIndex) {
     auto flowState = getFlowStateFromFlowStateIndex(flowStateIndex);
-    eez::flow::executeCallAction(flowState, componentIndex, flowIndex);
+    eez::flow::executeCallAction(flowState, componentIndex, flowIndex, Value());
 }
 
 EM_PORT_API(void) onEvent(int flowStateIndex, FlowEvent flowEvent, Value *flowValue) {
