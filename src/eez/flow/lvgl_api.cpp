@@ -190,7 +190,9 @@ extern "C" void flowPropagateValueLVGLEvent(void *flowState, unsigned componentI
 
     int32_t rotaryDiff = 0;
 #if LVGL_VERSION_MAJOR >= 9
-    rotaryDiff = lv_event_get_rotary_diff(event);
+    if (lv_event_get_code(event) == LV_EVENT_ROTARY) {
+        rotaryDiff = lv_event_get_rotary_diff(event);
+    }
 #endif
 
     eez::flow::propagateValue(
