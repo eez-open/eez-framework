@@ -35,6 +35,11 @@ struct AnimateComponenentExecutionState : public ComponenentExecutionState {
 };
 
 void executeAnimateComponent(FlowState *flowState, unsigned componentIndex) {
+    FlowState *timelineFlowState = flowState;
+    while (timelineFlowState->isAction && timelineFlowState->parentFlowState) {
+        timelineFlowState = timelineFlowState->parentFlowState;
+    }
+
 	auto state = (AnimateComponenentExecutionState *)flowState->componenentExecutionStates[componentIndex];
 	if (!state) {
         Value fromValue;
@@ -57,7 +62,7 @@ void executeAnimateComponent(FlowState *flowState, unsigned componentIndex) {
         float speed = speedValue.toFloat();
 
         if (speed == 0) {
-            flowState->timelinePosition = to;
+            timelineFlowState->timelinePosition = to;
             onFlowStateTimelineChanged(flowState);
 
             propagateValueThroughSeqout(flowState, componentIndex);
@@ -88,7 +93,7 @@ void executeAnimateComponent(FlowState *flowState, unsigned componentIndex) {
             }
         }
 
-        flowState->timelinePosition = currentTime;
+        timelineFlowState->timelinePosition = currentTime;
         onFlowStateTimelineChanged(flowState);
 
         if (currentTime == state->endPosition) {
