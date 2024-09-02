@@ -28,7 +28,9 @@ void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIn
 	if (flowIndex >= (int)flowState->flowDefinition->flows.count) {
         // native action
 		executeActionFunction(flowIndex - flowState->flowDefinition->flows.count);
-		propagateValueThroughSeqout(flowState, componentIndex);
+        if ((int)componentIndex != -1) {
+		    propagateValueThroughSeqout(flowState, componentIndex);
+        }
 		return;
 	}
 
