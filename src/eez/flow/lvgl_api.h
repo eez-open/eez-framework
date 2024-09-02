@@ -16,12 +16,16 @@
 
 #include <stdint.h>
 
-#if defined(EEZ_FOR_LVGL)
 #ifdef LV_LVGL_H_INCLUDE_SIMPLE
-#include "lvgl.h"
+    #include "lvgl.h"
+    #if LVGL_VERSION_MAJOR > 9 || (LVGL_VERSION_MAJOR == 9 && LVGL_VERSION_MINOR > 1)
+        #include "src/lvgl_private.h"
+    #endif
 #else
-#include "lvgl/lvgl.h"
-#endif
+    #include "lvgl/lvgl.h"
+    #if LVGL_VERSION_MAJOR > 9 || (LVGL_VERSION_MAJOR == 9 && LVGL_VERSION_MINOR > 1)
+        #include "lvgl/src/lvgl_private.h"
+    #endif
 #endif
 
 #if LVGL_VERSION_MAJOR >= 9

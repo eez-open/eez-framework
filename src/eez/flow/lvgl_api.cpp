@@ -14,15 +14,6 @@
 
 #include <stdio.h>
 
-#if defined(EEZ_FOR_LVGL)
-#ifdef LV_LVGL_H_INCLUDE_SIMPLE
-#include "lvgl.h"
-#else
-#include "lvgl/lvgl.h"
-#endif
-#endif
-
-
 #include <eez/core/os.h>
 #include <eez/core/action.h>
 #include <eez/core/util.h>
