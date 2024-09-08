@@ -24,6 +24,7 @@
 #include <eez/flow/hooks.h>
 #include <eez/flow/components/lvgl_user_widget.h>
 #include <eez/flow/watch_list.h>
+#include <eez/flow/expression.h>
 
 #if EEZ_OPTION_GUI
 #include <eez/gui/gui.h>
@@ -265,6 +266,29 @@ void setGlobalVariable(Assets *assets, uint32_t globalVariableIndex, const Value
             *assets->flowDefinition->globalVariables[globalVariableIndex] = value;
         }
     }
+}
+
+Value getUserProperty(unsigned propertyIndex) {
+    Value value;
+
+    char errorMessage[64];
+    snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate property #%d in CallAction", (int)(propertyIndex + 1));
+
+    evalProperty(g_executeActionFlowState, g_executeActionComponentIndex, propertyIndex, value, nullptr);
+
+    return value;
+}
+
+void setUserProperty(unsigned propertyIndex, const Value &value) {
+    char errorMessage[64];
+    snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate assignable property #%d in CallAction", (int)(propertyIndex + 1));
+
+    Value dstValue;
+    if (!evalAssignableProperty(g_executeActionFlowState, g_executeActionComponentIndex, propertyIndex, dstValue, errorMessage)) {
+        return;
+    }
+
+    assignValue(g_executeActionFlowState, g_executeActionComponentIndex, dstValue, value);
 }
 
 #if EEZ_OPTION_GUI

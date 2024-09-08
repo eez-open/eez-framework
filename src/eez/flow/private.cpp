@@ -530,6 +530,37 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
             dstValueType = dstValue.dstValueType;
         }
 
+        while (true) {
+            if (pDstValue->type == VALUE_TYPE_ARRAY_ELEMENT_VALUE) {
+                assignValue(flowState, componentIndex, *pDstValue, srcValue);
+                return;
+            }
+
+#if defined(EEZ_DASHBOARD_API)
+            if (pDstValue->type == VALUE_TYPE_JSON_MEMBER_VALUE) {
+                assignValue(flowState, componentIndex, *pDstValue, srcValue);
+                return;
+            }
+#endif
+
+            if (pDstValue->type == VALUE_TYPE_PROPERTY_REF) {
+                auto propertyRef = pDstValue->getPropertyRef();
+                Value dstValue;
+                if (evalAssignableProperty(propertyRef->flowState, propertyRef->componentIndex, propertyRef->propertyIndex, dstValue, "Failed to evaluate an assignable user property in UserWidget", nullptr, nullptr)) {
+                    assignValue(flowState, componentIndex, dstValue, srcValue);
+                    onValueChanged(pDstValue);
+                }
+                return;
+            }
+
+            if (pDstValue->type == VALUE_TYPE_VALUE_PTR) {
+                onValueChanged(pDstValue);
+                pDstValue = pDstValue->pValueValue;
+            } else {
+                break;
+            }
+        }
+
         if (assignValue(*pDstValue, srcValue, dstValueType)) {
             onValueChanged(pDstValue);
         } else {

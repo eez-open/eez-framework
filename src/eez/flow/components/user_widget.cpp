@@ -19,6 +19,9 @@
 #include <eez/flow/flow.h>
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/queue.h>
+#include <eez/flow/debugger.h>
+#include <eez/flow/expression.h>
+#include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/components/call_action.h>
 #include <eez/flow/components/input.h>
 
@@ -37,6 +40,17 @@ struct UserWidgetWidgetExecutionState : public ComponenentExecutionState {
 
 static UserWidgetWidgetExecutionState *createUserWidgetFlowState(FlowState *flowState, uint16_t userWidgetWidgetComponentIndex, int16_t pageId) {
     auto userWidgetFlowState = initPageFlowState(flowState->assets, pageId, flowState, userWidgetWidgetComponentIndex);
+
+    // init user properties
+    auto component = flowState->flow->components[userWidgetWidgetComponentIndex];
+    auto offset = defs_v3::USER_WIDGET_WIDGET_USER_PROPERTIES_START;
+    for (uint32_t i = offset; i < component->properties.count; i++) {
+        Value value = Value::makePropertyRef(flowState, userWidgetWidgetComponentIndex, i, 0x5166d8a4);
+        auto propValuePtr = userWidgetFlowState->values + userWidgetFlowState->flow->componentInputs.count + (i - offset);
+        *propValuePtr = value;
+        onValueChanged(propValuePtr);
+    }
+
     auto userWidgetWidgetExecutionState = allocateComponentExecutionState<UserWidgetWidgetExecutionState>(flowState, userWidgetWidgetComponentIndex);
     userWidgetWidgetExecutionState->flowState = userWidgetFlowState;
     return userWidgetWidgetExecutionState;

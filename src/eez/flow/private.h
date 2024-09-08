@@ -146,6 +146,9 @@ void endAsyncExecution(FlowState *flowState, int componentIndex);
 
 void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIndex, const Value& value);
 
+extern FlowState *g_executeActionFlowState;
+extern unsigned g_executeActionComponentIndex;
+
 enum FlowEvent {
     FLOW_EVENT_OPEN_PAGE,
     FLOW_EVENT_CLOSE_PAGE,

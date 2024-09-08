@@ -18,23 +18,57 @@
 #include <eez/flow/components/call_action.h>
 #include <eez/flow/debugger.h>
 #include <eez/flow/queue.h>
+#include <eez/flow/expression.h>
 
 namespace eez {
 namespace flow {
+
+FlowState *g_executeActionFlowState;
+unsigned g_executeActionComponentIndex;
 
 void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIndex, const Value& inputValue) {
     // if componentIndex == -1 then execute flow at flowIndex without CallAction component
 
 	if (flowIndex >= (int)flowState->flowDefinition->flows.count) {
         // native action
+        g_executeActionFlowState = flowState;
+        g_executeActionComponentIndex = componentIndex;
+
 		executeActionFunction(flowIndex - flowState->flowDefinition->flows.count);
+
         if ((int)componentIndex != -1) {
 		    propagateValueThroughSeqout(flowState, componentIndex);
         }
+
 		return;
 	}
 
 	FlowState *actionFlowState = initActionFlowState(flowIndex, flowState, componentIndex, inputValue);
+
+    // init user properties
+    auto component = flowState->flow->components[componentIndex];
+    for (uint32_t i = 0; i < component->properties.count; i++) {
+        auto isAssignable = actionFlowState->flow->userPropertiesAssignable.items[i];
+
+        Value value;
+        char errorMessage[64];
+        if (isAssignable) {
+            snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate assignable property #%d in CallAction", (int)(i + 1));
+            if (!evalAssignableProperty(flowState, componentIndex, i, value, errorMessage)) {
+                break;
+            }
+        } else {
+            snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate property #%d in CallAction", (int)(i + 1));
+            if (!evalProperty(flowState, componentIndex, i, value, errorMessage)) {
+                break;
+            }
+        }
+
+        auto propValuePtr = actionFlowState->values + actionFlowState->flow->componentInputs.count + i;
+
+        *propValuePtr = value;
+        onValueChanged(propValuePtr);
+    }
 
 	if (canFreeFlowState(actionFlowState)) {
         freeFlowState(actionFlowState);

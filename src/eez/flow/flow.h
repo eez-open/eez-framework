@@ -44,6 +44,9 @@ Value getGlobalVariable(Assets *assets, uint32_t globalVariableIndex);
 void setGlobalVariable(uint32_t globalVariableIndex, const Value &value);
 void setGlobalVariable(Assets *assets, uint32_t globalVariableIndex, const Value &value);
 
+Value getUserProperty(unsigned propertyIndex);
+void setUserProperty(unsigned propertyIndex, const Value &value);
+
 #if EEZ_OPTION_GUI
 FlowState *getUserWidgetFlowState(FlowState *flowState, uint16_t userWidgetWidgetComponentIndex, int16_t pageId);
 void executeFlowAction(const WidgetCursor &widgetCursor, int16_t actionId, void *param);

@@ -559,7 +559,7 @@ void onValueChanged(const Value *pValue) {
 		);
         writeDebuggerBufferHook(buffer, strlen(buffer));
 
-		writeValue(*pValue);
+		writeValue(pValue->getValue());
     }
 }
 

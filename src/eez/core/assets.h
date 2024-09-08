@@ -415,6 +415,8 @@ struct Flow {
 
 	ListOfAssetsPtr<WidgetDataItem> widgetDataItems;
 	ListOfAssetsPtr<WidgetActionItem> widgetActions;
+
+    ListOfFundamentalType<uint8_t> userPropertiesAssignable;
 };
 
 struct FlowDefinition {

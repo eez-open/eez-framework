@@ -17,6 +17,10 @@
 
 namespace eez {
 
+namespace flow {
+    struct FlowState;
+}
+
 static const size_t MAX_ITERATORS = 4;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -90,6 +94,7 @@ struct Ref {
 struct ArrayValue;
 struct ArrayElementValue;
 struct BlobRef;
+struct PropertyRef;
 
 #if defined(EEZ_FOR_LVGL)
 struct LVGLEventRef;
@@ -532,6 +537,12 @@ struct Value {
 
     static Value makeError() { return Value(0, VALUE_TYPE_ERROR); }
 
+    static Value makePropertyRef(flow::FlowState *flowState, int componentIndex, int propertyIndex, uint32_t id);
+    PropertyRef *getPropertyRef() const {
+        return (PropertyRef *)refValue;
+    }
+    Value evalProperty() const;
+
     Value clone();
 
 	//////////
@@ -615,6 +626,12 @@ struct LVGLEventRef : public Ref {
 };
 #endif
 
+struct PropertyRef : public Ref {
+	flow::FlowState *flowState;
+    int componentIndex;
+    int propertyIndex;
+};
+
 struct ArrayElementValue : public Ref {
 	Value arrayValue;
     int elementIndex;
@@ -645,7 +662,7 @@ namespace flow {
 
 inline Value Value::getValue() const {
     if (type == VALUE_TYPE_VALUE_PTR) {
-        return *pValueValue;
+        return pValueValue->getValue();
     }
     if (type == VALUE_TYPE_NATIVE_VARIABLE) {
 #if EEZ_OPTION_GUI
@@ -678,6 +695,10 @@ inline Value Value::getValue() const {
         return flow::operationJsonGet(jsonMemberValue->jsonValue.getInt(), jsonMemberValue->propertyName.getString());
     }
 #endif
+
+    else if (type == VALUE_TYPE_PROPERTY_REF) {
+        return evalProperty();
+    }
 
     return *this;
 }

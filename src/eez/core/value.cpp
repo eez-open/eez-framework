@@ -23,6 +23,7 @@
 #include <eez/flow/flow.h>
 #include <eez/flow/hooks.h>
 #include <eez/flow/date.h>
+#include <eez/flow/expression.h>
 
 #if defined(EEZ_DASHBOARD_API)
 #include <eez/flow/dashboard_api.h>
@@ -527,6 +528,19 @@ void EVENT_value_to_text(const Value &value, char *text, int count) {
 
 const char *EVENT_value_type_name(const Value &value) {
     return "event";
+}
+
+const char *PROPERTY_REF_value_type_name(const Value &value) {
+    return "property-ref";
+}
+
+bool compare_PROPERTY_REF_value(const Value &a, const Value &b) {
+    return a.type == b.type && a.refValue == b.refValue;
+}
+
+void PROPERTY_REF_value_to_text(const Value &value, char *text, int count) {
+    snprintf(text, count, "property-ref (flowState=%p, component=%d, property=%d)",
+        (void *)value.getPropertyRef()->flowState, value.getPropertyRef()->componentIndex, value.getPropertyRef()->propertyIndex);
 }
 
 bool compare_DATE_value(const Value &a, const Value &b) {
@@ -1490,6 +1504,34 @@ Value Value::makeLVGLEventRef(uint32_t code, void *currentTarget, void *target, 
 	return value;
 }
 #endif
+
+Value Value::makePropertyRef(flow::FlowState *flowState, int componentIndex, int propertyIndex, uint32_t id) {
+    auto propertyRef = ObjectAllocator<PropertyRef>::allocate(id);
+	if (propertyRef == nullptr) {
+		return Value(0, VALUE_TYPE_NULL);
+	}
+
+	propertyRef->flowState = flowState;
+    propertyRef->componentIndex = componentIndex;
+    propertyRef->propertyIndex = propertyIndex;
+
+    propertyRef->refCounter = 1;
+
+    Value value;
+
+    value.type = VALUE_TYPE_PROPERTY_REF;
+    value.options = VALUE_OPTIONS_REF;
+    value.refValue = propertyRef;
+
+	return value;
+}
+
+Value Value::evalProperty() const {
+    auto propertyRef = getPropertyRef();
+    Value value;
+    flow::evalProperty(propertyRef->flowState, propertyRef->componentIndex, propertyRef->propertyIndex, value, "Failed to evaluate an user property in UserWidget");
+    return value;
+}
 
 Value Value::clone() {
     if (isArray()) {

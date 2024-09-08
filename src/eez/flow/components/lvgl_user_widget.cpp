@@ -17,6 +17,7 @@
 #include <eez/flow/flow.h>
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/queue.h>
+#include <eez/flow/debugger.h>
 #include <eez/flow/components/input.h>
 #include <eez/flow/components/lvgl_user_widget.h>
 
@@ -36,6 +37,16 @@ LVGLUserWidgetExecutionState *createUserWidgetFlowState(FlowState *flowState, un
     auto component = (LVGLUserWidgetComponent *)flowState->flow->components[userWidgetWidgetComponentIndex];
     auto userWidgetFlowState = initPageFlowState(flowState->assets, component->flowIndex, flowState, userWidgetWidgetComponentIndex);
     userWidgetFlowState->lvglWidgetStartIndex = component->widgetStartIndex;
+
+    // init user properties
+    auto offset = defs_v3::LVGL_USER_WIDGET_WIDGET_USER_PROPERTIES_START;
+    for (uint32_t i = offset; i < component->properties.count; i++) {
+        Value value = Value::makePropertyRef(flowState, userWidgetWidgetComponentIndex, i, 0x5166d8a4);
+        auto propValuePtr = userWidgetFlowState->values + userWidgetFlowState->flow->componentInputs.count + (i - offset);
+        *propValuePtr = value;
+        onValueChanged(propValuePtr);
+    }
+
     auto userWidgetWidgetExecutionState = allocateComponentExecutionState<LVGLUserWidgetExecutionState>(flowState, userWidgetWidgetComponentIndex);
     userWidgetWidgetExecutionState->flowState = userWidgetFlowState;
     return userWidgetWidgetExecutionState;
