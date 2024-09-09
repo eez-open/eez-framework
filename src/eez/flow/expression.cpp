@@ -138,14 +138,27 @@ bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *ins
 #else
 bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *instructions, Value &result, const char *errorMessage, int *numInstructionBytes, const int32_t *iterators) {
 #endif
-	g_stack.sp = 0;
+	//g_stack.sp = 0;
+
+    size_t savedSp = g_stack.sp;
+    FlowState *savedFlowState = g_stack.flowState;
+	int savedComponentIndex = g_stack.componentIndex;
+	const int32_t *savedIterators = g_stack.iterators;
+    const char *savedErrorMessage = g_stack.errorMessage;
+
 	g_stack.flowState = flowState;
 	g_stack.componentIndex = componentIndex;
 	g_stack.iterators = iterators;
-    g_stack.errorMessage[0] = 0;
+    g_stack.errorMessage = nullptr;
 
 	evalExpression(flowState, instructions, numInstructionBytes, errorMessage);
-    if (g_stack.sp == 1) {
+
+	g_stack.flowState = savedFlowState;
+	g_stack.componentIndex = savedComponentIndex;
+	g_stack.iterators = savedIterators;
+    g_stack.errorMessage = savedErrorMessage;
+
+    if (g_stack.sp == savedSp + 1) {
 #if EEZ_OPTION_GUI
         if (operation == DATA_OPERATION_GET_TEXT_REFRESH_RATE) {
             result = g_stack.pop();
@@ -180,18 +193,29 @@ bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *ins
 #endif
     }
 
-    throwError(flowState, componentIndex, errorMessage, *g_stack.errorMessage ? g_stack.errorMessage : nullptr);
+    throwError(flowState, componentIndex, errorMessage, g_stack.errorMessage ? g_stack.errorMessage : nullptr);
 	return false;
 }
 
 bool evalAssignableExpression(FlowState *flowState, int componentIndex, const uint8_t *instructions, Value &result, const char *errorMessage, int *numInstructionBytes, const int32_t *iterators) {
-	g_stack.sp = 0;
+    size_t savedSp = g_stack.sp;
+    FlowState *savedFlowState = g_stack.flowState;
+	int savedComponentIndex = g_stack.componentIndex;
+	const int32_t *savedIterators = g_stack.iterators;
+    const char *savedErrorMessage = g_stack.errorMessage;
+
 	g_stack.flowState = flowState;
 	g_stack.componentIndex = componentIndex;
 	g_stack.iterators = iterators;
-    g_stack.errorMessage[0] = 0;
+    g_stack.errorMessage = nullptr;
 
 	evalExpression(flowState, instructions, numInstructionBytes, errorMessage);
+
+	g_stack.flowState = savedFlowState;
+	g_stack.componentIndex = savedComponentIndex;
+	g_stack.iterators = savedIterators;
+    g_stack.errorMessage = savedErrorMessage;
+
     if (g_stack.sp == 1) {
         auto finalResult = g_stack.pop();
         if (
@@ -206,7 +230,7 @@ bool evalAssignableExpression(FlowState *flowState, int componentIndex, const ui
         }
     }
 
-    throwError(flowState, componentIndex, errorMessage, *g_stack.errorMessage ? g_stack.errorMessage : nullptr);
+    throwError(flowState, componentIndex, errorMessage, g_stack.errorMessage ? g_stack.errorMessage : nullptr);
 
 	return false;
 }
@@ -264,13 +288,23 @@ int16_t getNativeVariableId(const WidgetCursor &widgetCursor) {
 			auto component = flow->components[widgetDataItem->componentIndex];
 			auto property = component->properties[widgetDataItem->propertyValueIndex];
 
-			g_stack.sp = 0;
+            size_t savedSp = g_stack.sp;
+            FlowState *savedFlowState = g_stack.flowState;
+            int savedComponentIndex = g_stack.componentIndex;
+            const int32_t *savedIterators = g_stack.iterators;
+            const char *savedErrorMessage = g_stack.errorMessage;
+
 			g_stack.flowState = flowState;
 			g_stack.componentIndex = widgetDataItem->componentIndex;
 			g_stack.iterators = widgetCursor.iterators;
-            g_stack.errorMessage[0] = 0;
+            g_stack.errorMessage = nullptr;
 
 			evalExpression(flowState, property->evalInstructions, nullptr, nullptr);
+
+            g_stack.flowState = savedFlowState;
+            g_stack.componentIndex = savedComponentIndex;
+            g_stack.iterators = savedIterators;
+            g_stack.errorMessage = savedErrorMessage;
 
             if (g_stack.sp == 1) {
                 auto finalResult = g_stack.pop();

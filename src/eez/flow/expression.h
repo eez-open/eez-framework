@@ -34,7 +34,7 @@ struct EvalStack {
 	Value stack[STACK_SIZE];
 	size_t sp = 0;
 
-    char errorMessage[512];
+    const char *errorMessage;
 
 	bool push(const Value &value) {
 		if (sp >= STACK_SIZE) {
@@ -61,7 +61,7 @@ struct EvalStack {
 	}
 
     void setErrorMessage(const char *str) {
-        stringCopy(errorMessage, sizeof(errorMessage), str);
+        errorMessage = str;
     }
 };
 

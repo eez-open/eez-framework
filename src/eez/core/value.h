@@ -314,7 +314,7 @@ struct Value {
     }
 
     bool isIndirectValueType() const {
-        return type == VALUE_TYPE_VALUE_PTR || type == VALUE_TYPE_NATIVE_VARIABLE || type == VALUE_TYPE_ARRAY_ELEMENT_VALUE || type == VALUE_TYPE_JSON_MEMBER_VALUE;
+        return type == VALUE_TYPE_VALUE_PTR || type == VALUE_TYPE_NATIVE_VARIABLE || type == VALUE_TYPE_ARRAY_ELEMENT_VALUE || type == VALUE_TYPE_JSON_MEMBER_VALUE || type == VALUE_TYPE_PROPERTY_REF;
     }
 
     Value getValue() const;
