@@ -163,25 +163,39 @@ extern "C" void flowPropagateValueUint32(void *flowState, unsigned componentInde
 }
 
 extern "C" void flowPropagateValueLVGLEvent(void *flowState, unsigned componentIndex, unsigned outputIndex, lv_event_t *event) {
-    uint32_t code = (uint32_t)lv_event_get_code(event);
+    lv_event_code_t event_code = lv_event_get_code(event);
+
+    uint32_t code = (uint32_t)event_code;
     void *currentTarget = (void *)lv_event_get_current_target(event);
     void *target = (void *)lv_event_get_target(event);
     int32_t userData = (int32_t)lv_event_get_user_data(event);
 
-    uint32_t *param = (uint32_t *)lv_event_get_param(event);
-    uint32_t key = param ? *param : 0;
-
-    int32_t gestureDir = (int32_t)lv_indev_get_gesture_dir(
+    uint32_t key = 0;
+    if (event_code == LV_EVENT_KEY || event_code == LV_EVENT_VALUE_CHANGED &&
 #if LVGL_VERSION_MAJOR >= 9
-        lv_indev_active()
+        lv_obj_check_type((lv_obj_t*)target, &lv_buttonmatrix_class)
 #else
-        lv_indev_get_act()
+        lv_obj_check_type((lv_obj_t*)target, &lv_btnmatrix_class)
 #endif
-    );
+    ) {
+        uint32_t *param = (uint32_t *)lv_event_get_param(event);
+        key = param ? *param : 0;
+    }
+
+    int32_t gestureDir = (int32_t)LV_DIR_NONE;
+    if (event_code == LV_EVENT_GESTURE) {
+        gestureDir = (int32_t)lv_indev_get_gesture_dir(
+#if LVGL_VERSION_MAJOR >= 9
+            lv_indev_active()
+#else
+            lv_indev_get_act()
+#endif
+        );
+    }
 
     int32_t rotaryDiff = 0;
 #if LVGL_VERSION_MAJOR >= 9
-    if (lv_event_get_code(event) == LV_EVENT_ROTARY) {
+    if (event_code == LV_EVENT_ROTARY) {
         rotaryDiff = lv_event_get_rotary_diff(event);
     }
 #endif

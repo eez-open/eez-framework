@@ -46,28 +46,30 @@ void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIn
 	FlowState *actionFlowState = initActionFlowState(flowIndex, flowState, componentIndex, inputValue);
 
     // init user properties
-    auto component = flowState->flow->components[componentIndex];
-    for (uint32_t i = 0; i < component->properties.count; i++) {
-        auto isAssignable = actionFlowState->flow->userPropertiesAssignable.items[i];
+    if (componentIndex != -1) {
+        auto component = flowState->flow->components[componentIndex];
+        for (uint32_t i = 0; i < component->properties.count; i++) {
+            auto isAssignable = actionFlowState->flow->userPropertiesAssignable.items[i];
 
-        Value value;
-        char errorMessage[64];
-        if (isAssignable) {
-            snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate assignable property #%d in CallAction", (int)(i + 1));
-            if (!evalAssignableProperty(flowState, componentIndex, i, value, errorMessage)) {
-                break;
+            Value value;
+            char errorMessage[64];
+            if (isAssignable) {
+                snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate assignable property #%d in CallAction", (int)(i + 1));
+                if (!evalAssignableProperty(flowState, componentIndex, i, value, errorMessage)) {
+                    break;
+                }
+            } else {
+                snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate property #%d in CallAction", (int)(i + 1));
+                if (!evalProperty(flowState, componentIndex, i, value, errorMessage)) {
+                    break;
+                }
             }
-        } else {
-            snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate property #%d in CallAction", (int)(i + 1));
-            if (!evalProperty(flowState, componentIndex, i, value, errorMessage)) {
-                break;
-            }
+
+            auto propValuePtr = actionFlowState->values + actionFlowState->flow->componentInputs.count + i;
+
+            *propValuePtr = value;
+            onValueChanged(propValuePtr);
         }
-
-        auto propValuePtr = actionFlowState->values + actionFlowState->flow->componentInputs.count + i;
-
-        *propValuePtr = value;
-        onValueChanged(propValuePtr);
     }
 
 	if (canFreeFlowState(actionFlowState)) {
