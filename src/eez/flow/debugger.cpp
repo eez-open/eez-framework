@@ -460,7 +460,7 @@ void writeValue(const Value &value) {
 		break;
 
 	case VALUE_TYPE_EVENT:
-		snprintf(tempStr, sizeof(tempStr) - 1, "!%p", value.getVoidPointer());
+		snprintf(tempStr, sizeof(tempStr) - 1, "!!%p", value.getVoidPointer());
 		break;
 
 	default:
