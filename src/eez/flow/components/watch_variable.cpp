@@ -39,13 +39,13 @@ void executeWatchVariableComponent(FlowState *flowState, unsigned componentIndex
 
 	if (!watchVariableComponentExecutionState) {
         watchVariableComponentExecutionState = allocateComponentExecutionState<WatchVariableComponenentExecutionState>(flowState, componentIndex);
-        watchVariableComponentExecutionState->value = value.clone();
+        watchVariableComponentExecutionState->value = value.type == VALUE_TYPE_STRING ? value.clone() : value;
         watchVariableComponentExecutionState->node = watchListAdd(flowState, componentIndex);
 
         propagateValue(flowState, componentIndex, 1, value);
 	} else {
 		if (value != watchVariableComponentExecutionState->value) {
-            watchVariableComponentExecutionState->value = value.clone();
+            watchVariableComponentExecutionState->value = value.type == VALUE_TYPE_STRING ? value.clone() : value;
 			propagateValue(flowState, componentIndex, 1, value);
 		}
 	}
