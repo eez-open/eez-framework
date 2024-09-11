@@ -168,7 +168,9 @@ extern "C" void flowPropagateValueLVGLEvent(void *flowState, unsigned componentI
     uint32_t code = (uint32_t)event_code;
     void *currentTarget = (void *)lv_event_get_current_target(event);
     void *target = (void *)lv_event_get_target(event);
-    int32_t userData = (int32_t)lv_event_get_user_data(event);
+
+    void *userDataPointer = lv_event_get_user_data(event);
+    int32_t userData = *((int32_t*)(&userDataPointer));
 
     uint32_t key = 0;
     if (event_code == LV_EVENT_KEY || event_code == LV_EVENT_VALUE_CHANGED &&
