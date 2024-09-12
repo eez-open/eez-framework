@@ -173,13 +173,13 @@ extern "C" void flowPropagateValueLVGLEvent(void *flowState, unsigned componentI
     int32_t userData = *((int32_t*)(&userDataPointer));
 
     uint32_t key = 0;
-    if (event_code == LV_EVENT_KEY || event_code == LV_EVENT_VALUE_CHANGED &&
+    if (event_code == LV_EVENT_KEY || (event_code == LV_EVENT_VALUE_CHANGED &&
 #if LVGL_VERSION_MAJOR >= 9
         lv_obj_check_type((lv_obj_t*)target, &lv_buttonmatrix_class)
 #else
         lv_obj_check_type((lv_obj_t*)target, &lv_btnmatrix_class)
 #endif
-    ) {
+    )) {
         uint32_t *param = (uint32_t *)lv_event_get_param(event);
         key = param ? *param : 0;
     }
