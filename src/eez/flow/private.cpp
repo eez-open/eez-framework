@@ -292,10 +292,12 @@ bool canFreeFlowState(FlowState *flowState) {
 void freeFlowState(FlowState *flowState) {
     auto parentFlowState = flowState->parentFlowState;
     if (parentFlowState) {
-        auto componentExecutionState = parentFlowState->componenentExecutionStates[flowState->parentComponentIndex];
-        if (componentExecutionState) {
-            deallocateComponentExecutionState(parentFlowState, flowState->parentComponentIndex);
-            return;
+        if (flowState->parentComponentIndex != -1) {
+            auto componentExecutionState = parentFlowState->componenentExecutionStates[flowState->parentComponentIndex];
+            if (componentExecutionState) {
+                deallocateComponentExecutionState(parentFlowState, flowState->parentComponentIndex);
+                return;
+            }
         }
 
         if (parentFlowState->firstChild == flowState) {
