@@ -198,6 +198,18 @@ Value convertToJson(const Value *arrayValuePtr) {
     return result;
 }
 
+Value getObjectVariableMemberValue(Value *objectValue, int memberIndex) {
+    auto valuePtr = (Value *)EM_ASM_INT({
+        return getObjectVariableMemberValue($0, $1, $2);
+    }, g_wasmModuleId, objectValue, memberIndex);
+
+    Value result = *valuePtr;
+
+    ObjectAllocator<Value>::deallocate(valuePtr);
+
+    return result;
+}
+
 void dashboardObjectValueIncRef(int json) {
     EM_ASM({
         dashboardObjectValueIncRef($0, $1);
@@ -641,6 +653,13 @@ EM_PORT_API(int) getFlowStateFlowIndex(int flowStateIndex) {
 
 EM_PORT_API(void) setDebuggerMessageSubsciptionFilter(uint32_t filter) {
     eez::flow::setDebuggerMessageSubsciptionFilter(filter);
+}
+
+EM_PORT_API(void) flowCleanup() {
+    if (!isFlowStopped()) {
+        stop();
+        tick();
+    }
 }
 
 #if EEZ_OPTION_GUI

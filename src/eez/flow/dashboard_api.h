@@ -44,6 +44,8 @@ Value operationStringFormatPrefix(const char *format, const Value *valuePtr, con
 Value convertFromJson(int json, uint32_t toType);
 Value convertToJson(const Value *arrayValuePtr);
 
+Value getObjectVariableMemberValue(Value *objectValue, int memberIndex);
+
 void dashboardObjectValueIncRef(int json);
 void dashboardObjectValueDecRef(int json);
 

@@ -257,7 +257,7 @@ struct Value {
 
 #if defined(EEZ_DASHBOARD_API)
         if (type == VALUE_TYPE_JSON || type == VALUE_TYPE_STREAM) {
-            flow::dashboardObjectValueDecRef(int32Value);;
+            flow::dashboardObjectValueDecRef(int32Value);
         }
 #endif
     }
@@ -657,6 +657,7 @@ void setVar(int16_t id, const Value& value);
 #if defined(EEZ_DASHBOARD_API)
 namespace flow {
     extern Value operationJsonGet(int json, const char *property);
+    extern Value getObjectVariableMemberValue(Value *objectValue, int memberIndex);
 }
 #endif
 
@@ -682,9 +683,17 @@ inline Value Value::getValue() const {
             return Value((uint32_t)blobRef->blob[arrayElementValue->elementIndex], VALUE_TYPE_UINT32);
         } else {
             auto array = arrayElementValue->arrayValue.getArray();
+
             if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= (int)array->arraySize) {
                 return Value();
             }
+
+#if defined(EEZ_DASHBOARD_API)
+            if (array->arrayType >= flow::defs_v3::FIRST_OBJECT_TYPE && array->arrayType <= flow::defs_v3::LAST_OBJECT_TYPE) {
+                return flow::getObjectVariableMemberValue(&arrayElementValue->arrayValue, arrayElementValue->elementIndex);
+            }
+#endif
+
             return array->values[arrayElementValue->elementIndex];
         }
     }

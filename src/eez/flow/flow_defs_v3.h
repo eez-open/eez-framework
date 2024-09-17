@@ -647,10 +647,12 @@ enum TerminalWidgetOnDataParamsSystemStructureFields {
 };
 
 enum ObjectTypes {
+    FIRST_OBJECT_TYPE = 40960,
     OBJECT_TYPE_INSTRUMENT = 40960,
     OBJECT_TYPE_SERIAL_CONNECTION = 40961,
     OBJECT_TYPE_MQTT_CONNECTION = 40962,
-    OBJECT_TYPE_TCP_CONNECTION = 40963
+    OBJECT_TYPE_TCP_CONNECTION = 40963,
+    LAST_OBJECT_TYPE = 40963
 };
 
 enum InstrumentObjectTypeFields {

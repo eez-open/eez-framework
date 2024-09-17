@@ -198,7 +198,6 @@ bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *ins
 }
 
 bool evalAssignableExpression(FlowState *flowState, int componentIndex, const uint8_t *instructions, Value &result, const char *errorMessage, int *numInstructionBytes, const int32_t *iterators) {
-    size_t savedSp = g_stack.sp;
     FlowState *savedFlowState = g_stack.flowState;
 	int savedComponentIndex = g_stack.componentIndex;
 	const int32_t *savedIterators = g_stack.iterators;
@@ -288,7 +287,6 @@ int16_t getNativeVariableId(const WidgetCursor &widgetCursor) {
 			auto component = flow->components[widgetDataItem->componentIndex];
 			auto property = component->properties[widgetDataItem->propertyValueIndex];
 
-            size_t savedSp = g_stack.sp;
             FlowState *savedFlowState = g_stack.flowState;
             int savedComponentIndex = g_stack.componentIndex;
             const int32_t *savedIterators = g_stack.iterators;

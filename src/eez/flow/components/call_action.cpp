@@ -46,7 +46,7 @@ void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIn
 	FlowState *actionFlowState = initActionFlowState(flowIndex, flowState, componentIndex, inputValue);
 
     // init user properties
-    if (componentIndex != -1) {
+    if ((int)componentIndex != -1) {
         auto component = flowState->flow->components[componentIndex];
         for (uint32_t i = 0; i < component->properties.count; i++) {
             auto isAssignable = actionFlowState->flow->userPropertiesAssignable.items[i];
