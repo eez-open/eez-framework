@@ -2600,6 +2600,28 @@ void do_OPERATION_TYPE_BLOB_ALLOCATE(EvalStack &stack) {
     stack.push(result);
 }
 
+void do_OPERATION_TYPE_BLOB_TO_STRING(EvalStack &stack) {
+#if defined(EEZ_DASHBOARD_API)
+    auto blobValue = stack.pop().getValue();
+
+    if (blobValue.isError()) {
+        stack.push(blobValue);
+        return;
+    }
+
+    if (!blobValue.isBlob()) {
+        stack.push(Value::makeError());
+        return;
+    }
+
+    auto blobRef = blobValue.getBlob();
+
+    stack.push(operationBlobToString(blobRef->blob, blobRef->len));
+#else
+    stack.push(Value::makeError());
+#endif
+}
+
 void do_OPERATION_TYPE_JSON_GET(EvalStack &stack) {
 #if defined(EEZ_DASHBOARD_API)
     auto jsonValue = stack.pop().getValue();
@@ -2840,6 +2862,7 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_EVENT_GET_KEY,
     do_OPERATION_TYPE_EVENT_GET_GESTURE_DIR,
     do_OPERATION_TYPE_EVENT_GET_ROTARY_DIFF,
+    do_OPERATION_TYPE_BLOB_TO_STRING,
 };
 
 } // namespace flow

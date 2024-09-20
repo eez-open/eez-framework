@@ -46,6 +46,8 @@ Value convertToJson(const Value *arrayValuePtr);
 
 Value getObjectVariableMemberValue(Value *objectValue, int memberIndex);
 
+Value operationBlobToString(const uint8_t* blob, uint32_t len);
+
 void dashboardObjectValueIncRef(int json);
 void dashboardObjectValueDecRef(int json);
 

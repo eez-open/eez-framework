@@ -210,6 +210,18 @@ Value getObjectVariableMemberValue(Value *objectValue, int memberIndex) {
     return result;
 }
 
+Value operationBlobToString(const uint8_t* blob, uint32_t len) {
+    auto valuePtr = (Value *)EM_ASM_INT({
+        return operationBlobToString($0, $1, $2);
+    }, g_wasmModuleId, blob, len);
+
+    Value result = *valuePtr;
+
+    ObjectAllocator<Value>::deallocate(valuePtr);
+
+    return result;
+}
+
 void dashboardObjectValueIncRef(int json) {
     EM_ASM({
         dashboardObjectValueIncRef($0, $1);
