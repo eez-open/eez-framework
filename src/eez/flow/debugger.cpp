@@ -444,19 +444,11 @@ void writeValue(const Value &value) {
 		break;
 
     case VALUE_TYPE_POINTER:
-#ifdef PRIu64
-        snprintf(tempStr, sizeof(tempStr) - 1, "%" PRIu64 "", (uint64_t)value.getVoidPointer());
-#else
-        snprintf(tempStr, sizeof(tempStr) - 1, "%" PRIu32 "", (uint32_t)value.getVoidPointer());
-#endif
+        snprintf(tempStr, sizeof(tempStr) - 1, "%p", value.getVoidPointer());
 		break;
 
 	case VALUE_TYPE_WIDGET:
-#if defined(EEZ_FOR_LVGL)
 		snprintf(tempStr, sizeof(tempStr) - 1, "*p%p", value.getVoidPointer());
-#else
-        snprintf(tempStr, sizeof(tempStr) - 1, "*n%d", (int)(value.int32Value));
-#endif
 		break;
 
 	case VALUE_TYPE_EVENT:
