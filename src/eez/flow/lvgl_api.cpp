@@ -34,17 +34,29 @@ extern "C" void tick_screen(int screen_index);
 
 static lv_obj_t **g_objects;
 static size_t g_numObjects;
+
+static lv_group_t **g_groups;
+static size_t g_numGroups;
+
 static const ext_img_desc_t *g_images;
 static size_t g_numImages;
+
 static ActionExecFunc *g_actions;
 
 int16_t g_currentScreen = -1;
 
 static lv_obj_t *getLvglObjectFromIndex(int32_t index) {
-    if (index == -1) {
-        return 0;
+    if (index >= 0 && index < g_numObjects) {
+        return g_objects[index];
     }
-    return g_objects[index];
+    return 0;
+}
+
+static lv_group_t *getLvglGroupFromIndex(int32_t index) {
+    if (index >= 0 && index < g_numGroups) {
+        return g_groups[index];
+    }
+    return 0;
 }
 
 static const void *getLvglImageByName(const char *name) {
@@ -113,6 +125,7 @@ extern "C" void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj
     eez::flow::getLvglObjectFromIndexHook = getLvglObjectFromIndex;
     eez::flow::getLvglImageByNameHook = getLvglImageByName;
     eez::flow::executeLvglActionHook = executeLvglAction;
+    eez::flow::getLvglGroupFromIndexHook = getLvglGroupFromIndex;
 
     eez::flow::start(eez::g_mainAssets);
 
@@ -126,6 +139,11 @@ extern "C" void eez_flow_init_styles(
 ) {
     eez::flow::lvglObjAddStyleHook = add_style;
     eez::flow::lvglObjRemoveStyleHook = remove_style;
+}
+
+void eez_flow_init_groups(lv_group_t **groups, size_t numGroups) {
+    g_groups = groups;
+    g_numGroups = numGroups;
 }
 
 extern "C" void eez_flow_tick() {

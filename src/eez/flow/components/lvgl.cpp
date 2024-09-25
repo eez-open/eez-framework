@@ -116,6 +116,17 @@ enum PropertyCode {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+enum GroupActions {
+    GROUP_ACTION_SET_WRAP = 0,
+    GROUP_ACTION_FOCUS_OBJ = 1,
+    GROUP_ACTION_FOCUS_NEXT = 2,
+    GROUP_ACTION_FOCUS_PREVIOUS = 3,
+    GROUP_ACTION_FOCUS_FREEZE = 4,
+    GROUP_ACTION_SET_EDITING = 5
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
 // in case when getLvglObjectFromIndexHook returns nullptr, i.e. LVGL widget is not yet created, we need to store
 // the index of the next action to be executed in the component execution state, so we can try later
 struct LVGLExecutionState : public ComponenentExecutionState {
@@ -276,11 +287,71 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
         } else if (general->action == ADD_STYLE) {
             auto specific = (LVGLComponent_AddStyle_ActionType *)general;
             auto target = getLvglObjectFromIndexHook(flowState->lvglWidgetStartIndex + specific->target);
-            lvglObjAddStyleHook(target, specific->style);
+            if (!target) {
+                if (!executionState) {
+                    executionState = allocateComponentExecutionState<LVGLExecutionState>(flowState, componentIndex);
+                }
+                executionState->actionIndex = actionIndex;
+                addToQueue(flowState, componentIndex, -1, -1, -1, true);
+                return;
+            } else {
+                lvglObjAddStyleHook(target, specific->style);
+            }
         } else if (general->action == REMOVE_STYLE) {
             auto specific = (LVGLComponent_RemoveStyle_ActionType *)general;
             auto target = getLvglObjectFromIndexHook(flowState->lvglWidgetStartIndex + specific->target);
-            lvglObjRemoveStyleHook(target, specific->style);
+            if (!target) {
+                if (!executionState) {
+                    executionState = allocateComponentExecutionState<LVGLExecutionState>(flowState, componentIndex);
+                }
+                executionState->actionIndex = actionIndex;
+                addToQueue(flowState, componentIndex, -1, -1, -1, true);
+                return;
+            } else {
+                lvglObjRemoveStyleHook(target, specific->style);
+            }
+        } else if (general->action == GROUP) {
+            auto specific = (LVGLComponent_Group_ActionType *)general;
+
+            if (specific->groupAction == GROUP_ACTION_SET_WRAP) {
+                auto target = getLvglGroupFromIndexHook(specific->target);
+                if (target) {
+                    lv_group_set_wrap(target, specific->enable ? true : false);
+                }
+            } else if (specific->groupAction == GROUP_ACTION_FOCUS_OBJ) {
+                auto target = getLvglObjectFromIndexHook(flowState->lvglWidgetStartIndex + specific->target);
+                if (!target) {
+                    if (!executionState) {
+                        executionState = allocateComponentExecutionState<LVGLExecutionState>(flowState, componentIndex);
+                    }
+                    executionState->actionIndex = actionIndex;
+                    addToQueue(flowState, componentIndex, -1, -1, -1, true);
+                    return;
+                } else {
+                    lv_group_focus_obj(target);
+                }
+            } else if (specific->groupAction == GROUP_ACTION_FOCUS_NEXT) {
+                auto target = getLvglGroupFromIndexHook(specific->target);
+                if (target) {
+                    lv_group_focus_next(target);
+                }
+            } else if (specific->groupAction == GROUP_ACTION_FOCUS_PREVIOUS) {
+                auto target = getLvglGroupFromIndexHook(specific->target);
+                if (target) {
+                    lv_group_focus_prev(target);
+                }
+            } else if (specific->groupAction == GROUP_ACTION_FOCUS_FREEZE) {
+                auto target = getLvglGroupFromIndexHook(specific->target);
+                if (target) {
+                    lv_group_focus_freeze(target, specific->enable ? true : false);
+                }
+            } else {
+                // specific->groupAction == GROUP_ACTION_SET_EDITING
+                auto target = getLvglGroupFromIndexHook(specific->target);
+                if (target) {
+                    lv_group_set_editing(target, specific->enable ? true : false);
+                }
+            }
         }
 
     }

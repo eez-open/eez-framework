@@ -22,7 +22,8 @@ enum LVGL_ACTIONS {
     PLAY_ANIMATION,
     SET_PROPERTY,
     ADD_STYLE,
-    REMOVE_STYLE
+    REMOVE_STYLE,
+    GROUP
 };
 
 struct LVGLComponent_ActionType {
@@ -91,6 +92,14 @@ struct LVGLComponent_AddStyle_ActionType : public LVGLComponent_ActionType {
 struct LVGLComponent_RemoveStyle_ActionType : public LVGLComponent_ActionType {
     int32_t target;
     int32_t style;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct LVGLComponent_Group_ActionType : public LVGLComponent_ActionType {
+    uint32_t groupAction;
+    int32_t target;
+    uint32_t enable;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

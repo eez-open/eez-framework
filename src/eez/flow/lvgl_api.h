@@ -59,6 +59,8 @@ void eez_flow_init_styles(
     void (*remove_style)(lv_obj_t *obj, int32_t styleIndex)
 );
 
+void eez_flow_init_groups(lv_group_t **groups, size_t numGroups);
+
 void eez_flow_tick();
 
 bool eez_flow_is_stopped();

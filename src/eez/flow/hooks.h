@@ -45,6 +45,7 @@ extern const void *(*getLvglImageByNameHook)(const char *name);
 extern void (*executeLvglActionHook)(int actionIndex);
 extern void (*lvglObjAddStyleHook)(lv_obj_t *object, int32_t styleIndex);
 extern void (*lvglObjRemoveStyleHook)(lv_obj_t *object, int32_t styleIndex);
+extern lv_group_t *(*getLvglGroupFromIndexHook)(int32_t index);
 
 #endif
 
