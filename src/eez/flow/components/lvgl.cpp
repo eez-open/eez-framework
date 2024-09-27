@@ -310,6 +310,32 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
             } else {
                 lvglObjRemoveStyleHook(target, specific->style);
             }
+        } else if (general->action == ADD_FLAG) {
+            auto specific = (LVGLComponent_AddFlag_ActionType *)general;
+            auto target = getLvglObjectFromIndexHook(flowState->lvglWidgetStartIndex + specific->target);
+            if (!target) {
+                if (!executionState) {
+                    executionState = allocateComponentExecutionState<LVGLExecutionState>(flowState, componentIndex);
+                }
+                executionState->actionIndex = actionIndex;
+                addToQueue(flowState, componentIndex, -1, -1, -1, true);
+                return;
+            } else {
+                lv_obj_add_flag(target, (lv_obj_flag_t)specific->flag);
+            }
+        } else if (general->action == CLEAR_FLAG) {
+            auto specific = (LVGLComponent_ClearFlag_ActionType *)general;
+            auto target = getLvglObjectFromIndexHook(flowState->lvglWidgetStartIndex + specific->target);
+            if (!target) {
+                if (!executionState) {
+                    executionState = allocateComponentExecutionState<LVGLExecutionState>(flowState, componentIndex);
+                }
+                executionState->actionIndex = actionIndex;
+                addToQueue(flowState, componentIndex, -1, -1, -1, true);
+                return;
+            } else {
+                lv_obj_clear_flag(target, (lv_obj_flag_t)specific->flag);
+            }
         } else if (general->action == GROUP) {
             auto specific = (LVGLComponent_Group_ActionType *)general;
 
