@@ -25,7 +25,9 @@ enum LVGL_ACTIONS {
     REMOVE_STYLE,
     ADD_FLAG,
     CLEAR_FLAG,
-    GROUP
+    GROUP,
+    ADD_STATE,
+    CLEAR_STATE,
 };
 
 struct LVGLComponent_ActionType {
@@ -116,6 +118,20 @@ struct LVGLComponent_Group_ActionType : public LVGLComponent_ActionType {
     uint32_t groupAction;
     int32_t target;
     uint32_t enable;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct LVGLComponent_AddState_ActionType : public LVGLComponent_ActionType {
+    int32_t target;
+    uint32_t state;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct LVGLComponent_ClearState_ActionType : public LVGLComponent_ActionType {
+    int32_t target;
+    uint32_t state;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -378,6 +378,32 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                     lv_group_set_editing(target, specific->enable ? true : false);
                 }
             }
+        } else if (general->action == ADD_STATE) {
+            auto specific = (LVGLComponent_AddState_ActionType *)general;
+            auto target = getLvglObjectFromIndexHook(flowState->lvglWidgetStartIndex + specific->target);
+            if (!target) {
+                if (!executionState) {
+                    executionState = allocateComponentExecutionState<LVGLExecutionState>(flowState, componentIndex);
+                }
+                executionState->actionIndex = actionIndex;
+                addToQueue(flowState, componentIndex, -1, -1, -1, true);
+                return;
+            } else {
+                lv_obj_add_state(target, (lv_state_t)specific->state);
+            }
+        } else if (general->action == CLEAR_STATE) {
+            auto specific = (LVGLComponent_ClearState_ActionType *)general;
+            auto target = getLvglObjectFromIndexHook(flowState->lvglWidgetStartIndex + specific->target);
+            if (!target) {
+                if (!executionState) {
+                    executionState = allocateComponentExecutionState<LVGLExecutionState>(flowState, componentIndex);
+                }
+                executionState->actionIndex = actionIndex;
+                addToQueue(flowState, componentIndex, -1, -1, -1, true);
+                return;
+            } else {
+                lv_obj_clear_state(target, (lv_state_t)specific->state);
+            }
         }
 
     }
