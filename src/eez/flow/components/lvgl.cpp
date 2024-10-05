@@ -642,7 +642,16 @@ ACTION_START(objSetWidth)
 #else
     lv_obj_set_width(obj, (lv_coord_t)width);
 #endif
+ACTION_END
 
+ACTION_START(objGetWidth)
+    WIDGET_PROP(obj);
+#if LVGL_VERSION_MAJOR >= 9
+    int32_t width = (int32_t)lv_obj_get_width(obj);
+#else
+    int32_t width = lv_obj_get_width(obj);
+#endif
+    RESULT(result, Value(width, VALUE_TYPE_INT32));
 ACTION_END
 
 ACTION_START(objSetHeight)
@@ -934,6 +943,7 @@ static ActionType actions[] = {
     &objSetX,
     &objSetY,
     &objSetWidth,
+    &objGetWidth,
     &objSetHeight,
     &objSetStyleOpa,
     &objAddStyle,
