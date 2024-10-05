@@ -375,6 +375,10 @@ struct Value {
         return type == VALUE_TYPE_JSON;
     }
 
+    bool isWidget() const {
+        return type == VALUE_TYPE_WIDGET;
+    }
+
     bool isError() const {
         return type == VALUE_TYPE_ERROR;
     }
@@ -488,6 +492,10 @@ struct Value {
 
     BlobRef *getBlob() const {
         return (BlobRef *)refValue;
+    }
+
+    void *getWidget() {
+        return pVoidValue;
     }
 
 #if defined(EEZ_FOR_LVGL)

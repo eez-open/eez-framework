@@ -41,12 +41,18 @@ extern void (*onDebuggerInputAvailableHook)();
 
 #if defined(EEZ_FOR_LVGL)
 extern lv_obj_t *(*getLvglObjectFromIndexHook)(int32_t index);
-extern const void *(*getLvglImageByNameHook)(const char *name);
-extern void (*executeLvglActionHook)(int actionIndex);
-extern void (*lvglObjAddStyleHook)(lv_obj_t *object, int32_t styleIndex);
-extern void (*lvglObjRemoveStyleHook)(lv_obj_t *object, int32_t styleIndex);
 extern lv_group_t *(*getLvglGroupFromIndexHook)(int32_t index);
 
+extern int32_t (*getLvglScreenByNameHook)(const char *name);
+extern int32_t (*getLvglObjectByNameHook)(const char *name);
+extern int32_t (*getLvglGroupByNameHook)(const char *name);
+extern int32_t (*getLvglStyleByNameHook)(const char *name);
+extern const void *(*getLvglImageByNameHook)(const char *name);
+
+extern void (*executeLvglActionHook)(int actionIndex);
+
+extern void (*lvglObjAddStyleHook)(lv_obj_t *object, int32_t styleIndex);
+extern void (*lvglObjRemoveStyleHook)(lv_obj_t *object, int32_t styleIndex);
 #endif
 
 extern double (*getDateNowHook)();

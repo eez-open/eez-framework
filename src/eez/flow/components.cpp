@@ -80,6 +80,7 @@ void executeMQTTPublishComponent(FlowState *flowState, unsigned componentIndex);
 void executeLabelInComponent(FlowState *flowState, unsigned componentIndex);
 void executeLabelOutComponent(FlowState *flowState, unsigned componentIndex);
 
+void executeLVGLApiComponent(FlowState *flowState, unsigned componentIndex);
 
 typedef void (*ExecuteComponentFunctionType)(FlowState *flowState, unsigned componentIndex);
 
@@ -143,6 +144,8 @@ static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
 
     executeLabelInComponent, // COMPONENT_TYPE_LABEL_IN_ACTION
     executeLabelOutComponent, // COMPONENT_TYPE_LABEL_OUT_ACTION
+
+    executeLVGLApiComponent, // COMPONENT_TYPE_LVGL_API_ACTION
 };
 
 void registerComponent(ComponentTypes componentType, ExecuteComponentFunctionType executeComponentFunction) {

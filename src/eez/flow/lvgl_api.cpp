@@ -32,11 +32,19 @@ static void replacePageHook(int16_t pageId, uint32_t animType, uint32_t speed, u
 extern "C" void create_screens();
 extern "C" void tick_screen(int screen_index);
 
+static const char **g_screenNames;
+static size_t g_numScreens;
+
 static lv_obj_t **g_objects;
+static const char **g_objectNames;
 static size_t g_numObjects;
 
 static lv_group_t **g_groups;
+static const char **g_groupNames;
 static size_t g_numGroups;
+
+static const char **g_styleNames;
+static size_t g_numStyles;
 
 static const ext_img_desc_t *g_images;
 static size_t g_numImages;
@@ -59,10 +67,46 @@ static lv_group_t *getLvglGroupFromIndex(int32_t index) {
     return 0;
 }
 
+static int32_t getLvglScreenByName(const char *name) {
+    for (size_t i = 0; i < g_numScreens; i++) {
+        if (strcmp(g_screenNames[i], name) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static int32_t getLvglObjectByName(const char *name) {
+    for (size_t i = 0; i < g_numObjects; i++) {
+        if (strcmp(g_objectNames[i], name) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static int32_t getLvglGroupByName(const char *name) {
+    for (size_t i = 0; i < g_numGroups; i++) {
+        if (strcmp(g_groupNames[i], name) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static int32_t getLvglStyleByName(const char *name) {
+    for (size_t i = 0; i < g_numStyles; i++) {
+        if (strcmp(g_styleNames[i], name) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 static const void *getLvglImageByName(const char *name) {
-    for (size_t imageIndex = 0; imageIndex < g_numImages; imageIndex++) {
-        if (strcmp(g_images[imageIndex].name, name) == 0) {
-            return g_images[imageIndex].img_dsc;
+    for (size_t i = 0; i < g_numImages; i++) {
+        if (strcmp(g_images[i].name, name) == 0) {
+            return g_images[i].img_dsc;
         }
     }
     return 0;
@@ -123,6 +167,9 @@ extern "C" void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj
 
     eez::flow::replacePageHook = replacePageHook;
     eez::flow::getLvglObjectFromIndexHook = getLvglObjectFromIndex;
+    eez::flow::getLvglObjectByNameHook = getLvglObjectByName;
+    eez::flow::getLvglGroupByNameHook = getLvglGroupByName;
+    eez::flow::getLvglStyleByNameHook = getLvglStyleByName;
     eez::flow::getLvglImageByNameHook = getLvglImageByName;
     eez::flow::executeLvglActionHook = executeLvglAction;
     eez::flow::getLvglGroupFromIndexHook = getLvglGroupFromIndex;
@@ -145,6 +192,25 @@ void eez_flow_init_groups(lv_group_t **groups, size_t numGroups) {
     g_groups = groups;
     g_numGroups = numGroups;
 }
+
+void eez_flow_init_screen_names(const char **screenNames, size_t numScreens) {
+    g_screenNames = screenNames;
+    g_numScreens = numScreens;
+}
+
+void eez_flow_init_object_names(const char **objectNames, size_t numObjects) {
+    g_objectNames = objectNames;
+}
+
+void eez_flow_init_group_names(const char **groupNames, size_t numGroups) {
+    g_groupNames = groupNames;
+}
+
+void eez_flow_init_style_names(const char **styleNames, size_t numStyles) {
+    g_styleNames = styleNames;
+    g_numStyles = numStyles;
+}
+
 
 extern "C" void eez_flow_tick() {
     eez::flow::tick();

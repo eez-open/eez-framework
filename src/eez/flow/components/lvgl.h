@@ -142,5 +142,16 @@ struct LVGLComponent : public Component {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+struct LVGLApiComponent_ActionType {
+    uint32_t action;
+    ListOfAssetsPtr<Property> properties;
+};
+
+struct LVGLApiComponent : public Component {
+    ListOfAssetsPtr<LVGLApiComponent_ActionType> actions;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
 } // flow
 } // eez

@@ -74,6 +74,26 @@ static lv_obj_t *getLvglObjectFromIndex(int32_t index) {
     return 0;
 }
 
+static lv_group_t *getLvglGroupFromIndex(int32_t index) {
+    return 0;
+}
+
+static int32_t getLvglScreenByName(const char *name) {
+    return -1;
+}
+
+static int32_t getLvglObjectByName(const char *name) {
+    return -1;
+}
+
+static int32_t getLvglGroupByName(const char *name) {
+    return -1;
+}
+
+static int32_t getLvglStyleByName(const char *name) {
+    return -1;
+}
+
 static const void *getLvglImageByName(const char *name) {
     return 0;
 }
@@ -87,16 +107,19 @@ static void lvglObjAddStyle(lv_obj_t *object, int32_t styleIndex) {
 static void lvglObjRemoveStyle(lv_obj_t *object, int32_t styleIndex) {
 }
 
-static lv_group_t *getLvglGroupFromIndex(int32_t index) {
-    return 0;
-}
-
 lv_obj_t *(*getLvglObjectFromIndexHook)(int32_t index) = getLvglObjectFromIndex;
+lv_group_t *(*getLvglGroupFromIndexHook)(int32_t index) = getLvglGroupFromIndex;
+
+int32_t (*getLvglScreenByNameHook)(const char *name) = getLvglScreenByName;
+int32_t (*getLvglObjectByNameHook)(const char *name) = getLvglObjectByName;
+int32_t (*getLvglGroupByNameHook)(const char *name) = getLvglGroupByName;
+int32_t (*getLvglStyleByNameHook)(const char *name) = getLvglStyleByName;
 const void *(*getLvglImageByNameHook)(const char *name) = getLvglImageByName;
+
 void (*executeLvglActionHook)(int actionIndex) = executeLvglAction;
+
 void (*lvglObjAddStyleHook)(lv_obj_t *object, int32_t styleIndex) = lvglObjAddStyle;
 void (*lvglObjRemoveStyleHook)(lv_obj_t *object, int32_t styleIndex) = lvglObjRemoveStyle;
-lv_group_t *(*getLvglGroupFromIndexHook)(int32_t index) = getLvglGroupFromIndex;
 #endif
 
 double getDateNowDefaultImplementation() {
