@@ -31,28 +31,28 @@ namespace flow {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void anim_callback_set_x(lv_anim_t * a, int32_t v) { lv_obj_set_x((lv_obj_t *)a->user_data, v); }
+void anim_callback_set_x(void *obj, int32_t v) { lv_obj_set_x((lv_obj_t *)obj, v); }
 int32_t anim_callback_get_x(lv_anim_t * a) { return lv_obj_get_x_aligned((lv_obj_t *)a->user_data); }
 
-void anim_callback_set_y(lv_anim_t * a, int32_t v) { lv_obj_set_y((lv_obj_t *)a->user_data, v); }
+void anim_callback_set_y(void *obj, int32_t v) { lv_obj_set_y((lv_obj_t *)obj, v); }
 int32_t anim_callback_get_y(lv_anim_t * a) { return lv_obj_get_y_aligned((lv_obj_t *)a->user_data); }
 
-void anim_callback_set_width(lv_anim_t * a, int32_t v) { lv_obj_set_width((lv_obj_t *)a->user_data, v); }
+void anim_callback_set_width(void *obj, int32_t v) { lv_obj_set_width((lv_obj_t *)obj, v); }
 int32_t anim_callback_get_width(lv_anim_t * a) { return lv_obj_get_width((lv_obj_t *)a->user_data); }
 
-void anim_callback_set_height(lv_anim_t * a, int32_t v) { lv_obj_set_height((lv_obj_t *)a->user_data, v); }
+void anim_callback_set_height(void *obj, int32_t v) { lv_obj_set_height((lv_obj_t *)obj, v); }
 int32_t anim_callback_get_height(lv_anim_t * a) { return lv_obj_get_height((lv_obj_t *)a->user_data); }
 
-void anim_callback_set_opacity(lv_anim_t * a, int32_t v) { lv_obj_set_style_opa((lv_obj_t *)a->user_data, v, 0); }
+void anim_callback_set_opacity(void *obj, int32_t v) { lv_obj_set_style_opa((lv_obj_t *)obj, v, 0); }
 int32_t anim_callback_get_opacity(lv_anim_t * a) { return lv_obj_get_style_opa((lv_obj_t *)a->user_data, 0); }
 
-void anim_callback_set_image_zoom(lv_anim_t * a, int32_t v) { lv_img_set_zoom((lv_obj_t *)a->user_data, v); }
+void anim_callback_set_image_zoom(void *obj, int32_t v) { lv_img_set_zoom((lv_obj_t *)obj, v); }
 int32_t anim_callback_get_image_zoom(lv_anim_t * a) { return lv_img_get_zoom((lv_obj_t *)a->user_data); }
 
-void anim_callback_set_image_angle(lv_anim_t * a, int32_t v) { lv_img_set_angle((lv_obj_t *)a->user_data, v); }
+void anim_callback_set_image_angle(void *obj, int32_t v) { lv_img_set_angle((lv_obj_t *)obj, v); }
 int32_t anim_callback_get_image_angle(lv_anim_t * a) { return lv_img_get_angle((lv_obj_t *)a->user_data); }
 
-void (*anim_set_callbacks[])(lv_anim_t *a, int32_t v) = {
+lv_anim_exec_xcb_t anim_set_callbacks[] = {
     anim_callback_set_x,
     anim_callback_set_y,
     anim_callback_set_width,
@@ -62,7 +62,7 @@ void (*anim_set_callbacks[])(lv_anim_t *a, int32_t v) = {
     anim_callback_set_image_angle
 };
 
-int32_t (*anim_get_callbacks[])(lv_anim_t *a) = {
+lv_anim_get_value_cb_t anim_get_callbacks[] = {
     anim_callback_get_x,
     anim_callback_get_y,
     anim_callback_get_width,
@@ -163,11 +163,12 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
             }
 
             lv_anim_t anim;
-
             lv_anim_init(&anim);
+
             lv_anim_set_time(&anim, specific->time);
             lv_anim_set_user_data(&anim, target);
-            lv_anim_set_custom_exec_cb(&anim, anim_set_callbacks[specific->property]);
+            lv_anim_set_var(&anim, target);
+            lv_anim_set_exec_cb(&anim, anim_set_callbacks[specific->property]);
             lv_anim_set_values(&anim, specific->start, specific->end);
             lv_anim_set_path_cb(&anim, anim_path_callbacks[specific->path]);
             lv_anim_set_delay(&anim, specific->delay);
@@ -867,9 +868,6 @@ ACTION_END
     BOOL_PROP(instant); \
     INT32_PROP(path);
 
-typedef void (*AnimSetCallback)(lv_anim_t * a, int32_t v);
-typedef int32_t (*AnimGetCallback)(lv_anim_t * a);
-
 void playAnimation(lv_obj_t *obj,
     int32_t start,
     int32_t end,
@@ -878,15 +876,16 @@ void playAnimation(lv_obj_t *obj,
     bool relative,
     bool instant,
     int32_t path,
-    AnimSetCallback set_callback,
-    AnimGetCallback get_callback
+    lv_anim_exec_xcb_t set_callback,
+    lv_anim_get_value_cb_t get_callback
 ) {
     lv_anim_t anim;
     lv_anim_init(&anim);
 
     lv_anim_set_time(&anim, time);
     lv_anim_set_user_data(&anim, obj);
-    lv_anim_set_custom_exec_cb(&anim, set_callback);
+    lv_anim_set_var(&anim, obj);
+    lv_anim_set_exec_cb(&anim, set_callback);
     lv_anim_set_values(&anim, start, end);
     lv_anim_set_path_cb(&anim, anim_path_callbacks[path]);
     lv_anim_set_delay(&anim, delay);
