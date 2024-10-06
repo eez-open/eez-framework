@@ -625,6 +625,16 @@ ACTION_START(objSetX)
 #endif
 ACTION_END
 
+ACTION_START(objGetX)
+    WIDGET_PROP(obj);
+#if LVGL_VERSION_MAJOR >= 9
+    int32_t x = (int32_t)lv_obj_get_x(obj);
+#else
+    int32_t x = lv_obj_get_x(obj);
+#endif
+    RESULT(result, Value(x, VALUE_TYPE_INT32));
+ACTION_END
+
 ACTION_START(objSetY)
     WIDGET_PROP(obj);
     INT32_PROP(y);
@@ -633,6 +643,16 @@ ACTION_START(objSetY)
 #else
     lv_obj_set_y(obj, (lv_coord_t)y);
 #endif
+ACTION_END
+
+ACTION_START(objGetY)
+    WIDGET_PROP(obj);
+#if LVGL_VERSION_MAJOR >= 9
+    int32_t y = (int32_t)lv_obj_get_y(obj);
+#else
+    int32_t y = lv_obj_get_y(obj);
+#endif
+    RESULT(result, Value(y, VALUE_TYPE_INT32));
 ACTION_END
 
 ACTION_START(objSetWidth)
@@ -665,10 +685,26 @@ ACTION_START(objSetHeight)
 #endif
 ACTION_END
 
+ACTION_START(objGetHeight)
+    WIDGET_PROP(obj);
+#if LVGL_VERSION_MAJOR >= 9
+    int32_t height = (int32_t)lv_obj_get_height(obj);
+#else
+    int32_t height = lv_obj_get_height(obj);
+#endif
+    RESULT(result, Value(height, VALUE_TYPE_INT32));
+ACTION_END
+
 ACTION_START(objSetStyleOpa)
     WIDGET_PROP(obj);
     INT32_PROP(opa);
     lv_obj_set_style_opa(obj, (lv_opa_t)opa, 0);
+ACTION_END
+
+ACTION_START(objGetStyleOpa)
+    WIDGET_PROP(obj);
+    int32_t opa = (int32_t)lv_obj_get_style_opa(obj, 0);
+    RESULT(result, Value(opa, VALUE_TYPE_INT32));
 ACTION_END
 
 ACTION_START(objAddStyle)
@@ -940,11 +976,15 @@ static ActionType actions[] = {
     &changeScreen,
     &changeToPreviousScreen,
     &objSetX,
+    &objGetX,
     &objSetY,
+    &objGetY,
     &objSetWidth,
     &objGetWidth,
     &objSetHeight,
+    &objGetHeight,
     &objSetStyleOpa,
+    &objGetStyleOpa,
     &objAddStyle,
     &objRemoveStyle,
     &objSetFlagHidden,
