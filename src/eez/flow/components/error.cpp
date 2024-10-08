@@ -19,11 +19,11 @@ namespace flow {
 
 void executeErrorComponent(FlowState *flowState, unsigned componentIndex) {
 	Value expressionValue;
-	if (!evalProperty(flowState, componentIndex, defs_v3::EVAL_EXPR_ACTION_COMPONENT_PROPERTY_EXPRESSION, expressionValue, "Failed to evaluate Message in Error")) {
+	if (!evalProperty(flowState, componentIndex, defs_v3::EVAL_EXPR_ACTION_COMPONENT_PROPERTY_EXPRESSION, expressionValue, FlowError::Property("Error", "Message"))) {
 		return;
 	}
 
-	throwError(flowState, componentIndex, expressionValue.getString());
+	throwError(flowState, componentIndex, FlowError::Plain(expressionValue.getString()));
 }
 
 } // namespace flow

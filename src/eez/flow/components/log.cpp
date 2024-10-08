@@ -22,7 +22,7 @@ namespace flow {
 
 void executeLogComponent(FlowState *flowState, unsigned componentIndex) {
     Value value;
-    if (!evalProperty(flowState, componentIndex, defs_v3::LOG_ACTION_COMPONENT_PROPERTY_VALUE, value, "Failed to evaluate Message in Log")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::LOG_ACTION_COMPONENT_PROPERTY_VALUE, value, FlowError::Property("Log", "Message"))) {
         return;
     }
 

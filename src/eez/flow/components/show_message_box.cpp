@@ -76,7 +76,7 @@ void executeShowMessageBoxComponent(FlowState *flowState, unsigned componentInde
 	auto component = (ShowMessagePageActionComponent *)flowState->flow->components[componentIndex];
 
     Value messageValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_MESSAGE_BOX_ACTION_COMPONENT_PROPERTY_MESSAGE, messageValue, "Failed to evaluate Message in ShowMessageBox")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_MESSAGE_BOX_ACTION_COMPONENT_PROPERTY_MESSAGE, messageValue, FlowError::Property("ShowMessageBox", "Message"))) {
         return;
     }
 
@@ -92,12 +92,12 @@ void executeShowMessageBoxComponent(FlowState *flowState, unsigned componentInde
 		getAppContextFromId(APP_CONTEXT_ID_DEVICE)->errorMessageWithAction(messageValue, errorMessageCallback, "Close", 0);
 	} else if (component->type == MESSAGE_BOX_TYPE_QUESTION) {
         Value buttonsValue;
-        if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_MESSAGE_BOX_ACTION_COMPONENT_PROPERTY_BUTTONS, buttonsValue, "Failed to evaluate Buttons in ShowMessageBox")) {
+        if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_MESSAGE_BOX_ACTION_COMPONENT_PROPERTY_BUTTONS, buttonsValue, FlowError::Property("ShowMessageBox", "Buttons"))) {
             return;
         }
 
         if (!buttonsValue.isArray()) {
-            throwError(flowState, componentIndex, "Buttons in ShowMessageBox is not an array");
+            throwError(flowState, componentIndex, FlowError::Plain("Buttons in ShowMessageBox is not an array"));
             return;
         }
 
@@ -106,7 +106,7 @@ void executeShowMessageBoxComponent(FlowState *flowState, unsigned componentInde
             if (!buttonsArray->values[i].isString()) {
                 char errorMessage[256];
                 snprintf(errorMessage, sizeof(errorMessage), "Element at index %d is not a string in Buttons array in ShowMessageBox", (int)i);
-                throwError(flowState, componentIndex, errorMessage);
+                throwError(flowState, componentIndex, FlowError::Plain(errorMessage));
                 return;
             }
         }

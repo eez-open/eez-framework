@@ -25,7 +25,7 @@ void executeCompareComponent(FlowState *flowState, unsigned componentIndex) {
     auto component = (CompareActionComponent *)flowState->flow->components[componentIndex];
 
     Value conditionValue;
-    if (!evalExpression(flowState, componentIndex, component->conditionInstructions, conditionValue, "Failed to evaluate Condition in Compare")) {
+    if (!evalExpression(flowState, componentIndex, component->conditionInstructions, conditionValue, FlowError::Property("Compare", "Condition"))) {
         return;
     }
 
@@ -38,7 +38,7 @@ void executeCompareComponent(FlowState *flowState, unsigned componentIndex) {
             propagateValue(flowState, componentIndex, 2, Value(false, VALUE_TYPE_BOOLEAN));
         }
     } else {
-        throwError(flowState, componentIndex, "Failed to convert Value to boolean in IsTrue\n");
+        throwError(flowState, componentIndex, FlowError::PropertyConvert("Compare", "Condition", "boolean"));
         return;
     }
 

@@ -22,7 +22,7 @@ namespace flow {
 
 void executeSelectLanguageComponent(FlowState *flowState, unsigned componentIndex) {
 	Value languageValue;
-	if (!evalProperty(flowState, componentIndex, defs_v3::SELECT_LANGUAGE_ACTION_COMPONENT_PROPERTY_LANGUAGE, languageValue, "Failed to evaluate Language in SelectLanguage")) {
+	if (!evalProperty(flowState, componentIndex, defs_v3::SELECT_LANGUAGE_ACTION_COMPONENT_PROPERTY_LANGUAGE, languageValue, FlowError::Property("SelectLanguage", "Language"))) {
 		return;
 	}
 
@@ -40,7 +40,7 @@ void executeSelectLanguageComponent(FlowState *flowState, unsigned componentInde
 
     char message[256];
     snprintf(message, sizeof(message), "Unknown language %s", language);
-    throwError(flowState, componentIndex, message);
+    throwError(flowState, componentIndex, FlowError::Plain(message));
 }
 
 } // namespace flow

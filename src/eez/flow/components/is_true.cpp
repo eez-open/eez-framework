@@ -19,7 +19,7 @@ namespace flow {
 
 void executeIsTrueComponent(FlowState *flowState, unsigned componentIndex) {
 	Value srcValue;
-	if (!evalProperty(flowState, componentIndex, defs_v3::IS_TRUE_ACTION_COMPONENT_PROPERTY_VALUE, srcValue, "Failed to evaluate Value in IsTrue")) {
+	if (!evalProperty(flowState, componentIndex, defs_v3::IS_TRUE_ACTION_COMPONENT_PROPERTY_VALUE, srcValue, FlowError::Property("IsTrue", "Value"))) {
 		return;
 	}
 
@@ -32,7 +32,7 @@ void executeIsTrueComponent(FlowState *flowState, unsigned componentIndex) {
             propagateValue(flowState, componentIndex, 2, Value(false, VALUE_TYPE_BOOLEAN));
         }
     } else {
-        throwError(flowState, componentIndex, "Failed to convert Value to boolean in IsTrue\n");
+        throwError(flowState, componentIndex, FlowError::PropertyConvert("IsTrue", "Value", "boolean"));
         return;
     }
 

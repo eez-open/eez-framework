@@ -52,15 +52,12 @@ void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIn
             auto isAssignable = actionFlowState->flow->userPropertiesAssignable.items[i];
 
             Value value;
-            char errorMessage[64];
             if (isAssignable) {
-                snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate assignable property #%d in CallAction", (int)(i + 1));
-                if (!evalAssignableProperty(flowState, componentIndex, i, value, errorMessage)) {
+                if (!evalAssignableProperty(flowState, componentIndex, i, value, FlowError::UserProperty("CallAction", i))) {
                     break;
                 }
             } else {
-                snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate property #%d in CallAction", (int)(i + 1));
-                if (!evalProperty(flowState, componentIndex, i, value, errorMessage)) {
+                if (!evalProperty(flowState, componentIndex, i, value, FlowError::UserAssignableProperty("CallAction", i))) {
                     break;
                 }
             }
@@ -85,7 +82,7 @@ void executeCallActionComponent(FlowState *flowState, unsigned componentIndex) {
 
 	auto flowIndex = component->flowIndex;
 	if (flowIndex < 0) {
-		throwError(flowState, componentIndex, "Invalid action flow index in CallAction\n");
+		throwError(flowState, componentIndex, FlowError::Plain("Invalid action flow index in CallAction"));
 		return;
 	}
 

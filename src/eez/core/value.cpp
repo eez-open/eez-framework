@@ -24,6 +24,7 @@
 #include <eez/flow/hooks.h>
 #include <eez/flow/date.h>
 #include <eez/flow/expression.h>
+#include <eez/flow/private.h>
 
 #if defined(EEZ_DASHBOARD_API)
 #include <eez/flow/dashboard_api.h>
@@ -1529,7 +1530,7 @@ Value Value::makePropertyRef(flow::FlowState *flowState, int componentIndex, int
 Value Value::evalProperty() const {
     auto propertyRef = getPropertyRef();
     Value value;
-    flow::evalProperty(propertyRef->flowState, propertyRef->componentIndex, propertyRef->propertyIndex, value, "Failed to evaluate an user property in UserWidget");
+    flow::evalProperty(propertyRef->flowState, propertyRef->componentIndex, propertyRef->propertyIndex, value, flow::FlowError::Plain("Failed to evaluate an user property in UserWidget"));
     return value;
 }
 

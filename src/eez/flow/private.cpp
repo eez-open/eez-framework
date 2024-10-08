@@ -446,7 +446,7 @@ void getValue(uint16_t dataId, DataOperationEnum operation, const WidgetCursor &
 
 		WidgetDataItem *widgetDataItem = flow->widgetDataItems[dataId];
 		if (widgetDataItem && widgetDataItem->componentIndex != -1 && widgetDataItem->propertyValueIndex != -1) {
-			evalProperty(flowState, widgetDataItem->componentIndex, widgetDataItem->propertyValueIndex, value, "doGetFlowValue failed", nullptr, widgetCursor.iterators, operation);
+			evalProperty(flowState, widgetDataItem->componentIndex, widgetDataItem->propertyValueIndex, value, FlowError::Plain("doGetFlowValue failed"), nullptr, widgetCursor.iterators, operation);
 		}
 	}
 }
@@ -461,7 +461,7 @@ void setValue(uint16_t dataId, const WidgetCursor &widgetCursor, const Value& va
 			auto component = flow->components[widgetDataItem->componentIndex];
 			auto property = component->properties[widgetDataItem->propertyValueIndex];
 			Value dstValue;
-			if (evalAssignableExpression(flowState, widgetDataItem->componentIndex, property->evalInstructions, dstValue, "doSetFlowValue failed", nullptr, widgetCursor.iterators)) {
+			if (evalAssignableExpression(flowState, widgetDataItem->componentIndex, property->evalInstructions, dstValue, FlowError::Plain("doSetFlowValue failed"), nullptr, widgetCursor.iterators)) {
 				assignValue(flowState, widgetDataItem->componentIndex, dstValue, value);
 			}
 		}
@@ -489,19 +489,18 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
             if (arrayElementValue->arrayValue.isBlob()) {
                 auto blobRef = arrayElementValue->arrayValue.getBlob();
                 if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= (int)blobRef->len) {
-                    throwError(flowState, componentIndex, "Can not assign, blob element index out of bounds\n");
+                    throwError(flowState, componentIndex, FlowError::Plain("Can not assign, blob element index out of bounds"));
                     return;
                 }
 
                 int err;
                 int32_t elementValue = srcValue.toInt32(&err);
                 if (err != 0) {
-                    char errorMessage[100];
-                    snprintf(errorMessage, sizeof(errorMessage), "Can not non-integer to blob");
+                    throwError(flowState, componentIndex, FlowError::Plain("Can not non-integer to blob"));
                 } else if (elementValue < 0 || elementValue > 255) {
                     char errorMessage[100];
                     snprintf(errorMessage, sizeof(errorMessage), "Can not assign %d to blob", (int)elementValue);
-                    throwError(flowState, componentIndex, errorMessage);
+                    throwError(flowState, componentIndex, FlowError::Plain(errorMessage));
                 } else {
                     blobRef->blob[arrayElementValue->elementIndex] = elementValue;
                     // TODO: onValueChanged
@@ -510,7 +509,7 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
             } else {
                 auto array = arrayElementValue->arrayValue.getArray();
                 if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= (int)array->arraySize) {
-                    throwError(flowState, componentIndex, "Can not assign, array element index out of bounds\n");
+                    throwError(flowState, componentIndex, FlowError::Plain("Can not assign, array element index out of bounds"));
                     return;
                 }
                 pDstValue = &array->values[arrayElementValue->elementIndex];
@@ -522,7 +521,7 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
             auto jsonMemberValue = (JsonMemberValue *)dstValue.refValue;
             int err = operationJsonSet(jsonMemberValue->jsonValue.getInt(), jsonMemberValue->propertyName.getString(), &srcValue);
             if (err) {
-                throwError(flowState, componentIndex, "Can not assign to JSON member");
+                throwError(flowState, componentIndex, FlowError::Plain("Can not assign to JSON member"));
             }
             return;
         }
@@ -548,7 +547,7 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
             if (pDstValue->type == VALUE_TYPE_PROPERTY_REF) {
                 auto propertyRef = pDstValue->getPropertyRef();
                 Value dstValue;
-                if (evalAssignableProperty(propertyRef->flowState, propertyRef->componentIndex, propertyRef->propertyIndex, dstValue, "Failed to evaluate an assignable user property in UserWidget", nullptr, nullptr)) {
+                if (evalAssignableProperty(propertyRef->flowState, propertyRef->componentIndex, propertyRef->propertyIndex, dstValue, FlowError::Plain("Failed to evaluate an assignable user property in UserWidget"), nullptr, nullptr)) {
                     assignValue(flowState, componentIndex, dstValue, srcValue);
                     onValueChanged(pDstValue);
                 }
@@ -570,7 +569,7 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
             snprintf(errorMessage, sizeof(errorMessage), "Can not assign %s to %s\n",
                 g_valueTypeNames[pDstValue->type](srcValue), g_valueTypeNames[srcValue.type](*pDstValue)
             );
-            throwError(flowState, componentIndex, errorMessage);
+            throwError(flowState, componentIndex, FlowError::Plain(errorMessage));
         }
 	}
 }
@@ -725,14 +724,114 @@ void throwError(FlowState *flowState, int componentIndex, const char *errorMessa
 	}
 }
 
-void throwError(FlowState *flowState, int componentIndex, const char *errorMessage, const char *errorMessageDescription) {
-    if (errorMessage) {
-        char throwErrorMessage[512];
-        snprintf(throwErrorMessage, sizeof(throwErrorMessage), "%s: %s", errorMessage, errorMessageDescription);
-        throwError(flowState, componentIndex, throwErrorMessage);
-    } else {
-        throwError(flowState, componentIndex, errorMessageDescription);
-    }
+const char *FlowError::getMessage(char *messageStr, size_t messageStrLength) const {
+    if (type == FLOW_ERROR_PLAIN) {
+        if (!description) {
+            return messagePart1;
+        }
+        snprintf(messageStr, messageStrLength, "%s: %s", messagePart1, description);
+        return messageStr;
+    } else if (type == FLOW_ERROR_PROPERTY) {
+        if (!description) {
+            snprintf(messageStr, messageStrLength, "Failed to evaluate '%s' in '%s'", messagePart2, messagePart1);
+        } else {
+            snprintf(messageStr, messageStrLength, "Failed to evaluate '%s' in '%s': %s", messagePart2, messagePart1, description);
+        }
+        return messageStr;
+    } else if (type == FLOW_ERROR_PROPERTY_INVALID) {
+        if (!description) {
+            snprintf(messageStr, messageStrLength, "Invalid '%s' value in '%s'", messagePart2, messagePart1);
+        } else {
+            snprintf(messageStr, messageStrLength, "Invalid '%s' value in '%s': %s", messagePart2, messagePart1, description);
+        }
+        return messageStr;
+    } else if (type == FLOW_ERROR_PROPERTY_CONVERT) {
+        if (!description) {
+            snprintf(messageStr, messageStrLength, "Failed to convert '%s' to '%s' in '%s'", messagePart2, messagePart3, messagePart1);
+        } else {
+            snprintf(messageStr, messageStrLength, "Failed to convert '%s' to '%s' in '%s': %s", messagePart2, messagePart3, messagePart1, description);
+        }
+        return messageStr;
+    } else if (type == FLOW_ERROR_PROPERTY_IN_ARRAY) {
+        if (!description) {
+            snprintf(messageStr, messageStrLength, "Failed to evaluate '%s' no. %d in '%s'", messagePart2, messagePartInt + 1, messagePart1);
+        } else {
+            snprintf(messageStr, messageStrLength, "Failed to evaluate '%s' no. %d in '%s': %s", messagePart2, messagePartInt + 1, messagePart1, description);
+        }
+        return messageStr;
+    } else if (type == FLOW_ERROR_PROPERTY_IN_ARRAY_CONVERT) {
+        if (!description) {
+            snprintf(messageStr, messageStrLength, "Failed to convert '%s' no. %d to '%s' in '%s'", messagePart2, messagePartInt + 1, messagePart3, messagePart1);
+        } else {
+            snprintf(messageStr, messageStrLength, "Failed to evaluate '%s' no. %d to '%s' in '%s': %s", messagePart2, messagePartInt + 1, messagePart3, messagePart1, description);
+        }
+        return messageStr;
+    } else if (type == FLOW_ERROR_PROPERTY_NUM) {
+        if (!description) {
+            snprintf(messageStr, messageStrLength, "Failed to evaluate property #%d in '%s'", messagePartInt + 1, messagePart1);
+        } else {
+            snprintf(messageStr, messageStrLength, "Failed to evaluate property #%d in '%s': %s", messagePartInt + 1, messagePart1, description);
+        }
+        return messageStr;
+    } else if (type == FLOW_ERROR_PROPERTY_IN_ACTION) {
+        if (!description) {
+            snprintf(messageStr, messageStrLength, "Failed to evaluate '%s' in '%s' action #%d", messagePart2, messagePart1, messagePartInt + 1);
+        } else {
+            snprintf(messageStr, messageStrLength, "Failed to evaluate '%s' in '%s' action #%d: %s", messagePart2, messagePart1, messagePartInt + 1, description);
+        }
+        return messageStr;
+    } else if (type == FLOW_ERROR_PROPERTY_ASSIGN_IN_ACTION) {
+        if (!description) {
+            snprintf(messageStr, messageStrLength, "Failed to assign '%s' in '%s' action #%d", messagePart2, messagePart1, messagePartInt + 1);
+        } else {
+            snprintf(messageStr, messageStrLength, "Failed to assign '%s' in '%s' action #%d: %s", messagePart2, messagePart1, messagePartInt + 1, description);
+        }
+        return messageStr;
+    } else if (type == FLOW_ERROR_PROPERTY_IN_ACTION_CONVERT) {
+        if (!description) {
+            snprintf(messageStr, messageStrLength, "Failed to convert '%s' to '%s' in '%s' action #%d", messagePart2, messagePart3, messagePart1, messagePartInt + 1);
+        } else {
+            snprintf(messageStr, messageStrLength, "Failed to convert '%s' to '%s' in '%s' action #%d: %s", messagePart2, messagePart3, messagePart1, messagePartInt + 1, description);
+        }
+        return messageStr;
+    } else if (type == FLOW_ERROR_PROPERTY_NOT_FOUND_IN_ACTION) {
+        if (!description) {
+            snprintf(messageStr, messageStrLength, "%s '%s' not found in '%s' action #%d", messagePart1, messagePart2, messagePart3, messagePartInt + 1);
+        } else {
+            snprintf(messageStr, messageStrLength, "%s '%s' not found in '%s' action #%d: %s", messagePart1, messagePart2, messagePart3, messagePartInt + 1, description);
+        }
+        return messageStr;
+    } else if (type == FLOW_ERROR_PROPERTY_IS_NULL_IN_ACTION) {
+        if (!description) {
+            snprintf(messageStr, messageStrLength, "%s is NULL in '%s' action #%d", messagePart1, messagePart2, messagePartInt + 1);
+        } else {
+            snprintf(messageStr, messageStrLength, "%s is NULL in '%s' action #%d: %s", messagePart1, messagePart2, messagePartInt + 1, description);
+        }
+        return messageStr;
+    } else if (type == FLOW_ERROR_USER_PROPERTY) {
+        if (!description) {
+            snprintf(messageStr, messageStrLength, "Failed to evaluate property #%d in '%s'", messagePartInt + 1, messagePart1);
+        } else {
+            snprintf(messageStr, messageStrLength, "Failed to evaluate property #%d in '%s': %s", messagePartInt + 1, messagePart1, description);
+        }
+        return messageStr;
+    } else if (type == FLOW_ERROR_USER_ASSIGNABLE_PROPERTY) {
+        if (!description) {
+            snprintf(messageStr, messageStrLength, "Failed to evaluate assignable property #%d in '%s'", messagePartInt + 1, messagePart1);
+        } else {
+            snprintf(messageStr, messageStrLength, "Failed to evaluate assignable property #%d in '%s': %s", messagePartInt + 1, messagePart1, description);
+        }
+        return messageStr;
+    } 
+
+    return 0;
+}
+
+
+void throwError(FlowState *flowState, int componentIndex, const FlowError &error) {
+    char errorMessageStr[512];
+    const char *errorMessage = error.getMessage(errorMessageStr, sizeof(errorMessageStr));
+    throwError(flowState, componentIndex, errorMessage);
 }
 
 void enableThrowError(bool enable) {

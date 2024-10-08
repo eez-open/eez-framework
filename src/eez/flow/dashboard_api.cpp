@@ -453,7 +453,7 @@ EM_PORT_API(void *) getExpressionListParam(int flowStateIndex, int componentInde
         new (expressionList->values + i) Value();
 
         auto valueExpression = list[i];
-        if (!evalExpression(flowState, componentIndex, valueExpression, expressionList->values[i], "Failed to evaluate expression")) {
+        if (!evalExpression(flowState, componentIndex, valueExpression, expressionList->values[i], FlowError::Plain("Failed to evaluate expression"))) {
             return nullptr;
         }
     }
@@ -491,13 +491,13 @@ EM_PORT_API(Value *) evalListParamElementExpression(int flowStateIndex, int comp
     auto &expressionInstructions = list[elementIndex]->expressions[expressionOffset / 4];
 
     Value result;
-    if (!evalExpression(flowState, componentIndex, expressionInstructions, result, errorMessage)) {
+    if (!evalExpression(flowState, componentIndex, expressionInstructions, result, FlowError::Plain(errorMessage))) {
         return nullptr;
     }
 
     auto pValue = ObjectAllocator<Value>::allocate(0x15cb2009);
     if (!pValue) {
-        throwError(flowState, componentIndex, "Out of memory\n");
+        throwError(flowState, componentIndex, FlowError::Plain("Out of memory"));
         return nullptr;
     }
 
@@ -528,7 +528,7 @@ EM_PORT_API(Value *) evalProperty(int flowStateIndex, int componentIndex, int pr
     }
 
     Value result;
-    if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, result, "Failed to evaluate property", nullptr, iterators)) {
+    if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, result, FlowError::Plain("Failed to evaluate property"), nullptr, iterators)) {
         return nullptr;
     }
 
@@ -538,7 +538,7 @@ EM_PORT_API(Value *) evalProperty(int flowStateIndex, int componentIndex, int pr
 
     auto pValue = ObjectAllocator<Value>::allocate(0xb7e697b8);
     if (!pValue) {
-        throwError(flowState, componentIndex, "Out of memory\n");
+        throwError(flowState, componentIndex, FlowError::Plain("Out of memory"));
         return nullptr;
     }
 
@@ -551,7 +551,7 @@ EM_PORT_API(void) assignProperty(int flowStateIndex, int componentIndex, int pro
     auto flowState = getFlowStateFromFlowStateIndex(flowStateIndex);
 
     Value dstValue;
-    if (evalAssignableProperty(flowState, componentIndex, propertyIndex, dstValue, nullptr, nullptr, iterators)) {
+    if (evalAssignableProperty(flowState, componentIndex, propertyIndex, dstValue, FlowError::Plain(""), nullptr, iterators)) {
         assignValue(flowState, componentIndex, dstValue, *srcValuePtr);
     }
 }
@@ -560,7 +560,7 @@ EM_PORT_API(void) setPropertyField(int flowStateIndex, int componentIndex, int p
     auto flowState = getFlowStateFromFlowStateIndex(flowStateIndex);
 
     Value result;
-    if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, result, "Failed to evaluate property")) {
+    if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, result, FlowError::Plain("Failed to evaluate property"))) {
         return;
     }
 
@@ -569,14 +569,14 @@ EM_PORT_API(void) setPropertyField(int flowStateIndex, int componentIndex, int p
 	}
 
     if (!result.isArray()) {
-        throwError(flowState, componentIndex, "Property is not an array");
+        throwError(flowState, componentIndex, FlowError::Plain("Property is not an array"));
         return;
     }
 
     auto array = result.getArray();
 
     if (fieldIndex < 0 || fieldIndex >= array->arraySize) {
-        throwError(flowState, componentIndex, "Invalid field index");
+        throwError(flowState, componentIndex, FlowError::Plain("Invalid field index"));
         return;
     }
 

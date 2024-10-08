@@ -24,12 +24,12 @@ namespace flow {
 
 void executeTestAndSetComponent(FlowState *flowState, unsigned componentIndex) {
     Value dstValue;
-    if (!evalAssignableProperty(flowState, componentIndex, defs_v3::TEST_AND_SET_ACTION_COMPONENT_PROPERTY_VARIABLE, dstValue, "Failed to evaluate Variable in TestAndSet")) {
+    if (!evalAssignableProperty(flowState, componentIndex, defs_v3::TEST_AND_SET_ACTION_COMPONENT_PROPERTY_VARIABLE, dstValue, FlowError::Property("TestAndSet", "Variable"))) {
         return;
     }
 
     if (dstValue.getValue().type != VALUE_TYPE_BOOLEAN) {
-        throwError(flowState, componentIndex, "Variable in TestAndSet must be of type Boolean");
+        throwError(flowState, componentIndex, FlowError::PropertyConvert("TestAndSet", "Variable", "boolean"));
         return;
     }
 

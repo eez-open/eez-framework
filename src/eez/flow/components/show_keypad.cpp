@@ -31,27 +31,27 @@ struct ShowKeyboardActionComponent : public Component {
 
 void executeShowKeypadComponent(FlowState *flowState, unsigned componentIndex) {
     Value labelValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_KEYBOARD_ACTION_COMPONENT_PROPERTY_LABEL, labelValue, "Failed to evaluate Label in ShowKeypad")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_KEYBOARD_ACTION_COMPONENT_PROPERTY_LABEL, labelValue, FlowError::Property("ShowKeypad", "Label"))) {
         return;
     }
 
     Value initialValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_INITAL_VALUE, initialValue, "Failed to evaluate InitialValue in ShowKeypad")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_INITAL_VALUE, initialValue, FlowError::Property("ShowKeypad", "Initial value"))) {
         return;
     }
 
     Value minValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_MIN, minValue, "Failed to evaluate Min in ShowKeypad")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_MIN, minValue, FlowError::Property("ShowKeypad", "Min"))) {
         return;
     }
 
     Value maxValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_MAX, maxValue, "Failed to evaluate Max in ShowKeypad")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_MAX, maxValue, FlowError::Property("ShowKeypad", "Max"))) {
         return;
     }
 
     Value unitValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_UNIT, unitValue, "Failed to evaluate Unit in ShowKeypad")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_UNIT, unitValue, FlowError::Property("ShowKeypad", "Unit"))) {
         return;
     }
 
@@ -65,14 +65,14 @@ void executeShowKeypadComponent(FlowState *flowState, unsigned componentIndex) {
 
 	auto onOk = [](float value) {
         Value precisionValue;
-        if (!evalProperty(g_showKeyboardFlowState, g_showKeyboardComponentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_PRECISION, precisionValue, "Failed to evaluate Precision in ShowKeypad")) {
+        if (!evalProperty(g_showKeyboardFlowState, g_showKeyboardComponentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_PRECISION, precisionValue, FlowError::Property("ShowKeypad", "Precision"))) {
             return;
         }
 
         float precision = precisionValue.toFloat();
 
         Value unitValue;
-        if (!evalProperty(g_showKeyboardFlowState, g_showKeyboardComponentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_UNIT, unitValue, "Failed to evaluate Unit in ShowKeypad")) {
+        if (!evalProperty(g_showKeyboardFlowState, g_showKeyboardComponentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_UNIT, unitValue, FlowError::Property("ShowKeypad", "Unit"))) {
             return;
         }
 

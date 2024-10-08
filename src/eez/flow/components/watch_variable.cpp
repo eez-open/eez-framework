@@ -33,7 +33,7 @@ void executeWatchVariableComponent(FlowState *flowState, unsigned componentIndex
 	auto watchVariableComponentExecutionState = (WatchVariableComponenentExecutionState *)flowState->componenentExecutionStates[componentIndex];
 
     Value value;
-    if (!evalProperty(flowState, componentIndex, defs_v3::WATCH_VARIABLE_ACTION_COMPONENT_PROPERTY_VARIABLE, value, "Failed to evaluate Variable in WatchVariable")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::WATCH_VARIABLE_ACTION_COMPONENT_PROPERTY_VARIABLE, value, FlowError::Property("WatchVariable", "Variable"))) {
         return;
     }
 

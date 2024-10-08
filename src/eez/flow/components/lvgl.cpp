@@ -136,8 +136,6 @@ struct LVGLExecutionState : public ComponenentExecutionState {
 void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
     auto component = (LVGLComponent *)flowState->flow->components[componentIndex];
 
-    char errorMessage[256];
-
     auto executionState = (LVGLExecutionState *)flowState->componenentExecutionStates[componentIndex];
 
     for (uint32_t actionIndex = executionState ? executionState->actionIndex : 0; actionIndex < component->actions.count; actionIndex++) {
@@ -204,8 +202,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                 lv_keyboard_set_textarea(target, textarea);
             } else {
                 Value value;
-                snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate Value in LVGL Set Property action #%d", (int)(actionIndex + 1));
-                if (!evalExpression(flowState, componentIndex, specific->value, value, errorMessage)) {
+                if (!evalExpression(flowState, componentIndex, specific->value, value, FlowError::PropertyInAction("LVGL Set Property", "Value", actionIndex))) {
                     return;
                 }
 
@@ -216,8 +213,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                         if (src) {
                             lv_img_set_src(target, src);
                         } else {
-                            snprintf(errorMessage, sizeof(errorMessage), "Image \"%s\" not found in LVGL Set Property action #%d", strValue, (int)(actionIndex + 1));
-                            throwError(flowState, componentIndex, errorMessage);
+                            throwError(flowState, componentIndex, FlowError::NotFoundInAction("Image", strValue, "LVGL Set Property", actionIndex));
                         }
                     } else {
                         lv_label_set_text(target, strValue ? strValue : "");
@@ -226,8 +222,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                     int err;
                     bool booleanValue = value.toBool(&err);
                     if (err) {
-                        snprintf(errorMessage, sizeof(errorMessage), "Failed to convert value to boolean in LVGL Set Property action #%d", (int)(actionIndex + 1));
-                        throwError(flowState, componentIndex, errorMessage);
+                        throwError(flowState, componentIndex, FlowError::PropertyInActionConvert("LVGL Set Property", "Value", "boolean", actionIndex));
                         return;
                     }
 
@@ -239,8 +234,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                     int err;
                     bool booleanValue = value.toBool(&err);
                     if (err) {
-                        snprintf(errorMessage, sizeof(errorMessage), "Failed to convert value to boolean in LVGL Set Property action #%d", (int)(actionIndex + 1));
-                        throwError(flowState, componentIndex, errorMessage);
+                        throwError(flowState, componentIndex, FlowError::PropertyInActionConvert("LVGL Set Property", "Value", "boolean", actionIndex));
                         return;
                     }
 
@@ -252,8 +246,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                     int err;
                     int32_t intValue = value.toInt32(&err);
                     if (err) {
-                        snprintf(errorMessage, sizeof(errorMessage), "Failed to convert value to integer in LVGL Set Property action #%d", (int)(actionIndex + 1));
-                        throwError(flowState, componentIndex, errorMessage);
+                        throwError(flowState, componentIndex, FlowError::PropertyInActionConvert("LVGL Set Property", "Value", "integer", actionIndex));
                         return;
                     }
 
@@ -416,13 +409,11 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
 
 #define ACTION_START(NAME) static void NAME(FlowState *flowState, unsigned componentIndex, const ListOfAssetsPtr<Property> &properties, uint32_t actionIndex) { \
     const char *actionName = #NAME; \
-    char errorMessage[256]; \
     int propIndex = 0;
 
 #define INT8_PROP(NAME) \
     Value NAME##Value; \
-    snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate " #NAME " in %s action #%d", actionName, (int)(actionIndex + 1)); \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, errorMessage)) { \
+    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
         return; \
     }\
     propIndex++; \
@@ -430,8 +421,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
 
 #define UINT8_PROP(NAME) \
     Value NAME##Value; \
-    snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate " #NAME " in %s action #%d", actionName, (int)(actionIndex + 1)); \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, errorMessage)) { \
+    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
         return; \
     }\
     propIndex++; \
@@ -439,8 +429,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
 
 #define INT16_PROP(NAME) \
     Value NAME##Value; \
-    snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate " #NAME " in %s action #%d", actionName, (int)(actionIndex + 1)); \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, errorMessage)) { \
+    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
         return; \
     }\
     propIndex++; \
@@ -448,8 +437,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
 
 #define UINT16_PROP(NAME) \
     Value NAME##Value; \
-    snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate " #NAME " in %s action #%d", actionName, (int)(actionIndex + 1)); \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, errorMessage)) { \
+    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
         return; \
     }\
     propIndex++; \
@@ -457,8 +445,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
 
 #define INT32_PROP(NAME) \
     Value NAME##Value; \
-    snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate " #NAME " in %s action #%d", actionName, (int)(actionIndex + 1)); \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, errorMessage)) { \
+    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
         return; \
     }\
     propIndex++; \
@@ -466,8 +453,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
 
 #define UINT32_PROP(NAME) \
     Value NAME##Value; \
-    snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate " #NAME " in %s action #%d", actionName, (int)(actionIndex + 1)); \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, errorMessage)) { \
+    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
         return; \
     }\
     propIndex++; \
@@ -475,8 +461,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
 
 #define BOOL_PROP(NAME) \
     Value NAME##Value; \
-    snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate " #NAME " in %s action #%d", actionName, (int)(actionIndex + 1)); \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, errorMessage)) { \
+    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
         return; \
     }\
     propIndex++; \
@@ -484,8 +469,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
 
 #define STR_PROP(NAME) \
     Value NAME##Value; \
-    snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate " #NAME " in %s action #%d", actionName, (int)(actionIndex + 1)); \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, errorMessage)) { \
+    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
         return; \
     }\
     propIndex++; \
@@ -493,8 +477,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
 
 #define SCREEN_PROP(NAME) \
     Value NAME##Value; \
-    snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate " #NAME " in %s action #%d", actionName, (int)(actionIndex + 1)); \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, errorMessage)) { \
+    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
         return; \
     }\
     propIndex++; \
@@ -503,8 +486,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
         const char *screenName = NAME##Value.getString(); \
         NAME = getLvglScreenByNameHook(screenName); \
         if (NAME == 0) { \
-            snprintf(errorMessage, sizeof(errorMessage), "Screen \"%s\" not found in %s action #%d", screenName, actionName, (int)(actionIndex + 1)); \
-            throwError(flowState, componentIndex, errorMessage); \
+            throwError(flowState, componentIndex, FlowError::NotFoundInAction("Screen", screenName, actionName, actionIndex)); \
             return; \
         } \
     } else { \
@@ -513,8 +495,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
 
 #define WIDGET_PROP(NAME) \
     Value NAME##Value; \
-    snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate " #NAME " in %s action #%d", actionName, (int)(actionIndex + 1)); \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, errorMessage)) { \
+    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
         return; \
     }\
     propIndex++; \
@@ -525,8 +506,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
         const char *objectName = NAME##Value.getString(); \
         int32_t NAME##_WidgetIndex = getLvglObjectByNameHook(objectName); \
         if (NAME##_WidgetIndex == -1) { \
-            snprintf(errorMessage, sizeof(errorMessage), "Widget \"%s\" not found in %s action #%d", objectName, actionName, (int)(actionIndex + 1)); \
-            throwError(flowState, componentIndex, errorMessage); \
+            throwError(flowState, componentIndex, FlowError::NotFoundInAction("Widget", objectName, actionName, actionIndex)); \
             return; \
         } \
         NAME = getLvglObjectFromIndexHook(flowState->lvglWidgetStartIndex + NAME##_WidgetIndex); \
@@ -535,15 +515,13 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
         NAME = getLvglObjectFromIndexHook(flowState->lvglWidgetStartIndex + NAME##_WidgetIndex); \
     } \
     if (!NAME) { \
-        snprintf(errorMessage, sizeof(errorMessage), "Widget is NULL in %s action #%d", actionName, (int)(actionIndex + 1)); \
-        throwError(flowState, componentIndex, errorMessage); \
+        throwError(flowState, componentIndex, FlowError::NullInAction("Widget", actionName, actionIndex)); \
         return; \
     }
 
 #define GROUP_PROP(NAME) \
     Value NAME##Value; \
-    snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate " #NAME " in %s action #%d", actionName, (int)(actionIndex + 1)); \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, errorMessage)) { \
+    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
         return; \
     }\
     propIndex++; \
@@ -552,8 +530,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
         const char *groupName = NAME##Value.getString(); \
         int32_t NAME##_GroupIndex = getLvglGroupByNameHook(groupName); \
         if (NAME##_GroupIndex == -1) { \
-            snprintf(errorMessage, sizeof(errorMessage), "Group \"%s\" not found in %s action #%d", groupName, actionName, (int)(actionIndex + 1)); \
-            throwError(flowState, componentIndex, errorMessage); \
+            throwError(flowState, componentIndex, FlowError::NotFoundInAction("Group", groupName, actionName, actionIndex)); \
             return; \
         } \
         NAME = getLvglGroupFromIndexHook(NAME##_GroupIndex); \
@@ -562,15 +539,13 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
         NAME = getLvglGroupFromIndexHook(NAME##_GroupIndex); \
     } \
     if (!NAME) { \
-        snprintf(errorMessage, sizeof(errorMessage), "Group is NULL LVGL in %s action #%d", actionName, (int)(actionIndex + 1)); \
-        throwError(flowState, componentIndex, errorMessage); \
+        throwError(flowState, componentIndex, FlowError::NullInAction("Group", actionName, actionIndex)); \
         return; \
     }
 
 #define STYLE_PROP(NAME) \
     Value NAME##Value; \
-    snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate " #NAME " in %s action #%d", actionName, (int)(actionIndex + 1)); \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, errorMessage)) { \
+    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
         return; \
     }\
     propIndex++; \
@@ -579,8 +554,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
         const char *styleName = NAME##Value.getString(); \
         NAME = getLvglStyleByNameHook(styleName); \
         if (NAME == -1) { \
-            snprintf(errorMessage, sizeof(errorMessage), "Style \"%s\" not found in %s action #%d", styleName, actionName, (int)(actionIndex + 1)); \
-            throwError(flowState, componentIndex, errorMessage); \
+            throwError(flowState, componentIndex, FlowError::NotFoundInAction("Style", styleName, actionName, actionIndex)); \
             return; \
         } \
     } else { \
@@ -589,8 +563,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
 
 #define RESULT(NAME, VALUE) \
     Value NAME##Value; \
-    snprintf(errorMessage, sizeof(errorMessage), "Failed to assign " #NAME " in %s action #%d", actionName, (int)(actionIndex + 1)); \
-    if (!evalAssignableExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, errorMessage)) { \
+    if (!evalAssignableExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyAssignInAction(#NAME, actionName, actionIndex))) { \
         return; \
     }\
     propIndex++; \
@@ -808,8 +781,7 @@ ACTION_START(imageSetSrc)
     if (src) {
         lv_img_set_src(obj, src);
     } else {
-        snprintf(errorMessage, sizeof(errorMessage), "Image \"%s\" not found in LVGL Set Property action #%d", str, (int)(actionIndex + 1));
-        throwError(flowState, componentIndex, errorMessage);
+        throwError(flowState, componentIndex, FlowError::NotFoundInAction("Image", str, "imageSetSrc", actionIndex));
     }
 ACTION_END
 
@@ -1055,11 +1027,11 @@ namespace eez {
 namespace flow {
 
 void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
-    throwError(flowState, componentIndex, "Not implemented");
+    throwError(flowState, componentIndex, FlowError::Plain("Not implemented"));
 }
 
 void executeLVGLApiComponent(FlowState *flowState, unsigned componentIndex) {
-    throwError(flowState, componentIndex, "Not implemented");
+    throwError(flowState, componentIndex, FlowError::Plain("Not implemented"));
 }
 
 } // namespace flow

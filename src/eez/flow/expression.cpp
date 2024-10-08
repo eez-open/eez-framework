@@ -26,7 +26,7 @@ namespace flow {
 
 EvalStack g_stack;
 
-static void evalExpression(FlowState *flowState, const uint8_t *instructions, int *numInstructionBytes, const char *errorMessage) {
+static void evalExpression(FlowState *flowState, const uint8_t *instructions, int *numInstructionBytes) {
 	auto flowDefinition = flowState->flowDefinition;
 	auto flow = flowState->flow;
 
@@ -134,9 +134,9 @@ static void evalExpression(FlowState *flowState, const uint8_t *instructions, in
 }
 
 #if EEZ_OPTION_GUI
-bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *instructions, Value &result, const char *errorMessage, int *numInstructionBytes, const int32_t *iterators, DataOperationEnum operation) {
+bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *instructions, Value &result, const FlowError &errorMessage, int *numInstructionBytes, const int32_t *iterators, DataOperationEnum operation) {
 #else
-bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *instructions, Value &result, const char *errorMessage, int *numInstructionBytes, const int32_t *iterators) {
+bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *instructions, Value &result, const FlowError &errorMessage, int *numInstructionBytes, const int32_t *iterators) {
 #endif
 	//g_stack.sp = 0;
 
@@ -151,7 +151,7 @@ bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *ins
 	g_stack.iterators = iterators;
     g_stack.errorMessage = nullptr;
 
-	evalExpression(flowState, instructions, numInstructionBytes, errorMessage);
+	evalExpression(flowState, instructions, numInstructionBytes);
 
 	g_stack.flowState = savedFlowState;
 	g_stack.componentIndex = savedComponentIndex;
@@ -193,11 +193,12 @@ bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *ins
 #endif
     }
 
-    throwError(flowState, componentIndex, errorMessage, g_stack.errorMessage ? g_stack.errorMessage : nullptr);
+    FlowError flowError = errorMessage.setDescription(g_stack.errorMessage);
+    throwError(flowState, componentIndex, flowError);
 	return false;
 }
 
-bool evalAssignableExpression(FlowState *flowState, int componentIndex, const uint8_t *instructions, Value &result, const char *errorMessage, int *numInstructionBytes, const int32_t *iterators) {
+bool evalAssignableExpression(FlowState *flowState, int componentIndex, const uint8_t *instructions, Value &result, const FlowError &errorMessage, int *numInstructionBytes, const int32_t *iterators) {
     FlowState *savedFlowState = g_stack.flowState;
 	int savedComponentIndex = g_stack.componentIndex;
 	const int32_t *savedIterators = g_stack.iterators;
@@ -208,7 +209,7 @@ bool evalAssignableExpression(FlowState *flowState, int componentIndex, const ui
 	g_stack.iterators = iterators;
     g_stack.errorMessage = nullptr;
 
-	evalExpression(flowState, instructions, numInstructionBytes, errorMessage);
+	evalExpression(flowState, instructions, numInstructionBytes);
 
 	g_stack.flowState = savedFlowState;
 	g_stack.componentIndex = savedComponentIndex;
@@ -229,27 +230,30 @@ bool evalAssignableExpression(FlowState *flowState, int componentIndex, const ui
         }
     }
 
-    throwError(flowState, componentIndex, errorMessage, g_stack.errorMessage ? g_stack.errorMessage : nullptr);
+    errorMessage.setDescription(g_stack.errorMessage);
+    throwError(flowState, componentIndex, errorMessage);
 
 	return false;
 }
 
 #if EEZ_OPTION_GUI
-bool evalProperty(FlowState *flowState, int componentIndex, int propertyIndex, Value &result, const char *errorMessage, int *numInstructionBytes, const int32_t *iterators, DataOperationEnum operation) {
+bool evalProperty(FlowState *flowState, int componentIndex, int propertyIndex, Value &result, const FlowError &errorMessage, int *numInstructionBytes, const int32_t *iterators, DataOperationEnum operation) {
 #else
-bool evalProperty(FlowState *flowState, int componentIndex, int propertyIndex, Value &result, const char *errorMessage, int *numInstructionBytes, const int32_t *iterators) {
+bool evalProperty(FlowState *flowState, int componentIndex, int propertyIndex, Value &result, const FlowError &errorMessage, int *numInstructionBytes, const int32_t *iterators) {
 #endif
     if (componentIndex < 0 || componentIndex >= (int)flowState->flow->components.count) {
         char message[256];
         snprintf(message, sizeof(message), "invalid component index %d in flow at index %d", componentIndex, flowState->flowIndex);
-        throwError(flowState, componentIndex, errorMessage, message);
+        FlowError flowError = errorMessage.setDescription(message);
+        throwError(flowState, componentIndex, flowError);
         return false;
     }
     auto component = flowState->flow->components[componentIndex];
     if (propertyIndex < 0 || propertyIndex >= (int)component->properties.count) {
         char message[256];
-        snprintf(message, sizeof(message), "invalid property index %d at component index %d in flow at index %d", propertyIndex, componentIndex, flowState->flowIndex);
-        throwError(flowState, componentIndex, errorMessage, message);
+        snprintf(message, sizeof(message), "invalid property index %d in component at index %d in flow at index %d", propertyIndex, componentIndex, flowState->flowIndex);
+        FlowError flowError = errorMessage.setDescription(message);
+        throwError(flowState, componentIndex, flowError);
         return false;
     }
 #if EEZ_OPTION_GUI
@@ -259,18 +263,20 @@ bool evalProperty(FlowState *flowState, int componentIndex, int propertyIndex, V
 #endif
 }
 
-bool evalAssignableProperty(FlowState *flowState, int componentIndex, int propertyIndex, Value &result, const char *errorMessage, int *numInstructionBytes, const int32_t *iterators) {
+bool evalAssignableProperty(FlowState *flowState, int componentIndex, int propertyIndex, Value &result, const FlowError &errorMessage, int *numInstructionBytes, const int32_t *iterators) {
     if (componentIndex < 0 || componentIndex >= (int)flowState->flow->components.count) {
         char message[256];
         snprintf(message, sizeof(message), "invalid component index %d in flow at index %d", componentIndex, flowState->flowIndex);
-        throwError(flowState, componentIndex, errorMessage, message);
+        FlowError flowError = errorMessage.setDescription(message);
+        throwError(flowState, componentIndex, flowError);
         return false;
     }
     auto component = flowState->flow->components[componentIndex];
     if (propertyIndex < 0 || propertyIndex >= (int)component->properties.count) {
         char message[256];
-        snprintf(message, sizeof(message), "invalid property index %d (max: %d) in component at index %d in flow at index %d", propertyIndex, (int)component->properties.count, componentIndex, flowState->flowIndex);
-        throwError(flowState, componentIndex, errorMessage, message);
+        snprintf(message, sizeof(message), "invalid property index %d in component at index %d in flow at index %d", propertyIndex, componentIndex, flowState->flowIndex);
+        FlowError flowError = errorMessage.setDescription(message);
+        throwError(flowState, componentIndex, flowError);
         return false;
     }
     return evalAssignableExpression(flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, result, errorMessage, numInstructionBytes, iterators);
@@ -297,7 +303,7 @@ int16_t getNativeVariableId(const WidgetCursor &widgetCursor) {
 			g_stack.iterators = widgetCursor.iterators;
             g_stack.errorMessage = nullptr;
 
-			evalExpression(flowState, property->evalInstructions, nullptr, nullptr);
+			evalExpression(flowState, property->evalInstructions, nullptr);
 
             g_stack.flowState = savedFlowState;
             g_stack.componentIndex = savedComponentIndex;

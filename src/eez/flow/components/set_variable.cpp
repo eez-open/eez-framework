@@ -26,18 +26,13 @@ void executeSetVariableComponent(FlowState *flowState, unsigned componentIndex) 
     for (uint32_t entryIndex = 0; entryIndex < component->entries.count; entryIndex++) {
         auto entry = component->entries[entryIndex];
 
-        char strErrorMessage[256];
-        snprintf(strErrorMessage, sizeof(strErrorMessage), "Failed to evaluate Variable no. %d in SetVariable", (int)(entryIndex + 1));
-
         Value dstValue;
-        if (!evalAssignableExpression(flowState, componentIndex, entry->variable, dstValue, strErrorMessage)) {
+        if (!evalAssignableExpression(flowState, componentIndex, entry->variable, dstValue, FlowError::PropertyInArray("SetVariable", "Variable", entryIndex))) {
             return;
         }
 
-        snprintf(strErrorMessage, sizeof(strErrorMessage), "Failed to evaluate Value no. %d in SetVariable", (int)(entryIndex + 1));
-
         Value srcValue;
-        if (!evalExpression(flowState, componentIndex, entry->value, srcValue, strErrorMessage)) {
+        if (!evalExpression(flowState, componentIndex, entry->value, srcValue, FlowError::PropertyInArray("SetVariable", "Value", entryIndex))) {
             return;
         }
 

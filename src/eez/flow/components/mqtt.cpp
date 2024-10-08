@@ -294,52 +294,52 @@ MQTTEventActionComponenentExecutionState::~MQTTEventActionComponenentExecutionSt
 
 void executeMQTTInitComponent(FlowState *flowState, unsigned componentIndex) {
     Value connectionDstValue;
-    if (!evalAssignableProperty(flowState, componentIndex, defs_v3::MQTT_INIT_ACTION_COMPONENT_PROPERTY_CONNECTION, connectionDstValue, "Failed to evaluate Connection in MQTTInit")) {
+    if (!evalAssignableProperty(flowState, componentIndex, defs_v3::MQTT_INIT_ACTION_COMPONENT_PROPERTY_CONNECTION, connectionDstValue, FlowError::Property("MQTTInit", "Connection"))) {
         return;
     }
 
     Value protocolValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_INIT_ACTION_COMPONENT_PROPERTY_PROTOCOL, protocolValue, "Failed to evaluate Protocol in MQTTInit")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_INIT_ACTION_COMPONENT_PROPERTY_PROTOCOL, protocolValue, FlowError::Property("MQTTInit", "Protocol"))) {
         return;
     }
     if (!protocolValue.isString()) {
-        throwError(flowState, componentIndex, "Protocol must be a string");
+        throwError(flowState, componentIndex, FlowError::Plain("Protocol must be a string"));
         return;
     }
 
     Value hostValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_INIT_ACTION_COMPONENT_PROPERTY_HOST, hostValue, "Failed to evaluate Host in MQTTInit")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_INIT_ACTION_COMPONENT_PROPERTY_HOST, hostValue, FlowError::Property("MQTTInit", "Host"))) {
         return;
     }
     if (!hostValue.isString()) {
-        throwError(flowState, componentIndex, "Host must be a string");
+        throwError(flowState, componentIndex, FlowError::Plain("Host must be a string"));
         return;
     }
 
     Value portValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_INIT_ACTION_COMPONENT_PROPERTY_PORT, portValue, "Failed to evaluate Port in MQTTInit")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_INIT_ACTION_COMPONENT_PROPERTY_PORT, portValue, FlowError::Property("MQTTInit", "Port"))) {
         return;
     }
     if (portValue.getType() != VALUE_TYPE_INT32) {
-        throwError(flowState, componentIndex, "Port must be an integer");
+        throwError(flowState, componentIndex, FlowError::Plain("Port must be an integer"));
         return;
     }
 
     Value usernameValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_INIT_ACTION_COMPONENT_PROPERTY_USER_NAME, usernameValue, "Failed to evaluate Username in MQTTInit")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_INIT_ACTION_COMPONENT_PROPERTY_USER_NAME, usernameValue, FlowError::Property("MQTTInit", "Username"))) {
         return;
     }
     if (usernameValue.getType() != VALUE_TYPE_UNDEFINED && !usernameValue.isString()) {
-        throwError(flowState, componentIndex, "Username must be a string");
+        throwError(flowState, componentIndex, FlowError::Plain("Username must be a string"));
         return;
     }
 
     Value passwordValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_INIT_ACTION_COMPONENT_PROPERTY_PASSWORD, passwordValue, "Failed to evaluate Password in MQTTInit")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_INIT_ACTION_COMPONENT_PROPERTY_PASSWORD, passwordValue, FlowError::Property("MQTTInit", "Password"))) {
         return;
     }
     if (passwordValue.getType() != VALUE_TYPE_UNDEFINED && !passwordValue.isString()) {
-        throwError(flowState, componentIndex, "Password must be a string");
+        throwError(flowState, componentIndex, FlowError::Plain("Password must be a string"));
         return;
     }
 
@@ -348,7 +348,7 @@ void executeMQTTInitComponent(FlowState *flowState, unsigned componentIndex) {
     if (result != MQTT_ERROR_OK) {
         char errorMessage[256];
         snprintf(errorMessage, sizeof(errorMessage), "Failed to initialize MQTT connection with error code: %d", (int)result);
-        throwError(flowState, componentIndex, errorMessage);
+        throwError(flowState, componentIndex, FlowError::Plain(errorMessage));
         return;
     }
 
@@ -382,11 +382,11 @@ void executeMQTTInitComponent(FlowState *flowState, unsigned componentIndex) {
 
 void executeMQTTConnectComponent(FlowState *flowState, unsigned componentIndex) {
     Value connectionValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_CONNECT_ACTION_COMPONENT_PROPERTY_CONNECTION, connectionValue, "Failed to evaluate Connection in MQTTEvent")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_CONNECT_ACTION_COMPONENT_PROPERTY_CONNECTION, connectionValue, FlowError::Property("MQTTConnect", "Connection"))) {
         return;
     }
     if (!connectionValue.isArray() || connectionValue.getArray()->arrayType != defs_v3::OBJECT_TYPE_MQTT_CONNECTION) {
-        throwError(flowState, componentIndex, "Connection must be a object:MQTTConnection");
+        throwError(flowState, componentIndex, FlowError::Plain("Connection must be a object:MQTTConnection"));
         return;
     }
 
@@ -397,7 +397,7 @@ void executeMQTTConnectComponent(FlowState *flowState, unsigned componentIndex) 
     if (result != MQTT_ERROR_OK) {
         char errorMessage[256];
         snprintf(errorMessage, sizeof(errorMessage), "Failed to connect to MQTT broker with error code: %d", (int)result);
-        throwError(flowState, componentIndex, errorMessage);
+        throwError(flowState, componentIndex, FlowError::Plain(errorMessage));
         return;
     }
 
@@ -408,11 +408,11 @@ void executeMQTTConnectComponent(FlowState *flowState, unsigned componentIndex) 
 
 void executeMQTTDisconnectComponent(FlowState *flowState, unsigned componentIndex) {
     Value connectionValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_DISCONNECT_ACTION_COMPONENT_PROPERTY_CONNECTION, connectionValue, "Failed to evaluate Connection in MQTTDisconnect")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_DISCONNECT_ACTION_COMPONENT_PROPERTY_CONNECTION, connectionValue, FlowError::Property("MQTTDisconnect", "Connection"))) {
         return;
     }
     if (!connectionValue.isArray() || connectionValue.getArray()->arrayType != defs_v3::OBJECT_TYPE_MQTT_CONNECTION) {
-        throwError(flowState, componentIndex, "Connection must be a object:MQTTConnection");
+        throwError(flowState, componentIndex, FlowError::Plain("Connection must be a object:MQTTConnection"));
         return;
     }
 
@@ -423,7 +423,7 @@ void executeMQTTDisconnectComponent(FlowState *flowState, unsigned componentInde
     if (result != MQTT_ERROR_OK) {
         char errorMessage[256];
         snprintf(errorMessage, sizeof(errorMessage), "Failed to disconnect from MQTT broker with error code: %d", (int)result);
-        throwError(flowState, componentIndex, errorMessage);
+        throwError(flowState, componentIndex, FlowError::Plain(errorMessage));
         return;
     }
 
@@ -434,11 +434,11 @@ void executeMQTTDisconnectComponent(FlowState *flowState, unsigned componentInde
 
 void executeMQTTEventComponent(FlowState *flowState, unsigned componentIndex) {
     Value connectionValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_EVENT_ACTION_COMPONENT_PROPERTY_CONNECTION, connectionValue, "Failed to evaluate Connection in MQTTEvent")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_EVENT_ACTION_COMPONENT_PROPERTY_CONNECTION, connectionValue, FlowError::Property("MQTTEvent", "Connection"))) {
         return;
     }
     if (!connectionValue.isArray() || connectionValue.getArray()->arrayType != defs_v3::OBJECT_TYPE_MQTT_CONNECTION) {
-        throwError(flowState, componentIndex, "Connection must be a object:MQTTConnection");
+        throwError(flowState, componentIndex, FlowError::Plain("Connection must be a object:MQTTConnection"));
         return;
     }
 
@@ -470,20 +470,20 @@ void executeMQTTEventComponent(FlowState *flowState, unsigned componentIndex) {
 
 void executeMQTTSubscribeComponent(FlowState *flowState, unsigned componentIndex) {
     Value connectionValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_SUBSCRIBE_ACTION_COMPONENT_PROPERTY_CONNECTION, connectionValue, "Failed to evaluate Connection in MQTTSubscribe")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_SUBSCRIBE_ACTION_COMPONENT_PROPERTY_CONNECTION, connectionValue, FlowError::Property("MQTTSubscribe", "Connection"))) {
         return;
     }
     if (!connectionValue.isArray() || connectionValue.getArray()->arrayType != defs_v3::OBJECT_TYPE_MQTT_CONNECTION) {
-        throwError(flowState, componentIndex, "Connection must be a object:MQTTConnection");
+        throwError(flowState, componentIndex, FlowError::Plain("Connection must be a object:MQTTConnection"));
         return;
     }
 
     Value topicValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_SUBSCRIBE_ACTION_COMPONENT_PROPERTY_TOPIC, topicValue, "Failed to evaluate Topic in MQTTSubscribe")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_SUBSCRIBE_ACTION_COMPONENT_PROPERTY_TOPIC, topicValue, FlowError::Property("MQTTSubscribe", "Topic"))) {
         return;
     }
     if (!topicValue.isString()) {
-        throwError(flowState, componentIndex, "Topic must be a string");
+        throwError(flowState, componentIndex, FlowError::Plain("Topic must be a string"));
         return;
     }
 
@@ -494,7 +494,7 @@ void executeMQTTSubscribeComponent(FlowState *flowState, unsigned componentIndex
     if (result != MQTT_ERROR_OK) {
         char errorMessage[256];
         snprintf(errorMessage, sizeof(errorMessage), "Failed to subscribe to MQTT topic with error code: %d", (int)result);
-        throwError(flowState, componentIndex, errorMessage);
+        throwError(flowState, componentIndex, FlowError::Plain(errorMessage));
         return;
     }
 
@@ -505,20 +505,20 @@ void executeMQTTSubscribeComponent(FlowState *flowState, unsigned componentIndex
 
 void executeMQTTUnsubscribeComponent(FlowState *flowState, unsigned componentIndex) {
     Value connectionValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_UNSUBSCRIBE_ACTION_COMPONENT_PROPERTY_CONNECTION, connectionValue, "Failed to evaluate Connection in MQTTUnsubscribe")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_UNSUBSCRIBE_ACTION_COMPONENT_PROPERTY_CONNECTION, connectionValue, FlowError::Property("MQTTUnsubscribe", "Connection"))) {
         return;
     }
     if (!connectionValue.isArray() || connectionValue.getArray()->arrayType != defs_v3::OBJECT_TYPE_MQTT_CONNECTION) {
-        throwError(flowState, componentIndex, "Connection must be a object:MQTTConnection");
+        throwError(flowState, componentIndex, FlowError::Plain("Connection must be a object:MQTTConnection"));
         return;
     }
 
     Value topicValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_UNSUBSCRIBE_ACTION_COMPONENT_PROPERTY_TOPIC, topicValue, "Failed to evaluate Topic in MQTTUnsubscribe")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_UNSUBSCRIBE_ACTION_COMPONENT_PROPERTY_TOPIC, topicValue, FlowError::Property("MQTTUnsubscribe", "Topic"))) {
         return;
     }
     if (!topicValue.isString()) {
-        throwError(flowState, componentIndex, "Topic must be a string");
+        throwError(flowState, componentIndex, FlowError::Plain("Topic must be a string"));
         return;
     }
 
@@ -529,7 +529,7 @@ void executeMQTTUnsubscribeComponent(FlowState *flowState, unsigned componentInd
     if (result != MQTT_ERROR_OK) {
         char errorMessage[256];
         snprintf(errorMessage, sizeof(errorMessage), "Failed to unsubscribe from MQTT topic with error code: %d", (int)result);
-        throwError(flowState, componentIndex, errorMessage);
+        throwError(flowState, componentIndex, FlowError::Plain(errorMessage));
         return;
     }
 
@@ -540,29 +540,29 @@ void executeMQTTUnsubscribeComponent(FlowState *flowState, unsigned componentInd
 
 void executeMQTTPublishComponent(FlowState *flowState, unsigned componentIndex) {
 	Value connectionValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_PUBLISH_ACTION_COMPONENT_PROPERTY_CONNECTION, connectionValue, "Failed to evaluate Connection in MQTTPublish")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_PUBLISH_ACTION_COMPONENT_PROPERTY_CONNECTION, connectionValue, FlowError::Property("MQTTPublish", "Connection"))) {
         return;
     }
     if (!connectionValue.isArray() || connectionValue.getArray()->arrayType != defs_v3::OBJECT_TYPE_MQTT_CONNECTION) {
-        throwError(flowState, componentIndex, "Connection must be a object:MQTTConnection");
+        throwError(flowState, componentIndex, FlowError::Plain("Connection must be a object:MQTTConnection"));
         return;
     }
 
     Value topicValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_PUBLISH_ACTION_COMPONENT_PROPERTY_TOPIC, topicValue, "Failed to evaluate Topic in MQTTPublish")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_PUBLISH_ACTION_COMPONENT_PROPERTY_TOPIC, topicValue, FlowError::Property("MQTTPublish", "Topic"))) {
         return;
     }
     if (!topicValue.isString()) {
-        throwError(flowState, componentIndex, "Topic must be a string");
+        throwError(flowState, componentIndex, FlowError::Plain("Topic must be a string"));
         return;
     }
 
     Value payloadValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_PUBLISH_ACTION_COMPONENT_PROPERTY_PAYLOAD, payloadValue, "Failed to evaluate Payload in MQTTPublish")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::MQTT_PUBLISH_ACTION_COMPONENT_PROPERTY_PAYLOAD, payloadValue, FlowError::Property("MQTTPublish", "Payload"))) {
         return;
     }
     if (!payloadValue.isString()) {
-        throwError(flowState, componentIndex, "Topic must be a string");
+        throwError(flowState, componentIndex, FlowError::Plain("Payload must be a string"));
         return;
     }
 
@@ -573,7 +573,7 @@ void executeMQTTPublishComponent(FlowState *flowState, unsigned componentIndex) 
     if (result != MQTT_ERROR_OK) {
         char errorMessage[256];
         snprintf(errorMessage, sizeof(errorMessage), "Failed to subscribe to MQTT topic with error code: %d", (int)result);
-        throwError(flowState, componentIndex, errorMessage);
+        throwError(flowState, componentIndex, FlowError::Plain(errorMessage));
         return;
     }
 

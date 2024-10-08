@@ -43,17 +43,17 @@ void executeAnimateComponent(FlowState *flowState, unsigned componentIndex) {
 	auto state = (AnimateComponenentExecutionState *)flowState->componenentExecutionStates[componentIndex];
 	if (!state) {
         Value fromValue;
-        if (!evalProperty(flowState, componentIndex, defs_v3::ANIMATE_ACTION_COMPONENT_PROPERTY_FROM, fromValue, "Failed to evaluate From in Animate")) {
+        if (!evalProperty(flowState, componentIndex, defs_v3::ANIMATE_ACTION_COMPONENT_PROPERTY_FROM, fromValue, FlowError::Property("Animate", "From"))) {
             return;
         }
 
         Value toValue;
-        if (!evalProperty(flowState, componentIndex, defs_v3::ANIMATE_ACTION_COMPONENT_PROPERTY_TO, toValue, "Failed to evaluate To in Animate")) {
+        if (!evalProperty(flowState, componentIndex, defs_v3::ANIMATE_ACTION_COMPONENT_PROPERTY_TO, toValue, FlowError::Property("Animate", "To"))) {
             return;
         }
 
         Value speedValue;
-        if (!evalProperty(flowState, componentIndex, defs_v3::ANIMATE_ACTION_COMPONENT_PROPERTY_SPEED, speedValue, "Failed to evaluate Speed in Animate")) {
+        if (!evalProperty(flowState, componentIndex, defs_v3::ANIMATE_ACTION_COMPONENT_PROPERTY_SPEED, speedValue, FlowError::Property("Animate", "Speed"))) {
             return;
         }
 

@@ -97,32 +97,29 @@ bool LineChartWidgetComponenentExecutionState::onInputValue(FlowState *flowState
     }
 
     Value value;
-    if (!evalExpression(flowState, componentIndex, component->xValue, value, "Failed to evaluate x value in LineChartWidget")) {
+    if (!evalExpression(flowState, componentIndex, component->xValue, value, FlowError::Plain("Failed to evaluate x value in LineChartWidget"))) {
         return false;
     }
 
     int err;
     value.toDouble(&err);
     if (err) {
-        throwError(flowState, componentIndex, "X value not an number or date");
+        throwError(flowState, componentIndex, FlowError::Plain("X value not an number or date"));
         return false;
     }
 
     setX(pointIndex, value);
 
     for (uint32_t lineIndex = 0; lineIndex < numLines; lineIndex++) {
-        char errorMessage[256];
-        snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate line value no. %d in LineChartWidget", (int)(lineIndex + 1));
         Value value;
-        if (!evalExpression(flowState, componentIndex, component->lines[lineIndex]->value, value, errorMessage)) {
+        if (!evalExpression(flowState, componentIndex, component->lines[lineIndex]->value, value, FlowError::PropertyInArray("LineChart Widget", "Line value", lineIndex))) {
             return false;
         }
 
         int err;
         auto y = value.toFloat(&err);
         if (err) {
-            snprintf(errorMessage, sizeof(errorMessage), "Can't convert line value no. %d to float", (int)(lineIndex + 1));
-            throwError(flowState, componentIndex, errorMessage);
+            throwError(flowState, componentIndex, FlowError::PropertyInArrayConvert("LineChart Widget", "Line value", "float", lineIndex));
             return false;
         }
 
@@ -141,10 +138,7 @@ void executeLineChartWidgetComponent(FlowState *flowState, unsigned componentInd
         executionState->init(component->lines.count, component->maxPoints);
 
         for (uint32_t lineIndex = 0; lineIndex < component->lines.count; lineIndex++) {
-            char errorMessage[256];
-            snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate line label no. %d in LineChartWidget", (int)(lineIndex + 1));
-
-            if (!evalExpression(flowState, componentIndex, component->lines[lineIndex]->label, executionState->lineLabels[lineIndex], errorMessage)) {
+            if (!evalExpression(flowState, componentIndex, component->lines[lineIndex]->label, executionState->lineLabels[lineIndex], FlowError::PropertyInArray("LineChart Widget", "Line label", lineIndex))) {
                 return;
             }
         }

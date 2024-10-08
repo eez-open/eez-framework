@@ -270,24 +270,15 @@ void setGlobalVariable(Assets *assets, uint32_t globalVariableIndex, const Value
 
 Value getUserProperty(unsigned propertyIndex) {
     Value value;
-
-    char errorMessage[64];
-    snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate property #%d in CallAction", (int)(propertyIndex + 1));
-
-    evalProperty(g_executeActionFlowState, g_executeActionComponentIndex, propertyIndex, value, nullptr);
-
+    evalProperty(g_executeActionFlowState, g_executeActionComponentIndex, propertyIndex, value, FlowError::PropertyNum("CallAction", propertyIndex));
     return value;
 }
 
 void setUserProperty(unsigned propertyIndex, const Value &value) {
-    char errorMessage[64];
-    snprintf(errorMessage, sizeof(errorMessage), "Failed to evaluate assignable property #%d in CallAction", (int)(propertyIndex + 1));
-
     Value dstValue;
-    if (!evalAssignableProperty(g_executeActionFlowState, g_executeActionComponentIndex, propertyIndex, dstValue, errorMessage)) {
+    if (!evalAssignableProperty(g_executeActionFlowState, g_executeActionComponentIndex, propertyIndex, dstValue, FlowError::PropertyInArray("CallAction", "Assignable property", propertyIndex))) {
         return;
     }
-
     assignValue(g_executeActionFlowState, g_executeActionComponentIndex, dstValue, value);
 }
 

@@ -31,7 +31,7 @@ void executeDelayComponent(FlowState *flowState, unsigned componentIndex) {
 
 	if (!delayComponentExecutionState) {
 		Value value;
-		if (!evalProperty(flowState, componentIndex, defs_v3::DELAY_ACTION_COMPONENT_PROPERTY_MILLISECONDS, value, "Failed to evaluate Milliseconds in Delay")) {
+		if (!evalProperty(flowState, componentIndex, defs_v3::DELAY_ACTION_COMPONENT_PROPERTY_MILLISECONDS, value, FlowError::Property("Delay", "Milliseconds"))) {
 			return;
 		}
 
@@ -40,7 +40,7 @@ void executeDelayComponent(FlowState *flowState, unsigned componentIndex) {
 			delayComponentExecutionState = allocateComponentExecutionState<DelayComponenentExecutionState>(flowState, componentIndex);
 			delayComponentExecutionState->waitUntil = millis() + (uint32_t)floor(milliseconds);
 		} else {
-			throwError(flowState, componentIndex, "Invalid Milliseconds value in Delay\n");
+			throwError(flowState, componentIndex, FlowError::PropertyInvalid("Delay", "Milliseconds"));
 			return;
 		}
 

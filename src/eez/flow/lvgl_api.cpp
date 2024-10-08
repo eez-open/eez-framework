@@ -302,7 +302,7 @@ static char textValue[EEZ_LVGL_TEMP_STRING_BUFFER_SIZE];
 
 extern "C" const char *evalTextProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage) {
     eez::Value value;
-    if (!eez::flow::evalProperty((eez::flow::FlowState *)flowState, componentIndex, propertyIndex, value, errorMessage)) {
+    if (!eez::flow::evalProperty((eez::flow::FlowState *)flowState, componentIndex, propertyIndex, value, eez::flow::FlowError::Plain(errorMessage))) {
         return "";
     }
     value.toText(textValue, sizeof(textValue));
@@ -311,7 +311,7 @@ extern "C" const char *evalTextProperty(void *flowState, unsigned componentIndex
 
 extern "C" int32_t evalIntegerProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage) {
     eez::Value value;
-    if (!eez::flow::evalProperty((eez::flow::FlowState *)flowState, componentIndex, propertyIndex, value, errorMessage)) {
+    if (!eez::flow::evalProperty((eez::flow::FlowState *)flowState, componentIndex, propertyIndex, value, eez::flow::FlowError::Plain(errorMessage))) {
         return 0;
     }
     int err;
@@ -325,7 +325,7 @@ extern "C" int32_t evalIntegerProperty(void *flowState, unsigned componentIndex,
 
 extern "C" bool evalBooleanProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage) {
     eez::Value value;
-    if (!eez::flow::evalProperty((eez::flow::FlowState *)flowState, componentIndex, propertyIndex, value, errorMessage)) {
+    if (!eez::flow::evalProperty((eez::flow::FlowState *)flowState, componentIndex, propertyIndex, value, eez::flow::FlowError::Plain(errorMessage))) {
         return 0;
     }
     int err;
@@ -339,7 +339,7 @@ extern "C" bool evalBooleanProperty(void *flowState, unsigned componentIndex, un
 
 const char *evalStringArrayPropertyAndJoin(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage, const char *separator) {
     eez::Value value;
-    if (!eez::flow::evalProperty((eez::flow::FlowState *)flowState, componentIndex, propertyIndex, value, errorMessage)) {
+    if (!eez::flow::evalProperty((eez::flow::FlowState *)flowState, componentIndex, propertyIndex, value, eez::flow::FlowError::Plain(errorMessage))) {
         return "";
     }
 
@@ -370,7 +370,7 @@ extern "C" void assignStringProperty(void *flowState, unsigned componentIndex, u
     auto component = ((eez::flow::FlowState *)flowState)->flow->components[componentIndex];
 
     eez::Value dstValue;
-    if (!eez::flow::evalAssignableExpression((eez::flow::FlowState *)flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, dstValue, errorMessage)) {
+    if (!eez::flow::evalAssignableExpression((eez::flow::FlowState *)flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, dstValue, eez::flow::FlowError::Plain(errorMessage))) {
         return;
     }
 
@@ -383,7 +383,7 @@ extern "C" void assignIntegerProperty(void *flowState, unsigned componentIndex, 
     auto component = ((eez::flow::FlowState *)flowState)->flow->components[componentIndex];
 
     eez::Value dstValue;
-    if (!eez::flow::evalAssignableExpression((eez::flow::FlowState *)flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, dstValue, errorMessage)) {
+    if (!eez::flow::evalAssignableExpression((eez::flow::FlowState *)flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, dstValue, eez::flow::FlowError::Plain(errorMessage))) {
         return;
     }
 
@@ -396,7 +396,7 @@ extern "C" void assignBooleanProperty(void *flowState, unsigned componentIndex, 
     auto component = ((eez::flow::FlowState *)flowState)->flow->components[componentIndex];
 
     eez::Value dstValue;
-    if (!eez::flow::evalAssignableExpression((eez::flow::FlowState *)flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, dstValue, errorMessage)) {
+    if (!eez::flow::evalAssignableExpression((eez::flow::FlowState *)flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, dstValue, eez::flow::FlowError::Plain(errorMessage))) {
         return;
     }
 

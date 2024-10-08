@@ -27,28 +27,21 @@ void executeSwitchComponent(FlowState *flowState, unsigned componentIndex) {
     for (uint32_t testIndex = 0; testIndex < component->tests.count; testIndex++) {
         auto test = component->tests[testIndex];
 
-        char strMessage[256];
-        snprintf(strMessage, sizeof(strMessage), "Failed to evaluate test condition no. %d in Switch", (int)(testIndex + 1));
-
         Value conditionValue;
-        if (!evalExpression(flowState, componentIndex, test->condition, conditionValue, strMessage)) {
+        if (!evalExpression(flowState, componentIndex, test->condition, conditionValue, FlowError::PropertyInArray("Switch", "Test condition", testIndex))) {
             return;
         }
 
         int err;
         bool result = conditionValue.toBool(&err);
         if (err) {
-            char strMessage[256];
-            snprintf(strMessage, sizeof(strMessage), "Failed to convert test condition no. %d to boolean in Switch\n", (int)(testIndex + 1));
-            throwError(flowState, componentIndex, strMessage);
+            throwError(flowState, componentIndex, FlowError::PropertyInArrayConvert("Switch", "Test condition", "boolean", testIndex));
             return;
         }
 
         if (result) {
-            snprintf(strMessage, sizeof(strMessage), "Failed to evaluate test output value no. %d in Switch", (int)(testIndex + 1));
-
             Value outputValue;
-            if (!evalExpression(flowState, componentIndex, test->outputValue, outputValue, strMessage)) {
+            if (!evalExpression(flowState, componentIndex, test->outputValue, outputValue, FlowError::PropertyInArray("Switch", "Test output", testIndex))) {
                 return;
             }
 

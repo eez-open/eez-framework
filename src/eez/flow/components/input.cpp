@@ -23,7 +23,7 @@ bool getCallActionValue(FlowState *flowState, unsigned componentIndex, Value &va
 	auto component = flowState->flow->components[componentIndex];
 
 	if (!flowState->parentFlowState) {
-		throwError(flowState, componentIndex, "No parentFlowState in Input\n");
+		throwError(flowState, componentIndex, FlowError::Plain("No parentFlowState in Input"));
 		return false;
 	}
 
@@ -32,7 +32,7 @@ bool getCallActionValue(FlowState *flowState, unsigned componentIndex, Value &va
             value = flowState->inputValue;
             return true;
         }
-		throwError(flowState, componentIndex, "No parentComponent in Input\n");
+		throwError(flowState, componentIndex, FlowError::Plain("No parentComponent in Input"));
 		return false;
 	}
 
@@ -47,7 +47,7 @@ bool getCallActionValue(FlowState *flowState, unsigned componentIndex, Value &va
     }
 
     if (callActionComponentInputIndex >= callActionComponent->inputs.count) {
-        throwError(flowState, componentIndex, "Invalid input index in Input\n");
+        throwError(flowState, componentIndex, FlowError::Plain("Invalid input index in Input"));
         return false;
     }
 
@@ -56,7 +56,7 @@ bool getCallActionValue(FlowState *flowState, unsigned componentIndex, Value &va
 
     auto parentFlow = flowState->flowDefinition->flows[flowState->parentFlowState->flowIndex];
     if (parentFlowInputIndex >= parentFlow->componentInputs.count) {
-        throwError(flowState, componentIndex, "Invalid input index of parent component in Input\n");
+        throwError(flowState, componentIndex, FlowError::Plain("Invalid input index of parent component in Input"));
         return false;
     }
 

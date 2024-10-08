@@ -103,7 +103,7 @@ namespace eez {
 namespace flow {
 
 void executeLVGLUserWidgetComponent(FlowState *flowState, unsigned componentIndex) {
-    throwError(flowState, componentIndex, "Not implemented");
+    throwError(flowState, componentIndex, FlowError::Plain("Not implemented"));
 }
 
 } // namespace flow

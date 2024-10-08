@@ -93,12 +93,12 @@ void executeSortArrayComponent(FlowState *flowState, unsigned componentIndex) {
     auto component = (SortArrayActionComponent *)flowState->flow->components[componentIndex];
 
     Value srcArrayValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::SORT_ARRAY_ACTION_COMPONENT_PROPERTY_ARRAY, srcArrayValue, "Failed to evaluate Array in SortArray\n")) {
+    if (!evalProperty(flowState, componentIndex, defs_v3::SORT_ARRAY_ACTION_COMPONENT_PROPERTY_ARRAY, srcArrayValue, FlowError::Property("SortArray", "Array"))) {
         return;
     }
 
     if (!srcArrayValue.isArray()) {
-        throwError(flowState, componentIndex, "SortArray: not an array\n");
+        throwError(flowState, componentIndex, FlowError::Plain("SortArray: not an array\n"));
         return;
     }
 
@@ -107,16 +107,16 @@ void executeSortArrayComponent(FlowState *flowState, unsigned componentIndex) {
 
     if (component->arrayType != -1) {
         if (array->arrayType != (uint32_t)component->arrayType) {
-            throwError(flowState, componentIndex, "SortArray: invalid array type\n");
+            throwError(flowState, componentIndex, FlowError::Plain("SortArray: invalid array type\n"));
             return;
         }
 
         if (component->structFieldIndex < 0) {
-            throwError(flowState, componentIndex, "SortArray: invalid struct field index\n");
+            throwError(flowState, componentIndex, FlowError::Plain("SortArray: invalid struct field index\n"));
         }
     } else {
         if (array->arrayType != defs_v3::ARRAY_TYPE_INTEGER && array->arrayType != defs_v3::ARRAY_TYPE_FLOAT && array->arrayType != defs_v3::ARRAY_TYPE_DOUBLE && array->arrayType != defs_v3::ARRAY_TYPE_STRING) {
-            throwError(flowState, componentIndex, "SortArray: array type is neither array:integer or array:float or array:double or array:string\n");
+            throwError(flowState, componentIndex, FlowError::Plain("SortArray: array type is neither array:integer or array:float or array:double or array:string\n"));
             return;
         }
     }
