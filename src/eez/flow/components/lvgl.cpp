@@ -605,7 +605,7 @@ ACTION_START(objGetX)
 #else
     int32_t x = lv_obj_get_x(obj);
 #endif
-    RESULT(result, Value(x, VALUE_TYPE_INT32));
+    RESULT(result, Value((int)x, VALUE_TYPE_INT32));
 ACTION_END
 
 ACTION_START(objSetY)
@@ -625,7 +625,7 @@ ACTION_START(objGetY)
 #else
     int32_t y = lv_obj_get_y(obj);
 #endif
-    RESULT(result, Value(y, VALUE_TYPE_INT32));
+    RESULT(result, Value((int)y, VALUE_TYPE_INT32));
 ACTION_END
 
 ACTION_START(objSetWidth)
@@ -645,7 +645,7 @@ ACTION_START(objGetWidth)
 #else
     int32_t width = lv_obj_get_width(obj);
 #endif
-    RESULT(result, Value(width, VALUE_TYPE_INT32));
+    RESULT(result, Value((int)width, VALUE_TYPE_INT32));
 ACTION_END
 
 ACTION_START(objSetHeight)
@@ -665,7 +665,7 @@ ACTION_START(objGetHeight)
 #else
     int32_t height = lv_obj_get_height(obj);
 #endif
-    RESULT(result, Value(height, VALUE_TYPE_INT32));
+    RESULT(result, Value((int)height, VALUE_TYPE_INT32));
 ACTION_END
 
 ACTION_START(objSetStyleOpa)
@@ -677,7 +677,7 @@ ACTION_END
 ACTION_START(objGetStyleOpa)
     WIDGET_PROP(obj);
     int32_t opa = (int32_t)lv_obj_get_style_opa(obj, 0);
-    RESULT(result, Value(opa, VALUE_TYPE_INT32));
+    RESULT(result, Value((int)opa, VALUE_TYPE_INT32));
 ACTION_END
 
 ACTION_START(objAddStyle)
