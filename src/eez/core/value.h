@@ -865,7 +865,7 @@ struct ArrayOfBoolean {
     }
 
     bool at(int position) {
-        return value.getArray()->values[position].getDouble();
+        return value.getArray()->values[position].getBoolean();
     }
 
     void at(int position, bool boolValue) {
