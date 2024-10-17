@@ -65,6 +65,7 @@ void eez_flow_init_screen_names(const char **screenNames, size_t numScreens);
 void eez_flow_init_object_names(const char **objectNames, size_t numObjects);
 void eez_flow_init_group_names(const char **groupNames, size_t numGroups);
 void eez_flow_init_style_names(const char **styleNames, size_t numStyles);
+void eez_flow_init_themes(const char **themeNames, size_t numThemes, void (*changeColorTheme)(uint32_t themeIndex));
 
 void eez_flow_tick();
 

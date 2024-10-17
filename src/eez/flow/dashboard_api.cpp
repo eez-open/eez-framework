@@ -252,6 +252,12 @@ Value getBitmapAsDataURL(const char *bitmapName) {
     return result;
 }
 
+void setDashboardColorTheme(const char *themeName) {
+    EM_ASM({
+        return setDashboardColorTheme($0, UTF8ToString($1));
+    }, g_wasmModuleId, themeName);
+}
+
 } // flow
 } // eez
 

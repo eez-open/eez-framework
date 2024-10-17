@@ -55,6 +55,8 @@ void onObjectArrayValueFree(ArrayValue *arrayValue);
 
 Value getBitmapAsDataURL(const char *bitmapName);
 
+void setDashboardColorTheme(const char *themeName);
+
 } // flow
 } // eez
 

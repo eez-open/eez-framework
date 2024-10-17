@@ -102,7 +102,7 @@ static uint8_t getDisplayBackgroundLuminosityStep() {
 }
 
 static uint8_t getSelectedThemeIndex() {
-    return eez::gui::THEME_ID_DEFAULT;
+    return eez::gui::g_selectedThemeIndex;
 }
 
 static void turnOnDisplayStart() {

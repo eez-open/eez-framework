@@ -107,6 +107,9 @@ static void lvglObjAddStyle(lv_obj_t *object, int32_t styleIndex) {
 static void lvglObjRemoveStyle(lv_obj_t *object, int32_t styleIndex) {
 }
 
+static void lvglSetColorTheme(const char *themeName) {
+}
+
 lv_obj_t *(*getLvglObjectFromIndexHook)(int32_t index) = getLvglObjectFromIndex;
 lv_group_t *(*getLvglGroupFromIndexHook)(int32_t index) = getLvglGroupFromIndex;
 
@@ -120,6 +123,8 @@ void (*executeLvglActionHook)(int actionIndex) = executeLvglAction;
 
 void (*lvglObjAddStyleHook)(lv_obj_t *object, int32_t styleIndex) = lvglObjAddStyle;
 void (*lvglObjRemoveStyleHook)(lv_obj_t *object, int32_t styleIndex) = lvglObjRemoveStyle;
+
+void (*lvglSetColorThemeHook)(const char *themeName) = lvglSetColorTheme;
 #endif
 
 double getDateNowDefaultImplementation() {

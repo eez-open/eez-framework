@@ -53,6 +53,8 @@ extern void (*executeLvglActionHook)(int actionIndex);
 
 extern void (*lvglObjAddStyleHook)(lv_obj_t *object, int32_t styleIndex);
 extern void (*lvglObjRemoveStyleHook)(lv_obj_t *object, int32_t styleIndex);
+
+extern void (*lvglSetColorThemeHook)(const char *themeName);
 #endif
 
 extern double (*getDateNowHook)();

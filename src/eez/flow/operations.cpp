@@ -1072,6 +1072,20 @@ void do_OPERATION_TYPE_FLOW_TRANSLATE(EvalStack &stack) {
     stack.push("");
 }
 
+void do_OPERATION_TYPE_FLOW_THEMES(EvalStack &stack) {
+    auto &themes = stack.flowState->assets->colorsDefinition->themes;
+
+    auto arrayValue = Value::makeArrayRef(themes.count, VALUE_TYPE_STRING, 0x03906e8f);
+
+    auto array = arrayValue.getArray();
+
+    for (uint32_t i = 0; i < themes.count; i++) {
+        array->values[i] = Value((const char *)(themes[i]->name));
+    }
+
+    stack.push(arrayValue);
+}
+
 void do_OPERATION_TYPE_FLOW_PARSE_INTEGER(EvalStack &stack) {
     auto str = stack.pop();
     if (str.isError()) {
@@ -2863,6 +2877,7 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_EVENT_GET_GESTURE_DIR,
     do_OPERATION_TYPE_EVENT_GET_ROTARY_DIFF,
     do_OPERATION_TYPE_BLOB_TO_STRING,
+    do_OPERATION_TYPE_FLOW_THEMES,
 };
 
 } // namespace flow

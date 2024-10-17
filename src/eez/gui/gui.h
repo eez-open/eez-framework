@@ -56,6 +56,7 @@ namespace gui {
 
 extern WidgetCursor g_activeWidget;
 extern bool g_isBlinkTime;
+extern uint8_t g_selectedThemeIndex;
 
 ////////////////////////////////////////////////////////////////////////////////
 

@@ -17,31 +17,50 @@
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/expression.h>
 #include <eez/flow/private.h>
+#include <eez/flow/hooks.h>
+
+#if defined(EEZ_DASHBOARD_API)
+#include <eez/flow/dashboard_api.h>
+#endif
+
+#if EEZ_OPTION_GUI
+#include <eez/gui/gui.h>
+#include <eez/gui/display.h>
+#endif
 
 namespace eez {
 namespace flow {
 
-void executeSelectLanguageComponent(FlowState *flowState, unsigned componentIndex) {
-	Value languageValue;
-	if (!evalProperty(flowState, componentIndex, defs_v3::SELECT_LANGUAGE_ACTION_COMPONENT_PROPERTY_LANGUAGE, languageValue, FlowError::Property("SelectLanguage", "Language"))) {
+void executeSetColorThemeComponent(FlowState *flowState, unsigned componentIndex) {
+	Value themeValue;
+	if (!evalProperty(flowState, componentIndex, defs_v3::SET_COLOR_THEME_ACTION_COMPONENT_PROPERTY_THEME, themeValue, FlowError::Property("SetColorTheme", "Theme"))) {
 		return;
 	}
 
-	const char *language = languageValue.getString();
+	const char *theme = themeValue.getString();
 
-    auto &languages = flowState->assets->languages;
+#if defined(EEZ_FOR_LVGL)
+    lvglSetColorThemeHook(theme);
+#elif EEZ_OPTION_GUI
+    if (g_mainAssets->assetsType == ASSETS_TYPE_DASHBOARD) {
+        setDashboardColorTheme(theme);
+        propagateValueThroughSeqout(flowState, componentIndex);
+    } else {
+        auto &themes = flowState->assets->colorsDefinition->themes;
 
-    for (uint32_t languageIndex = 0; languageIndex < languages.count; languageIndex++) {
-        if (strcmp(languages[languageIndex]->languageID, language) == 0) {
-            g_selectedLanguage = languageIndex;
-	        propagateValueThroughSeqout(flowState, componentIndex);
-            return;
+        for (uint32_t themeIndex = 0; themeIndex < themes.count; themeIndex++) {
+            if (strcmp(themes[themeIndex]->name, theme) == 0) {
+                eez::gui::g_selectedThemeIndex = themeIndex;
+                eez::gui::display::onThemeChanged();
+                propagateValueThroughSeqout(flowState, componentIndex);
+                return;
+            }
         }
+        char message[256];
+        snprintf(message, sizeof(message), "Unknown theme %s", theme);
+        throwError(flowState, componentIndex, FlowError::Plain(message));
     }
-
-    char message[256];
-    snprintf(message, sizeof(message), "Unknown language %s", language);
-    throwError(flowState, componentIndex, FlowError::Plain(message));
+#endif
 }
 
 } // namespace flow

@@ -43,6 +43,8 @@ Assets*& g_mainAssets = eez::g_mainAssets;
 bool g_isBlinkTime;
 static bool g_wasBlinkTime;
 
+uint8_t g_selectedThemeIndex = THEME_ID_DEFAULT;
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void guiInit() {

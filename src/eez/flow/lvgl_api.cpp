@@ -53,6 +53,11 @@ static ActionExecFunc *g_actions;
 
 int16_t g_currentScreen = -1;
 
+static const char **g_themeNames;
+static size_t g_numThemes;
+static void (*g_changeColorTheme)(uint32_t themeIndex);
+static uint32_t g_selectedThemeIndex;
+
 static lv_obj_t *getLvglObjectFromIndex(int32_t index) {
     if (index >= 0 && index < g_numObjects) {
         return g_objects[index];
@@ -116,6 +121,24 @@ static void executeLvglAction(int actionIndex) {
     g_actions[actionIndex](0);
 }
 
+void eez_flow_init_themes(const char **themeNames, size_t numThemes, void (*changeColorTheme)(uint32_t themeIndex)) {
+    g_themeNames = themeNames;
+    g_numThemes = numThemes;
+    g_changeColorTheme = changeColorTheme;
+}
+
+static void lvglSetColorTheme(const char *themeName) {
+    for (uint32_t i = 0; i < g_numThemes; i++) {
+        if (strcmp(themeName, g_themeNames[i]) == 0) {
+            g_selectedThemeIndex = i;
+            if (g_changeColorTheme) {
+                g_changeColorTheme(g_selectedThemeIndex);
+            }
+            return;
+        }
+    }
+}
+
 #if !defined(EEZ_LVGL_SCREEN_STACK_SIZE)
 #define EEZ_LVGL_SCREEN_STACK_SIZE 10
 #endif
@@ -173,6 +196,7 @@ extern "C" void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj
     eez::flow::getLvglImageByNameHook = getLvglImageByName;
     eez::flow::executeLvglActionHook = executeLvglAction;
     eez::flow::getLvglGroupFromIndexHook = getLvglGroupFromIndex;
+    eez::flow::lvglSetColorThemeHook = lvglSetColorTheme;
 
     eez::flow::start(eez::g_mainAssets);
 

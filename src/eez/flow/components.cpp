@@ -56,6 +56,7 @@ void executeOverrideStyleComponent(FlowState *flowState, unsigned componentIndex
 #endif
 void executeSelectLanguageComponent(FlowState *flowState, unsigned componentIndex);
 void executeAnimateComponent(FlowState *flowState, unsigned componentIndex);
+void executeSetColorThemeComponent(FlowState *flowState, unsigned componentIndex);
 void executeNoopComponent(FlowState *flowState, unsigned componentIndex);
 void executeOnEventComponent(FlowState *flowState, unsigned componentIndex);
 void executeLVGLComponent(FlowState *flowState, unsigned componentIndex);
@@ -146,6 +147,8 @@ static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
     executeLabelOutComponent, // COMPONENT_TYPE_LABEL_OUT_ACTION
 
     executeLVGLApiComponent, // COMPONENT_TYPE_LVGL_API_ACTION
+
+    executeSetColorThemeComponent,  // COMPONENT_TYPE_SET_COLOR_THEME_ACTION
 };
 
 void registerComponent(ComponentTypes componentType, ExecuteComponentFunctionType executeComponentFunction) {
