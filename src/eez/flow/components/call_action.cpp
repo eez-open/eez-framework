@@ -56,6 +56,9 @@ void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIn
                 if (!evalAssignableProperty(flowState, componentIndex, i, value, FlowError::UserProperty("CallAction", i))) {
                     break;
                 }
+                if (value.getType() == VALUE_TYPE_FLOW_OUTPUT) {
+                    value = Value::makePropertyRef(flowState, componentIndex, i, 0x5696e703);
+                }
             } else {
                 if (!evalProperty(flowState, componentIndex, i, value, FlowError::UserAssignableProperty("CallAction", i))) {
                     break;

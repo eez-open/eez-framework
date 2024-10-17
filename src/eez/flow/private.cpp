@@ -548,8 +548,12 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
                 auto propertyRef = pDstValue->getPropertyRef();
                 Value dstValue;
                 if (evalAssignableProperty(propertyRef->flowState, propertyRef->componentIndex, propertyRef->propertyIndex, dstValue, FlowError::Plain("Failed to evaluate an assignable user property in UserWidget"), nullptr, nullptr)) {
-                    assignValue(flowState, componentIndex, dstValue, srcValue);
-                    onValueChanged(pDstValue);
+                    if (dstValue.getType() == VALUE_TYPE_FLOW_OUTPUT) {
+		                propagateValue(propertyRef->flowState, propertyRef->componentIndex, dstValue.getUInt16(), srcValue);
+                    } else {
+	                    assignValue(flowState, componentIndex, dstValue, srcValue);
+                        onValueChanged(pDstValue);
+                    }
                 }
                 return;
             }
