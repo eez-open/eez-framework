@@ -294,6 +294,12 @@ extern "C" void flowPropagateValueLVGLEvent(void *flowState, unsigned componentI
 
     int32_t gestureDir = (int32_t)LV_DIR_NONE;
     if (event_code == LV_EVENT_GESTURE) {
+#if LVGL_VERSION_MAJOR >= 9
+        lv_indev_wait_release(lv_indev_active());
+#else
+        lv_indev_wait_release(lv_indev_get_act());
+#endif
+
         gestureDir = (int32_t)lv_indev_get_gesture_dir(
 #if LVGL_VERSION_MAJOR >= 9
             lv_indev_active()
