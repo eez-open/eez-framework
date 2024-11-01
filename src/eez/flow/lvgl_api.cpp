@@ -391,6 +391,9 @@ const char *evalStringArrayPropertyAndJoin(void *flowState, unsigned componentIn
         }
 
         return textValue;
+    } else if (value.isString()) {
+        value.toText(textValue, sizeof(textValue));
+        return textValue;
     }
 
     return "";
