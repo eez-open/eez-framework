@@ -700,7 +700,9 @@ void throwError(FlowState *flowState, int componentIndex, const char *errorMessa
             )
         ) {
             for (FlowState *fs = flowState; fs != catchErrorFlowState; fs = fs->parentFlowState) {
-                fs->error = true;
+                if (fs->isAction) {
+                    fs->error = true;
+                }
             }
 
             auto component = catchErrorFlowState->flow->components[catchErrorComponentIndex];
