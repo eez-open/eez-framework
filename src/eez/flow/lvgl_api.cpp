@@ -75,7 +75,7 @@ static lv_group_t *getLvglGroupFromIndex(int32_t index) {
 static int32_t getLvglScreenByName(const char *name) {
     for (size_t i = 0; i < g_numScreens; i++) {
         if (strcmp(g_screenNames[i], name) == 0) {
-            return i;
+            return i + 1;
         }
     }
     return -1;
@@ -190,6 +190,7 @@ extern "C" void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj
 
     eez::flow::replacePageHook = replacePageHook;
     eez::flow::getLvglObjectFromIndexHook = getLvglObjectFromIndex;
+    eez::flow::getLvglScreenByNameHook = getLvglScreenByName;
     eez::flow::getLvglObjectByNameHook = getLvglObjectByName;
     eez::flow::getLvglGroupByNameHook = getLvglGroupByName;
     eez::flow::getLvglStyleByNameHook = getLvglStyleByName;
