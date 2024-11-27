@@ -578,7 +578,16 @@ ACTION_START(changeScreen)
     INT32_PROP(fadeMode);
     UINT32_PROP(speed);
     UINT32_PROP(delay);
-    eez_flow_push_screen(screen, (lv_scr_load_anim_t)fadeMode, speed, delay);
+    if (properties.count > 4) {
+        BOOL_PROP(useStack);
+        if (useStack) {
+            eez_flow_push_screen(screen, (lv_scr_load_anim_t)fadeMode, speed, delay);
+        } else {
+            eez::flow::replacePageHook(screen, (lv_scr_load_anim_t)fadeMode, speed, delay);
+        }
+    } else {
+        eez_flow_push_screen(screen, (lv_scr_load_anim_t)fadeMode, speed, delay);
+    }
 ACTION_END
 
 ACTION_START(changeToPreviousScreen)
