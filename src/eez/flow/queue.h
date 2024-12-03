@@ -18,7 +18,7 @@ namespace flow {
 void queueReset();
 size_t getQueueSize();
 size_t getMaxQueueSize();
-extern unsigned g_numContinuousTaskInQueue;
+extern unsigned g_numNonContinuousTaskInQueue;
 bool addToQueue(FlowState *flowState, unsigned componentIndex,
     int sourceComponentIndex, int sourceOutputIndex, int targetInputIndex,
     bool continuousTask);

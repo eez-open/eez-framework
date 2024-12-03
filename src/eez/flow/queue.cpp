@@ -30,14 +30,14 @@ static unsigned g_queueHead;
 static unsigned g_queueTail;
 static unsigned g_queueMax;
 static bool g_queueIsFull = false;
-unsigned g_numContinuousTaskInQueue;
+unsigned g_numNonContinuousTaskInQueue;
 
 void queueReset() {
 	g_queueHead = 0;
 	g_queueTail = 0;
 	g_queueMax  = 0;
 	g_queueIsFull = false;
-    g_numContinuousTaskInQueue = 0;
+    g_numNonContinuousTaskInQueue = 0;
 }
 
 size_t getQueueSize() {
@@ -79,7 +79,7 @@ bool addToQueue(FlowState *flowState, unsigned componentIndex, int sourceCompone
 	g_queueMax = g_queueMax < queueSize ? queueSize : g_queueMax;
 
     if (!continuousTask) {
-        ++g_numContinuousTaskInQueue;
+        ++g_numNonContinuousTaskInQueue;
 	    onAddToQueue(flowState, sourceComponentIndex, sourceOutputIndex, componentIndex, targetInputIndex);
     }
 
@@ -110,7 +110,7 @@ void removeNextTaskFromQueue() {
 	g_queueIsFull = false;
 
     if (!continuousTask) {
-        --g_numContinuousTaskInQueue;
+        --g_numNonContinuousTaskInQueue;
 	    onRemoveFromQueue();
     }
 }

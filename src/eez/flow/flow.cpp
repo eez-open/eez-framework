@@ -91,9 +91,9 @@ void tick() {
 
 	uint32_t startTickCount = millis();
 
-    auto n = getQueueSize();
+    auto queueSizeAtTickStart = getQueueSize();
 
-    for (size_t i = 0; i < n || g_numContinuousTaskInQueue > 0; i++) {
+    for (size_t i = 0; i < queueSizeAtTickStart || g_numNonContinuousTaskInQueue > 0; i++) {
 		FlowState *flowState;
 		unsigned componentIndex;
         bool continuousTask;
@@ -113,11 +113,7 @@ void tick() {
             deallocateComponentExecutionState(flowState, componentIndex);
         } else {
             if (continuousTask) {
-                auto componentExecutionState = (ComponenentExecutionState *)flowState->componenentExecutionStates[componentIndex];
-                if (!componentExecutionState) {
-                    executeComponent(flowState, componentIndex);
-                } else if (componentExecutionState->lastExecutedTime + FLOW_TICK_MAX_DURATION_MS <= startTickCount) {
-                    componentExecutionState->lastExecutedTime = startTickCount;
+                if (i < queueSizeAtTickStart) {
                     executeComponent(flowState, componentIndex);
                 } else {
                     addToQueue(flowState, componentIndex, -1, -1, -1, true);
