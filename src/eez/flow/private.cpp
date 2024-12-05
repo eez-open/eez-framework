@@ -436,6 +436,25 @@ void propagateValueThroughSeqout(FlowState *flowState, unsigned componentIndex) 
 	}
 }
 
+bool hasAnyDataConnection(FlowState *flowState, unsigned componentIndex, unsigned outputIndex) {
+    if ((int)componentIndex == -1) {
+        return false;
+    }
+
+	auto component = flowState->flow->components[componentIndex];
+	auto componentOutput = component->outputs[outputIndex];
+
+	for (unsigned connectionIndex = 0; connectionIndex < componentOutput->connections.count; connectionIndex++) {
+		auto connection = componentOutput->connections[connectionIndex];
+        auto isDataInput = !(flowState->flow->componentInputs[connection->targetInputIndex] & COMPONENT_INPUT_FLAG_IS_SEQ_INPUT);
+        if (isDataInput) {
+            return true;
+        }
+	}
+
+    return false;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 #if EEZ_OPTION_GUI

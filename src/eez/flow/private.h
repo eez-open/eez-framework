@@ -130,6 +130,9 @@ void propagateValue(FlowState *flowState, unsigned componentIndex, unsigned outp
 void propagateValue(FlowState *flowState, unsigned componentIndex, unsigned outputIndex); // propagates null value
 void propagateValueThroughSeqout(FlowState *flowState, unsigned componentIndex); // propagates null value through @seqout (0-th output)
 
+// check if there is any data connection from component@output
+bool hasAnyDataConnection(FlowState *flowState, unsigned componentIndex, unsigned outputIndex);
+
 #if EEZ_OPTION_GUI
 void getValue(uint16_t dataId, DataOperationEnum operation, const WidgetCursor &widgetCursor, Value &value);
 void setValue(uint16_t dataId, const WidgetCursor &widgetCursor, const Value& value);
