@@ -428,7 +428,7 @@ bool is_equal(const Value& a1, const Value& b1) {
     if (a.isString() && b.isString()) {
         const char *aStr = a.getString();
         const char *bStr = b.getString();
-        if (!aStr && !aStr) {
+        if (!aStr && !bStr) {
             return true;
         }
         if (!aStr || !bStr) {
@@ -440,7 +440,7 @@ bool is_equal(const Value& a1, const Value& b1) {
     if (a.isBlob() && b.isBlob()) {
         auto aBlobRef = a.getBlob();
         auto bBlobRef = b.getBlob();
-        if (!aBlobRef && !aBlobRef) {
+        if (!aBlobRef && !bBlobRef) {
             return true;
         }
         if (!aBlobRef || !bBlobRef) {
