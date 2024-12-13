@@ -512,7 +512,8 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
         NAME = getLvglObjectFromIndexHook(flowState->lvglWidgetStartIndex + NAME##_WidgetIndex); \
     } else { \
         int32_t NAME##_WidgetIndex = NAME##Value.getInt(); \
-        NAME = getLvglObjectFromIndexHook(flowState->lvglWidgetStartIndex + NAME##_WidgetIndex); \
+        for (FlowState *fs = flowState; fs; fs = fs->parentFlowState) NAME##_WidgetIndex += fs->lvglWidgetStartIndex; \
+        NAME = getLvglObjectFromIndexHook(NAME##_WidgetIndex); \
     } \
     if (!NAME) { \
         throwError(flowState, componentIndex, FlowError::NullInAction("Widget", actionName, actionIndex)); \
