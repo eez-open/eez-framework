@@ -504,16 +504,16 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
         NAME = (lv_obj_t *)NAME##Value.getWidget(); \
     } else if (NAME##Value.isString()) { \
         const char *objectName = NAME##Value.getString(); \
-        int32_t NAME##_WidgetIndex = getLvglObjectByNameHook(objectName); \
-        if (NAME##_WidgetIndex == -1) { \
+        int32_t widgetIndex = getLvglObjectByNameHook(objectName); \
+        if (widgetIndex == -1) { \
             throwError(flowState, componentIndex, FlowError::NotFoundInAction("Widget", objectName, actionName, actionIndex)); \
             return; \
         } \
-        NAME = getLvglObjectFromIndexHook(flowState->lvglWidgetStartIndex + NAME##_WidgetIndex); \
+        NAME = getLvglObjectFromIndexHook(flowState->lvglWidgetStartIndex + widgetIndex); \
     } else { \
-        int32_t NAME##_WidgetIndex = NAME##Value.getInt(); \
-        for (FlowState *fs = flowState; fs; fs = fs->parentFlowState) NAME##_WidgetIndex += fs->lvglWidgetStartIndex; \
-        NAME = getLvglObjectFromIndexHook(NAME##_WidgetIndex); \
+        int32_t widgetIndex = NAME##Value.getInt(); \
+        for (FlowState *fs = flowState; fs; fs = fs->parentFlowState) widgetIndex += fs->lvglWidgetStartIndex; \
+        NAME = getLvglObjectFromIndexHook(widgetIndex); \
     } \
     if (!NAME) { \
         throwError(flowState, componentIndex, FlowError::NullInAction("Widget", actionName, actionIndex)); \
