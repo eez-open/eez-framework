@@ -453,6 +453,10 @@ bool is_equal(const Value& a1, const Value& b1) {
 
     }
 
+    if (a.getType() == b.getType()) {
+        return a == b;
+    }
+
     return a.toDouble() == b.toDouble();
 }
 

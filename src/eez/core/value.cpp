@@ -1239,6 +1239,11 @@ bool Value::toBool(int *err) const {
         return int32Value != 0;
     }
 
+    if (isWidget()) {
+        return pVoidValue != 0;
+    }
+
+
     if (err) {
         *err = 1;
     }
