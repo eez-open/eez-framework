@@ -31,6 +31,7 @@ void tick();
 void stop();
 
 bool isFlowStopped();
+unsigned getTickMaxDurationCounter();
 
 #if EEZ_OPTION_GUI
 FlowState *getPageFlowState(Assets *assets, int16_t pageIndex, const WidgetCursor &widgetCursor);
