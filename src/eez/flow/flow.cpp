@@ -91,6 +91,8 @@ void tick() {
 
 	uint32_t startTickCount = millis();
 
+    visitWatchList();
+
     auto queueSizeAtTickStart = getQueueSize();
 
     for (size_t i = 0; i < queueSizeAtTickStart || g_numNonContinuousTaskInQueue > 0; i++) {
@@ -139,8 +141,6 @@ void tick() {
             }
         }
 	}
-
-    visitWatchList();
 
 	finishToDebuggerMessageHook();
 }
