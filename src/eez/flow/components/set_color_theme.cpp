@@ -42,11 +42,15 @@ void executeSetColorThemeComponent(FlowState *flowState, unsigned componentIndex
 #if defined(EEZ_FOR_LVGL)
     lvglSetColorThemeHook(theme);
 #elif EEZ_OPTION_GUI
+
+#if defined(EEZ_DASHBOARD_API)
     if (g_mainAssets->assetsType == ASSETS_TYPE_DASHBOARD) {
         setDashboardColorTheme(theme);
         propagateValueThroughSeqout(flowState, componentIndex);
     } else {
-        auto &themes = flowState->assets->colorsDefinition->themes;
+#endif
+
+    	auto &themes = flowState->assets->colorsDefinition->themes;
 
         for (uint32_t themeIndex = 0; themeIndex < themes.count; themeIndex++) {
             if (strcmp(themes[themeIndex]->name, theme) == 0) {
@@ -59,7 +63,11 @@ void executeSetColorThemeComponent(FlowState *flowState, unsigned componentIndex
         char message[256];
         snprintf(message, sizeof(message), "Unknown theme %s", theme);
         throwError(flowState, componentIndex, FlowError::Plain(message));
+
+#if defined(EEZ_DASHBOARD_API)
     }
+#endif
+
 #endif
 }
 

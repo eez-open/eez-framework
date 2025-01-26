@@ -499,6 +499,11 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCurs
             getValue(flowDataId, operation, widgetCursor, value);
 		}
 #endif
+#if EEZ_OPTION_GUI
+		else if (operation == DATA_OPERATION_GET_CANVAS_REFRESH_STATE) {
+            getValue(flowDataId, operation, widgetCursor, value);
+		}
+#endif
 
 	} else {
 		// TODO this shouldn't happen
