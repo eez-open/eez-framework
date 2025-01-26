@@ -45,7 +45,12 @@ namespace flow {
 uint32_t g_wasmModuleId = 0;
 #endif
 
-static const uint32_t FLOW_TICK_MAX_DURATION_MS = 5;
+#if !defined(EEZ_FLOW_TICK_MAX_DURATION_MS)
+#define EEZ_FLOW_TICK_MAX_DURATION_MS 5
+#endif
+static const uint32_t FLOW_TICK_MAX_DURATION_MS = EEZ_FLOW_TICK_MAX_DURATION_MS;
+
+static unsigned g_tick_max_duration_count = 0;
 
 int g_selectedLanguage = 0;
 FlowState *g_firstFlowState;
@@ -137,6 +142,7 @@ void tick() {
 
         if ((i + 1) % 5 == 0) {
             if (millis() - startTickCount >= FLOW_TICK_MAX_DURATION_MS) {
+                g_tick_max_duration_count++;
                 break;
             }
         }
@@ -166,6 +172,10 @@ void doStop() {
 
 bool isFlowStopped() {
     return g_isStopped;
+}
+
+unsigned getTickMaxDurationCounter() {
+    return g_tick_max_duration_count;
 }
 
 #if EEZ_OPTION_GUI
