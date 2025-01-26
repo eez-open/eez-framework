@@ -265,7 +265,11 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                     } else if (specific->property == BASIC_OPACITY) {
                         lv_obj_set_style_opa(target, intValue, 0);
                     } else if (specific->property == DROPDOWN_SELECTED) {
+ #if LVGL_VERSION_MAJOR >= 9 && LVGL_VERSION_MINOR >= 3
+                        lv_dropdown_set_selected(target, intValue, LV_ANIM_OFF);
+#else
                         lv_dropdown_set_selected(target, intValue);
+#endif
                     } else if (specific->property == IMAGE_ANGLE) {
                         lv_img_set_angle(target, intValue);
                     } else if (specific->property == IMAGE_ZOOM) {
@@ -778,10 +782,15 @@ ACTION_START(dropdownSetSelected)
     WIDGET_PROP(obj);
     UINT32_PROP(value);
 #if LVGL_VERSION_MAJOR >= 9
+#if LVGL_VERSION_MINOR >= 3
+    lv_dropdown_set_selected(obj, value, LV_ANIM_OFF);
+#else
     lv_dropdown_set_selected(obj, value);
+#endif
 #else
     lv_dropdown_set_selected(obj, (uint16_t)value);
 #endif
+
 ACTION_END
 
 ACTION_START(imageSetSrc)
