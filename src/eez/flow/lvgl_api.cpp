@@ -274,65 +274,63 @@ extern "C" void flowPropagateValueUint32(void *flowState, unsigned componentInde
 }
 
 extern "C" void flowPropagateValueLVGLEvent(void *flowState, unsigned componentIndex, unsigned outputIndex, lv_event_t *event) {
-    if (eez::flow::hasAnyDataConnection((eez::flow::FlowState *)flowState, componentIndex, outputIndex)) {
-        lv_event_code_t event_code = lv_event_get_code(event);
+    lv_event_code_t event_code = lv_event_get_code(event);
 
-        uint32_t code = (uint32_t)event_code;
-        void *currentTarget = (void *)lv_event_get_current_target(event);
-        void *target = (void *)lv_event_get_target(event);
+    uint32_t code = (uint32_t)event_code;
+    void *currentTarget = (void *)lv_event_get_current_target(event);
+    void *target = (void *)lv_event_get_target(event);
 
-        void *userDataPointer = lv_event_get_user_data(event);
-        int32_t userData = *((int32_t*)(&userDataPointer));
+    void *userDataPointer = lv_event_get_user_data(event);
+    int32_t userData = *((int32_t*)(&userDataPointer));
 
-        uint32_t key = 0;
-        if (event_code == LV_EVENT_KEY || (event_code == LV_EVENT_VALUE_CHANGED &&
-    #if LVGL_VERSION_MAJOR >= 9
-            lv_obj_check_type((lv_obj_t*)target, &lv_buttonmatrix_class)
-    #else
-            lv_obj_check_type((lv_obj_t*)target, &lv_btnmatrix_class)
-    #endif
-        )) {
-            uint32_t *param = (uint32_t *)lv_event_get_param(event);
-            key = param ? *param : 0;
-        }
-
-        int32_t gestureDir = (int32_t)LV_DIR_NONE;
-        if (event_code == LV_EVENT_GESTURE) {
-    #if LVGL_VERSION_MAJOR >= 9
-            lv_indev_wait_release(lv_indev_active());
-    #else
-            lv_indev_wait_release(lv_indev_get_act());
-    #endif
-
-            gestureDir = (int32_t)lv_indev_get_gesture_dir(
-    #if LVGL_VERSION_MAJOR >= 9
-                lv_indev_active()
-    #else
-                lv_indev_get_act()
-    #endif
-            );
-        }
-
-        int32_t rotaryDiff = 0;
-    #if LVGL_VERSION_MAJOR >= 9
-        if (event_code == LV_EVENT_ROTARY) {
-            rotaryDiff = lv_event_get_rotary_diff(event);
-        }
-    #endif
-
-        eez::flow::propagateValue(
-            (eez::flow::FlowState *)flowState, componentIndex, outputIndex,
-            eez::Value::makeLVGLEventRef(
-                code, currentTarget, target, userData, key, gestureDir, rotaryDiff, 0xe7f23624
-            )
-        );
-    } else {
-        eez::flow::propagateValue((eez::flow::FlowState *)flowState, componentIndex, outputIndex);
+    uint32_t key = 0;
+    if (event_code == LV_EVENT_KEY || (event_code == LV_EVENT_VALUE_CHANGED &&
+#if LVGL_VERSION_MAJOR >= 9
+        lv_obj_check_type((lv_obj_t*)target, &lv_buttonmatrix_class)
+#else
+        lv_obj_check_type((lv_obj_t*)target, &lv_btnmatrix_class)
+#endif
+    )) {
+        uint32_t *param = (uint32_t *)lv_event_get_param(event);
+        key = param ? *param : 0;
     }
 
-    g_currentLVGLEvent = event;
-    eez::flow::tick();
-    g_currentLVGLEvent = 0;
+    int32_t gestureDir = (int32_t)LV_DIR_NONE;
+    if (event_code == LV_EVENT_GESTURE) {
+#if LVGL_VERSION_MAJOR >= 9
+        lv_indev_wait_release(lv_indev_active());
+#else
+        lv_indev_wait_release(lv_indev_get_act());
+#endif
+
+        gestureDir = (int32_t)lv_indev_get_gesture_dir(
+#if LVGL_VERSION_MAJOR >= 9
+            lv_indev_active()
+#else
+            lv_indev_get_act()
+#endif
+        );
+    }
+
+    int32_t rotaryDiff = 0;
+#if LVGL_VERSION_MAJOR >= 9
+    if (event_code == LV_EVENT_ROTARY) {
+        rotaryDiff = lv_event_get_rotary_diff(event);
+    }
+#endif
+
+    eez::flow::propagateValue(
+        (eez::flow::FlowState *)flowState, componentIndex, outputIndex,
+        eez::Value::makeLVGLEventRef(
+            code, currentTarget, target, userData, key, gestureDir, rotaryDiff, 0xe7f23624
+        )
+    );
+
+    if (!lv_disp_get_default()->rendering_in_progress) { // do not call tick if rendering in progress
+        g_currentLVGLEvent = event;
+        eez::flow::tick();
+        g_currentLVGLEvent = 0;
+    }
 }
 
 #ifndef EEZ_LVGL_TEMP_STRING_BUFFER_SIZE
