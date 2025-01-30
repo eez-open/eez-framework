@@ -88,6 +88,10 @@ bool isComponentReadyToRun(FlowState *flowState, unsigned componentIndex) {
         return false;
     }
 
+    if (component->type > defs_v3::FIRST_LVGL_WIDGET_COMPONENT_TYPE) {
+        return false;
+    }
+
     if ((component->type < defs_v3::COMPONENT_TYPE_START_ACTION && component->type != defs_v3::COMPONENT_TYPE_USER_WIDGET_WIDGET) || component->type >= defs_v3::FIRST_DASHBOARD_WIDGET_COMPONENT_TYPE) {
         // always execute widget
         return true;
