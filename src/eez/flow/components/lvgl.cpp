@@ -959,6 +959,22 @@ ACTION_START(animImageAngle)
     playAnimation(obj, start, end, delay, time, relative, instant, path, anim_callback_set_image_angle, anim_callback_get_image_angle);
 ACTION_END
 
+ACTION_START(createScreen)
+    SCREEN_PROP(screen);
+    eez_flow_create_screen(screen);
+ACTION_END
+
+ACTION_START(deleteScreen)
+    SCREEN_PROP(screen);
+    eez_flow_delete_screen(screen);
+ACTION_END
+
+ACTION_START(isScreenCreated)
+    SCREEN_PROP(screen);
+    bool isCreated = eez_flow_is_screen_created(screen);
+    RESULT(result, Value(isCreated, VALUE_TYPE_BOOLEAN));
+ACTION_END
+
 ////////////////////////////////////////////////////////////////////////////////
 
 typedef void (*ActionType)(FlowState *flowState, unsigned componentIndex, const ListOfAssetsPtr<Property> &properties, uint32_t actionIndex);
@@ -1010,7 +1026,10 @@ static ActionType actions[] = {
     &animHeight,
     &animOpacity,
     &animImageZoom,
-    &animImageAngle
+    &animImageAngle,
+    &createScreen,
+    &deleteScreen,
+    &isScreenCreated
 };
 
 ////////////////////////////////////////////////////////////////////////////////

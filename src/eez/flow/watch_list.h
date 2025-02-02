@@ -22,5 +22,7 @@ void watchListRemove(WatchListNode *node);
 void visitWatchList();
 void watchListReset();
 
+void removeWatchesForFlowState(FlowState *flowState);
+
 } // flow
 } // eez

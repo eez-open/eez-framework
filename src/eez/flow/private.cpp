@@ -26,6 +26,7 @@ using namespace eez::gui;
 #include <eez/flow/debugger.h>
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/hooks.h>
+#include <eez/flow/watch_list.h>
 #include <eez/flow/components/call_action.h>
 #include <eez/flow/components/on_event.h>
 
@@ -337,6 +338,9 @@ void freeFlowState(FlowState *flowState) {
 	for (unsigned i = 0; i < flow->components.count; i++) {
         deallocateComponentExecutionState(flowState, i);
 	}
+
+    removeTasksFromQueueForFlowState(flowState);
+    removeWatchesForFlowState(flowState);
 
     freeAllChildrenFlowStates(flowState->firstChild);
 

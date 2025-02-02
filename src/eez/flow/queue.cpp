@@ -135,5 +135,23 @@ bool isInQueue(FlowState *flowState, unsigned componentIndex) {
     return false;
 }
 
+void removeTasksFromQueueForFlowState(FlowState *flowState) {
+	if (g_queueHead == g_queueTail && !g_queueIsFull) {
+		return;
+	}
+
+    unsigned int it = g_queueHead;
+    while (true) {
+		if (g_queue[it].flowState == flowState) {
+            g_queue[it].flowState = 0;
+		}
+
+        it = (it + 1) % QUEUE_SIZE;
+        if (it == g_queueTail) {
+            break;
+        }
+	}
+}
+
 } // namespace flow
 } // namespace eez

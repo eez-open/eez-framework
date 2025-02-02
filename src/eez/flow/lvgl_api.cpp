@@ -58,6 +58,10 @@ static size_t g_numThemes;
 static void (*g_changeColorTheme)(uint32_t themeIndex);
 static uint32_t g_selectedThemeIndex;
 
+static void (*g_createScreenFunc)(int screenIndex);
+static void (*g_deleteScreenFunc)(int screenIndex);
+bool *g_deleteOnScreenUnload;
+
 static lv_obj_t *getLvglObjectFromIndex(int32_t index) {
     if (index >= 0 && index < g_numObjects) {
         return g_objects[index];
@@ -129,6 +133,18 @@ void eez_flow_init_themes(const char **themeNames, size_t numThemes, void (*chan
     g_changeColorTheme = changeColorTheme;
 }
 
+void eez_flow_set_create_screen_func(void (*createScreenFunc)(int screenIndex)) {
+    g_createScreenFunc = createScreenFunc;
+}
+
+void eez_flow_set_delete_screen_func(void (*deleteScreenFunc)(int screenIndex)) {
+    g_deleteScreenFunc = deleteScreenFunc;
+}
+
+void eez_flow_set_delete_on_screen_unload(bool *deleteOnScreenUnload) {
+    g_deleteOnScreenUnload = deleteOnScreenUnload;
+}
+
 static void lvglSetColorTheme(const char *themeName) {
     for (uint32_t i = 0; i < g_numThemes; i++) {
         if (strcmp(themeName, g_themeNames[i]) == 0) {
@@ -152,12 +168,34 @@ extern "C" int16_t eez_flow_get_current_screen() {
     return g_currentScreen + 1;
 }
 
+static bool isScreenCreated(int screenIndex) {
+    return eez::flow::getLvglObjectFromIndexHook(screenIndex) != 0;
+}
+
+static void createScreen(int screenIndex) {
+    if (g_createScreenFunc && !isScreenCreated(screenIndex)) {
+        g_createScreenFunc(screenIndex);
+    }
+}
+
+static void deleteScreen(int screenIndex) {
+    if (g_deleteScreenFunc && isScreenCreated(screenIndex)) {
+        g_deleteScreenFunc(screenIndex);
+    }
+}
+
 extern "C" void eez_flow_set_screen(int16_t screenId, lv_scr_load_anim_t animType, uint32_t speed, uint32_t delay) {
+    // make sure screen is created
+    createScreen(screenId - 1);
+
     g_screenStackPosition = 0;
     eez::flow::replacePageHook(screenId, animType, speed, delay);
 }
 
 extern "C" void eez_flow_push_screen(int16_t screenId, lv_scr_load_anim_t animType, uint32_t speed, uint32_t delay) {
+    // make sure screen is created
+    createScreen(screenId - 1);
+
     // remove the oldest screen from the stack if the stack is full
     if (g_screenStackPosition == EEZ_LVGL_SCREEN_STACK_SIZE) {
         for (unsigned i = 1; i < EEZ_LVGL_SCREEN_STACK_SIZE; i++) {
@@ -176,6 +214,21 @@ extern "C" void eez_flow_pop_screen(lv_scr_load_anim_t animType, uint32_t speed,
         g_screenStackPosition--;
         eez::flow::replacePageHook(g_screenStack[g_screenStackPosition], animType, speed, delay);
     }
+}
+
+void eez_flow_create_screen(int16_t screenId) {
+    int16_t screenIndex = screenId - 1;
+    createScreen(screenIndex);
+}
+
+void eez_flow_delete_screen(int16_t screenId) {
+    int16_t screenIndex = screenId - 1;
+    deleteScreen(screenIndex);
+}
+
+bool eez_flow_is_screen_created(int16_t screenId) {
+    int16_t screenIndex = screenId - 1;
+    return isScreenCreated(screenIndex);
 }
 
 extern "C" void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj_t **objects, size_t numObjects, const ext_img_desc_t *images, size_t numImages, ActionExecFunc *actions) {
@@ -251,10 +304,40 @@ namespace eez {
 ActionExecFunc g_actionExecFunctions[] = { 0 };
 }
 
+void on_screen_unloaded(lv_event_t *e) {
+    if (lv_event_get_code(e) == LV_EVENT_SCREEN_UNLOADED) {
+        int16_t screenIndex = (int16_t)(lv_uintptr_t)lv_event_get_user_data(e);
+        deleteScreen(screenIndex);
+    }
+}
+
 void replacePageHook(int16_t pageId, uint32_t animType, uint32_t speed, uint32_t delay) {
+    int16_t screenIndex = pageId - 1;
+
+    lv_obj_t *screen = eez::flow::getLvglObjectFromIndexHook(screenIndex);
+    if (!screen) {
+        return;
+    }
+
     eez::flow::onPageChanged(g_currentScreen + 1, pageId);
-    g_currentScreen = pageId - 1;
-    lv_scr_load_anim(getLvglObjectFromIndex(g_currentScreen), (lv_scr_load_anim_t)animType, speed, delay, false);
+
+    if (
+        g_currentScreen != -1 && 
+        g_currentScreen != screenIndex && 
+        g_deleteScreenFunc && 
+        g_deleteOnScreenUnload && 
+        g_deleteOnScreenUnload[g_currentScreen]
+    ) {
+        lv_obj_add_event_cb(
+            eez::flow::getLvglObjectFromIndexHook(g_currentScreen),
+            on_screen_unloaded,
+            LV_EVENT_SCREEN_UNLOADED,
+            (void*)(lv_uintptr_t)(g_currentScreen)
+        );
+    }
+
+    g_currentScreen = screenIndex;
+    lv_scr_load_anim(screen, (lv_scr_load_anim_t)animType, speed, delay, false);
 }
 
 extern "C" void flowOnPageLoaded(unsigned pageIndex) {
@@ -462,6 +545,10 @@ void *getFlowState(void *flowState, unsigned userWidgetComponentIndexOrPageIndex
     return executionState->flowState;
 }
 
+void deletePageFlowState(unsigned pageIndex) {
+    eez::flow::deletePageFlowState(eez::g_mainAssets, (int16_t)pageIndex);
+}
+
 bool compareRollerOptions(lv_roller_t *roller, const char *new_val, const char *cur_val, lv_roller_mode_t mode) {
     if (mode == LV_ROLLER_MODE_NORMAL) {
         return strcmp(new_val, cur_val) != 0;
@@ -482,6 +569,10 @@ bool compareRollerOptions(lv_roller_t *roller, const char *new_val, const char *
     }
 
     return false;
+}
+
+uint32_t eez_flow_get_selected_theme_index() {
+    return g_selectedThemeIndex;
 }
 
 #endif // EEZ_FOR_LVGL

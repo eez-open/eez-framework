@@ -67,6 +67,10 @@ void eez_flow_init_group_names(const char **groupNames, size_t numGroups);
 void eez_flow_init_style_names(const char **styleNames, size_t numStyles);
 void eez_flow_init_themes(const char **themeNames, size_t numThemes, void (*changeColorTheme)(uint32_t themeIndex));
 
+void eez_flow_set_create_screen_func(void (*createScreenFunc)(int screenIndex));
+void eez_flow_set_delete_screen_func(void (*deleteScreenFunc)(int screenIndex));
+void eez_flow_set_delete_on_screen_unload(bool *deleteOnScreenUnload);
+
 void eez_flow_tick();
 
 bool eez_flow_is_stopped();
@@ -78,10 +82,15 @@ void eez_flow_set_screen(int16_t screenId, lv_scr_load_anim_t animType, uint32_t
 void eez_flow_push_screen(int16_t screenId, lv_scr_load_anim_t animType, uint32_t speed, uint32_t delay);
 void eez_flow_pop_screen(lv_scr_load_anim_t animType, uint32_t speed, uint32_t delay);
 
+void eez_flow_create_screen(int16_t screenId);
+void eez_flow_delete_screen(int16_t screenId);
+bool eez_flow_is_screen_created(int16_t screenId);
+
 void flowOnPageLoaded(unsigned pageIndex);
 
 // if flowState is nullptr then userWidgetComponentIndexOrPageIndex is page index
 void *getFlowState(void *flowState, unsigned userWidgetComponentIndexOrPageIndex);
+void deletePageFlowState(unsigned pageIndex);
 
 void flowPropagateValue(void *flowState, unsigned componentIndex, unsigned outputIndex);
 void flowPropagateValueInt32(void *flowState, unsigned componentIndex, unsigned outputIndex, int32_t value);
@@ -135,6 +144,8 @@ float getTimelinePosition(void *flowState);
 extern int g_eezFlowLvlgMeterTickIndex;
 
 bool compareRollerOptions(lv_roller_t *roller, const char *new_val, const char *cur_val, lv_roller_mode_t mode);
+
+uint32_t eez_flow_get_selected_theme_index();
 
 #ifdef __cplusplus
 }

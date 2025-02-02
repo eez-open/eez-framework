@@ -108,6 +108,11 @@ void tick() {
 			break;
 		}
 
+        if (!flowState) {
+            removeNextTaskFromQueue();
+            continue;
+        }
+
 		if (!continuousTask && !canExecuteStep(flowState, componentIndex)) {
 			break;
 		}
@@ -247,6 +252,16 @@ FlowState *getPageFlowState(Assets *assets, int16_t pageIndex) {
 
 int getPageIndex(FlowState *flowState) {
 	return flowState->flowIndex;
+}
+
+void deletePageFlowState(Assets *assets, int16_t pageIndex) {
+    FlowState *flowState;
+    for (flowState = g_firstFlowState; flowState; flowState = flowState->nextSibling) {
+        if (flowState->flowIndex == pageIndex) {
+            freeFlowState(flowState);
+            return;
+        }
+    }
 }
 
 Value getGlobalVariable(uint32_t globalVariableIndex) {

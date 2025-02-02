@@ -40,6 +40,8 @@ FlowState *getPageFlowState(Assets *assets, int16_t pageIndex);
 #endif
 int getPageIndex(FlowState *flowState);
 
+void deletePageFlowState(Assets *assets, int16_t pageIndex);
+
 Value getGlobalVariable(uint32_t globalVariableIndex);
 Value getGlobalVariable(Assets *assets, uint32_t globalVariableIndex);
 void setGlobalVariable(uint32_t globalVariableIndex, const Value &value);

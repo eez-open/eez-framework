@@ -103,5 +103,15 @@ void watchListReset() {
     }
 }
 
+void removeWatchesForFlowState(FlowState *flowState) {
+    for (auto node = g_watchList.first; node;) {
+        auto nextNode = node->next;
+        if (node->flowState == flowState) {
+            watchListRemove(node);
+        }
+        node = nextNode;
+    }
+}
+
 } // namespace flow
 } // namespace eez
