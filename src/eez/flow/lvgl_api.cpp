@@ -60,7 +60,6 @@ static uint32_t g_selectedThemeIndex;
 
 static void (*g_createScreenFunc)(int screenIndex);
 static void (*g_deleteScreenFunc)(int screenIndex);
-bool *g_deleteOnScreenUnload;
 
 static lv_obj_t *getLvglObjectFromIndex(int32_t index) {
     if (index >= 0 && index < g_numObjects) {
@@ -139,10 +138,6 @@ void eez_flow_set_create_screen_func(void (*createScreenFunc)(int screenIndex)) 
 
 void eez_flow_set_delete_screen_func(void (*deleteScreenFunc)(int screenIndex)) {
     g_deleteScreenFunc = deleteScreenFunc;
-}
-
-void eez_flow_set_delete_on_screen_unload(bool *deleteOnScreenUnload) {
-    g_deleteOnScreenUnload = deleteOnScreenUnload;
 }
 
 static void lvglSetColorTheme(const char *themeName) {
@@ -226,6 +221,22 @@ bool eez_flow_is_screen_created(int16_t screenId) {
     return isScreenCreated(screenIndex);
 }
 
+void on_screen_unloaded(lv_event_t *e) {
+    if (lv_event_get_code(e) == LV_EVENT_SCREEN_UNLOADED) {
+        int16_t screenIndex = (int16_t)(lv_uintptr_t)lv_event_get_user_data(e);
+        deleteScreen(screenIndex);
+    }
+}
+
+void eez_flow_delete_screen_on_unload(int screenIndex) {
+    lv_obj_add_event_cb(
+        eez::flow::getLvglObjectFromIndexHook(screenIndex),
+        on_screen_unloaded,
+        LV_EVENT_SCREEN_UNLOADED,
+        (void*)(lv_uintptr_t)(screenIndex)
+    );
+}
+
 extern "C" void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj_t **objects, size_t numObjects, const ext_img_desc_t *images, size_t numImages, ActionExecFunc *actions) {
     g_objects = objects;
     g_numObjects = numObjects;
@@ -299,13 +310,6 @@ namespace eez {
 ActionExecFunc g_actionExecFunctions[] = { 0 };
 }
 
-void on_screen_unloaded(lv_event_t *e) {
-    if (lv_event_get_code(e) == LV_EVENT_SCREEN_UNLOADED) {
-        int16_t screenIndex = (int16_t)(lv_uintptr_t)lv_event_get_user_data(e);
-        deleteScreen(screenIndex);
-    }
-}
-
 void replacePageHook(int16_t pageId, uint32_t animType, uint32_t speed, uint32_t delay) {
     int16_t screenIndex = pageId - 1;
 
@@ -318,21 +322,6 @@ void replacePageHook(int16_t pageId, uint32_t animType, uint32_t speed, uint32_t
     }
 
     eez::flow::onPageChanged(g_currentScreen + 1, pageId);
-
-    if (
-        g_currentScreen != -1 && 
-        g_currentScreen != screenIndex && 
-        g_deleteScreenFunc && 
-        g_deleteOnScreenUnload && 
-        g_deleteOnScreenUnload[g_currentScreen]
-    ) {
-        lv_obj_add_event_cb(
-            eez::flow::getLvglObjectFromIndexHook(g_currentScreen),
-            on_screen_unloaded,
-            LV_EVENT_SCREEN_UNLOADED,
-            (void*)(lv_uintptr_t)(g_currentScreen)
-        );
-    }
 
     g_currentScreen = screenIndex;
     lv_scr_load_anim(screen, (lv_scr_load_anim_t)animType, speed, delay, false);

@@ -69,7 +69,6 @@ void eez_flow_init_themes(const char **themeNames, size_t numThemes, void (*chan
 
 void eez_flow_set_create_screen_func(void (*createScreenFunc)(int screenIndex));
 void eez_flow_set_delete_screen_func(void (*deleteScreenFunc)(int screenIndex));
-void eez_flow_set_delete_on_screen_unload(bool *deleteOnScreenUnload);
 
 void eez_flow_tick();
 
@@ -85,6 +84,8 @@ void eez_flow_pop_screen(lv_scr_load_anim_t animType, uint32_t speed, uint32_t d
 void eez_flow_create_screen(int16_t screenId);
 void eez_flow_delete_screen(int16_t screenId);
 bool eez_flow_is_screen_created(int16_t screenId);
+
+void eez_flow_delete_screen_on_unload(int screenIndex);
 
 void flowOnPageLoaded(unsigned pageIndex);
 
