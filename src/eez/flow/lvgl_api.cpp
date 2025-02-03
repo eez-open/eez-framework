@@ -185,17 +185,11 @@ static void deleteScreen(int screenIndex) {
 }
 
 extern "C" void eez_flow_set_screen(int16_t screenId, lv_scr_load_anim_t animType, uint32_t speed, uint32_t delay) {
-    // make sure screen is created
-    createScreen(screenId - 1);
-
     g_screenStackPosition = 0;
     eez::flow::replacePageHook(screenId, animType, speed, delay);
 }
 
 extern "C" void eez_flow_push_screen(int16_t screenId, lv_scr_load_anim_t animType, uint32_t speed, uint32_t delay) {
-    // make sure screen is created
-    createScreen(screenId - 1);
-
     // remove the oldest screen from the stack if the stack is full
     if (g_screenStackPosition == EEZ_LVGL_SCREEN_STACK_SIZE) {
         for (unsigned i = 1; i < EEZ_LVGL_SCREEN_STACK_SIZE; i++) {
@@ -212,6 +206,7 @@ extern "C" void eez_flow_push_screen(int16_t screenId, lv_scr_load_anim_t animTy
 extern "C" void eez_flow_pop_screen(lv_scr_load_anim_t animType, uint32_t speed, uint32_t delay) {
     if (g_screenStackPosition > 0) {
         g_screenStackPosition--;
+
         eez::flow::replacePageHook(g_screenStack[g_screenStackPosition], animType, speed, delay);
     }
 }
@@ -313,6 +308,9 @@ void on_screen_unloaded(lv_event_t *e) {
 
 void replacePageHook(int16_t pageId, uint32_t animType, uint32_t speed, uint32_t delay) {
     int16_t screenIndex = pageId - 1;
+
+    // make sure screen is created
+    createScreen(screenIndex);
 
     lv_obj_t *screen = eez::flow::getLvglObjectFromIndexHook(screenIndex);
     if (!screen) {
