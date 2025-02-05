@@ -124,6 +124,7 @@ static lv_event_t *g_currentLVGLEvent;
 
 static void executeLvglAction(int actionIndex) {
     g_actions[actionIndex](g_currentLVGLEvent);
+    g_currentLVGLEvent = 0;
 }
 
 void eez_flow_init_themes(const char **themeNames, size_t numThemes, void (*changeColorTheme)(uint32_t themeIndex)) {
@@ -396,11 +397,7 @@ extern "C" void flowPropagateValueLVGLEvent(void *flowState, unsigned componentI
         )
     );
 
-    if (!lv_disp_get_default()->rendering_in_progress) { // do not call tick if rendering in progress
-        g_currentLVGLEvent = event;
-        eez::flow::tick();
-        g_currentLVGLEvent = 0;
-    }
+    g_currentLVGLEvent = event;
 }
 
 #ifndef EEZ_LVGL_TEMP_STRING_BUFFER_SIZE
