@@ -154,6 +154,13 @@ void tick() {
 	}
 
 	finishToDebuggerMessageHook();
+
+    // delete flow states marked with deleteOnNextTick
+    for (FlowState *flowState = g_firstFlowState; flowState; flowState = flowState->nextSibling) {
+        if (flowState->deleteOnNextTick) {
+            freeFlowState(flowState);
+        }
+    }
 }
 
 void stop() {
@@ -212,9 +219,11 @@ FlowState *getPageFlowState(Assets *assets, int16_t pageIndex, const WidgetCurso
                 }
             }
 
-            if (!flowState) {
+            if (flowState) {
+                flowState->deleteOnNextTick = false;
+			} else {
 				flowState = initPageFlowState(assets, pageIndex, nullptr, 0);
-			}
+            }
 
 			return flowState;
 		}
@@ -241,7 +250,9 @@ FlowState *getPageFlowState(Assets *assets, int16_t pageIndex) {
         }
     }
 
-    if (!flowState) {
+    if (flowState) {
+        flowState->deleteOnNextTick = false;
+    } else {
         flowState = initPageFlowState(assets, pageIndex, nullptr, 0);
     }
 
@@ -255,10 +266,9 @@ int getPageIndex(FlowState *flowState) {
 }
 
 void deletePageFlowState(Assets *assets, int16_t pageIndex) {
-    FlowState *flowState;
-    for (flowState = g_firstFlowState; flowState; flowState = flowState->nextSibling) {
+    for (FlowState *flowState = g_firstFlowState; flowState; flowState = flowState->nextSibling) {
         if (flowState->flowIndex == pageIndex) {
-            freeFlowState(flowState);
+            flowState->deleteOnNextTick = true;
             return;
         }
     }

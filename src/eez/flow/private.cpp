@@ -173,6 +173,7 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
 	flowState->flow = flowDefinition->flows[flowIndex];
 	flowState->flowIndex = flowIndex;
 	flowState->error = false;
+    flowState->deleteOnNextTick = false;
 	flowState->refCounter = 0;
 	flowState->parentFlowState = parentFlowState;
 

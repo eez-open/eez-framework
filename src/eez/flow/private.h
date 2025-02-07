@@ -58,6 +58,7 @@ struct FlowState {
 	uint16_t flowIndex;
 	bool isAction;
 	bool error;
+    bool deleteOnNextTick;
 
     // Used for freeing flow state. While this is greater than 0, flow state cannot be freed
     // because it is still active. It is active if:
