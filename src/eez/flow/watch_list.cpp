@@ -30,6 +30,7 @@ struct WatchListNode {
 struct WatchList {
     WatchListNode *first;
     WatchListNode *last;
+    unsigned       size;
 };
 
 static WatchList g_watchList;
@@ -53,6 +54,7 @@ WatchListNode *watchListAdd(FlowState *flowState, unsigned componentIndex) {
     node->componentIndex = componentIndex;
 
     incRefCounterForFlowState(flowState);
+    (g_watchList.size)++;
 
     return node;
 }
@@ -71,6 +73,7 @@ void watchListRemove(WatchListNode *node) {
     }
 
     free(node);
+    g_watchList.size > 0 ? (g_watchList.size)-- : 0;
 }
 
 void visitWatchList() {
@@ -111,6 +114,10 @@ void removeWatchesForFlowState(FlowState *flowState) {
         }
         node = nextNode;
     }
+}
+
+unsigned getWatchListSize() {
+    return g_watchList.size;
 }
 
 } // namespace flow

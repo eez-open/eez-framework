@@ -23,6 +23,7 @@ void visitWatchList();
 void watchListReset();
 
 void removeWatchesForFlowState(FlowState *flowState);
+unsigned getWatchListSize();
 
 } // flow
 } // eez
