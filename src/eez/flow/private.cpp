@@ -684,12 +684,10 @@ void throwError(FlowState *flowState, int componentIndex, const char *errorMessa
         return;
     }
 
-#if defined(__EMSCRIPTEN__)
-    printf("throwError: %s\n", errorMessage);
-#endif
-
 #if defined(EEZ_FOR_LVGL)
     LV_LOG_ERROR("EEZ-FLOW error: %s", errorMessage);
+#elif defined(__EMSCRIPTEN__)
+    printf("throwError: %s\n", errorMessage);
 #endif
 
 	if (component->errorCatchOutput != -1) {
@@ -740,113 +738,106 @@ void throwError(FlowState *flowState, int componentIndex, const char *errorMessa
 	}
 }
 
-const char *FlowError::getMessage(char *messageStr, size_t messageStrLength) const {
+const char *FlowError::getMessage(char *messageStr, size_t messageStrLength, int flowIndex, int componentIndex) const {
+    #define GET_MESSAGE(FMT, ...) \
+        if (file) snprintf(messageStr, messageStrLength, FMT " | %d.%d | %s:%d", __VA_ARGS__, flowIndex, componentIndex, file, line); \
+        else snprintf(messageStr, messageStrLength, FMT " | %d.%d", __VA_ARGS__, flowIndex, componentIndex);
+
     if (type == FLOW_ERROR_PLAIN) {
-        if (!description) {
-            return messagePart1;
+        if (description) {
+            GET_MESSAGE("%s: %s", messagePart1, description);
+        } else {
+            GET_MESSAGE("%s", messagePart1);
         }
-        snprintf(messageStr, messageStrLength, "%s: %s", messagePart1, description);
-        return messageStr;
     } else if (type == FLOW_ERROR_PROPERTY) {
         if (!description) {
-            snprintf(messageStr, messageStrLength, "Failed to evaluate '%s' in '%s'", messagePart2, messagePart1);
+            GET_MESSAGE("Failed to evaluate '%s' in '%s'", messagePart2, messagePart1);
         } else {
-            snprintf(messageStr, messageStrLength, "Failed to evaluate '%s' in '%s': %s", messagePart2, messagePart1, description);
+            GET_MESSAGE("Failed to evaluate '%s' in '%s': %s", messagePart2, messagePart1, description);
         }
-        return messageStr;
     } else if (type == FLOW_ERROR_PROPERTY_INVALID) {
         if (!description) {
-            snprintf(messageStr, messageStrLength, "Invalid '%s' value in '%s'", messagePart2, messagePart1);
+            GET_MESSAGE("Invalid '%s' value in '%s'", messagePart2, messagePart1);
         } else {
-            snprintf(messageStr, messageStrLength, "Invalid '%s' value in '%s': %s", messagePart2, messagePart1, description);
+            GET_MESSAGE("Invalid '%s' value in '%s': %s", messagePart2, messagePart1, description);
         }
-        return messageStr;
     } else if (type == FLOW_ERROR_PROPERTY_CONVERT) {
         if (!description) {
-            snprintf(messageStr, messageStrLength, "Failed to convert '%s' to '%s' in '%s'", messagePart2, messagePart3, messagePart1);
+            GET_MESSAGE("Failed to convert '%s' to '%s' in '%s'", messagePart2, messagePart3, messagePart1);
         } else {
-            snprintf(messageStr, messageStrLength, "Failed to convert '%s' to '%s' in '%s': %s", messagePart2, messagePart3, messagePart1, description);
+            GET_MESSAGE("Failed to convert '%s' to '%s' in '%s': %s", messagePart2, messagePart3, messagePart1, description);
         }
-        return messageStr;
     } else if (type == FLOW_ERROR_PROPERTY_IN_ARRAY) {
         if (!description) {
-            snprintf(messageStr, messageStrLength, "Failed to evaluate '%s' no. %d in '%s'", messagePart2, messagePartInt + 1, messagePart1);
+            GET_MESSAGE("Failed to evaluate '%s' no. %d in '%s'", messagePart2, messagePartInt + 1, messagePart1);
         } else {
-            snprintf(messageStr, messageStrLength, "Failed to evaluate '%s' no. %d in '%s': %s", messagePart2, messagePartInt + 1, messagePart1, description);
+            GET_MESSAGE("Failed to evaluate '%s' no. %d in '%s': %s", messagePart2, messagePartInt + 1, messagePart1, description);
         }
-        return messageStr;
     } else if (type == FLOW_ERROR_PROPERTY_IN_ARRAY_CONVERT) {
         if (!description) {
-            snprintf(messageStr, messageStrLength, "Failed to convert '%s' no. %d to '%s' in '%s'", messagePart2, messagePartInt + 1, messagePart3, messagePart1);
+            GET_MESSAGE("Failed to convert '%s' no. %d to '%s' in '%s'", messagePart2, messagePartInt + 1, messagePart3, messagePart1);
         } else {
-            snprintf(messageStr, messageStrLength, "Failed to evaluate '%s' no. %d to '%s' in '%s': %s", messagePart2, messagePartInt + 1, messagePart3, messagePart1, description);
+            GET_MESSAGE("Failed to evaluate '%s' no. %d to '%s' in '%s': %s", messagePart2, messagePartInt + 1, messagePart3, messagePart1, description);
         }
-        return messageStr;
     } else if (type == FLOW_ERROR_PROPERTY_NUM) {
         if (!description) {
-            snprintf(messageStr, messageStrLength, "Failed to evaluate property #%d in '%s'", messagePartInt + 1, messagePart1);
+            GET_MESSAGE("Failed to evaluate property #%d in '%s'", messagePartInt + 1, messagePart1);
         } else {
-            snprintf(messageStr, messageStrLength, "Failed to evaluate property #%d in '%s': %s", messagePartInt + 1, messagePart1, description);
+            GET_MESSAGE("Failed to evaluate property #%d in '%s': %s", messagePartInt + 1, messagePart1, description);
         }
-        return messageStr;
     } else if (type == FLOW_ERROR_PROPERTY_IN_ACTION) {
         if (!description) {
-            snprintf(messageStr, messageStrLength, "Failed to evaluate '%s' in '%s' action #%d", messagePart2, messagePart1, messagePartInt + 1);
+            GET_MESSAGE("Failed to evaluate '%s' in '%s' action #%d", messagePart2, messagePart1, messagePartInt + 1);
         } else {
-            snprintf(messageStr, messageStrLength, "Failed to evaluate '%s' in '%s' action #%d: %s", messagePart2, messagePart1, messagePartInt + 1, description);
+            GET_MESSAGE("Failed to evaluate '%s' in '%s' action #%d: %s", messagePart2, messagePart1, messagePartInt + 1, description);
         }
-        return messageStr;
     } else if (type == FLOW_ERROR_PROPERTY_ASSIGN_IN_ACTION) {
         if (!description) {
-            snprintf(messageStr, messageStrLength, "Failed to assign '%s' in '%s' action #%d", messagePart2, messagePart1, messagePartInt + 1);
+            GET_MESSAGE("Failed to assign '%s' in '%s' action #%d", messagePart2, messagePart1, messagePartInt + 1);
         } else {
-            snprintf(messageStr, messageStrLength, "Failed to assign '%s' in '%s' action #%d: %s", messagePart2, messagePart1, messagePartInt + 1, description);
+            GET_MESSAGE("Failed to assign '%s' in '%s' action #%d: %s", messagePart2, messagePart1, messagePartInt + 1, description);
         }
-        return messageStr;
     } else if (type == FLOW_ERROR_PROPERTY_IN_ACTION_CONVERT) {
         if (!description) {
-            snprintf(messageStr, messageStrLength, "Failed to convert '%s' to '%s' in '%s' action #%d", messagePart2, messagePart3, messagePart1, messagePartInt + 1);
+            GET_MESSAGE("Failed to convert '%s' to '%s' in '%s' action #%d", messagePart2, messagePart3, messagePart1, messagePartInt + 1);
         } else {
-            snprintf(messageStr, messageStrLength, "Failed to convert '%s' to '%s' in '%s' action #%d: %s", messagePart2, messagePart3, messagePart1, messagePartInt + 1, description);
+            GET_MESSAGE("Failed to convert '%s' to '%s' in '%s' action #%d: %s", messagePart2, messagePart3, messagePart1, messagePartInt + 1, description);
         }
-        return messageStr;
     } else if (type == FLOW_ERROR_PROPERTY_NOT_FOUND_IN_ACTION) {
         if (!description) {
-            snprintf(messageStr, messageStrLength, "%s '%s' not found in '%s' action #%d", messagePart1, messagePart2, messagePart3, messagePartInt + 1);
+            GET_MESSAGE("%s '%s' not found in '%s' action #%d", messagePart1, messagePart2, messagePart3, messagePartInt + 1);
         } else {
-            snprintf(messageStr, messageStrLength, "%s '%s' not found in '%s' action #%d: %s", messagePart1, messagePart2, messagePart3, messagePartInt + 1, description);
+            GET_MESSAGE("%s '%s' not found in '%s' action #%d: %s", messagePart1, messagePart2, messagePart3, messagePartInt + 1, description);
         }
-        return messageStr;
     } else if (type == FLOW_ERROR_PROPERTY_IS_NULL_IN_ACTION) {
         if (!description) {
-            snprintf(messageStr, messageStrLength, "%s is NULL in '%s' action #%d", messagePart1, messagePart2, messagePartInt + 1);
+            GET_MESSAGE("%s is NULL in '%s' action #%d", messagePart1, messagePart2, messagePartInt + 1);
         } else {
-            snprintf(messageStr, messageStrLength, "%s is NULL in '%s' action #%d: %s", messagePart1, messagePart2, messagePartInt + 1, description);
+            GET_MESSAGE("%s is NULL in '%s' action #%d: %s", messagePart1, messagePart2, messagePartInt + 1, description);
         }
-        return messageStr;
     } else if (type == FLOW_ERROR_USER_PROPERTY) {
         if (!description) {
-            snprintf(messageStr, messageStrLength, "Failed to evaluate property #%d in '%s'", messagePartInt + 1, messagePart1);
+            GET_MESSAGE("Failed to evaluate property #%d in '%s'", messagePartInt + 1, messagePart1);
         } else {
-            snprintf(messageStr, messageStrLength, "Failed to evaluate property #%d in '%s': %s", messagePartInt + 1, messagePart1, description);
+            GET_MESSAGE("Failed to evaluate property #%d in '%s': %s", messagePartInt + 1, messagePart1, description);
         }
-        return messageStr;
     } else if (type == FLOW_ERROR_USER_ASSIGNABLE_PROPERTY) {
         if (!description) {
-            snprintf(messageStr, messageStrLength, "Failed to evaluate assignable property #%d in '%s'", messagePartInt + 1, messagePart1);
+            GET_MESSAGE("Failed to evaluate assignable property #%d in '%s'", messagePartInt + 1, messagePart1);
         } else {
-            snprintf(messageStr, messageStrLength, "Failed to evaluate assignable property #%d in '%s': %s", messagePartInt + 1, messagePart1, description);
+            GET_MESSAGE("Failed to evaluate assignable property #%d in '%s': %s", messagePartInt + 1, messagePart1, description);
         }
-        return messageStr;
-    } 
+    } else {
+        GET_MESSAGE("%s", "UNKNOWN ERROR");
+    }
 
-    return 0;
+    return messageStr;
 }
 
 
 void throwError(FlowState *flowState, int componentIndex, const FlowError &error) {
     char errorMessageStr[512];
-    const char *errorMessage = error.getMessage(errorMessageStr, sizeof(errorMessageStr));
+    const char *errorMessage = error.getMessage(errorMessageStr, sizeof(errorMessageStr), flowState->flowIndex, componentIndex);
     throwError(flowState, componentIndex, errorMessage);
 }
 

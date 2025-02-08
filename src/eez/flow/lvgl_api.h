@@ -98,14 +98,25 @@ void flowPropagateValueInt32(void *flowState, unsigned componentIndex, unsigned 
 void flowPropagateValueUint32(void *flowState, unsigned componentIndex, unsigned outputIndex, uint32_t value);
 void flowPropagateValueLVGLEvent(void *flowState, unsigned componentIndex, unsigned outputIndex, lv_event_t *event);
 
-const char *evalTextProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage);
-int32_t evalIntegerProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage);
-bool evalBooleanProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage);
-const char *evalStringArrayPropertyAndJoin(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage, const char *separator);
+#define evalTextProperty(flowState, componentIndex, propertyIndex, errorMessage) _evalTextProperty(flowState, componentIndex, propertyIndex, errorMessage, __FILE__, __LINE__)
+#define evalIntegerProperty(flowState, componentIndex, propertyIndex, errorMessage) _evalIntegerProperty(flowState, componentIndex, propertyIndex, errorMessage, __FILE__, __LINE__)
+#define evalBooleanProperty(flowState, componentIndex, propertyIndex, errorMessage) _evalBooleanProperty(flowState, componentIndex, propertyIndex, errorMessage, __FILE__, __LINE__)
+#define evalStringArrayPropertyAndJoin(flowState, componentIndex, propertyIndex, errorMessage, separator) _evalStringArrayPropertyAndJoin(flowState, componentIndex, propertyIndex, errorMessage, separator, __FILE__, __LINE__)
 
-void assignStringProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *value, const char *errorMessage);
-void assignIntegerProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, int32_t value, const char *errorMessage);
-void assignBooleanProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, bool value, const char *errorMessage);
+#define assignStringProperty(flowState, componentIndex, propertyIndex, value, errorMessage) _assignStringProperty(flowState, componentIndex, propertyIndex, value, errorMessage, __FILE__, __LINE__)
+#define assignIntegerProperty(flowState, componentIndex, propertyIndex, value, errorMessage) _assignIntegerProperty(flowState, componentIndex, propertyIndex, value, errorMessage, __FILE__, __LINE__)
+#define assignBooleanProperty(flowState, componentIndex, propertyIndex, value, errorMessage) _assignBooleanProperty(flowState, componentIndex, propertyIndex, value, errorMessage, __FILE__, __LINE__) 
+
+// PRIVATE functions
+const char *_evalTextProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage, const char *file, int line);
+int32_t _evalIntegerProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage, const char *file, int line);
+bool _evalBooleanProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage, const char *file, int line);
+const char *_evalStringArrayPropertyAndJoin(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage, const char *separator, const char *file, int line);
+
+void _assignStringProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *value, const char *errorMessage, const char *file, int line);
+void _assignIntegerProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, int32_t value, const char *errorMessage, const char *file, int line);
+void _assignBooleanProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, bool value, const char *errorMessage, const char *file, int line);
+//
 
 float eez_linear(float x);
 float eez_easeInQuad(float x);

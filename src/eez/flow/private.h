@@ -174,67 +174,67 @@ enum FlowErrorType {
 };
 
 struct FlowError {
-    static FlowError Plain(const char *message) {
-        return FlowError(FLOW_ERROR_PLAIN, message);
+    static FlowError Plain(const char *message, const char *file = 0, int line = -1) {
+        return FlowError(FLOW_ERROR_PLAIN, message, file, line);
     }
 
-    static FlowError Property(const char *componentName, const char *propertyName) {
-        return FlowError(FLOW_ERROR_PROPERTY, componentName, propertyName);
+    static FlowError Property(const char *componentName, const char *propertyName, const char *file = 0, int line = -1) {
+        return FlowError(FLOW_ERROR_PROPERTY, componentName, propertyName, file, line);
     }
 
-    static FlowError PropertyInvalid(const char *componentName, const char *propertyName) {
-        return FlowError(FLOW_ERROR_PROPERTY_INVALID, componentName, propertyName);
+    static FlowError PropertyInvalid(const char *componentName, const char *propertyName, const char *file = 0, int line = -1) {
+        return FlowError(FLOW_ERROR_PROPERTY_INVALID, componentName, propertyName, file, line);
     }
 
-    static FlowError PropertyConvert(const char *componentName, const char *propertyName, const char *typeName) {
-        return FlowError(FLOW_ERROR_PROPERTY_CONVERT, componentName, propertyName, typeName);
+    static FlowError PropertyConvert(const char *componentName, const char *propertyName, const char *typeName, const char *file = 0, int line = -1) {
+        return FlowError(FLOW_ERROR_PROPERTY_CONVERT, componentName, propertyName, typeName, file, line);
     }
 
-    static FlowError PropertyInArray(const char *componentName, const char *propertyName, int index) {
-        return FlowError(FLOW_ERROR_PROPERTY_IN_ARRAY, componentName, propertyName, index);
+    static FlowError PropertyInArray(const char *componentName, const char *propertyName, int index, const char *file = 0, int line = -1) {
+        return FlowError(FLOW_ERROR_PROPERTY_IN_ARRAY, componentName, propertyName, index, file, line);
     }
 
-    static FlowError PropertyInArrayConvert(const char *componentName, const char *propertyName, const char *typeName, int index) {
-        return FlowError(FLOW_ERROR_PROPERTY_IN_ARRAY_CONVERT, componentName, propertyName, typeName, index);
+    static FlowError PropertyInArrayConvert(const char *componentName, const char *propertyName, const char *typeName, int index, const char *file = 0, int line = -1) {
+        return FlowError(FLOW_ERROR_PROPERTY_IN_ARRAY_CONVERT, componentName, propertyName, typeName, index, file, line);
     }
 
-    static FlowError PropertyNum(const char *componentName, int index) {
-        return FlowError(FLOW_ERROR_PROPERTY_NUM, componentName, index);
+    static FlowError PropertyNum(const char *componentName, int index, const char *file = 0, int line = -1) {
+        return FlowError(FLOW_ERROR_PROPERTY_NUM, componentName, index, file, line);
     }
 
-    static FlowError PropertyInAction(const char *componentName, const char *propertyName, int actionIndex) {
-        return FlowError(FLOW_ERROR_PROPERTY_IN_ACTION, componentName, propertyName, actionIndex);
+    static FlowError PropertyInAction(const char *componentName, const char *propertyName, int actionIndex, const char *file = 0, int line = -1) {
+        return FlowError(FLOW_ERROR_PROPERTY_IN_ACTION, componentName, propertyName, actionIndex, file, line);
     }
 
-    static FlowError PropertyAssignInAction(const char *componentName, const char *propertyName, int actionIndex) {
-        return FlowError(FLOW_ERROR_PROPERTY_ASSIGN_IN_ACTION, componentName, propertyName, actionIndex);
+    static FlowError PropertyAssignInAction(const char *componentName, const char *propertyName, int actionIndex, const char *file = 0, int line = -1) {
+        return FlowError(FLOW_ERROR_PROPERTY_ASSIGN_IN_ACTION, componentName, propertyName, actionIndex, file, line);
     }
 
-    static FlowError PropertyInActionConvert(const char *componentName, const char *propertyName, const char *typeName, int actionIndex) {
-        return FlowError(FLOW_ERROR_PROPERTY_IN_ACTION_CONVERT, componentName, propertyName, typeName, actionIndex);
+    static FlowError PropertyInActionConvert(const char *componentName, const char *propertyName, const char *typeName, int actionIndex, const char *file = 0, int line = -1) {
+        return FlowError(FLOW_ERROR_PROPERTY_IN_ACTION_CONVERT, componentName, propertyName, typeName, actionIndex, file, line);
     }
 
-    static FlowError NotFoundInAction(const char *resourceType, const char *resourceName, const char *actionName, int actionIndex) {
-        return FlowError(FLOW_ERROR_PROPERTY_NOT_FOUND_IN_ACTION, resourceType, resourceName, actionName, actionIndex);
+    static FlowError NotFoundInAction(const char *resourceType, const char *resourceName, const char *actionName, int actionIndex, const char *file = 0, int line = -1) {
+        return FlowError(FLOW_ERROR_PROPERTY_NOT_FOUND_IN_ACTION, resourceType, resourceName, actionName, actionIndex, file, line);
     }
 
-    static FlowError NullInAction(const char *resourceType, const char *actionName, int actionIndex) {
-        return FlowError(FLOW_ERROR_PROPERTY_IS_NULL_IN_ACTION, resourceType, actionName, actionIndex);
+    static FlowError NullInAction(const char *resourceType, const char *actionName, int actionIndex, const char *file = 0, int line = -1) {
+        return FlowError(FLOW_ERROR_PROPERTY_IS_NULL_IN_ACTION, resourceType, actionName, actionIndex, file, line);
     }
 
-    static FlowError UserProperty(const char *componentName, int userPropertyIndex) {
-        return FlowError(FLOW_ERROR_USER_PROPERTY, componentName, userPropertyIndex);
+    static FlowError UserProperty(const char *componentName, int userPropertyIndex, const char *file = 0, int line = -1) {
+        return FlowError(FLOW_ERROR_USER_PROPERTY, componentName, userPropertyIndex, file, line);
     }
 
-    static FlowError UserAssignableProperty(const char *componentName, int userPropertyIndex) {
-        return FlowError(FLOW_ERROR_USER_ASSIGNABLE_PROPERTY, componentName, userPropertyIndex);
+    static FlowError UserAssignableProperty(const char *componentName, int userPropertyIndex, const char *file = 0, int line = -1) {
+        return FlowError(FLOW_ERROR_USER_ASSIGNABLE_PROPERTY, componentName, userPropertyIndex, file, line);
     }
 
     FlowError setDescription(const char *description) const {
-        return FlowError(type, messagePart1, messagePart2, messagePart3, messagePartInt, description);
+        return FlowError(type, messagePart1, messagePart2, messagePart3, messagePartInt, description, file, line);
     }
 
-    const char *getMessage(char *messageStr, size_t messageStrLength) const;
+    const char *getMessage(char *messageStr, size_t messageStrLength, int flowIndex, int componentIndex) const;
 
 private: 
     FlowErrorType type;
@@ -244,26 +244,29 @@ private:
     const char *description;
     int messagePartInt;
 
-    FlowError(FlowErrorType _type, const char *_messagePart1)
-        : type(_type), messagePart1(_messagePart1), messagePart2(0), messagePart3(0), description(0), messagePartInt(0) {}
+    const char *file;
+    int line;
+
+    FlowError(FlowErrorType _type, const char *_messagePart1, const char *_file, int _line)
+        : type(_type), messagePart1(_messagePart1), messagePart2(0), messagePart3(0), description(0), messagePartInt(0), file(_file), line(_line) {}
     
-    FlowError(FlowErrorType _type, const char *_messagePart1, const char *_messagePart2)
-        : type(_type), messagePart1(_messagePart1), messagePart2(_messagePart2), messagePart3(0), description(0), messagePartInt(0) {}
+    FlowError(FlowErrorType _type, const char *_messagePart1, const char *_messagePart2, const char *_file, int _line)
+        : type(_type), messagePart1(_messagePart1), messagePart2(_messagePart2), messagePart3(0), description(0), messagePartInt(0), file(_file), line(_line) {}
     
-    FlowError(FlowErrorType _type, const char *_messagePart1, const char *_messagePart2, const char *_messagePart3)
-        : type(_type), messagePart1(_messagePart1), messagePart2(_messagePart2), messagePart3(_messagePart3), description(0), messagePartInt(0) {}
+    FlowError(FlowErrorType _type, const char *_messagePart1, const char *_messagePart2, const char *_messagePart3, const char *_file, int _line)
+        : type(_type), messagePart1(_messagePart1), messagePart2(_messagePart2), messagePart3(_messagePart3), description(0), messagePartInt(0), file(_file), line(_line) {}
 
-    FlowError(FlowErrorType _type, const char *_messagePart1, int _messagePartInt)
-        : type(_type), messagePart1(_messagePart1), messagePart2(0), messagePart3(0), description(0), messagePartInt(_messagePartInt) {}
+    FlowError(FlowErrorType _type, const char *_messagePart1, int _messagePartInt, const char *_file, int _line)
+        : type(_type), messagePart1(_messagePart1), messagePart2(0), messagePart3(0), description(0), messagePartInt(_messagePartInt), file(_file), line(_line) {}
 
-    FlowError(FlowErrorType _type, const char *_messagePart1, const char *_messagePart2, int _messagePartInt)
-        : type(_type), messagePart1(_messagePart1), messagePart2(_messagePart2), messagePart3(0), description(0), messagePartInt(_messagePartInt) {}
+    FlowError(FlowErrorType _type, const char *_messagePart1, const char *_messagePart2, int _messagePartInt, const char *_file, int _line)
+        : type(_type), messagePart1(_messagePart1), messagePart2(_messagePart2), messagePart3(0), description(0), messagePartInt(_messagePartInt), file(_file), line(_line) {}
 
-    FlowError(FlowErrorType _type, const char *_messagePart1, const char *_messagePart2, const char *_messagePart3, int _messagePartInt)
-        : type(_type), messagePart1(_messagePart1), messagePart2(_messagePart2), messagePart3(_messagePart3), description(0), messagePartInt(_messagePartInt) {}
+    FlowError(FlowErrorType _type, const char *_messagePart1, const char *_messagePart2, const char *_messagePart3, int _messagePartInt, const char *_file, int _line)
+        : type(_type), messagePart1(_messagePart1), messagePart2(_messagePart2), messagePart3(_messagePart3), description(0), messagePartInt(_messagePartInt), file(_file), line(_line) {}
 
-    FlowError(FlowErrorType _type, const char *_messagePart1, const char *_messagePart2, const char *_messagePart3, int _messagePartInt, const char *_description)
-        : type(_type), messagePart1(_messagePart1), messagePart2(_messagePart2), messagePart3(_messagePart3), description(_description), messagePartInt(_messagePartInt) {}
+    FlowError(FlowErrorType _type, const char *_messagePart1, const char *_messagePart2, const char *_messagePart3, int _messagePartInt, const char *_description, const char *_file, int _line)
+        : type(_type), messagePart1(_messagePart1), messagePart2(_messagePart2), messagePart3(_messagePart3), description(_description), messagePartInt(_messagePartInt), file(_file), line(_line) {}
 };
 
 void throwError(FlowState *flowState, int componentIndex, const char *errorMessage);
