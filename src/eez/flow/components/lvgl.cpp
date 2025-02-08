@@ -975,6 +975,42 @@ ACTION_START(isScreenCreated)
     RESULT(result, Value(isCreated, VALUE_TYPE_BOOLEAN));
 ACTION_END
 
+ACTION_START(calendarSetTodayDate)
+    WIDGET_PROP(obj);
+    UINT32_PROP(year);
+    UINT32_PROP(month);
+    UINT32_PROP(day);
+    lv_calendar_set_today_date(obj, year, month, day);
+ACTION_END
+
+ACTION_START(calendarSetShowedDate)
+    WIDGET_PROP(obj);
+    UINT32_PROP(year);
+    UINT32_PROP(month);
+    lv_calendar_set_showed_date(obj, year, month);
+ACTION_END
+
+ACTION_START(calendarSetHighlightedDate)
+    WIDGET_PROP(obj);
+    UINT32_PROP(year);
+    UINT32_PROP(month);
+    UINT32_PROP(day);
+    lv_calendar_date_t d;
+    d.year = year;
+    d.month = month;
+    d.day = day;
+    lv_calendar_set_highlighted_dates(obj, &d, 1);
+ACTION_END
+
+ACTION_START(calendarGetPressedDate)
+    WIDGET_PROP(obj);
+    lv_calendar_date_t d;
+    lv_calendar_get_pressed_date(obj, &d);
+    RESULT(year, Value((int)d.year, VALUE_TYPE_INT32));
+    RESULT(month, Value((int)d.month, VALUE_TYPE_INT32));
+    RESULT(day, Value((int)d.day, VALUE_TYPE_INT32));
+ACTION_END
+
 ////////////////////////////////////////////////////////////////////////////////
 
 typedef void (*ActionType)(FlowState *flowState, unsigned componentIndex, const ListOfAssetsPtr<Property> &properties, uint32_t actionIndex);
@@ -1029,7 +1065,11 @@ static ActionType actions[] = {
     &animImageAngle,
     &createScreen,
     &deleteScreen,
-    &isScreenCreated
+    &isScreenCreated,
+    &calendarSetTodayDate,
+    &calendarSetShowedDate,
+    &calendarSetHighlightedDate,
+    &calendarGetPressedDate
 };
 
 ////////////////////////////////////////////////////////////////////////////////
