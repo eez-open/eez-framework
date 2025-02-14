@@ -36,7 +36,7 @@ void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIn
 
 		executeActionFunction(flowIndex - flowState->flowDefinition->flows.count);
 
-        if ((int)componentIndex != -1) {
+        if ((int)componentIndex != -1 && !flowState->componenentAsyncStates[componentIndex]) {
 		    propagateValueThroughSeqout(flowState, componentIndex);
         }
 

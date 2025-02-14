@@ -120,11 +120,12 @@ static const void *getLvglImageByName(const char *name) {
     return 0;
 }
 
-static lv_event_t *g_currentLVGLEvent;
+uint8_t g_lastLVGLEventUserDataBuffer[64];
+uint8_t g_lastLVGLEventParamBuffer[64];
+static lv_event_t g_lastLVGLEvent;
 
 static void executeLvglAction(int actionIndex) {
-    g_actions[actionIndex](g_currentLVGLEvent);
-    g_currentLVGLEvent = 0;
+    g_actions[actionIndex](&g_lastLVGLEvent);
 }
 
 void eez_flow_init_themes(const char **themeNames, size_t numThemes, void (*changeColorTheme)(uint32_t themeIndex)) {
@@ -397,7 +398,15 @@ extern "C" void flowPropagateValueLVGLEvent(void *flowState, unsigned componentI
         )
     );
 
-    g_currentLVGLEvent = event;
+    g_lastLVGLEvent = *event;
+    if (event->user_data) {
+        g_lastLVGLEvent.user_data = &g_lastLVGLEventUserDataBuffer;
+        memcpy(&g_lastLVGLEventUserDataBuffer, event->user_data, sizeof(g_lastLVGLEventUserDataBuffer));
+    }
+    if (event->param) {
+        g_lastLVGLEvent.param = &g_lastLVGLEventParamBuffer;
+        memcpy(&g_lastLVGLEventParamBuffer, event->param, sizeof(g_lastLVGLEventParamBuffer));
+    }
 }
 
 #ifndef EEZ_LVGL_TEMP_STRING_BUFFER_SIZE

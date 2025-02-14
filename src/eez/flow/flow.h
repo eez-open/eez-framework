@@ -50,6 +50,22 @@ void setGlobalVariable(Assets *assets, uint32_t globalVariableIndex, const Value
 Value getUserProperty(unsigned propertyIndex);
 void setUserProperty(unsigned propertyIndex, const Value &value);
 
+// Support for async execution for the native user actions
+//
+struct AsyncAction {
+    eez::flow::FlowState *flowState;
+    unsigned componentIndex;
+};
+
+// signal to the flow engine that async action has been started
+AsyncAction *beginAsyncExecution();
+
+// signal to the flow engine that async action has been ended
+void endAsyncExecution(AsyncAction *asyncAction);
+
+Value getUserPropertyAsync(AsyncAction *asyncAction, unsigned propertyIndex);
+void setUserPropertyAsync(AsyncAction *asyncAction, unsigned propertyIndex, const Value &value);
+
 #if EEZ_OPTION_GUI
 FlowState *getUserWidgetFlowState(FlowState *flowState, uint16_t userWidgetWidgetComponentIndex, int16_t pageId);
 void executeFlowAction(const WidgetCursor &widgetCursor, int16_t actionId, void *param);

@@ -313,6 +313,36 @@ void setUserProperty(unsigned propertyIndex, const Value &value) {
     assignValue(g_executeActionFlowState, g_executeActionComponentIndex, dstValue, value);
 }
 
+// signal to the flow engine that async action has been started
+AsyncAction *beginAsyncExecution() {
+    startAsyncExecution(g_executeActionFlowState, g_executeActionComponentIndex);
+    AsyncAction *asyncAction = (AsyncAction *) alloc(sizeof(AsyncAction), 0xcb44f51e);
+    asyncAction->flowState = g_executeActionFlowState;
+    asyncAction->componentIndex = g_executeActionComponentIndex;
+    return asyncAction;
+}
+
+// signal to the flow engine that async action has been ended
+void endAsyncExecution(AsyncAction *asyncAction) {
+    endAsyncExecution(asyncAction->flowState, asyncAction->componentIndex);
+    propagateValueThroughSeqout(asyncAction->flowState, asyncAction->componentIndex);
+    eez::free(asyncAction);
+}
+
+Value getUserPropertyAsync(AsyncAction *asyncAction, unsigned propertyIndex) {
+    Value value;
+    evalProperty(asyncAction->flowState, asyncAction->componentIndex, propertyIndex, value, FlowError::PropertyNum("CallAction", propertyIndex));
+    return value;
+}
+
+void setUserPropertyAsync(AsyncAction *asyncAction, unsigned propertyIndex, const Value &value) {
+    Value dstValue;
+    if (!evalAssignableProperty(asyncAction->flowState, asyncAction->componentIndex, propertyIndex, dstValue, FlowError::PropertyInArray("CallAction", "Assignable property", propertyIndex))) {
+        return;
+    }
+    assignValue(g_executeActionFlowState, g_executeActionComponentIndex, dstValue, value);
+}
+
 #if EEZ_OPTION_GUI
 void executeFlowAction(const WidgetCursor &widgetCursor, int16_t actionId, void *param) {
 	if (isFlowStopped()) {
