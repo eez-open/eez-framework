@@ -100,6 +100,7 @@ void flowPropagateValueLVGLEvent(void *flowState, unsigned componentIndex, unsig
 
 #define evalTextProperty(flowState, componentIndex, propertyIndex, errorMessage) _evalTextProperty(flowState, componentIndex, propertyIndex, errorMessage, __FILE__, __LINE__)
 #define evalIntegerProperty(flowState, componentIndex, propertyIndex, errorMessage) _evalIntegerProperty(flowState, componentIndex, propertyIndex, errorMessage, __FILE__, __LINE__)
+#define evalUnsignedIntegerProperty(flowState, componentIndex, propertyIndex, errorMessage) _evalUnsignedIntegerProperty(flowState, componentIndex, propertyIndex, errorMessage, __FILE__, __LINE__)
 #define evalBooleanProperty(flowState, componentIndex, propertyIndex, errorMessage) _evalBooleanProperty(flowState, componentIndex, propertyIndex, errorMessage, __FILE__, __LINE__)
 #define evalStringArrayPropertyAndJoin(flowState, componentIndex, propertyIndex, errorMessage, separator) _evalStringArrayPropertyAndJoin(flowState, componentIndex, propertyIndex, errorMessage, separator, __FILE__, __LINE__)
 
@@ -110,6 +111,7 @@ void flowPropagateValueLVGLEvent(void *flowState, unsigned componentIndex, unsig
 // PRIVATE functions
 const char *_evalTextProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage, const char *file, int line);
 int32_t _evalIntegerProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage, const char *file, int line);
+uint32_t _evalUnsignedIntegerProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage, const char *file, int line);
 bool _evalBooleanProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage, const char *file, int line);
 const char *_evalStringArrayPropertyAndJoin(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage, const char *separator, const char *file, int line);
 

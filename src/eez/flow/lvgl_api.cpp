@@ -438,6 +438,21 @@ extern "C" int32_t _evalIntegerProperty(void *flowState, unsigned componentIndex
     return intValue;
 }
 
+extern "C" uint32_t _evalUnsignedIntegerProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage, const char *file, int line) {
+    eez::Value value;
+    if (!eez::flow::evalProperty((eez::flow::FlowState *)flowState, componentIndex, propertyIndex, value, eez::flow::FlowError::Plain(errorMessage, file, line))) {
+        return 0;
+    }
+    int err;
+    uint32_t intValue = (uint32_t)value.toInt32(&err);
+    if (err) {
+        eez::flow::throwError((eez::flow::FlowState *)flowState, componentIndex, errorMessage);
+        return 0;
+    }
+    return intValue;
+}
+
+
 extern "C" bool _evalBooleanProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage, const char *file, int line) {
     eez::Value value;
     if (!eez::flow::evalProperty((eez::flow::FlowState *)flowState, componentIndex, propertyIndex, value, eez::flow::FlowError::Plain(errorMessage, file, line))) {
@@ -542,7 +557,7 @@ void deletePageFlowState(unsigned pageIndex) {
     eez::flow::deletePageFlowState(eez::g_mainAssets, (int16_t)pageIndex);
 }
 
-bool compareRollerOptions(lv_roller_t *roller, const char *new_val, const char *cur_val, lv_roller_mode_t mode) {
+extern "C" bool compareRollerOptions(lv_roller_t *roller, const char *new_val, const char *cur_val, lv_roller_mode_t mode) {
     if (mode == LV_ROLLER_MODE_NORMAL) {
         return strcmp(new_val, cur_val) != 0;
     }
