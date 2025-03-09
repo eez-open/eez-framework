@@ -256,7 +256,7 @@ Unit findDerivedUnit(float value, Unit unit) {
 	return unit;
 }
 
-float getSmallerFactor(float factor) {
+static float getSmallerFactor(float factor) {
 	for (int factorIndex = sizeof(FACTORS) / sizeof(float) - 1; factorIndex > 0; factorIndex--) {
 		float itFactor = FACTORS[factorIndex];
 		if (itFactor < factor) {

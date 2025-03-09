@@ -18,6 +18,7 @@ namespace eez {
 namespace flow {
 
 void executeEndComponent(FlowState *flowState, unsigned componentIndex) {
+    EEZ_UNUSED(componentIndex);
 	if (flowState->parentFlowState && flowState->isAction) {
         if (flowState->parentComponentIndex != -1) {
 		    propagateValueThroughSeqout(flowState->parentFlowState, flowState->parentComponentIndex);

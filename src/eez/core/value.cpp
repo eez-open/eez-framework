@@ -34,35 +34,42 @@ namespace eez {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool compare_UNDEFINED_value(const Value &a, const Value &b) {
+static bool compare_UNDEFINED_value(const Value &a, const Value &b) {
     return b.type == VALUE_TYPE_UNDEFINED && a.int32Value == b.int32Value;
 }
 
-void UNDEFINED_value_to_text(const Value &value, char *text, int count) {
+static void UNDEFINED_value_to_text(const Value &value, char *text, int count) {
+    EEZ_UNUSED(value);
+    EEZ_UNUSED(count);
     *text = 0;
 }
 
-const char *UNDEFINED_value_type_name(const Value &value) {
+static const char *UNDEFINED_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "undefined";
 }
 
-bool compare_NULL_value(const Value &a, const Value &b) {
+static bool compare_NULL_value(const Value &a, const Value &b) {
+    EEZ_UNUSED(a);
     return b.type == VALUE_TYPE_NULL;
 }
 
-void NULL_value_to_text(const Value &value, char *text, int count) {
+static void NULL_value_to_text(const Value &value, char *text, int count) {
+    EEZ_UNUSED(value);
+    EEZ_UNUSED(count);
     *text = 0;
 }
 
-const char *NULL_value_type_name(const Value &value) {
+static const char *NULL_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "null";
 }
 
-bool compare_BOOLEAN_value(const Value &a, const Value &b) {
+static bool compare_BOOLEAN_value(const Value &a, const Value &b) {
     return a.type == b.type && a.getInt() == b.getInt();
 }
 
-void BOOLEAN_value_to_text(const Value &value, char *text, int count) {
+static void BOOLEAN_value_to_text(const Value &value, char *text, int count) {
     if (value.getInt()) {
         stringCopy(text, count, "true");
     } else {
@@ -70,111 +77,120 @@ void BOOLEAN_value_to_text(const Value &value, char *text, int count) {
     }
 }
 
-const char *BOOLEAN_value_type_name(const Value &value) {
+static const char *BOOLEAN_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "boolean";
 }
 
-bool compare_INT8_value(const Value &a, const Value &b) {
+static bool compare_INT8_value(const Value &a, const Value &b) {
     return a.type == b.type && a.getInt8() == b.getInt8();
 }
 
-void INT8_value_to_text(const Value &value, char *text, int count) {
+static void INT8_value_to_text(const Value &value, char *text, int count) {
     stringAppendInt(text, count, value.getInt8());
 }
 
-const char *INT8_value_type_name(const Value &value) {
+static const char *INT8_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "int8";
 }
 
-bool compare_UINT8_value(const Value &a, const Value &b) {
+static bool compare_UINT8_value(const Value &a, const Value &b) {
     return a.type == b.type && a.getUInt8() == b.getUInt8();
 }
 
-void UINT8_value_to_text(const Value &value, char *text, int count) {
+static void UINT8_value_to_text(const Value &value, char *text, int count) {
     stringAppendUInt32(text, count, value.getUInt8());
 }
 
-const char *UINT8_value_type_name(const Value &value) {
+static const char *UINT8_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "uint8";
 }
 
-bool compare_INT16_value(const Value &a, const Value &b) {
+static bool compare_INT16_value(const Value &a, const Value &b) {
     return a.type == b.type && a.getInt16() == b.getInt16();
 }
 
-void INT16_value_to_text(const Value &value, char *text, int count) {
+static void INT16_value_to_text(const Value &value, char *text, int count) {
     stringAppendInt(text, count, value.getInt16());
 }
 
-const char *INT16_value_type_name(const Value &value) {
+static const char *INT16_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "int16";
 }
 
-bool compare_UINT16_value(const Value &a, const Value &b) {
+static bool compare_UINT16_value(const Value &a, const Value &b) {
     return a.type == b.type && a.getUInt16() == b.getUInt16();
 }
 
-void UINT16_value_to_text(const Value &value, char *text, int count) {
+static void UINT16_value_to_text(const Value &value, char *text, int count) {
     stringAppendUInt32(text, count, value.getUInt16());
 }
 
-const char *UINT16_value_type_name(const Value &value) {
+static const char *UINT16_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "uint16";
 }
 
-bool compare_INT32_value(const Value &a, const Value &b) {
+static bool compare_INT32_value(const Value &a, const Value &b) {
     return a.type == b.type && a.getInt32() == b.getInt32();
 }
 
-void INT32_value_to_text(const Value &value, char *text, int count) {
+static void INT32_value_to_text(const Value &value, char *text, int count) {
     stringAppendInt(text, count, value.getInt32());
 }
 
-const char *INT32_value_type_name(const Value &value) {
+static const char *INT32_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "int32";
 }
 
-bool compare_UINT32_value(const Value &a, const Value &b) {
+static bool compare_UINT32_value(const Value &a, const Value &b) {
     return a.type == b.type && a.getUInt32() == b.getUInt32();
 }
 
-void UINT32_value_to_text(const Value &value, char *text, int count) {
+static void UINT32_value_to_text(const Value &value, char *text, int count) {
     stringAppendUInt32(text, count, value.getUInt32());
 }
 
-const char *UINT32_value_type_name(const Value &value) {
+static const char *UINT32_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "uint32";
 }
 
-bool compare_INT64_value(const Value &a, const Value &b) {
+static bool compare_INT64_value(const Value &a, const Value &b) {
     return a.type == b.type && a.getInt64() == b.getInt64();
 }
 
-void INT64_value_to_text(const Value &value, char *text, int count) {
+static void INT64_value_to_text(const Value &value, char *text, int count) {
     stringAppendInt64(text, count, value.getInt64());
 }
 
-const char *INT64_value_type_name(const Value &value) {
+static const char *INT64_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "int64";
 }
 
-bool compare_UINT64_value(const Value &a, const Value &b) {
+static bool compare_UINT64_value(const Value &a, const Value &b) {
     return a.type == b.type && a.getUInt64() == b.getUInt64();
 }
 
-void UINT64_value_to_text(const Value &value, char *text, int count) {
+static void UINT64_value_to_text(const Value &value, char *text, int count) {
     stringAppendUInt64(text, count, value.getUInt64());
 }
 
-const char *UINT64_value_type_name(const Value &value) {
+static const char *UINT64_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "uint64";
 }
 
-bool compare_FLOAT_value(const Value &a, const Value &b) {
+static bool compare_FLOAT_value(const Value &a, const Value &b) {
     return a.type == b.type && a.getUnit() == b.getUnit() && a.getFloat() == b.getFloat() && a.getOptions() == b.getOptions();
 }
 
-void FLOAT_value_to_text(const Value &value, char *text, int count) {
+static void FLOAT_value_to_text(const Value &value, char *text, int count) {
     text[0] = 0;
 
     float floatValue = value.getFloat();
@@ -262,15 +278,16 @@ void FLOAT_value_to_text(const Value &value, char *text, int count) {
     }
 }
 
-const char *FLOAT_value_type_name(const Value &value) {
+static const char *FLOAT_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "float";
 }
 
-bool compare_DOUBLE_value(const Value &a, const Value &b) {
+static bool compare_DOUBLE_value(const Value &a, const Value &b) {
     return a.type == b.type && a.getUnit() == b.getUnit() && a.getDouble() == b.getDouble() && a.getOptions() == b.getOptions();
 }
 
-void DOUBLE_value_to_text(const Value &value, char *text, int count) {
+static void DOUBLE_value_to_text(const Value &value, char *text, int count) {
     text[0] = 0;
 
     double doubleValue = value.getDouble();
@@ -358,11 +375,12 @@ void DOUBLE_value_to_text(const Value &value, char *text, int count) {
     }
 }
 
-const char *DOUBLE_value_type_name(const Value &value) {
+static const char *DOUBLE_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "double";
 }
 
-bool compare_STRING_value(const Value &a, const Value &b) {
+static bool compare_STRING_value(const Value &a, const Value &b) {
     if (!b.isString()) {
         return false;
     }
@@ -377,7 +395,7 @@ bool compare_STRING_value(const Value &a, const Value &b) {
     return strcmp(astr, bstr) == 0;
 }
 
-void STRING_value_to_text(const Value &value, char *text, int count) {
+static void STRING_value_to_text(const Value &value, char *text, int count) {
     const char *str = value.getString();
     if (str) {
         stringCopy(text, count, str);
@@ -386,95 +404,109 @@ void STRING_value_to_text(const Value &value, char *text, int count) {
     }
 }
 
-const char *STRING_value_type_name(const Value &value) {
+static const char *STRING_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "string";
 }
 
-bool compare_STRING_ASSET_value(const Value &a, const Value &b) {
+static bool compare_STRING_ASSET_value(const Value &a, const Value &b) {
     return compare_STRING_value(a, b);
 }
 
-void STRING_ASSET_value_to_text(const Value &value, char *text, int count) {
+static void STRING_ASSET_value_to_text(const Value &value, char *text, int count) {
     STRING_value_to_text(value, text, count);
 }
 
-const char *STRING_ASSET_value_type_name(const Value &value) {
+static const char *STRING_ASSET_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "string";
 }
 
-bool compare_ARRAY_value(const Value &a, const Value &b) {
+static bool compare_ARRAY_value(const Value &a, const Value &b) {
     return a.type == b.type && a.arrayValue == b.arrayValue;
 }
 
-void ARRAY_value_to_text(const Value &value, char *text, int count) {
+static void ARRAY_value_to_text(const Value &value, char *text, int count) {
+    EEZ_UNUSED(value);
+    EEZ_UNUSED(count);
     text[0] = 0;
 }
 
-const char *ARRAY_value_type_name(const Value &value) {
+static const char *ARRAY_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "array";
 }
 
-bool compare_ARRAY_ASSET_value(const Value &a, const Value &b) {
+static bool compare_ARRAY_ASSET_value(const Value &a, const Value &b) {
     return a.type == b.type && a.int32Value == b.int32Value;
 }
 
-void ARRAY_ASSET_value_to_text(const Value &value, char *text, int count) {
+static void ARRAY_ASSET_value_to_text(const Value &value, char *text, int count) {
+    EEZ_UNUSED(value);
+    EEZ_UNUSED(count);
     text[0] = 0;
 }
 
-const char *ARRAY_ASSET_value_type_name(const Value &value) {
+static const char *ARRAY_ASSET_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "array";
 }
 
-bool compare_ARRAY_REF_value(const Value &a, const Value &b) {
+static bool compare_ARRAY_REF_value(const Value &a, const Value &b) {
     return a.type == b.type && a.refValue == b.refValue;
 }
 
-void ARRAY_REF_value_to_text(const Value &value, char *text, int count) {
+static void ARRAY_REF_value_to_text(const Value &value, char *text, int count) {
+    EEZ_UNUSED(value);
+    EEZ_UNUSED(count);
     text[0] = 0;
 }
 
-const char *ARRAY_REF_value_type_name(const Value &value) {
+static const char *ARRAY_REF_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "array";
 }
 
-bool compare_STRING_REF_value(const Value &a, const Value &b) {
+static bool compare_STRING_REF_value(const Value &a, const Value &b) {
 	return compare_STRING_value(a, b);
 }
 
-void STRING_REF_value_to_text(const Value &value, char *text, int count) {
+static void STRING_REF_value_to_text(const Value &value, char *text, int count) {
 	STRING_value_to_text(value, text, count);
 }
 
-const char *STRING_REF_value_type_name(const Value &value) {
+static const char *STRING_REF_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "string";
 }
 
-bool compare_BLOB_REF_value(const Value &a, const Value &b) {
+static bool compare_BLOB_REF_value(const Value &a, const Value &b) {
     return a.type == b.type && a.refValue == b.refValue;
 }
 
-void BLOB_REF_value_to_text(const Value &value, char *text, int count) {
+static void BLOB_REF_value_to_text(const Value &value, char *text, int count) {
     snprintf(text, count, "blob (size=%d)", value.getInt());
 }
 
-const char *BLOB_REF_value_type_name(const Value &value) {
+static const char *BLOB_REF_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "blob";
 }
 
-bool compare_STREAM_value(const Value &a, const Value &b) {
+static bool compare_STREAM_value(const Value &a, const Value &b) {
     return a.type == b.type && a.int32Value == b.int32Value;
 }
 
-void STREAM_value_to_text(const Value &value, char *text, int count) {
+static void STREAM_value_to_text(const Value &value, char *text, int count) {
     snprintf(text, count, "stream (id=%d)", value.getInt());
 }
 
-const char *STREAM_value_type_name(const Value &value) {
+static const char *STREAM_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "stream";
 }
 
-bool compare_WIDGET_value(const Value &a, const Value &b) {
+static bool compare_WIDGET_value(const Value &a, const Value &b) {
 #if defined(EEZ_FOR_LVGL)
     return a.type == b.type && a.getVoidPointer() == b.getVoidPointer();
 #else
@@ -482,7 +514,7 @@ bool compare_WIDGET_value(const Value &a, const Value &b) {
 #endif
 }
 
-void WIDGET_value_to_text(const Value &value, char *text, int count) {
+static void WIDGET_value_to_text(const Value &value, char *text, int count) {
 #if defined(EEZ_FOR_LVGL)
     snprintf(text, count, "widget (%p)", value.getVoidPointer());
 #else
@@ -490,77 +522,82 @@ void WIDGET_value_to_text(const Value &value, char *text, int count) {
 #endif
 }
 
-const char *WIDGET_value_type_name(const Value &value) {
+static const char *WIDGET_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "widget";
 }
 
-bool compare_JSON_value(const Value &a, const Value &b) {
+static bool compare_JSON_value(const Value &a, const Value &b) {
     return a.type == b.type && a.int32Value == b.int32Value;
 }
 
-void JSON_value_to_text(const Value &value, char *text, int count) {
+static void JSON_value_to_text(const Value &value, char *text, int count) {
     snprintf(text, count, "json (id=%d)", value.getInt());
 }
 
-const char *JSON_value_type_name(const Value &value) {
+static const char *JSON_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "json";
 }
 
-bool compare_JSON_MEMBER_VALUE_value(const Value &a, const Value &b) {
+static bool compare_JSON_MEMBER_VALUE_value(const Value &a, const Value &b) {
 	return a.getValue() == b.getValue();
 }
 
-void JSON_MEMBER_VALUE_value_to_text(const Value &value, char *text, int count) {
+static void JSON_MEMBER_VALUE_value_to_text(const Value &value, char *text, int count) {
 	value.getValue().toText(text, count);
 }
 
-const char *JSON_MEMBER_VALUE_value_type_name(const Value &value) {
+static const char *JSON_MEMBER_VALUE_value_type_name(const Value &value) {
     auto value2 = value.getValue();
     return g_valueTypeNames[value2.type](value2);
 }
 
-bool compare_EVENT_value(const Value &a, const Value &b) {
+static bool compare_EVENT_value(const Value &a, const Value &b) {
     return a.type == b.type && a.getVoidPointer() == b.getVoidPointer();
 }
 
-void EVENT_value_to_text(const Value &value, char *text, int count) {
+static void EVENT_value_to_text(const Value &value, char *text, int count) {
     snprintf(text, count, "event (%p)", value.getVoidPointer());
 }
 
-const char *EVENT_value_type_name(const Value &value) {
+static const char *EVENT_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "event";
 }
 
-const char *PROPERTY_REF_value_type_name(const Value &value) {
+static const char *PROPERTY_REF_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "property-ref";
 }
 
-bool compare_PROPERTY_REF_value(const Value &a, const Value &b) {
+static bool compare_PROPERTY_REF_value(const Value &a, const Value &b) {
     return a.type == b.type && a.refValue == b.refValue;
 }
 
-void PROPERTY_REF_value_to_text(const Value &value, char *text, int count) {
+static void PROPERTY_REF_value_to_text(const Value &value, char *text, int count) {
     snprintf(text, count, "property-ref (flowState=%p, component=%d, property=%d)",
         (void *)value.getPropertyRef()->flowState, value.getPropertyRef()->componentIndex, value.getPropertyRef()->propertyIndex);
 }
 
-bool compare_DATE_value(const Value &a, const Value &b) {
+static bool compare_DATE_value(const Value &a, const Value &b) {
     return a.type == b.type && a.doubleValue == b.doubleValue;
 }
 
-void DATE_value_to_text(const Value &value, char *text, int count) {
+static void DATE_value_to_text(const Value &value, char *text, int count) {
     flow::date::toLocaleString((flow::date::Date)value.getDouble(), text, count);
 }
 
-const char *DATE_value_type_name(const Value &value) {
+static const char *DATE_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "date";
 }
 
-bool compare_VERSIONED_STRING_value(const Value &a, const Value &b) {
+static bool compare_VERSIONED_STRING_value(const Value &a, const Value &b) {
     return a.type == b.type && a.unit == b.unit; // here unit is used as string version
 }
 
-void VERSIONED_STRING_value_to_text(const Value &value, char *text, int count) {
+static void VERSIONED_STRING_value_to_text(const Value &value, char *text, int count) {
     const char *str = value.getString();
     if (str) {
         stringCopy(text, count, str);
@@ -569,15 +606,16 @@ void VERSIONED_STRING_value_to_text(const Value &value, char *text, int count) {
     }
 }
 
-const char *VERSIONED_STRING_value_type_name(const Value &value) {
+static const char *VERSIONED_STRING_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "versioned-string";
 }
 
-bool compare_VALUE_PTR_value(const Value &a, const Value &b) {
+static bool compare_VALUE_PTR_value(const Value &a, const Value &b) {
 	return a.type == b.type && (a.pValueValue == b.pValueValue || (a.pValueValue && b.pValueValue && *a.pValueValue == *b.pValueValue));
 }
 
-void VALUE_PTR_value_to_text(const Value &value, char *text, int count) {
+static void VALUE_PTR_value_to_text(const Value &value, char *text, int count) {
 	if (value.pValueValue) {
 		value.pValueValue->toText(text, count);
 	} else {
@@ -585,7 +623,7 @@ void VALUE_PTR_value_to_text(const Value &value, char *text, int count) {
 	}
 }
 
-const char *VALUE_PTR_value_type_name(const Value &value) {
+static const char *VALUE_PTR_value_type_name(const Value &value) {
 	if (value.pValueValue) {
 		return g_valueTypeNames[value.pValueValue->type](value.pValueValue);
 	} else {
@@ -593,106 +631,126 @@ const char *VALUE_PTR_value_type_name(const Value &value) {
 	}
 }
 
-bool compare_ARRAY_ELEMENT_VALUE_value(const Value &a, const Value &b) {
+static bool compare_ARRAY_ELEMENT_VALUE_value(const Value &a, const Value &b) {
 	return a.getValue() == b.getValue();
 }
 
-void ARRAY_ELEMENT_VALUE_value_to_text(const Value &value, char *text, int count) {
+static void ARRAY_ELEMENT_VALUE_value_to_text(const Value &value, char *text, int count) {
 	value.getValue().toText(text, count);
 }
 
-const char *ARRAY_ELEMENT_VALUE_value_type_name(const Value &value) {
+static const char *ARRAY_ELEMENT_VALUE_value_type_name(const Value &value) {
     auto value2 = value.getValue();
     return g_valueTypeNames[value2.type](value2);
 }
 
-bool compare_FLOW_OUTPUT_value(const Value &a, const Value &b) {
+static bool compare_FLOW_OUTPUT_value(const Value &a, const Value &b) {
 	return a.type == b.type && a.getUInt16() == b.getUInt16();
 }
 
-void FLOW_OUTPUT_value_to_text(const Value &value, char *text, int count) {
+static void FLOW_OUTPUT_value_to_text(const Value &value, char *text, int count) {
+    EEZ_UNUSED(value);
+    EEZ_UNUSED(count);
     text[0] = 0;
 }
 
-const char *FLOW_OUTPUT_value_type_name(const Value &value) {
+static const char *FLOW_OUTPUT_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "internal";
 }
 
 #if EEZ_OPTION_GUI
 using namespace gui;
-bool compare_NATIVE_VARIABLE_value(const Value &a, const Value &b) {
+static bool compare_NATIVE_VARIABLE_value(const Value &a, const Value &b) {
     auto aValue = get(g_widgetCursor, a.getInt());
     auto bValue = get(g_widgetCursor, b.getInt());
 	return aValue == bValue;
 }
 
-void NATIVE_VARIABLE_value_to_text(const Value &value, char *text, int count) {
+static void NATIVE_VARIABLE_value_to_text(const Value &value, char *text, int count) {
     auto aValue = get(g_widgetCursor, value.getInt());
     aValue.toText(text, count);
 }
 
-const char *NATIVE_VARIABLE_value_type_name(const Value &value) {
+static const char *NATIVE_VARIABLE_value_type_name(const Value &value) {
     auto aValue = get(g_widgetCursor, value.getInt());
     return g_valueTypeNames[aValue.type](aValue);
 }
 #else
-bool compare_NATIVE_VARIABLE_value(const Value &a, const Value &b) {
-	return false;
+
+static bool compare_NATIVE_VARIABLE_value(const Value &a, const Value &b) {
+    EEZ_UNUSED(a);
+    EEZ_UNUSED(b);
+    return false;
 }
 
-void NATIVE_VARIABLE_value_to_text(const Value &value, char *text, int count) {
+static void NATIVE_VARIABLE_value_to_text(const Value &value, char *text, int count) {
+    EEZ_UNUSED(value);
+    EEZ_UNUSED(count);
     *text = 0;
 }
 
-const char *NATIVE_VARIABLE_value_type_name(const Value &value) {
+static const char *NATIVE_VARIABLE_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "";
 }
 #endif
 
-bool compare_ERROR_value(const Value &a, const Value &b) {
+static bool compare_ERROR_value(const Value &a, const Value &b) {
+    EEZ_UNUSED(a);
+    EEZ_UNUSED(b);
 	return false;
 }
 
-void ERROR_value_to_text(const Value &value, char *text, int count) {
+static void ERROR_value_to_text(const Value &value, char *text, int count) {
+    EEZ_UNUSED(value);
+    EEZ_UNUSED(count);
     *text = 0;
 }
 
-const char *ERROR_value_type_name(const Value &value) {
+static const char *ERROR_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "error";
 }
 
-bool compare_RANGE_value(const Value &a, const Value &b) {
+static bool compare_RANGE_value(const Value &a, const Value &b) {
     return a.type == b.type && a.getUInt32() == b.getUInt32();
 }
 
-void RANGE_value_to_text(const Value &value, char *text, int count) {
+static void RANGE_value_to_text(const Value &value, char *text, int count) {
+    EEZ_UNUSED(value);
+    EEZ_UNUSED(count);
     text[0] = 0;
 }
 
-const char *RANGE_value_type_name(const Value &value) {
+static const char *RANGE_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "internal";
 }
 
-bool compare_POINTER_value(const Value &a, const Value &b) {
+static bool compare_POINTER_value(const Value &a, const Value &b) {
     return a.type == b.type && a.getVoidPointer() == b.getVoidPointer();
 }
 
-void POINTER_value_to_text(const Value &value, char *text, int count) {
+static void POINTER_value_to_text(const Value &value, char *text, int count) {
+    EEZ_UNUSED(value);
+    EEZ_UNUSED(count);
     text[0] = 0;
 }
 
-const char *POINTER_value_type_name(const Value &value) {
+static const char *POINTER_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "internal";
 }
 
 #if EEZ_OPTION_GUI
 using namespace gui;
-bool compare_ENUM_value(const Value &a, const Value &b) {
+static bool compare_ENUM_value(const Value &a, const Value &b) {
     return a.type == b.type && a.getEnum().enumDefinition == b.getEnum().enumDefinition &&
            a.getEnum().enumValue == b.getEnum().enumValue;
 }
 
-void ENUM_value_to_text(const Value &value, char *text, int count) {
+static void ENUM_value_to_text(const Value &value, char *text, int count) {
     const EnumItem *enumDefinition = g_enumDefinitions[value.getEnum().enumDefinition];
     for (int i = 0; enumDefinition[i].menuLabel; ++i) {
         if (value.getEnum().enumValue == enumDefinition[i].value) {
@@ -706,57 +764,68 @@ void ENUM_value_to_text(const Value &value, char *text, int count) {
     }
 }
 
-const char *ENUM_value_type_name(const Value &value) {
+static const char *ENUM_value_type_name(const Value &value) {
     return "internal";
 }
 #else
-bool compare_ENUM_value(const Value &a, const Value &b) {
+
+static bool compare_ENUM_value(const Value &a, const Value &b) {
+    EEZ_UNUSED(a);
+    EEZ_UNUSED(b);
     return false;
 }
 
-void ENUM_value_to_text(const Value &value, char *text, int count) {
+static void ENUM_value_to_text(const Value &value, char *text, int count) {
+    EEZ_UNUSED(value);
+    EEZ_UNUSED(count);
     *text = 0;
 }
 
-const char *ENUM_value_type_name(const Value &value) {
+static const char *ENUM_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "internal";
 }
 
 #endif // EEZ_OPTION_GUI
 
-bool compare_YT_DATA_GET_VALUE_FUNCTION_POINTER_value(const Value &a, const Value &b) {
+static bool compare_YT_DATA_GET_VALUE_FUNCTION_POINTER_value(const Value &a, const Value &b) {
     return a.type == b.type && a.getUInt32() == b.getUInt32();
 }
 
-bool compare_IP_ADDRESS_value(const Value &a, const Value &b) {
+static bool compare_IP_ADDRESS_value(const Value &a, const Value &b) {
     return a.type == b.type && a.getUInt32() == b.getUInt32();
 }
 
-void IP_ADDRESS_value_to_text(const Value &value, char *text, int count) {
+static void IP_ADDRESS_value_to_text(const Value &value, char *text, int count) {
     ipAddressToString(value.getUInt32(), text, count);
 }
 
-const char *IP_ADDRESS_value_type_name(const Value &value) {
+static const char *IP_ADDRESS_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "internal";
 }
 
-bool compare_TIME_ZONE_value(const Value &a, const Value &b) {
+static bool compare_TIME_ZONE_value(const Value &a, const Value &b) {
     return a.type == b.type && a.getInt16() == b.getInt16();
 }
 
-void TIME_ZONE_value_to_text(const Value &value, char *text, int count) {
+static void TIME_ZONE_value_to_text(const Value &value, char *text, int count) {
     formatTimeZone(value.getInt16(), text, count);
 }
 
-const char *TIME_ZONE_value_type_name(const Value &value) {
+static const char *TIME_ZONE_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "internal";
 }
 
-void YT_DATA_GET_VALUE_FUNCTION_POINTER_value_to_text(const Value &value, char *text, int count) {
+static void YT_DATA_GET_VALUE_FUNCTION_POINTER_value_to_text(const Value &value, char *text, int count) {
+    EEZ_UNUSED(value);
+    EEZ_UNUSED(count);
     text[0] = 0;
 }
 
-const char *YT_DATA_GET_VALUE_FUNCTION_POINTER_value_type_name(const Value &value) {
+static const char *YT_DATA_GET_VALUE_FUNCTION_POINTER_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
     return "internal";
 }
 
@@ -1231,8 +1300,8 @@ bool Value::toBool(int *err) const {
 	}
 
 	if (isArray()) {
-		auto arrayValue = getArray();
-        return arrayValue->arraySize != 0;
+		auto array = getArray();
+        return array->arraySize != 0;
 	}
 
     if (isJson()) {

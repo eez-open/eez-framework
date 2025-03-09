@@ -102,7 +102,7 @@ void setDebuggerMessageSubsciptionFilter(uint32_t filter) {
     g_messageSubsciptionFilter = filter;
 }
 
-bool isSubscribedTo(MessagesToDebugger messageType) {
+static bool isSubscribedTo(MessagesToDebugger messageType) {
     if (g_debuggerIsConnected && (g_messageSubsciptionFilter & (1 << messageType)) != 0) {
         startToDebuggerMessageHook();
         return true;
@@ -166,9 +166,9 @@ void processDebuggerInput(char *buffer, uint32_t length) {
 
 				auto assets = g_firstFlowState->assets;
 				auto flowDefinition = static_cast<FlowDefinition *>(assets->flowDefinition);
-				if (flowIndex >= 0 && flowIndex < flowDefinition->flows.count) {
+				if (flowIndex < flowDefinition->flows.count) {
 					auto flow = flowDefinition->flows[flowIndex];
-					if (componentIndex >= 0 && componentIndex < flow->components.count) {
+					if (componentIndex < flow->components.count) {
 						auto component = flow->components[componentIndex];
 
 						component->breakpoint = messageFromDebugger == MESSAGE_FROM_DEBUGGER_ADD_BREAKPOINT ||
@@ -256,7 +256,7 @@ int outputBufferPosition = 0;
 		outputBufferPosition = 0; \
 	}
 
-void writeValueAddr(const void *pValue) {
+static void writeValueAddr(const void *pValue) {
 	char tmpStr[32];
 	snprintf(tmpStr, sizeof(tmpStr), "%p", pValue);
 	auto len = strlen(tmpStr);
@@ -265,7 +265,7 @@ void writeValueAddr(const void *pValue) {
 	}
 }
 
-void writeString(const char *str) {
+static void writeString(const char *str) {
 	WRITE_TO_OUTPUT_BUFFER('"');
 
     while (true) {
@@ -300,7 +300,7 @@ void writeString(const char *str) {
 	FLUSH_OUTPUT_BUFFER();
 }
 
-void writeArrayType(uint32_t arrayType) {
+static void writeArrayType(uint32_t arrayType) {
 	char tmpStr[32];
 	snprintf(tmpStr, sizeof(tmpStr), "%x", (int)arrayType);
 	auto len = strlen(tmpStr);
@@ -309,7 +309,7 @@ void writeArrayType(uint32_t arrayType) {
 	}
 }
 
-void writeArray(const ArrayValue *arrayValue) {
+static void writeArray(const ArrayValue *arrayValue) {
 	WRITE_TO_OUTPUT_BUFFER('{');
 
 	writeValueAddr(arrayValue);
@@ -336,7 +336,7 @@ void writeArray(const ArrayValue *arrayValue) {
     }
 }
 
-void writeHex(char *dst, uint8_t *src, size_t srcLength) {
+static void writeHex(char *dst, uint8_t *src, size_t srcLength) {
     *dst++ = 'H';
     for (size_t i = 0; i < srcLength; i++) {
         *dst++ = toHexDigit(src[i] / 16);
@@ -345,7 +345,7 @@ void writeHex(char *dst, uint8_t *src, size_t srcLength) {
     *dst++ = 0;
 }
 
-void writeValue(const Value &value) {
+static void writeValue(const Value &value) {
 	char tempStr[64];
 
 #ifdef _MSC_VER
@@ -678,7 +678,7 @@ void onComponentAsyncStateChanged(FlowState *flowState, int componentIndex) {
 	}
 }
 
-void writeLogMessage(const char *str) {
+static void writeLogMessage(const char *str) {
 	for (const char *p = str; *p; p++) {
 		if (*p == '\t') {
 			WRITE_TO_OUTPUT_BUFFER('\\');
@@ -695,7 +695,7 @@ void writeLogMessage(const char *str) {
 	FLUSH_OUTPUT_BUFFER();
 }
 
-void writeLogMessage(const char *str, size_t len) {
+static void writeLogMessage(const char *str, size_t len) {
 	for (size_t i = 0; i < len; i++) {
 		if (str[i] == '\t') {
 			WRITE_TO_OUTPUT_BUFFER('\\');

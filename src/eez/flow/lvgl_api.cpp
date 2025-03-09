@@ -62,14 +62,14 @@ static void (*g_createScreenFunc)(int screenIndex);
 static void (*g_deleteScreenFunc)(int screenIndex);
 
 static lv_obj_t *getLvglObjectFromIndex(int32_t index) {
-    if (index >= 0 && index < g_numObjects) {
+    if (index >= 0 && (uint32_t)index < g_numObjects) {
         return g_objects[index];
     }
     return 0;
 }
 
 static lv_group_t *getLvglGroupFromIndex(int32_t index) {
-    if (index >= 0 && index < g_numGroups) {
+    if (index >= 0 && (uint32_t)index < g_numGroups) {
         return g_groups[index];
     }
     return 0;
@@ -223,7 +223,7 @@ bool eez_flow_is_screen_created(int16_t screenId) {
     return isScreenCreated(screenIndex);
 }
 
-void on_screen_unloaded(lv_event_t *e) {
+static void on_screen_unloaded(lv_event_t *e) {
     if (lv_event_get_code(e) == LV_EVENT_SCREEN_UNLOADED) {
         int16_t screenIndex = (int16_t)(lv_uintptr_t)lv_event_get_user_data(e);
         deleteScreen(screenIndex);
@@ -288,10 +288,12 @@ void eez_flow_init_screen_names(const char **screenNames, size_t numScreens) {
 
 void eez_flow_init_object_names(const char **objectNames, size_t numObjects) {
     g_objectNames = objectNames;
+    EEZ_UNUSED(numObjects);
 }
 
 void eez_flow_init_group_names(const char **groupNames, size_t numGroups) {
     g_groupNames = groupNames;
+    EEZ_UNUSED(numGroups);
 }
 
 void eez_flow_init_style_names(const char **styleNames, size_t numStyles) {
@@ -353,7 +355,7 @@ extern "C" void flowPropagateValueLVGLEvent(void *flowState, unsigned componentI
     void *target = (void *)lv_event_get_target(event);
 
     void *userDataPointer = lv_event_get_user_data(event);
-    int32_t userData = *((int32_t*)(&userDataPointer));
+    int32_t userData = (intptr_t)userDataPointer;
 
     uint32_t key = 0;
     if (event_code == LV_EVENT_KEY || (event_code == LV_EVENT_VALUE_CHANGED &&

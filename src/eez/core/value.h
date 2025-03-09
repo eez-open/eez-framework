@@ -139,82 +139,82 @@ struct Value {
 		// }
 	}
 
-    Value(const char *str, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), strValue(str)
+    Value(const char *str, ValueType type_)
+        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), strValue(str)
     {
     }
 
-    Value(int value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int32Value(value)
+    Value(int value, ValueType type_)
+        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int32Value(value)
     {
     }
 
-    Value(int value, ValueType type, uint16_t options)
-        : type(type), unit(UNIT_UNKNOWN), options(options), dstValueType(VALUE_TYPE_UNDEFINED), int32Value(value)
+    Value(int value, ValueType type_, uint16_t options_)
+        : type(type_), unit(UNIT_UNKNOWN), options(options_), dstValueType(VALUE_TYPE_UNDEFINED), int32Value(value)
     {
     }
 
-    Value(int8_t value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int8Value(value)
+    Value(int8_t value, ValueType type_)
+        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int8Value(value)
     {
     }
 
-    Value(uint8_t value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint8Value(value)
+    Value(uint8_t value, ValueType type_)
+        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint8Value(value)
     {
     }
 
-    Value(int16_t value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int16Value(value)
+    Value(int16_t value, ValueType type_)
+        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int16Value(value)
     {
     }
 
-    Value(uint16_t value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint16Value(value)
+    Value(uint16_t value, ValueType type_)
+        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint16Value(value)
     {
     }
 
-    Value(uint32_t value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint32Value(value)
+    Value(uint32_t value, ValueType type_)
+        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint32Value(value)
     {
     }
 
-    Value(int64_t value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int64Value(value)
+    Value(int64_t value, ValueType type_)
+        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int64Value(value)
     {
     }
 
-    Value(uint64_t value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint64Value(value)
+    Value(uint64_t value, ValueType type_)
+        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint64Value(value)
     {
     }
 
-    Value(float value, Unit unit)
-        : type(VALUE_TYPE_FLOAT), unit(unit), options(0), dstValueType(VALUE_TYPE_UNDEFINED), floatValue(value)
+    Value(float value, Unit unit_)
+        : type(VALUE_TYPE_FLOAT), unit(unit_), options(0), dstValueType(VALUE_TYPE_UNDEFINED), floatValue(value)
     {
     }
 
-    Value(float value, Unit unit, uint16_t options)
-        : type(VALUE_TYPE_FLOAT), unit(unit), options(options), dstValueType(VALUE_TYPE_UNDEFINED), floatValue(value)
+    Value(float value, Unit unit_, uint16_t options_)
+        : type(VALUE_TYPE_FLOAT), unit(unit_), options(options_), dstValueType(VALUE_TYPE_UNDEFINED), floatValue(value)
     {
     }
 
-    Value(float value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), floatValue(value)
+    Value(float value, ValueType type_)
+        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), floatValue(value)
     {
     }
 
-	Value(double value, ValueType type)
-		: type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), doubleValue(value) {
+	Value(double value, ValueType type_)
+		: type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), doubleValue(value) {
 	}
 
-	Value(const char *value, ValueType type, uint16_t options)
-        : type(type), unit(UNIT_UNKNOWN), options(options), dstValueType(VALUE_TYPE_UNDEFINED), strValue(value)
+	Value(const char *value, ValueType type_, uint16_t options_)
+        : type(type_), unit(UNIT_UNKNOWN), options(options_), dstValueType(VALUE_TYPE_UNDEFINED), strValue(value)
     {
     }
 
-    Value(void *value, ValueType type)
-        : type(type), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), pVoidValue(value)
+    Value(void *value, ValueType type_)
+        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), pVoidValue(value)
     {
     }
 
@@ -779,7 +779,7 @@ struct ArrayOf {
         value = Value::makeArrayRef((uint32_t)size, ARRAY_TYPE, 0);
     }
 
-    ArrayOf(Value value) : value(value) {}
+    ArrayOf(Value value_) : value(value_) {}
 
     operator Value() const { return value; }
 
@@ -805,7 +805,7 @@ struct ArrayOfInteger {
         value = Value::makeArrayRef((uint32_t)size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
     }
 
-    ArrayOfInteger(Value value) : value(value) {}
+    ArrayOfInteger(Value value_) : value(value_) {}
 
     operator Value() const { return value; }
 
@@ -831,7 +831,7 @@ struct ArrayOfFloat {
         value = Value::makeArrayRef((uint32_t)size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
     }
 
-    ArrayOfFloat(Value value) : value(value) {}
+    ArrayOfFloat(Value value_) : value(value_) {}
 
     operator Value() const { return value; }
 
@@ -857,7 +857,7 @@ struct ArrayOfDouble {
         value = Value::makeArrayRef((uint32_t)size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
     }
 
-    ArrayOfDouble(Value value) : value(value) {}
+    ArrayOfDouble(Value value_) : value(value_) {}
 
     operator Value() const { return value; }
 
@@ -883,7 +883,7 @@ struct ArrayOfBoolean {
         value = Value::makeArrayRef((uint32_t)size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
     }
 
-    ArrayOfBoolean(Value value) : value(value) {}
+    ArrayOfBoolean(Value value_) : value(value_) {}
 
     operator Value() const { return value; }
 
@@ -909,7 +909,7 @@ struct ArrayOfString {
         value = Value::makeArrayRef((uint32_t)size, flow::defs_v3::ARRAY_TYPE_INTEGER, 0);
     }
 
-    ArrayOfString(Value value) : value(value) {}
+    ArrayOfString(Value value_) : value(value_) {}
 
     operator Value() const { return value; }
 

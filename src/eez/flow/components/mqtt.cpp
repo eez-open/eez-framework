@@ -168,7 +168,7 @@ static void deleteConnection(void *handle) {
     ObjectAllocator<MQTTConnection>::deallocate(connection);
 }
 
-MQTTConnectionEventHandler *addConnectionEventHandler(void *handle, MQTTEventActionComponenentExecutionState *componentExecutionState) {
+static MQTTConnectionEventHandler *addConnectionEventHandler(void *handle, MQTTEventActionComponenentExecutionState *componentExecutionState) {
     auto connection = findConnection(handle);
     if (!connection) {
         return nullptr;
@@ -219,7 +219,7 @@ static void removeEventHandler(MQTTEventActionComponenentExecutionState *compone
     }
 }
 
-void eez_mqtt_on_event_callback(void *handle, EEZ_MQTT_Event event, void *eventData) {
+static void eez_mqtt_on_event_callback(void *handle, EEZ_MQTT_Event event, void *eventData) {
     auto connection = findConnection(handle);
     if (!connection) {
         return;
@@ -664,30 +664,46 @@ EM_PORT_API(void) onMqttEvent(void *handle, EEZ_MQTT_Event event, void *eventDat
 #ifndef EEZ_MQTT_ADAPTER
 
 int eez_mqtt_init(const char *protocol, const char *host, int port, const char *username, const char *password, void **handle) {
+    EEZ_UNUSED(protocol);
+    EEZ_UNUSED(host);
+    EEZ_UNUSED(port);
+    EEZ_UNUSED(username);
+    EEZ_UNUSED(password);
+    EEZ_UNUSED(handle);
     return MQTT_ERROR_NOT_IMPLEMENTED;
 }
 
 int eez_mqtt_deinit(void *handle) {
+    EEZ_UNUSED(handle);
     return MQTT_ERROR_NOT_IMPLEMENTED;
 }
 
 int eez_mqtt_connect(void *handle) {
+    EEZ_UNUSED(handle);
     return MQTT_ERROR_NOT_IMPLEMENTED;
 }
 
 int eez_mqtt_disconnect(void *handle) {
+    EEZ_UNUSED(handle);
     return MQTT_ERROR_NOT_IMPLEMENTED;
 }
 
 int eez_mqtt_subscribe(void *handle, const char *topic) {
+    EEZ_UNUSED(handle);
+    EEZ_UNUSED(topic);
     return MQTT_ERROR_NOT_IMPLEMENTED;
 }
 
 int eez_mqtt_unsubscribe(void *handle, const char *topic) {
+    EEZ_UNUSED(handle);
+    EEZ_UNUSED(topic);
     return MQTT_ERROR_NOT_IMPLEMENTED;
 }
 
 int eez_mqtt_publish(void *handle, const char *topic, const char *payload) {
+    EEZ_UNUSED(handle);
+    EEZ_UNUSED(topic);
+    EEZ_UNUSED(payload);
     return MQTT_ERROR_NOT_IMPLEMENTED;
 }
 

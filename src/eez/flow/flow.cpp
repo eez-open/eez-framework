@@ -266,6 +266,7 @@ int getPageIndex(FlowState *flowState) {
 }
 
 void deletePageFlowState(Assets *assets, int16_t pageIndex) {
+    EEZ_UNUSED(assets);
     for (FlowState *flowState = g_firstFlowState; flowState; flowState = flowState->nextSibling) {
         if (flowState->flowIndex == pageIndex) {
             flowState->deleteOnNextTick = true;
@@ -279,7 +280,7 @@ Value getGlobalVariable(uint32_t globalVariableIndex) {
 }
 
 Value getGlobalVariable(Assets *assets, uint32_t globalVariableIndex) {
-    if (globalVariableIndex >= 0 && globalVariableIndex < assets->flowDefinition->globalVariables.count) {
+    if (globalVariableIndex < assets->flowDefinition->globalVariables.count) {
         return g_globalVariables ? g_globalVariables->values[globalVariableIndex] : *assets->flowDefinition->globalVariables[globalVariableIndex];
     }
     return Value();
@@ -290,7 +291,7 @@ void setGlobalVariable(uint32_t globalVariableIndex, const Value &value) {
 }
 
 void setGlobalVariable(Assets *assets, uint32_t globalVariableIndex, const Value &value) {
-    if (globalVariableIndex >= 0 && globalVariableIndex < assets->flowDefinition->globalVariables.count) {
+    if (globalVariableIndex < assets->flowDefinition->globalVariables.count) {
         if (g_globalVariables) {
             g_globalVariables->values[globalVariableIndex] = value;
         } else {

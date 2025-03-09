@@ -68,3 +68,5 @@
 #ifndef EEZ_FOR_LVGL_SHA256_OPTION
 #define EEZ_FOR_LVGL_SHA256_OPTION 1
 #endif
+
+#define EEZ_UNUSED(x) (void)(x)

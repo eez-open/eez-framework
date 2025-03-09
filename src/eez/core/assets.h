@@ -477,7 +477,7 @@ const int getBitmapIdByName(const char *bitmapName);
 
 int getThemesCount();
 const char *getThemeName(int i);
-const uint32_t getThemeColorsCount(int themeIndex);
+uint32_t getThemeColorsCount(int themeIndex);
 const uint16_t *getThemeColors(int themeIndex);
 const uint16_t *getColors();
 

@@ -29,7 +29,7 @@ namespace flow {
 
 SortArrayActionComponent *g_sortArrayActionComponent;
 
-int elementCompare(const void *a, const void *b) {
+static int elementCompare(const void *a, const void *b) {
     auto aValue = *(const Value *)a;
     auto bValue = *(const Value *)b;
 

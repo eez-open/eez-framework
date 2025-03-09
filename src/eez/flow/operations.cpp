@@ -412,7 +412,7 @@ Value op_binary_xor(const Value& a1, const Value& b1) {
     return Value((int)(a.toInt32() ^ b.toInt32()), VALUE_TYPE_INT32);
 }
 
-bool is_equal(const Value& a1, const Value& b1) {
+static bool is_equal(const Value& a1, const Value& b1) {
     auto a = a1.getValue();
     auto b = b1.getValue();
 
@@ -460,7 +460,7 @@ bool is_equal(const Value& a1, const Value& b1) {
     return a.toDouble() == b.toDouble();
 }
 
-bool is_less(const Value& a1, const Value& b1) {
+static bool is_less(const Value& a1, const Value& b1) {
     auto a = a1.getValue();
     auto b = b1.getValue();
 
@@ -476,7 +476,7 @@ bool is_less(const Value& a1, const Value& b1) {
     return a.toDouble() < b.toDouble();
 }
 
-bool is_great(const Value& a1, const Value& b1) {
+static bool is_great(const Value& a1, const Value& b1) {
     return !is_less(a1, b1) && !is_equal(a1, b1);
 }
 
@@ -552,7 +552,7 @@ Value op_great_eq(const Value& a1, const Value& b1) {
     return Value(!is_less(a1, b1), VALUE_TYPE_BOOLEAN);
 }
 
-void do_OPERATION_TYPE_ADD(EvalStack &stack) {
+static void do_OPERATION_TYPE_ADD(EvalStack &stack) {
     auto b = stack.pop();
     auto a = stack.pop();
 
@@ -565,7 +565,7 @@ void do_OPERATION_TYPE_ADD(EvalStack &stack) {
     stack.push(result);
 }
 
-void do_OPERATION_TYPE_SUB(EvalStack &stack) {
+static void do_OPERATION_TYPE_SUB(EvalStack &stack) {
     auto b = stack.pop();
     auto a = stack.pop();
 
@@ -578,7 +578,7 @@ void do_OPERATION_TYPE_SUB(EvalStack &stack) {
     stack.push(result);
 }
 
-void do_OPERATION_TYPE_MUL(EvalStack &stack) {
+static void do_OPERATION_TYPE_MUL(EvalStack &stack) {
     auto b = stack.pop();
     auto a = stack.pop();
 
@@ -591,7 +591,7 @@ void do_OPERATION_TYPE_MUL(EvalStack &stack) {
     stack.push(result);
 }
 
-void do_OPERATION_TYPE_DIV(EvalStack &stack) {
+static void do_OPERATION_TYPE_DIV(EvalStack &stack) {
     auto b = stack.pop();
     auto a = stack.pop();
 
@@ -604,7 +604,7 @@ void do_OPERATION_TYPE_DIV(EvalStack &stack) {
     stack.push(result);
 }
 
-void do_OPERATION_TYPE_MOD(EvalStack &stack) {
+static void do_OPERATION_TYPE_MOD(EvalStack &stack) {
     auto b = stack.pop();
     auto a = stack.pop();
 
@@ -617,7 +617,7 @@ void do_OPERATION_TYPE_MOD(EvalStack &stack) {
     stack.push(result);
 }
 
-void do_OPERATION_TYPE_LEFT_SHIFT(EvalStack &stack) {
+static void do_OPERATION_TYPE_LEFT_SHIFT(EvalStack &stack) {
     auto b = stack.pop();
     auto a = stack.pop();
 
@@ -630,7 +630,7 @@ void do_OPERATION_TYPE_LEFT_SHIFT(EvalStack &stack) {
     stack.push(result);
 }
 
-void do_OPERATION_TYPE_RIGHT_SHIFT(EvalStack &stack) {
+static void do_OPERATION_TYPE_RIGHT_SHIFT(EvalStack &stack) {
     auto b = stack.pop();
     auto a = stack.pop();
 
@@ -643,7 +643,7 @@ void do_OPERATION_TYPE_RIGHT_SHIFT(EvalStack &stack) {
     stack.push(result);
 }
 
-void do_OPERATION_TYPE_BINARY_AND(EvalStack &stack) {
+static void do_OPERATION_TYPE_BINARY_AND(EvalStack &stack) {
     auto b = stack.pop();
     auto a = stack.pop();
 
@@ -656,7 +656,7 @@ void do_OPERATION_TYPE_BINARY_AND(EvalStack &stack) {
     stack.push(result);
 }
 
-void do_OPERATION_TYPE_BINARY_OR(EvalStack &stack) {
+static void do_OPERATION_TYPE_BINARY_OR(EvalStack &stack) {
     auto b = stack.pop();
     auto a = stack.pop();
 
@@ -669,7 +669,7 @@ void do_OPERATION_TYPE_BINARY_OR(EvalStack &stack) {
     stack.push(result);
 }
 
-void do_OPERATION_TYPE_BINARY_XOR(EvalStack &stack) {
+static void do_OPERATION_TYPE_BINARY_XOR(EvalStack &stack) {
     auto b = stack.pop();
     auto a = stack.pop();
 
@@ -682,43 +682,43 @@ void do_OPERATION_TYPE_BINARY_XOR(EvalStack &stack) {
     stack.push(result);
 }
 
-void do_OPERATION_TYPE_EQUAL(EvalStack &stack) {
+static void do_OPERATION_TYPE_EQUAL(EvalStack &stack) {
     auto b = stack.pop();
     auto a = stack.pop();
     stack.push(op_eq(a, b));
 }
 
-void do_OPERATION_TYPE_NOT_EQUAL(EvalStack &stack) {
+static void do_OPERATION_TYPE_NOT_EQUAL(EvalStack &stack) {
     auto b = stack.pop();
     auto a = stack.pop();
     stack.push(op_neq(a, b));
 }
 
-void do_OPERATION_TYPE_LESS(EvalStack &stack) {
+static void do_OPERATION_TYPE_LESS(EvalStack &stack) {
     auto b = stack.pop();
     auto a = stack.pop();
     stack.push(op_less(a, b));
 }
 
-void do_OPERATION_TYPE_GREATER(EvalStack &stack) {
+static void do_OPERATION_TYPE_GREATER(EvalStack &stack) {
     auto b = stack.pop();
     auto a = stack.pop();
     stack.push(op_great(a, b));
 }
 
-void do_OPERATION_TYPE_LESS_OR_EQUAL(EvalStack &stack) {
+static void do_OPERATION_TYPE_LESS_OR_EQUAL(EvalStack &stack) {
     auto b = stack.pop();
     auto a = stack.pop();
     stack.push(op_less_eq(a, b));
 }
 
-void do_OPERATION_TYPE_GREATER_OR_EQUAL(EvalStack &stack) {
+static void do_OPERATION_TYPE_GREATER_OR_EQUAL(EvalStack &stack) {
     auto b = stack.pop();
     auto a = stack.pop();
     stack.push(op_great_eq(a, b));
 }
 
-void do_OPERATION_TYPE_LOGICAL_AND(EvalStack &stack) {
+static void do_OPERATION_TYPE_LOGICAL_AND(EvalStack &stack) {
     auto bValue = stack.pop().getValue();
     auto aValue = stack.pop().getValue();
 
@@ -740,7 +740,7 @@ void do_OPERATION_TYPE_LOGICAL_AND(EvalStack &stack) {
     stack.push(Value(bValue.toBool(), VALUE_TYPE_BOOLEAN));
 }
 
-void do_OPERATION_TYPE_LOGICAL_OR(EvalStack &stack) {
+static void do_OPERATION_TYPE_LOGICAL_OR(EvalStack &stack) {
     auto bValue = stack.pop().getValue();
     auto aValue = stack.pop().getValue();
 
@@ -762,7 +762,7 @@ void do_OPERATION_TYPE_LOGICAL_OR(EvalStack &stack) {
     stack.push(Value(bValue.toBool(), VALUE_TYPE_BOOLEAN));
 }
 
-void do_OPERATION_TYPE_UNARY_PLUS(EvalStack &stack) {
+static void do_OPERATION_TYPE_UNARY_PLUS(EvalStack &stack) {
     auto a = stack.pop().getValue();
 
     if (a.isDouble()) {
@@ -798,7 +798,7 @@ void do_OPERATION_TYPE_UNARY_PLUS(EvalStack &stack) {
     stack.push(Value::makeError());
 }
 
-void do_OPERATION_TYPE_UNARY_MINUS(EvalStack &stack) {
+static void do_OPERATION_TYPE_UNARY_MINUS(EvalStack &stack) {
     auto a = stack.pop().getValue();
 
     if (a.isDouble()) {
@@ -834,7 +834,7 @@ void do_OPERATION_TYPE_UNARY_MINUS(EvalStack &stack) {
     stack.push(Value::makeError());
 }
 
-void do_OPERATION_TYPE_BINARY_ONE_COMPLEMENT(EvalStack &stack) {
+static void do_OPERATION_TYPE_BINARY_ONE_COMPLEMENT(EvalStack &stack) {
     auto a = stack.pop().getValue();
 
     if (a.isInt64()) {
@@ -860,7 +860,7 @@ void do_OPERATION_TYPE_BINARY_ONE_COMPLEMENT(EvalStack &stack) {
     stack.push(Value::makeError());
 }
 
-void do_OPERATION_TYPE_NOT(EvalStack &stack) {
+static void do_OPERATION_TYPE_NOT(EvalStack &stack) {
     auto aValue = stack.pop();
 
     if (aValue.isError()) {
@@ -878,7 +878,7 @@ void do_OPERATION_TYPE_NOT(EvalStack &stack) {
     stack.push(Value(!a, VALUE_TYPE_BOOLEAN));
 }
 
-void do_OPERATION_TYPE_CONDITIONAL(EvalStack &stack) {
+static void do_OPERATION_TYPE_CONDITIONAL(EvalStack &stack) {
     auto alternate = stack.pop();
     auto consequent = stack.pop();
     auto conditionValue = stack.pop();
@@ -898,11 +898,11 @@ void do_OPERATION_TYPE_CONDITIONAL(EvalStack &stack) {
     stack.push(condition ? consequent : alternate);
 }
 
-void do_OPERATION_TYPE_SYSTEM_GET_TICK(EvalStack &stack) {
+static void do_OPERATION_TYPE_SYSTEM_GET_TICK(EvalStack &stack) {
     stack.push(Value(millis(), VALUE_TYPE_UINT32));
 }
 
-void do_OPERATION_TYPE_FLOW_INDEX(EvalStack &stack) {
+static void do_OPERATION_TYPE_FLOW_INDEX(EvalStack &stack) {
     if (!stack.iterators) {
         stack.push(Value::makeError());
         return;
@@ -917,7 +917,6 @@ void do_OPERATION_TYPE_FLOW_INDEX(EvalStack &stack) {
         return;
     }
 
-    iteratorIndex = iteratorIndex;
     if (iteratorIndex < 0 || iteratorIndex >= (int)MAX_ITERATORS) {
         stack.push(Value::makeError());
         return;
@@ -926,7 +925,7 @@ void do_OPERATION_TYPE_FLOW_INDEX(EvalStack &stack) {
     stack.push(stack.iterators[iteratorIndex]);
 }
 
-void do_OPERATION_TYPE_FLOW_IS_PAGE_ACTIVE(EvalStack &stack) {
+static void do_OPERATION_TYPE_FLOW_IS_PAGE_ACTIVE(EvalStack &stack) {
 #if EEZ_OPTION_GUI
     bool isActive = false;
 
@@ -959,11 +958,11 @@ void do_OPERATION_TYPE_FLOW_IS_PAGE_ACTIVE(EvalStack &stack) {
 #endif // EEZ_OPTION_GUI
 }
 
-void do_OPERATION_TYPE_FLOW_PAGE_TIMELINE_POSITION(EvalStack &stack) {
+static void do_OPERATION_TYPE_FLOW_PAGE_TIMELINE_POSITION(EvalStack &stack) {
     stack.push(Value(stack.flowState->timelinePosition, VALUE_TYPE_FLOAT));
 }
 
-void do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE(EvalStack &stack) {
+static void do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE(EvalStack &stack) {
     auto arrayTypeValue = stack.pop();
     if (arrayTypeValue.isError()) {
         stack.push(arrayTypeValue);
@@ -1038,7 +1037,7 @@ void do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE(EvalStack &stack) {
     stack.push(arrayValue);
 }
 
-void do_OPERATION_TYPE_FLOW_LANGUAGES(EvalStack &stack) {
+static void do_OPERATION_TYPE_FLOW_LANGUAGES(EvalStack &stack) {
     auto &languages = stack.flowState->assets->languages;
 
     auto arrayValue = Value::makeArrayRef(languages.count, VALUE_TYPE_STRING, 0xff4787fc);
@@ -1052,7 +1051,7 @@ void do_OPERATION_TYPE_FLOW_LANGUAGES(EvalStack &stack) {
     stack.push(arrayValue);
 }
 
-void do_OPERATION_TYPE_FLOW_TRANSLATE(EvalStack &stack) {
+static void do_OPERATION_TYPE_FLOW_TRANSLATE(EvalStack &stack) {
     auto textResourceIndexValue = stack.pop();
 
     int err;
@@ -1076,7 +1075,7 @@ void do_OPERATION_TYPE_FLOW_TRANSLATE(EvalStack &stack) {
     stack.push("");
 }
 
-void do_OPERATION_TYPE_FLOW_THEMES(EvalStack &stack) {
+static void do_OPERATION_TYPE_FLOW_THEMES(EvalStack &stack) {
     auto &themes = stack.flowState->assets->colorsDefinition->themes;
 
     auto arrayValue = Value::makeArrayRef(themes.count, VALUE_TYPE_STRING, 0x03906e8f);
@@ -1090,7 +1089,7 @@ void do_OPERATION_TYPE_FLOW_THEMES(EvalStack &stack) {
     stack.push(arrayValue);
 }
 
-void do_OPERATION_TYPE_FLOW_PARSE_INTEGER(EvalStack &stack) {
+static void do_OPERATION_TYPE_FLOW_PARSE_INTEGER(EvalStack &stack) {
     auto str = stack.pop();
     if (str.isError()) {
         stack.push(str);
@@ -1107,7 +1106,7 @@ void do_OPERATION_TYPE_FLOW_PARSE_INTEGER(EvalStack &stack) {
     stack.push(Value((int)value, VALUE_TYPE_INT32));
 }
 
-void do_OPERATION_TYPE_FLOW_PARSE_FLOAT(EvalStack &stack) {
+static void do_OPERATION_TYPE_FLOW_PARSE_FLOAT(EvalStack &stack) {
     auto str = stack.pop();
     if (str.isError()) {
         stack.push(str);
@@ -1124,7 +1123,7 @@ void do_OPERATION_TYPE_FLOW_PARSE_FLOAT(EvalStack &stack) {
     stack.push(Value(value, VALUE_TYPE_FLOAT));
 }
 
-void do_OPERATION_TYPE_FLOW_PARSE_DOUBLE(EvalStack &stack) {
+static void do_OPERATION_TYPE_FLOW_PARSE_DOUBLE(EvalStack &stack) {
     auto str = stack.pop();
     if (str.isError()) {
         stack.push(str);
@@ -1141,7 +1140,7 @@ void do_OPERATION_TYPE_FLOW_PARSE_DOUBLE(EvalStack &stack) {
     stack.push(Value(value, VALUE_TYPE_DOUBLE));
 }
 
-void do_OPERATION_TYPE_FLOW_TO_INTEGER(EvalStack &stack) {
+static void do_OPERATION_TYPE_FLOW_TO_INTEGER(EvalStack &stack) {
     auto str = stack.pop();
     if (str.isError()) {
         stack.push(str);
@@ -1158,7 +1157,7 @@ void do_OPERATION_TYPE_FLOW_TO_INTEGER(EvalStack &stack) {
     stack.push(Value(value, VALUE_TYPE_INT32));
 }
 
-void do_OPERATION_TYPE_FLOW_GET_BITMAP_INDEX(EvalStack &stack) {
+static void do_OPERATION_TYPE_FLOW_GET_BITMAP_INDEX(EvalStack &stack) {
 #if EEZ_OPTION_GUI
     auto a = stack.pop().getValue();
     if (a.isError()) {
@@ -1176,7 +1175,7 @@ void do_OPERATION_TYPE_FLOW_GET_BITMAP_INDEX(EvalStack &stack) {
 #endif // EEZ_OPTION_GUI
 }
 
-void do_OPERATION_TYPE_FLOW_GET_BITMAP_AS_DATA_URL(EvalStack &stack) {
+static void do_OPERATION_TYPE_FLOW_GET_BITMAP_AS_DATA_URL(EvalStack &stack) {
 #if defined(EEZ_DASHBOARD_API)
     auto a = stack.pop().getValue();
     if (a.isError()) {
@@ -1191,11 +1190,11 @@ void do_OPERATION_TYPE_FLOW_GET_BITMAP_AS_DATA_URL(EvalStack &stack) {
 #endif // EEZ_OPTION_GUI
 }
 
-void do_OPERATION_TYPE_DATE_NOW(EvalStack &stack) {
+static void do_OPERATION_TYPE_DATE_NOW(EvalStack &stack) {
     stack.push(Value((double)date::now(), VALUE_TYPE_DATE));
 }
 
-void do_OPERATION_TYPE_DATE_TO_STRING(EvalStack &stack) {
+static void do_OPERATION_TYPE_DATE_TO_STRING(EvalStack &stack) {
 #ifndef ARDUINO
     auto a = stack.pop().getValue();
     if (a.isError()) {
@@ -1215,7 +1214,7 @@ void do_OPERATION_TYPE_DATE_TO_STRING(EvalStack &stack) {
 #endif
 }
 
-void do_OPERATION_TYPE_DATE_TO_LOCALE_STRING(EvalStack &stack) {
+static void do_OPERATION_TYPE_DATE_TO_LOCALE_STRING(EvalStack &stack) {
 #ifndef ARDUINO
     auto a = stack.pop().getValue();
     if (a.isError()) {
@@ -1235,7 +1234,7 @@ void do_OPERATION_TYPE_DATE_TO_LOCALE_STRING(EvalStack &stack) {
 #endif
 }
 
-void do_OPERATION_TYPE_DATE_FROM_STRING(EvalStack &stack) {
+static void do_OPERATION_TYPE_DATE_FROM_STRING(EvalStack &stack) {
 #ifndef ARDUINO
     auto a = stack.pop().getValue();
     if (a.isError()) {
@@ -1252,7 +1251,7 @@ void do_OPERATION_TYPE_DATE_FROM_STRING(EvalStack &stack) {
 #endif
 }
 
-void do_OPERATION_TYPE_DATE_GET_YEAR(EvalStack &stack) {
+static void do_OPERATION_TYPE_DATE_GET_YEAR(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -1266,7 +1265,7 @@ void do_OPERATION_TYPE_DATE_GET_YEAR(EvalStack &stack) {
     stack.push(date::getYear(a.getDouble()));
 }
 
-void do_OPERATION_TYPE_DATE_GET_MONTH(EvalStack &stack) {
+static void do_OPERATION_TYPE_DATE_GET_MONTH(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -1280,7 +1279,7 @@ void do_OPERATION_TYPE_DATE_GET_MONTH(EvalStack &stack) {
     stack.push(date::getMonth(a.getDouble()));
 }
 
-void do_OPERATION_TYPE_DATE_GET_DAY(EvalStack &stack) {
+static void do_OPERATION_TYPE_DATE_GET_DAY(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -1294,7 +1293,7 @@ void do_OPERATION_TYPE_DATE_GET_DAY(EvalStack &stack) {
     stack.push(date::getDay(a.getDouble()));
 }
 
-void do_OPERATION_TYPE_DATE_GET_HOURS(EvalStack &stack) {
+static void do_OPERATION_TYPE_DATE_GET_HOURS(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -1308,7 +1307,7 @@ void do_OPERATION_TYPE_DATE_GET_HOURS(EvalStack &stack) {
     stack.push(date::getHours(a.getDouble()));
 }
 
-void do_OPERATION_TYPE_DATE_GET_MINUTES(EvalStack &stack) {
+static void do_OPERATION_TYPE_DATE_GET_MINUTES(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -1322,7 +1321,7 @@ void do_OPERATION_TYPE_DATE_GET_MINUTES(EvalStack &stack) {
     stack.push(date::getMinutes(a.getDouble()));
 }
 
-void do_OPERATION_TYPE_DATE_GET_SECONDS(EvalStack &stack) {
+static void do_OPERATION_TYPE_DATE_GET_SECONDS(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -1336,7 +1335,7 @@ void do_OPERATION_TYPE_DATE_GET_SECONDS(EvalStack &stack) {
     stack.push(date::getSeconds(a.getDouble()));
 }
 
-void do_OPERATION_TYPE_DATE_GET_MILLISECONDS(EvalStack &stack) {
+static void do_OPERATION_TYPE_DATE_GET_MILLISECONDS(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -1350,7 +1349,7 @@ void do_OPERATION_TYPE_DATE_GET_MILLISECONDS(EvalStack &stack) {
     stack.push(date::getMilliseconds(a.getDouble()));
 }
 
-void do_OPERATION_TYPE_DATE_MAKE(EvalStack &stack) {
+static void do_OPERATION_TYPE_DATE_MAKE(EvalStack &stack) {
     int err;
     Value value;
 
@@ -1435,7 +1434,7 @@ void do_OPERATION_TYPE_DATE_MAKE(EvalStack &stack) {
     stack.push(Value(date, VALUE_TYPE_DATE));
 }
 
-void do_OPERATION_TYPE_MATH_SIN(EvalStack &stack) {
+static void do_OPERATION_TYPE_MATH_SIN(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -1465,7 +1464,7 @@ void do_OPERATION_TYPE_MATH_SIN(EvalStack &stack) {
     stack.push(Value::makeError());
 }
 
-void do_OPERATION_TYPE_MATH_COS(EvalStack &stack) {
+static void do_OPERATION_TYPE_MATH_COS(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -1495,7 +1494,7 @@ void do_OPERATION_TYPE_MATH_COS(EvalStack &stack) {
     stack.push(Value::makeError());
 }
 
-void do_OPERATION_TYPE_MATH_POW(EvalStack &stack) {
+static void do_OPERATION_TYPE_MATH_POW(EvalStack &stack) {
     auto baseValue = stack.pop().getValue();
     if (baseValue.isError()) {
         stack.push(Value::makeError());
@@ -1555,7 +1554,7 @@ void do_OPERATION_TYPE_MATH_POW(EvalStack &stack) {
     }
 }
 
-void do_OPERATION_TYPE_MATH_LOG(EvalStack &stack) {
+static void do_OPERATION_TYPE_MATH_LOG(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -1585,7 +1584,7 @@ void do_OPERATION_TYPE_MATH_LOG(EvalStack &stack) {
     stack.push(Value::makeError());
 }
 
-void do_OPERATION_TYPE_MATH_LOG10(EvalStack &stack) {
+static void do_OPERATION_TYPE_MATH_LOG10(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -1615,7 +1614,7 @@ void do_OPERATION_TYPE_MATH_LOG10(EvalStack &stack) {
     stack.push(Value::makeError());
 }
 
-void do_OPERATION_TYPE_MATH_ABS(EvalStack &stack) {
+static void do_OPERATION_TYPE_MATH_ABS(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -1655,7 +1654,7 @@ void do_OPERATION_TYPE_MATH_ABS(EvalStack &stack) {
     stack.push(Value::makeError());
 }
 
-void do_OPERATION_TYPE_MATH_FLOOR(EvalStack &stack) {
+static void do_OPERATION_TYPE_MATH_FLOOR(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -1680,7 +1679,7 @@ void do_OPERATION_TYPE_MATH_FLOOR(EvalStack &stack) {
     stack.push(Value::makeError());
 }
 
-void do_OPERATION_TYPE_MATH_CEIL(EvalStack &stack) {
+static void do_OPERATION_TYPE_MATH_CEIL(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -1705,17 +1704,17 @@ void do_OPERATION_TYPE_MATH_CEIL(EvalStack &stack) {
     stack.push(Value::makeError());
 }
 
-float roundN(float value, unsigned int numDigits) {
+static float roundN(float value, unsigned int numDigits) {
   float pow_10 = pow(10.0f, numDigits);
   return round(value * pow_10) / pow_10;
 }
 
-double roundN(double value, unsigned int numDigits) {
+static double roundN(double value, unsigned int numDigits) {
   float pow_10 = pow(10.0f, numDigits);
   return round(value * pow_10) / pow_10;
 }
 
-void do_OPERATION_TYPE_MATH_ROUND(EvalStack &stack) {
+static void do_OPERATION_TYPE_MATH_ROUND(EvalStack &stack) {
     auto numArgs = stack.pop().getInt();
     auto a = stack.pop().getValue();
     if (a.isError()) {
@@ -1754,7 +1753,7 @@ void do_OPERATION_TYPE_MATH_ROUND(EvalStack &stack) {
     stack.push(Value::makeError());
 }
 
-void do_OPERATION_TYPE_MATH_MIN(EvalStack &stack) {
+static void do_OPERATION_TYPE_MATH_MIN(EvalStack &stack) {
     auto numArgs = stack.pop().getInt();
 
     Value minValue;
@@ -1773,7 +1772,7 @@ void do_OPERATION_TYPE_MATH_MIN(EvalStack &stack) {
     stack.push(minValue);
 }
 
-void do_OPERATION_TYPE_MATH_MAX(EvalStack &stack) {
+static void do_OPERATION_TYPE_MATH_MAX(EvalStack &stack) {
     auto numArgs = stack.pop().getInt();
 
     Value maxValue;
@@ -1792,7 +1791,7 @@ void do_OPERATION_TYPE_MATH_MAX(EvalStack &stack) {
     stack.push(maxValue);
 }
 
-void do_OPERATION_TYPE_STRING_LENGTH(EvalStack &stack) {
+static void do_OPERATION_TYPE_STRING_LENGTH(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -1810,7 +1809,7 @@ void do_OPERATION_TYPE_STRING_LENGTH(EvalStack &stack) {
     stack.push(Value(aStrLen, VALUE_TYPE_INT32));
 }
 
-void do_OPERATION_TYPE_STRING_SUBSTRING(EvalStack &stack) {
+static void do_OPERATION_TYPE_STRING_SUBSTRING(EvalStack &stack) {
     auto numArgs = stack.pop().getInt();
 
     Value strValue = stack.pop().getValue();
@@ -1880,7 +1879,7 @@ void do_OPERATION_TYPE_STRING_SUBSTRING(EvalStack &stack) {
     stack.push(Value("", VALUE_TYPE_STRING));
 }
 
-void do_OPERATION_TYPE_STRING_FIND(EvalStack &stack) {
+static void do_OPERATION_TYPE_STRING_FIND(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -1943,7 +1942,7 @@ typedef enum {
     length_L
 } FormatLength;
 
-size_t do_string_format(FormatType type, const Value& b, char *result, size_t result_size, const char *format) {
+static size_t do_string_format(FormatType type, const Value& b, char *result, size_t result_size, const char *format) {
     if (type == type_int) return snprintf(result, result_size, format, (int)b.getInt());
     if (type == type_signed_char) return snprintf(result, result_size, format, (signed char)b.getInt32());
     if (type == type_short_int) return snprintf(result, result_size, format, (short int)b.getInt32());
@@ -1972,7 +1971,7 @@ size_t do_string_format(FormatType type, const Value& b, char *result, size_t re
 }
 #endif
 
-void do_OPERATION_TYPE_STRING_FORMAT(EvalStack &stack) {
+static void do_OPERATION_TYPE_STRING_FORMAT(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -2078,7 +2077,7 @@ void do_OPERATION_TYPE_STRING_FORMAT(EvalStack &stack) {
 #endif
 }
 
-void do_OPERATION_TYPE_STRING_FORMAT_PREFIX(EvalStack &stack) {
+static void do_OPERATION_TYPE_STRING_FORMAT_PREFIX(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -2110,7 +2109,7 @@ void do_OPERATION_TYPE_STRING_FORMAT_PREFIX(EvalStack &stack) {
 #endif
 }
 
-void do_OPERATION_TYPE_STRING_PAD_START(EvalStack &stack) {
+static void do_OPERATION_TYPE_STRING_PAD_START(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -2168,7 +2167,7 @@ void do_OPERATION_TYPE_STRING_PAD_START(EvalStack &stack) {
     stack.push(resultValue);
 }
 
-void do_OPERATION_TYPE_STRING_SPLIT(EvalStack &stack) {
+static void do_OPERATION_TYPE_STRING_SPLIT(EvalStack &stack) {
     auto strValue = stack.pop().getValue();
     if (strValue.isError()) {
         stack.push(strValue);
@@ -2224,7 +2223,7 @@ void do_OPERATION_TYPE_STRING_SPLIT(EvalStack &stack) {
     stack.push(arrayValue);
 }
 
-void do_OPERATION_TYPE_STRING_FROM_CODE_POINT(EvalStack &stack) {
+static void do_OPERATION_TYPE_STRING_FROM_CODE_POINT(EvalStack &stack) {
     Value charCodeValue = stack.pop().getValue();
     if (charCodeValue.isError()) {
         stack.push(charCodeValue);
@@ -2247,7 +2246,7 @@ void do_OPERATION_TYPE_STRING_FROM_CODE_POINT(EvalStack &stack) {
     return;
 }
 
-void do_OPERATION_TYPE_STRING_CODE_POINT_AT(EvalStack &stack) {
+static void do_OPERATION_TYPE_STRING_CODE_POINT_AT(EvalStack &stack) {
     auto strValue = stack.pop().getValue();
     if (strValue.isError()) {
         stack.push(strValue);
@@ -2277,7 +2276,7 @@ void do_OPERATION_TYPE_STRING_CODE_POINT_AT(EvalStack &stack) {
     return;
 }
 
-void do_OPERATION_TYPE_ARRAY_LENGTH(EvalStack &stack) {
+static void do_OPERATION_TYPE_ARRAY_LENGTH(EvalStack &stack) {
     auto a = stack.pop().getValue();
     if (a.isError()) {
         stack.push(a);
@@ -2309,7 +2308,7 @@ void do_OPERATION_TYPE_ARRAY_LENGTH(EvalStack &stack) {
     stack.push(Value::makeError());
 }
 
-void do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
+static void do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
     auto numArgs = stack.pop().getInt();
 
     auto arrayValue = stack.pop().getValue();
@@ -2391,7 +2390,7 @@ void do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
     stack.push(resultArrayValue);
 }
 
-void do_OPERATION_TYPE_ARRAY_ALLOCATE(EvalStack &stack) {
+static void do_OPERATION_TYPE_ARRAY_ALLOCATE(EvalStack &stack) {
     auto sizeValue = stack.pop();
     if (sizeValue.isError()) {
         stack.push(sizeValue);
@@ -2409,7 +2408,7 @@ void do_OPERATION_TYPE_ARRAY_ALLOCATE(EvalStack &stack) {
     stack.push(resultArrayValue);
 }
 
-void do_OPERATION_TYPE_ARRAY_APPEND(EvalStack &stack) {
+static void do_OPERATION_TYPE_ARRAY_APPEND(EvalStack &stack) {
     auto arrayValue = stack.pop().getValue();
     if (arrayValue.isError()) {
         stack.push(arrayValue);
@@ -2446,7 +2445,7 @@ void do_OPERATION_TYPE_ARRAY_APPEND(EvalStack &stack) {
     stack.push(resultArrayValue);
 }
 
-void do_OPERATION_TYPE_ARRAY_INSERT(EvalStack &stack) {
+static void do_OPERATION_TYPE_ARRAY_INSERT(EvalStack &stack) {
     auto arrayValue = stack.pop().getValue();
     if (arrayValue.isError()) {
         stack.push(arrayValue);
@@ -2504,7 +2503,7 @@ void do_OPERATION_TYPE_ARRAY_INSERT(EvalStack &stack) {
     stack.push(resultArrayValue);
 }
 
-void do_OPERATION_TYPE_ARRAY_REMOVE(EvalStack &stack) {
+static void do_OPERATION_TYPE_ARRAY_REMOVE(EvalStack &stack) {
     auto arrayValue = stack.pop().getValue();
     if (arrayValue.isError()) {
         stack.push(arrayValue);
@@ -2556,7 +2555,7 @@ void do_OPERATION_TYPE_ARRAY_REMOVE(EvalStack &stack) {
     }
 }
 
-void do_OPERATION_TYPE_ARRAY_CLONE(EvalStack &stack) {
+static void do_OPERATION_TYPE_ARRAY_CLONE(EvalStack &stack) {
     auto arrayValue = stack.pop().getValue();
     if (arrayValue.isError()) {
         stack.push(arrayValue);
@@ -2568,11 +2567,12 @@ void do_OPERATION_TYPE_ARRAY_CLONE(EvalStack &stack) {
     stack.push(resultArray);
 }
 
-void do_OPERATION_TYPE_LVGL_METER_TICK_INDEX(EvalStack &stack) {
+static void do_OPERATION_TYPE_LVGL_METER_TICK_INDEX(EvalStack &stack) {
     stack.push(g_eezFlowLvlgMeterTickIndex);
 }
 
-void do_OPERATION_TYPE_CRYPTO_SHA256(EvalStack &stack) {
+static void do_OPERATION_TYPE_CRYPTO_SHA256(EvalStack &stack) {
+#if EEZ_FOR_LVGL_SHA256_OPTION
     auto value = stack.pop().getValue();
     if (value.isError()) {
         stack.push(value);
@@ -2595,7 +2595,6 @@ void do_OPERATION_TYPE_CRYPTO_SHA256(EvalStack &stack) {
         return;
     }
 
-#if EEZ_FOR_LVGL_SHA256_OPTION
     BYTE buf[SHA256_BLOCK_SIZE];
     SHA256_CTX ctx;
     sha256_init(&ctx);
@@ -2610,7 +2609,7 @@ void do_OPERATION_TYPE_CRYPTO_SHA256(EvalStack &stack) {
 #endif
 }
 
-void do_OPERATION_TYPE_BLOB_ALLOCATE(EvalStack &stack) {
+static void do_OPERATION_TYPE_BLOB_ALLOCATE(EvalStack &stack) {
     auto sizeValue = stack.pop();
     if (sizeValue.isError()) {
         stack.push(sizeValue);
@@ -2628,7 +2627,7 @@ void do_OPERATION_TYPE_BLOB_ALLOCATE(EvalStack &stack) {
     stack.push(result);
 }
 
-void do_OPERATION_TYPE_BLOB_TO_STRING(EvalStack &stack) {
+static void do_OPERATION_TYPE_BLOB_TO_STRING(EvalStack &stack) {
 #if defined(EEZ_DASHBOARD_API)
     auto blobValue = stack.pop().getValue();
 
@@ -2650,7 +2649,7 @@ void do_OPERATION_TYPE_BLOB_TO_STRING(EvalStack &stack) {
 #endif
 }
 
-void do_OPERATION_TYPE_JSON_GET(EvalStack &stack) {
+static void do_OPERATION_TYPE_JSON_GET(EvalStack &stack) {
 #if defined(EEZ_DASHBOARD_API)
     auto jsonValue = stack.pop().getValue();
     auto propertyValue = stack.pop();
@@ -2676,7 +2675,7 @@ void do_OPERATION_TYPE_JSON_GET(EvalStack &stack) {
 #endif
 }
 
-void do_OPERATION_TYPE_JSON_CLONE(EvalStack &stack) {
+static void do_OPERATION_TYPE_JSON_CLONE(EvalStack &stack) {
 #if defined(EEZ_DASHBOARD_API)
     auto jsonValue = stack.pop().getValue();
 
@@ -2696,7 +2695,7 @@ void do_OPERATION_TYPE_JSON_CLONE(EvalStack &stack) {
 #endif
 }
 
-void do_OPERATION_TYPE_EVENT_GET_CODE(EvalStack &stack) {
+static void do_OPERATION_TYPE_EVENT_GET_CODE(EvalStack &stack) {
 #if defined(EEZ_FOR_LVGL)
     auto eventValue = stack.pop().getValue();
     if (eventValue.type != VALUE_TYPE_EVENT) {
@@ -2711,7 +2710,7 @@ void do_OPERATION_TYPE_EVENT_GET_CODE(EvalStack &stack) {
 #endif
 }
 
-void do_OPERATION_TYPE_EVENT_GET_CURRENT_TARGET(EvalStack &stack) {
+static void do_OPERATION_TYPE_EVENT_GET_CURRENT_TARGET(EvalStack &stack) {
 #if defined(EEZ_FOR_LVGL)
     auto eventValue = stack.pop().getValue();
     if (eventValue.type != VALUE_TYPE_EVENT) {
@@ -2726,7 +2725,7 @@ void do_OPERATION_TYPE_EVENT_GET_CURRENT_TARGET(EvalStack &stack) {
 #endif
 }
 
-void do_OPERATION_TYPE_EVENT_GET_TARGET(EvalStack &stack) {
+static void do_OPERATION_TYPE_EVENT_GET_TARGET(EvalStack &stack) {
 #if defined(EEZ_FOR_LVGL)
     auto eventValue = stack.pop().getValue();
     if (eventValue.type != VALUE_TYPE_EVENT) {
@@ -2741,7 +2740,7 @@ void do_OPERATION_TYPE_EVENT_GET_TARGET(EvalStack &stack) {
 #endif
 }
 
-void do_OPERATION_TYPE_EVENT_GET_USER_DATA(EvalStack &stack) {
+static void do_OPERATION_TYPE_EVENT_GET_USER_DATA(EvalStack &stack) {
 #if defined(EEZ_FOR_LVGL)
     auto eventValue = stack.pop().getValue();
     if (eventValue.type != VALUE_TYPE_EVENT) {
@@ -2756,7 +2755,7 @@ void do_OPERATION_TYPE_EVENT_GET_USER_DATA(EvalStack &stack) {
 #endif
 }
 
-void do_OPERATION_TYPE_EVENT_GET_KEY(EvalStack &stack) {
+static void do_OPERATION_TYPE_EVENT_GET_KEY(EvalStack &stack) {
 #if defined(EEZ_FOR_LVGL)
     auto eventValue = stack.pop().getValue();
     if (eventValue.type != VALUE_TYPE_EVENT) {
@@ -2771,7 +2770,7 @@ void do_OPERATION_TYPE_EVENT_GET_KEY(EvalStack &stack) {
 #endif
 }
 
-void do_OPERATION_TYPE_EVENT_GET_GESTURE_DIR(EvalStack &stack) {
+static void do_OPERATION_TYPE_EVENT_GET_GESTURE_DIR(EvalStack &stack) {
 #if defined(EEZ_FOR_LVGL)
     auto eventValue = stack.pop().getValue();
     if (eventValue.type != VALUE_TYPE_EVENT) {
@@ -2786,7 +2785,7 @@ void do_OPERATION_TYPE_EVENT_GET_GESTURE_DIR(EvalStack &stack) {
 #endif
 }
 
-void do_OPERATION_TYPE_EVENT_GET_ROTARY_DIFF(EvalStack &stack) {
+static void do_OPERATION_TYPE_EVENT_GET_ROTARY_DIFF(EvalStack &stack) {
 #if defined(EEZ_FOR_LVGL)
     auto eventValue = stack.pop().getValue();
     if (eventValue.type != VALUE_TYPE_EVENT) {

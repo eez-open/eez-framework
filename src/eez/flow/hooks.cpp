@@ -29,13 +29,32 @@ namespace flow {
 static void replacePage(int16_t pageId, uint32_t animType, uint32_t speed, uint32_t delay) {
 #if EEZ_OPTION_GUI
 	eez::gui::getAppContextFromId(APP_CONTEXT_ID_DEVICE)->replacePage(pageId);
+#else
+    EEZ_UNUSED(pageId);
+    EEZ_UNUSED(animType);
+    EEZ_UNUSED(speed);
+    EEZ_UNUSED(delay);
 #endif
 }
 
 static void showKeyboard(Value label, Value initialText, Value minChars, Value maxChars, bool isPassword, void(*onOk)(char *), void(*onCancel)()) {
+    EEZ_UNUSED(label);
+    EEZ_UNUSED(initialText);
+    EEZ_UNUSED(minChars);
+    EEZ_UNUSED(maxChars);
+    EEZ_UNUSED(isPassword);
+    EEZ_UNUSED(onOk);
+    EEZ_UNUSED(onCancel);
 }
 
 static void showKeypad(Value label, Value initialValue, Value min, Value max, Unit unit, void(*onOk)(float), void(*onCancel)()) {
+    EEZ_UNUSED(label);
+    EEZ_UNUSED(initialValue);
+    EEZ_UNUSED(min);
+    EEZ_UNUSED(max);
+    EEZ_UNUSED(unit);
+    EEZ_UNUSED(onOk);
+    EEZ_UNUSED(onCancel);
 }
 
 static void stopScript() {
@@ -49,6 +68,8 @@ static void startToDebuggerMessage() {
 }
 
 static void writeDebuggerBuffer(const char *buffer, uint32_t length) {
+    EEZ_UNUSED(buffer);
+    EEZ_UNUSED(length);
 }
 
 static void finishToDebuggerMessage() {
@@ -71,43 +92,56 @@ void (*onDebuggerInputAvailableHook)() = onDebuggerInputAvailable;
 
 #if defined(EEZ_FOR_LVGL)
 static lv_obj_t *getLvglObjectFromIndex(int32_t index) {
+    EEZ_UNUSED(index);
     return 0;
 }
 
 static lv_group_t *getLvglGroupFromIndex(int32_t index) {
+    EEZ_UNUSED(index);
     return 0;
 }
 
 static int32_t getLvglScreenByName(const char *name) {
+    EEZ_UNUSED(name);
     return -1;
 }
 
 static int32_t getLvglObjectByName(const char *name) {
+    EEZ_UNUSED(name);
     return -1;
 }
 
 static int32_t getLvglGroupByName(const char *name) {
+    EEZ_UNUSED(name);
     return -1;
 }
 
 static int32_t getLvglStyleByName(const char *name) {
+    EEZ_UNUSED(name);
     return -1;
 }
 
 static const void *getLvglImageByName(const char *name) {
+    EEZ_UNUSED(name);
     return 0;
 }
 
 static void executeLvglAction(int actionIndex) {
+    EEZ_UNUSED(actionIndex);
 }
 
 static void lvglObjAddStyle(lv_obj_t *object, int32_t styleIndex) {
+    EEZ_UNUSED(object);
+    EEZ_UNUSED(styleIndex);
 }
 
 static void lvglObjRemoveStyle(lv_obj_t *object, int32_t styleIndex) {
+    EEZ_UNUSED(object);
+    EEZ_UNUSED(styleIndex);
 }
 
 static void lvglSetColorTheme(const char *themeName) {
+    EEZ_UNUSED(themeName);
 }
 
 lv_obj_t *(*getLvglObjectFromIndexHook)(int32_t index) = getLvglObjectFromIndex;
@@ -127,7 +161,7 @@ void (*lvglObjRemoveStyleHook)(lv_obj_t *object, int32_t styleIndex) = lvglObjRe
 void (*lvglSetColorThemeHook)(const char *themeName) = lvglSetColorTheme;
 #endif
 
-double getDateNowDefaultImplementation() {
+static double getDateNowDefaultImplementation() {
     using namespace std::chrono;
     milliseconds ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     return (double)ms.count();

@@ -31,9 +31,12 @@ namespace eez {
 #if defined(EEZ_FOR_LVGL)
 
 void initAllocHeap(uint8_t *heap, size_t heapSize) {
+    EEZ_UNUSED(heap);
+    EEZ_UNUSED(heapSize);
 }
 
 void *alloc(size_t size, uint32_t id) {
+    EEZ_UNUSED(id);
 #if LVGL_VERSION_MAJOR >= 9
     return lv_malloc(size);
 #else

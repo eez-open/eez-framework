@@ -50,6 +50,7 @@ Assets *g_externalAssets;
 void fixOffsets(Assets *assets);
 
 bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, Assets *decompressedAssets, uint32_t maxDecompressedAssetsSize, int *err) {
+#if EEZ_FOR_LVGL_LZ4_OPTION
 	uint32_t compressedDataOffset;
 	uint32_t decompressedSize;
 
@@ -83,7 +84,6 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 #pragma GCC diagnostic pop
 #endif
 
-
 	if (decompressedDataOffset + decompressedSize > maxDecompressedAssetsSize) {
 		if (err) {
 			*err = SCPI_ERROR_OUT_OF_DEVICE_MEMORY;
@@ -93,7 +93,6 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 
 	int compressedSize = assetsDataSize - compressedDataOffset;
 
-#if EEZ_FOR_LVGL_LZ4_OPTION
     int decompressResult = LZ4_decompress_safe(
 		(const char *)(assetsData + compressedDataOffset),
 		(char *)decompressedAssets + decompressedDataOffset,
@@ -109,12 +108,18 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 	}
 	return true;
 #else
+    EEZ_UNUSED(assetsData);
+    EEZ_UNUSED(assetsDataSize);
+    EEZ_UNUSED(decompressedAssets);
+    EEZ_UNUSED(maxDecompressedAssetsSize);
     *err = -1;
     return false;
 #endif
 }
 
-void allocMemoryForDecompressedAssets(const uint8_t *assetsData, uint32_t assetsDataSize, uint8_t *&decompressedAssetsMemoryBuffer, uint32_t &decompressedAssetsMemoryBufferSize) {
+static void allocMemoryForDecompressedAssets(const uint8_t *assetsData, uint32_t assetsDataSize, uint8_t *&decompressedAssetsMemoryBuffer, uint32_t &decompressedAssetsMemoryBufferSize) {
+    EEZ_UNUSED(assetsDataSize);
+
 // disable warning: offsetof within non-standard-layout type ... is conditionally-supported [-Winvalid-offsetof]
 #ifdef __GNUC__
 #pragma GCC diagnostic push
@@ -246,7 +251,7 @@ int getThemesCount() {
 	return (int)g_mainAssets->colorsDefinition->themes.count;
 }
 
-Theme *getTheme(int i) {
+static Theme *getTheme(int i) {
     if (i < 0 || i >= (int)g_mainAssets->colorsDefinition->themes.count) {
         return nullptr;
     }
@@ -261,7 +266,7 @@ const char *getThemeName(int i) {
     return static_cast<const char *>(theme->name);
 }
 
-const uint32_t getThemeColorsCount(int themeIndex) {
+uint32_t getThemeColorsCount(int themeIndex) {
     auto theme = getTheme(themeIndex);
     if (!theme) {
 	    return 0;

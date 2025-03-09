@@ -74,7 +74,7 @@ void initGlobalVariables(Assets *assets) {
 	}
 }
 
-bool isComponentReadyToRun(FlowState *flowState, unsigned componentIndex) {
+static bool isComponentReadyToRun(FlowState *flowState, unsigned componentIndex) {
 	auto component = flowState->flow->components[componentIndex];
 
 	if (component->type == defs_v3::COMPONENT_TYPE_CATCH_ERROR_ACTION) {
@@ -654,7 +654,7 @@ void onEvent(FlowState *flowState, FlowEvent flowEvent, Value eventValue) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool findCatchErrorComponent(FlowState *flowState, FlowState *&catchErrorFlowState, int &catchErrorComponentIndex) {
+static bool findCatchErrorComponent(FlowState *flowState, FlowState *&catchErrorFlowState, int &catchErrorComponentIndex) {
     if (!flowState) {
         return false;
     }

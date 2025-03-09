@@ -19,6 +19,8 @@ namespace flow {
 
 
 void executeLabelInComponent(FlowState *flowState, unsigned componentIndex) {
+    EEZ_UNUSED(flowState);
+    EEZ_UNUSED(componentIndex);
 }
 
 } // namespace flow

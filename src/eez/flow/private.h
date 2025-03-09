@@ -230,8 +230,8 @@ struct FlowError {
         return FlowError(FLOW_ERROR_USER_ASSIGNABLE_PROPERTY, componentName, userPropertyIndex, file, line);
     }
 
-    FlowError setDescription(const char *description) const {
-        return FlowError(type, messagePart1, messagePart2, messagePart3, messagePartInt, description, file, line);
+    FlowError setDescription(const char *description_) const {
+        return FlowError(type, messagePart1, messagePart2, messagePart3, messagePartInt, description_, file, line);
     }
 
     const char *getMessage(char *messageStr, size_t messageStrLength, int flowIndex, int componentIndex) const;

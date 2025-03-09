@@ -18,13 +18,13 @@ namespace eez {
 namespace flow {
 
 struct LabelOutActionComponent : public Component {
-    uint16_t labelInComponentIndex;
+    int16_t labelInComponentIndex;
 };
 
 void executeLabelOutComponent(FlowState *flowState, unsigned componentIndex) {
     auto component = (LabelOutActionComponent *)flowState->flow->components[componentIndex];
 
-    if ((int)component->labelInComponentIndex != -1) {
+    if (component->labelInComponentIndex != -1) {
         propagateValueThroughSeqout(flowState, component->labelInComponentIndex);
     }
 }
