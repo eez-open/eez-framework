@@ -49,8 +49,6 @@ typedef struct {
     const char *payload;
 } EEZ_MQTT_MessageEvent;
 
-void eez_mqtt_on_event_callback(void *handle, EEZ_MQTT_Event event, void *eventData);
-
 #ifdef __cplusplus
 }
 #endif
