@@ -1011,6 +1011,28 @@ ACTION_START(calendarGetPressedDate)
     RESULT(day, Value((int)d.day, VALUE_TYPE_INT32));
 ACTION_END
 
+ACTION_START(buttonMatrixSetButtonCtrl)
+    WIDGET_PROP(obj);
+    UINT32_PROP(buttonID);
+    UINT32_PROP(ctrl);
+#if LVGL_VERSION_MAJOR >= 9
+    lv_buttonmatrix_set_button_ctrl(obj, buttonID, (lv_buttonmatrix_ctrl_t)ctrl);
+#else
+    lv_btnmatrix_set_btn_ctrl(obj, buttonID, (lv_btnmatrix_ctrl_t)ctrl);
+#endif
+ACTION_END
+
+ACTION_START(buttonMatrixClearButtonCtrl)
+    WIDGET_PROP(obj);
+    UINT32_PROP(buttonID);
+    UINT32_PROP(ctrl);
+#if LVGL_VERSION_MAJOR >= 9
+    lv_buttonmatrix_clear_button_ctrl(obj, buttonID, (lv_buttonmatrix_ctrl_t)ctrl);
+#else
+    lv_btnmatrix_set_btn_ctrl(obj, buttonID, (lv_btnmatrix_ctrl_t)ctrl);
+#endif
+ACTION_END
+
 ////////////////////////////////////////////////////////////////////////////////
 
 typedef void (*ActionType)(FlowState *flowState, unsigned componentIndex, const ListOfAssetsPtr<Property> &properties, uint32_t actionIndex);
@@ -1069,7 +1091,9 @@ static ActionType actions[] = {
     &calendarSetTodayDate,
     &calendarSetShowedDate,
     &calendarSetHighlightedDate,
-    &calendarGetPressedDate
+    &calendarGetPressedDate,
+    &buttonMatrixSetButtonCtrl,
+    &buttonMatrixClearButtonCtrl
 };
 
 ////////////////////////////////////////////////////////////////////////////////
