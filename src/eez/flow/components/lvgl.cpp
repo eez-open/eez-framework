@@ -840,6 +840,20 @@ ACTION_START(sliderSetValue)
     lv_slider_set_value(obj, value, animated ? LV_ANIM_ON : LV_ANIM_OFF);
 ACTION_END
 
+ACTION_START(sliderSetValueLeft)
+    WIDGET_PROP(obj);
+    INT32_PROP(valueLeft);
+    BOOL_PROP(animated);
+    lv_slider_set_left_value(obj, valueLeft, animated ? LV_ANIM_ON : LV_ANIM_OFF);
+ACTION_END
+
+ACTION_START(sliderSetRange)
+    WIDGET_PROP(obj);
+    INT32_PROP(min);
+    INT32_PROP(max);
+    lv_slider_set_range(obj, min, max);
+ACTION_END
+
 ACTION_START(keyboardSetTextarea)
     WIDGET_PROP(obj);
     WIDGET_PROP(textarea);
@@ -1038,62 +1052,64 @@ ACTION_END
 typedef void (*ActionType)(FlowState *flowState, unsigned componentIndex, const ListOfAssetsPtr<Property> &properties, uint32_t actionIndex);
 
 static ActionType actions[] = {
-    &changeScreen,
-    &changeToPreviousScreen,
-    &objSetX,
-    &objGetX,
-    &objSetY,
-    &objGetY,
-    &objSetWidth,
-    &objGetWidth,
-    &objSetHeight,
-    &objGetHeight,
-    &objSetStyleOpa,
-    &objGetStyleOpa,
-    &objAddStyle,
-    &objRemoveStyle,
-    &objSetFlagHidden,
-    &objAddFlag,
-    &objClearFlag,
-    &objHasFlag,
-    &objSetStateChecked,
-    &objSetStateDisabled,
-    &objAddState,
-    &objClearState,
-    &objHasState,
-    &arcSetValue,
-    &barSetValue,
-    &dropdownSetSelected,
-    &imageSetSrc,
-    &imageSetAngle,
-    &imageSetZoom,
-    &labelSetText,
-    &rollerSetSelected,
-    &sliderSetValue,
-    &keyboardSetTextarea,
-    &groupFocusObj,
-    &groupFocusNext,
-    &groupFocusPrev,
-    &groupGetFocused,
-    &groupFocusFreeze,
-    &groupSetWrap,
-    &groupSetEditing,
-    &animX,
-    &animY,
-    &animWidth,
-    &animHeight,
-    &animOpacity,
-    &animImageZoom,
-    &animImageAngle,
-    &createScreen,
-    &deleteScreen,
-    &isScreenCreated,
-    &calendarSetTodayDate,
-    &calendarSetShowedDate,
-    &calendarSetHighlightedDate,
-    &calendarGetPressedDate,
-    &buttonMatrixSetButtonCtrl,
-    &buttonMatrixClearButtonCtrl
+    /* 0 */ &changeScreen,
+    /* 1 */ &changeToPreviousScreen,
+    /* 2 */ &objSetX,
+    /* 3 */ &objGetX,
+    /* 4 */ &objSetY,
+    /* 5 */ &objGetY,
+    /* 6 */ &objSetWidth,
+    /* 7 */ &objGetWidth,
+    /* 8 */ &objSetHeight,
+    /* 9 */ &objGetHeight,
+    /* 10 */ &objSetStyleOpa,
+    /* 11 */ &objGetStyleOpa,
+    /* 12 */ &objAddStyle,
+    /* 13 */ &objRemoveStyle,
+    /* 14 */ &objSetFlagHidden,
+    /* 15 */ &objAddFlag,
+    /* 16 */ &objClearFlag,
+    /* 17 */ &objHasFlag,
+    /* 18 */ &objSetStateChecked,
+    /* 19 */ &objSetStateDisabled,
+    /* 20 */ &objAddState,
+    /* 21 */ &objClearState,
+    /* 22 */ &objHasState,
+    /* 23 */ &arcSetValue,
+    /* 24 */ &barSetValue,
+    /* 25 */ &dropdownSetSelected,
+    /* 26 */ &imageSetSrc,
+    /* 27 */ &imageSetAngle,
+    /* 28 */ &imageSetZoom,
+    /* 29 */ &labelSetText,
+    /* 30 */ &rollerSetSelected,
+    /* 31 */ &sliderSetValue,
+    /* 32 */ &keyboardSetTextarea,
+    /* 33 */ &groupFocusObj,
+    /* 34 */ &groupFocusNext,
+    /* 35 */ &groupFocusPrev,
+    /* 36 */ &groupGetFocused,
+    /* 37 */ &groupFocusFreeze,
+    /* 38 */ &groupSetWrap,
+    /* 39 */ &groupSetEditing,
+    /* 40 */ &animX,
+    /* 41 */ &animY,
+    /* 42 */ &animWidth,
+    /* 43 */ &animHeight,
+    /* 44 */ &animOpacity,
+    /* 45 */ &animImageZoom,
+    /* 46 */ &animImageAngle,
+    /* 47 */ &createScreen,
+    /* 48 */ &deleteScreen,
+    /* 49 */ &isScreenCreated,
+    /* 50 */ &calendarSetTodayDate,
+    /* 51 */ &calendarSetShowedDate,
+    /* 52 */ &calendarSetHighlightedDate,
+    /* 53 */ &calendarGetPressedDate,
+    /* 54 */ &buttonMatrixSetButtonCtrl,
+    /* 55 */ &buttonMatrixClearButtonCtrl,
+    /* 56 */ &sliderSetValueLeft,
+    /* 57 */ &sliderSetRange
 };
 
 ////////////////////////////////////////////////////////////////////////////////
