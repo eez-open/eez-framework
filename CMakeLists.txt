@@ -1,5 +1,11 @@
 if(ESP_PLATFORM)
-# do nothing for ESP-IDF
+    # for arduino as component ESP-IDF
+    get_filename_component(dir ${CMAKE_CURRENT_LIST_FILE} PATH)
+    FILE(GLOB_RECURSE app_sources ${dir}/src/eez/*.c*)
+    idf_component_register(SRCS ${app_sources}      
+        INCLUDE_DIRS "src" "src/eez/libs/agg"
+        PRIV_REQUIRES arduino lvgl
+    )    
 else()
     cmake_minimum_required(VERSION 3.12)
 
