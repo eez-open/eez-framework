@@ -220,10 +220,13 @@ bool canExecuteStep(FlowState *&flowState, unsigned &componentIndex) {
 
     // g_debuggerState == DEBUGGER_STATE_RESUMED
 
+    auto component = flowState->flow->components[componentIndex];
+
     if (g_skipNextBreakpoint) {
-        g_skipNextBreakpoint = false;
+        if (component->breakpoint) {
+            g_skipNextBreakpoint = false;
+        }
     } else {
-        auto component = flowState->flow->components[componentIndex];
         if (component->breakpoint) {
             g_skipNextBreakpoint = true;
 			setDebuggerState(DEBUGGER_STATE_PAUSED);
