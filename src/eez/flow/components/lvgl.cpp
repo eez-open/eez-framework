@@ -11,6 +11,7 @@
 #include <eez/conf-internal.h>
 
 #include <stdio.h>
+#include <string.h>
 #include <eez/core/os.h>
 
 #include <eez/flow/components.h>
@@ -822,6 +823,12 @@ ACTION_START(labelSetText)
     lv_label_set_text(obj, text);
 ACTION_END
 
+ACTION_START(qrCodeUpdate)
+    WIDGET_PROP(obj);
+    STR_PROP(text);
+    lv_qrcode_update(obj, text, strlen(text));
+ACTION_END
+
 ACTION_START(rollerSetSelected)
     WIDGET_PROP(obj);
     UINT32_PROP(selected);
@@ -1109,7 +1116,8 @@ static ActionType actions[] = {
     /* 54 */ &buttonMatrixSetButtonCtrl,
     /* 55 */ &buttonMatrixClearButtonCtrl,
     /* 56 */ &sliderSetValueLeft,
-    /* 57 */ &sliderSetRange
+    /* 57 */ &sliderSetRange,
+    /* 58 */ &qrCodeUpdate
 };
 
 ////////////////////////////////////////////////////////////////////////////////
