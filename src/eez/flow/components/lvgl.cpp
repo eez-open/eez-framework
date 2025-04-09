@@ -826,7 +826,9 @@ ACTION_END
 ACTION_START(qrCodeUpdate)
     WIDGET_PROP(obj);
     STR_PROP(text);
+#if LV_USE_QRCODE
     lv_qrcode_update(obj, text, strlen(text));
+#endif
 ACTION_END
 
 ACTION_START(rollerSetSelected)
