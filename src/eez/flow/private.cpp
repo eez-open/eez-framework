@@ -270,6 +270,9 @@ FlowState *initPageFlowState(Assets *assets, int flowIndex, FlowState *parentFlo
 }
 
 void incRefCounterForFlowState(FlowState *flowState) {
+    if (!flowState) {
+        return;
+    }
     flowState->refCounter++;
     for (auto parent = flowState->parentFlowState; parent; parent = parent->parentFlowState) {
         parent->refCounter++;
@@ -277,6 +280,9 @@ void incRefCounterForFlowState(FlowState *flowState) {
 }
 
 void decRefCounterForFlowState(FlowState *flowState) {
+    if (!flowState) {
+        return;
+    }
     flowState->refCounter--;
     for (auto parent = flowState->parentFlowState; parent; parent = parent->parentFlowState) {
         parent->refCounter--;
