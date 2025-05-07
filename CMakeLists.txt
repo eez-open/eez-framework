@@ -1,11 +1,11 @@
+# ESP_PLATFORM: Set to 1 when the CMake file is processed within the ESP-IDF build system.
 if(ESP_PLATFORM)
-    # for arduino as component ESP-IDF
-    # get_filename_component(dir ${CMAKE_CURRENT_LIST_FILE} PATH)
-    # FILE(GLOB_RECURSE app_sources ${dir}/src/eez/*.c*)
-    # idf_component_register(SRCS ${app_sources}      
-    #     INCLUDE_DIRS "src" "src/eez/libs/agg"
-    #     PRIV_REQUIRES arduino lvgl
-    # )    
+
+    file(GLOB_RECURSE app_sources src/eez/*.c*)
+    idf_component_register(SRCS ${app_sources}
+        INCLUDE_DIRS "src" "src/eez/libs/agg" "src/eez/platform/simulator/"
+        PRIV_REQUIRES lvgl
+    )
 else()
     cmake_minimum_required(VERSION 3.12)
 
@@ -23,3 +23,4 @@ else()
 
     target_include_directories(eez-framework SYSTEM PUBLIC ./src ./src/eez/libs/agg)
 endif()
+
