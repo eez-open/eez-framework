@@ -5,7 +5,7 @@ This library, called eez-framework, is used in combination with the [EEZ Studio]
 # For ESP-IDF Users
 
 ```
-idf.py add-dependency haruny/eez-framework
+idf.py add-dependency eez-open/eez-framework
 ```
 
 # For LVGL users
