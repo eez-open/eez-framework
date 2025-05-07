@@ -3,9 +3,12 @@
 This library, called eez-framework, is used in combination with the [EEZ Studio](https://github.com/eez-open/studio). When EEZ Studio generates C/C++ for your eez-project, and your eez-project is using EEZ Flow or EEZ-GUI, then you will need this library. It is written in C++.
 
 # For ESP-IDF Users
+Add the following lines in your idf_components.yml
 
 ```
-idf.py add-dependency eez-open/eez-framework
+  eez-framework:
+    version: * 
+    git: https://github.com/eez-open/eez-framework.git
 ```
 
 # For LVGL users
