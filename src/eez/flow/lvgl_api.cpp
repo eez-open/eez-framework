@@ -559,26 +559,34 @@ void deletePageFlowState(unsigned pageIndex) {
     eez::flow::deletePageFlowState(eez::g_mainAssets, (int16_t)pageIndex);
 }
 
-extern "C" bool compareRollerOptions(lv_roller_t *roller, const char *new_val, const char *cur_val, lv_roller_mode_t mode) {
-    if (mode == LV_ROLLER_MODE_NORMAL) {
-        return strcmp(new_val, cur_val) != 0;
-    }
+// returns 0 if options are equal, 1 if options are different
+extern "C" int compareRollerOptions(lv_roller_t *roller, const char *new_val, const char *cur_val, lv_roller_mode_t mode) {
+    EEZ_UNUSED(mode);
 
-    auto n = strlen(new_val);
+    uint32_t new_option_count = 1;
 
-#if LVGL_VERSION_MAJOR >= 9
-    size_t numPages = roller->inf_page_cnt;
-#else
-    size_t numPages = LV_ROLLER_INF_PAGES;
-#endif
+    for (int i = 0; ; i++) {
+        if (new_val[i] == '\0') {
+            if (cur_val[i] != '\0' && cur_val[i] != '\n') {
+                return 1;
+            }
+            break;
+        }
 
-    for (size_t i = 0; i < numPages * (n + 1); i += n + 1) {
-        if (strncmp(new_val, cur_val + i, n) != 0) {
-            return true;
+        if (new_val[i] != cur_val[i]) {
+            return 1;
+        }
+ 
+        if (new_val[i] == '\n') {
+            new_option_count++;
         }
     }
 
-    return false;
+#if LVGL_VERSION_MAJOR >= 9
+    return lv_roller_get_option_count((const lv_obj_t *)roller) == new_option_count ? 0 : 1;    
+#else
+    return lv_roller_get_option_cnt((const lv_obj_t *)roller) == new_option_count ? 0 : 1;    
+#endif
 }
 
 uint32_t eez_flow_get_selected_theme_index() {

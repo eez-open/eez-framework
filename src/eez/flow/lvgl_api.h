@@ -157,7 +157,8 @@ float getTimelinePosition(void *flowState);
 
 extern int g_eezFlowLvlgMeterTickIndex;
 
-bool compareRollerOptions(lv_roller_t *roller, const char *new_val, const char *cur_val, lv_roller_mode_t mode);
+// returns 0 if options are equal, 1 if options are different
+int compareRollerOptions(lv_roller_t *roller, const char *new_val, const char *cur_val, lv_roller_mode_t mode);
 
 uint32_t eez_flow_get_selected_theme_index();
 
