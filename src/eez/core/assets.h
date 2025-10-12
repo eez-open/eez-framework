@@ -115,6 +115,9 @@ private:
     T *ptr() {
         return static_cast<T *>(items);
     }
+    const T *ptr() const {
+        return static_cast<const T *>(items);
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

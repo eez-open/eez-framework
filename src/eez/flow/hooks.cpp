@@ -21,7 +21,9 @@
 #include <eez/gui/gui.h>
 #endif
 
+#if !defined(EEZ_DISABLE_DATE_NOW_DEFAULT_IMPLEMENTATION)
 #include <chrono>
+#endif
 
 namespace eez {
 namespace flow {
@@ -161,6 +163,8 @@ void (*lvglObjRemoveStyleHook)(lv_obj_t *object, int32_t styleIndex) = lvglObjRe
 void (*lvglSetColorThemeHook)(const char *themeName) = lvglSetColorTheme;
 #endif
 
+#if !defined(EEZ_DISABLE_DATE_NOW_DEFAULT_IMPLEMENTATION)
+
 static double getDateNowDefaultImplementation() {
     using namespace std::chrono;
     milliseconds ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
@@ -168,6 +172,12 @@ static double getDateNowDefaultImplementation() {
 }
 
 double (*getDateNowHook)() = getDateNowDefaultImplementation;
+
+#else
+
+double (*getDateNowHook)() = nullptr;
+
+#endif
 
 void (*onFlowErrorHook)(FlowState *flowState, int componentIndex, const char *errorMessage) = nullptr;
 
