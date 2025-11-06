@@ -1911,7 +1911,6 @@ static void do_OPERATION_TYPE_STRING_FIND(EvalStack &stack) {
     stack.push(Value(-1, VALUE_TYPE_INT32));
 }
 
-#if !defined(EEZ_DASHBOARD_API)
 typedef enum {
     type_int,
     type_signed_char,
@@ -1973,7 +1972,6 @@ static size_t do_string_format(FormatType type, const Value& b, char *result, si
 
     return snprintf(result, result_size, format, b.getString());
 }
-#endif
 
 static void do_OPERATION_TYPE_STRING_FORMAT(EvalStack &stack) {
     auto a = stack.pop().getValue();
@@ -1994,8 +1992,11 @@ static void do_OPERATION_TYPE_STRING_FORMAT(EvalStack &stack) {
     }
 
 #if defined(EEZ_DASHBOARD_API)
-    stack.push(operationStringFormat(a.getString(), &b));
-#else
+    if (stack.flowState->assets->assetsType == ASSETS_TYPE_DASHBOARD) {
+        stack.push(operationStringFormat(a.getString(), &b));
+    } else {
+#endif
+
     const char *format = a.getString();
     size_t formatLength = strlen(format);
     if (formatLength == 0) {
@@ -2073,11 +2074,12 @@ static void do_OPERATION_TYPE_STRING_FORMAT(EvalStack &stack) {
     char *resultStr = (char *)eez::alloc(resultStrLen + 1, 0x987ee4eb);
     do_string_format(type, b, resultStr, resultStrLen + 1, format);
 
-
-
     stack.push(Value::makeStringRef(resultStr, -1, 0x1e1227fd));
 
     eez::free(resultStr);
+
+#if defined(EEZ_DASHBOARD_API)
+    }
 #endif
 }
 
