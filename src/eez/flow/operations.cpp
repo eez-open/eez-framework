@@ -936,7 +936,7 @@ static void do_OPERATION_TYPE_FLOW_IS_PAGE_ACTIVE(EvalStack &stack) {
     auto pageIndex = getPageIndex(stack.flowState);
     if (pageIndex >= 0) {
         int16_t pageId = (int16_t)(pageIndex + 1);
-        if (stack.flowState->assets == g_externalAssets) {
+        if (stack.flowState->assets != g_mainAssets) {
             pageId = -pageId;
         }
 

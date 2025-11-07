@@ -786,31 +786,17 @@ void onPageChanged(int previousPageId, int activePageId, bool activePageIsFromSt
     }
 
     if (!previousPageIsStillOnStack) {
-        if (previousPageId > 0 && previousPageId < FIRST_INTERNAL_PAGE_ID) {
-            auto flowState = getPageFlowState(g_mainAssets, previousPageId - 1, WidgetCursor());
-            if (flowState) {
-                onEvent(flowState, FLOW_EVENT_CLOSE_PAGE, Value());
-            }
-        } else if (previousPageId < 0) {
-            auto flowState = getPageFlowState(g_externalAssets, -previousPageId - 1, WidgetCursor());
-            if (flowState) {
-                onEvent(flowState, FLOW_EVENT_CLOSE_PAGE, Value());
-            }
-        }
+		auto flowState = getPageFlowStateFromPageIdHook(previousPageId, WidgetCursor());
+		if (flowState) {
+			onEvent(flowState, FLOW_EVENT_CLOSE_PAGE, Value());
+		}
     }
 
     if (!activePageIsFromStack) {
-        if (activePageId > 0 && activePageId < FIRST_INTERNAL_PAGE_ID) {
-            auto flowState = getPageFlowState(g_mainAssets, activePageId - 1, WidgetCursor());
-            if (flowState) {
-                onEvent(flowState, FLOW_EVENT_OPEN_PAGE, Value());
-            }
-        } else if (activePageId < 0) {
-            auto flowState = getPageFlowState(g_externalAssets, -activePageId - 1, WidgetCursor());
-            if (flowState) {
-                onEvent(flowState, FLOW_EVENT_OPEN_PAGE, Value());
-            }
-        }
+		auto flowState = getPageFlowStateFromPageIdHook(activePageId, WidgetCursor());
+		if (flowState) {
+			onEvent(flowState, FLOW_EVENT_OPEN_PAGE, Value());
+		}
     }
 
 	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_PAGE_CHANGED)) {

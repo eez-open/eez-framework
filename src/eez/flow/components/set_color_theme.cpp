@@ -44,7 +44,7 @@ void executeSetColorThemeComponent(FlowState *flowState, unsigned componentIndex
 #elif EEZ_OPTION_GUI
 
 #if defined(EEZ_DASHBOARD_API)
-    if (g_mainAssets->assetsType == ASSETS_TYPE_DASHBOARD) {
+    if (flowState->assets->assetsType == ASSETS_TYPE_DASHBOARD) {
         setDashboardColorTheme(theme);
         propagateValueThroughSeqout(flowState, componentIndex);
     } else {

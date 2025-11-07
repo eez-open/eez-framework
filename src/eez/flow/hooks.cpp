@@ -14,6 +14,7 @@
 #include <math.h>
 
 #include <eez/flow/hooks.h>
+#include <eez/flow/flow.h>
 
 #include <eez/core/util.h>
 
@@ -180,6 +181,17 @@ double (*getDateNowHook)() = nullptr;
 #endif
 
 void (*onFlowErrorHook)(FlowState *flowState, int componentIndex, const char *errorMessage) = nullptr;
+
+#if EEZ_OPTION_GUI
+static FlowState *getPageFlowStateFromPageIdDefaultImplementation(int pageId, const WidgetCursor &widgetCursor) {
+    if (pageId > 0 && pageId < FIRST_INTERNAL_PAGE_ID) {
+        return getPageFlowState(g_mainAssets, pageId - 1, WidgetCursor());
+    }
+    return nullptr;    
+}
+
+FlowState *(*getPageFlowStateFromPageIdHook)(int pageId, const WidgetCursor &widgetCursor) = getPageFlowStateFromPageIdDefaultImplementation;
+#endif
 
 } // namespace flow
 } // namespace eez

@@ -43,6 +43,7 @@ namespace eez {
 bool g_isMainAssetsLoaded;
 Assets *g_mainAssets;
 bool g_mainAssetsUncompressed;
+
 Assets *g_externalAssets;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -117,6 +118,7 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 #endif
 }
 
+#if defined(EEZ_FOR_LVGL) || defined(EEZ_DASHBOARD_API)
 static void allocMemoryForDecompressedAssets(const uint8_t *assetsData, uint32_t assetsDataSize, uint8_t *&decompressedAssetsMemoryBuffer, uint32_t &decompressedAssetsMemoryBufferSize) {
     EEZ_UNUSED(assetsDataSize);
 
@@ -140,6 +142,7 @@ static void allocMemoryForDecompressedAssets(const uint8_t *assetsData, uint32_t
 
     decompressedAssetsMemoryBuffer = (uint8_t *)eez::alloc(decompressedAssetsMemoryBufferSize, 0x587da194);
 }
+#endif
 
 void loadMainAssets(const uint8_t *assets, uint32_t assetsSize) {
     auto header = (Header *)assets;
@@ -159,16 +162,6 @@ void loadMainAssets(const uint8_t *assets, uint32_t assetsSize) {
         assert(decompressedSize);
     }
     g_isMainAssetsLoaded = true;
-}
-
-void unloadExternalAssets() {
-	if (g_externalAssets) {
-#if EEZ_OPTION_GUI
-		removeExternalPagesFromTheStack();
-#endif
-		free(g_externalAssets);
-		g_externalAssets = nullptr;
-	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -285,10 +278,6 @@ const uint16_t *getThemeColors(int themeIndex) {
 
 const uint16_t *getColors() {
 	return static_cast<uint16_t *>(g_mainAssets->colorsDefinition->colors.items);
-}
-
-int getExternalAssetsMainPageId() {
-	return -1;
 }
 
 #if EEZ_OPTION_GUI

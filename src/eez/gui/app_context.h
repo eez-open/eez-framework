@@ -67,8 +67,6 @@ public:
 
     Page *getPage(int pageId);
     bool isPageOnStack(int pageId);
-    bool isExternalPageOnStack();
-	void removeExternalPagesFromTheStack();
 
     int getNumPagesOnStack() {
         return m_pageNavigationStackPointer + 1;

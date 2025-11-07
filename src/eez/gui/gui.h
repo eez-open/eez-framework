@@ -70,9 +70,6 @@ bool isFocusWidget(const WidgetCursor &widgetCursor);
 void refreshScreen();
 inline bool isPageInternal(int pageId) { return pageId > FIRST_INTERNAL_PAGE_ID; }
 
-bool isExternalPageOnStack();
-void removeExternalPagesFromTheStack();
-
 inline int getWidgetAction(const WidgetCursor &widgetCursor) {
     if (widgetCursor.widget->type == WIDGET_TYPE_INPUT) {
         if (widgetCursor.widget->action == ACTION_ID_NONE) {
@@ -88,9 +85,6 @@ void executeInternalAction(int actionId);
 AppContext *getAppContextFromId(int16_t id);
 
 extern const char *g_discardMessage;
-
-extern void (*loadMainAssets)(const uint8_t *assets, uint32_t assetsSize);
-extern Assets *&g_mainAssets;
 
 void setOverrideStyleRule(int16_t fromStyle, int16_t toStyle);
 int overrideStyle(const WidgetCursor &widgetCursor, int styleId);

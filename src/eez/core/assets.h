@@ -38,10 +38,12 @@ struct Header {
 	uint32_t decompressedSize;
 };
 
-extern bool g_isMainAssetsLoaded;
 struct Assets;
+
+extern bool g_isMainAssetsLoaded;
 extern Assets *g_mainAssets;
 extern bool g_mainAssetsUncompressed;
+
 extern Assets *g_externalAssets;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -464,8 +466,6 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 ////////////////////////////////////////////////////////////////////////////////
 
 void loadMainAssets(const uint8_t *assets, uint32_t assetsSize);
-bool loadExternalAssets(const char *filePath, int *err);
-void unloadExternalAssets();
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -483,8 +483,6 @@ const char *getThemeName(int i);
 uint32_t getThemeColorsCount(int themeIndex);
 const uint16_t *getThemeColors(int themeIndex);
 const uint16_t *getColors();
-
-int getExternalAssetsMainPageId();
 
 #if EEZ_OPTION_GUI
 const char *getActionName(const gui::WidgetCursor &widgetCursor, int16_t actionId);

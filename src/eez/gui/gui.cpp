@@ -37,9 +37,6 @@
 namespace eez {
 namespace gui {
 
-void (*loadMainAssets)(const uint8_t* assets, uint32_t assetsSize) = eez::loadMainAssets;
-Assets*& g_mainAssets = eez::g_mainAssets;
-
 bool g_isBlinkTime;
 static bool g_wasBlinkTime;
 
@@ -130,14 +127,6 @@ void executeInternalAction(int actionId) {
 
 bool isFocusWidget(const WidgetCursor &widgetCursor) {
     return widgetCursor.appContext->isFocusWidget(widgetCursor);
-}
-
-bool isExternalPageOnStack() {
-	return getAppContextFromId(APP_CONTEXT_ID_DEVICE)->isExternalPageOnStack();
-}
-
-void removeExternalPagesFromTheStack() {
-	return getAppContextFromId(APP_CONTEXT_ID_DEVICE)->removeExternalPagesFromTheStack();
 }
 
 struct OverrideStyleRule {

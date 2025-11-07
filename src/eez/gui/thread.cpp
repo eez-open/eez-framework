@@ -98,8 +98,6 @@ void processGuiQueue(uint32_t timeout) {
         obj.changePage.appContext->pushPage(obj.changePage.pageId, obj.changePage.page);
     } else if (type == GUI_QUEUE_MESSAGE_REFRESH_SCREEN) {
         refreshScreen();
-    } else if (type == GUI_QUEUE_MESSAGE_UNLOAD_EXTERNAL_ASSETS) {
-        unloadExternalAssets();
     } else if (type == GUI_QUEUE_MESSAGE_DEBUGGER_CLIENT_CONNECTED) {
         flow::onDebuggerClientConnected();
     } else if (type == GUI_QUEUE_MESSAGE_DEBUGGER_CLIENT_DISCONNECTED) {
