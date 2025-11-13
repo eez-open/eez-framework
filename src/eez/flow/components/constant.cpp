@@ -22,7 +22,7 @@ struct ConstantActionComponent : public Component {
 void executeConstantComponent(FlowState *flowState, unsigned componentIndex) {
 	auto component = (ConstantActionComponent *)flowState->flow->components[componentIndex];
 
-	auto &sourceValue = *flowState->flowDefinition->constants[component->valueIndex];
+	auto &sourceValue = *flowState->assets->flowDefinition->constants[component->valueIndex];
 
 	propagateValue(flowState, componentIndex, 1, sourceValue);
 

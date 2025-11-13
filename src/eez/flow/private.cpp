@@ -54,9 +54,14 @@ inline Value getEmptyInputValue() {
 }
 
 void initGlobalVariables(Assets *assets) {
-    if (!g_mainAssetsUncompressed) {
+    // Only part of assets that can be modified during runtime are global variables.
+    
+    if (assets->external || g_mainAssetsAreMutable) {
+        // We can use globalVariables from assets memory
         return;
     }
+
+    // assets are stored in ROM, i.e. not mutable, so we need to allocate another buffer in RAM for global variables
 
 	auto flowDefinition = static_cast<FlowDefinition *>(assets->flowDefinition);
 
@@ -167,9 +172,9 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
 		)
 	) FlowState;
 
-	flowState->flowStateIndex = (int)((uint8_t *)flowState - ALLOC_BUFFER);
 	flowState->assets = assets;
-	flowState->flowDefinition = static_cast<FlowDefinition *>(assets->flowDefinition);
+
+    flowState->flowStateIndex = (int)((uint8_t *)flowState - ALLOC_BUFFER);
 	flowState->flow = flowDefinition->flows[flowIndex];
 	flowState->flowIndex = flowIndex;
 	flowState->error = false;
@@ -435,7 +440,7 @@ void propagateValue(FlowState *flowState, unsigned componentIndex, unsigned outp
 }
 
 void propagateValue(FlowState *flowState, unsigned componentIndex, unsigned outputIndex) {
-	auto &nullValue = *flowState->flowDefinition->constants[NULL_VALUE_INDEX];
+	auto &nullValue = *flowState->assets->flowDefinition->constants[NULL_VALUE_INDEX];
 	propagateValue(flowState, componentIndex, outputIndex, nullValue);
 }
 

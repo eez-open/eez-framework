@@ -51,9 +51,9 @@ struct CatchErrorComponenentExecutionState : public ComponenentExecutionState {
 };
 
 struct FlowState {
-	uint32_t flowStateIndex;
 	Assets *assets;
-	FlowDefinition *flowDefinition;
+
+    uint32_t flowStateIndex;
 	Flow *flow;
 	uint16_t flowIndex;
 	bool isAction;

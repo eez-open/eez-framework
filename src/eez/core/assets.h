@@ -39,12 +39,8 @@ struct Header {
 };
 
 struct Assets;
-
-extern bool g_isMainAssetsLoaded;
 extern Assets *g_mainAssets;
-extern bool g_mainAssetsUncompressed;
-
-extern Assets *g_externalAssets;
+extern bool g_mainAssetsAreMutable;
 
 ////////////////////////////////////////////////////////////////////////////////
 

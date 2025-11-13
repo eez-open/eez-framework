@@ -27,7 +27,7 @@ namespace flow {
 EvalStack g_stack;
 
 static void evalExpression(FlowState *flowState, const uint8_t *instructions, int *numInstructionBytes) {
-	auto flowDefinition = flowState->flowDefinition;
+	auto flowDefinition = static_cast<FlowDefinition*>(flowState->assets->flowDefinition);
 	auto flow = flowState->flow;
 
 	int i = 0;
@@ -43,7 +43,7 @@ static void evalExpression(FlowState *flowState, const uint8_t *instructions, in
 			g_stack.push(&flowState->values[flow->componentInputs.count + instructionArg]);
 		} else if (instructionType == EXPR_EVAL_INSTRUCTION_TYPE_PUSH_GLOBAL_VAR) {
 			if ((uint32_t)instructionArg < flowDefinition->globalVariables.count) {
-                if (g_globalVariables) {
+                if (g_globalVariables && !flowState->assets->external) {
 				    g_stack.push(g_globalVariables->values + instructionArg);
                 } else {
                     g_stack.push(flowDefinition->globalVariables[instructionArg]);

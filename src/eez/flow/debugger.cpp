@@ -475,7 +475,7 @@ static void writeValue(const Value &value) {
 ////////////////////////////////////////////////////////////////////////////////
 
 void onStarted(Assets *assets) {
-    if (isSubscribedTo(MESSAGE_TO_DEBUGGER_GLOBAL_VARIABLE_INIT)) {
+    if (!assets->external && isSubscribedTo(MESSAGE_TO_DEBUGGER_GLOBAL_VARIABLE_INIT)) {
 		auto flowDefinition = static_cast<FlowDefinition *>(assets->flowDefinition);
 
         if (g_globalVariables) {
@@ -786,16 +786,18 @@ void onPageChanged(int previousPageId, int activePageId, bool activePageIsFromSt
     }
 
     if (!previousPageIsStillOnStack) {
-		auto flowState = getPageFlowStateFromPageIdHook(previousPageId, WidgetCursor());
-		if (flowState) {
-			onEvent(flowState, FLOW_EVENT_CLOSE_PAGE, Value());
+		WidgetCursor widgetCursor;
+		getPageAsset(previousPageId, widgetCursor);
+		if (widgetCursor.flowState) {
+			onEvent(widgetCursor.flowState, FLOW_EVENT_CLOSE_PAGE, Value());
 		}
     }
 
     if (!activePageIsFromStack) {
-		auto flowState = getPageFlowStateFromPageIdHook(activePageId, WidgetCursor());
-		if (flowState) {
-			onEvent(flowState, FLOW_EVENT_OPEN_PAGE, Value());
+		WidgetCursor widgetCursor;
+		getPageAsset(activePageId, widgetCursor);
+		if (widgetCursor.flowState) {
+			onEvent(widgetCursor.flowState, FLOW_EVENT_OPEN_PAGE, Value());
 		}
     }
 

@@ -28,7 +28,7 @@ struct FlowState;
 
 unsigned start(Assets *assets);
 void tick();
-void stop();
+void stop(Assets* assets = nullptr);
 
 bool isFlowStopped();
 unsigned getTickMaxDurationCounter();

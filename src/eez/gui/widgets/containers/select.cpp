@@ -80,9 +80,9 @@ void SelectWidgetState::enumChildren() {
 
     bool callResizeWidget = containerOriginalWidth != containerWidth || containerOriginalHeight != containerHeight;
 
-	if (widgetIndex != -1) {
-		auto widget = (const SelectWidget *)widgetCursor.widget;
+	auto widget = (const SelectWidget*)widgetCursor.widget;
 
+	if (widgetIndex >= 0 && widgetIndex < (int)widget->widgets.count) {
 		auto savedWidget = widgetCursor.widget;
 		widgetCursor.widget = widget->widgets[widgetIndex];
 

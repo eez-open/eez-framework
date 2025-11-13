@@ -675,7 +675,7 @@ EM_PORT_API(void) setDebuggerMessageSubsciptionFilter(uint32_t filter) {
 
 EM_PORT_API(void) flowCleanup() {
     if (!isFlowStopped()) {
-        stop();
+        stop(g_mainAssets);
         tick();
     }
 }

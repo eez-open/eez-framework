@@ -640,8 +640,22 @@ void adjustColor(uint16_t &c) {
 }
 
 uint16_t getColor16FromIndex(uint16_t color) {
-    color = g_hooks.transformColor(color);
-	return color < g_themeColorsCount ? g_themeColors[color] : g_colors[color - g_themeColorsCount];
+    if ((int16_t)color < -1) {
+        // color is from external (i.e. not main) assets data
+        Assets *assets = g_widgetCursor.assets;
+
+        auto& colors = assets->colorsDefinition->colors;
+
+        uint32_t colorIndex = -((int16_t)color) - 2;
+        if (colorIndex < colors.count) {
+            return colors.items[colorIndex];
+        }
+        
+        return 0;
+    } else {
+        color = g_hooks.transformColor(color);
+	    return color < g_themeColorsCount ? g_themeColors[color] : g_colors[color - g_themeColorsCount];
+    }
 }
 
 void setColor(uint8_t r, uint8_t g, uint8_t b) {

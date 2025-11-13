@@ -46,7 +46,7 @@ uint8_t g_selectedThemeIndex = THEME_ID_DEFAULT;
 
 void guiInit() {
 #ifndef GUI_SKIP_LOAD_MAIN_ASSETS
-    if (!g_isMainAssetsLoaded) {
+    if (!g_mainAssets) {
         loadMainAssets(assets, sizeof(assets));
     }
 #endif

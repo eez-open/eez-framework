@@ -40,6 +40,11 @@ static void externalData(int16_t id, DataOperationEnum operation, const WidgetCu
     flow::dataOperation(id, operation, widgetCursor, value);
 }
 
+static int resolveExternalPage(int pageId, Assets **assets) {
+    *assets = g_mainAssets;
+    return PAGE_ID_NONE;
+}
+
 static OnTouchFunctionType getWidgetTouchFunctionHook(const WidgetCursor &widgetCursor) {
 #if OPTION_KEYPAD
 	auto data = widgetCursor.widget->data < 0 ? (g_mainAssets->flowDefinition ? flow::getNativeVariableId(widgetCursor) : DATA_ID_NONE) : widgetCursor.widget->data;
@@ -171,6 +176,7 @@ Hooks g_hooks = {
     getDefaultAnimationDuration,
     executeExternalAction,
     externalData,
+    resolveExternalPage,
 	getWidgetTouchFunctionHook,
     getPageFromId,
     setFocusCursor,

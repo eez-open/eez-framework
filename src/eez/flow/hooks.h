@@ -61,9 +61,5 @@ extern double (*getDateNowHook)();
 
 extern void (*onFlowErrorHook)(FlowState *flowState, int componentIndex, const char *errorMessage);
 
-#if EEZ_OPTION_GUI
-extern FlowState *(*getPageFlowStateFromPageIdHook)(int pageId, const WidgetCursor &widgetCursor);
-#endif
-
 } // flow
 } // eez

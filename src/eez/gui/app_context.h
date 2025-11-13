@@ -40,6 +40,7 @@ public:
     virtual void stateManagment();
 
     void showPage(int pageId);
+    void replacePage(int pageId, Page *page = nullptr);
     void pushPage(int pageId, Page *page = nullptr);
     void popPage();
     void removePageFromStack(int pageId);
@@ -62,8 +63,6 @@ public:
         int index = getActivePageStackPointer();
         return index == 0 ? PAGE_ID_NONE : m_pageNavigationStack[index - 1].pageId;
     }
-
-    void replacePage(int pageId, Page *page = nullptr);
 
     Page *getPage(int pageId);
     bool isPageOnStack(int pageId);
