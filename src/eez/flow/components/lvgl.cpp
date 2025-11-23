@@ -44,8 +44,8 @@ static int32_t anim_callback_get_width(lv_anim_t * a) { return lv_obj_get_width(
 static void anim_callback_set_height(void *obj, int32_t v) { lv_obj_set_height((lv_obj_t *)obj, v); }
 static int32_t anim_callback_get_height(lv_anim_t * a) { return lv_obj_get_height((lv_obj_t *)a->user_data); }
 
-static void anim_callback_set_opacity(void *obj, int32_t v) { lv_obj_set_style_opa((lv_obj_t *)obj, v, 0); }
-static int32_t anim_callback_get_opacity(lv_anim_t * a) { return lv_obj_get_style_opa((lv_obj_t *)a->user_data, 0); }
+static void anim_callback_set_opacity(void *obj, int32_t v) { lv_obj_set_style_opa((lv_obj_t *)obj, v, LV_PART_MAIN); }
+static int32_t anim_callback_get_opacity(lv_anim_t * a) { return lv_obj_get_style_opa((lv_obj_t *)a->user_data, LV_PART_MAIN); }
 
 static void anim_callback_set_image_zoom(void *obj, int32_t v) { lv_img_set_zoom((lv_obj_t *)obj, v); }
 static int32_t anim_callback_get_image_zoom(lv_anim_t * a) { return lv_img_get_zoom((lv_obj_t *)a->user_data); }
@@ -264,7 +264,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                     } else if (specific->property == BASIC_HEIGHT) {
                         lv_obj_set_height(target, intValue);
                     } else if (specific->property == BASIC_OPACITY) {
-                        lv_obj_set_style_opa(target, intValue, 0);
+                        lv_obj_set_style_opa(target, intValue, LV_PART_MAIN);
                     } else if (specific->property == DROPDOWN_SELECTED) {
                         lv_dropdown_set_selected(target, intValue);
                     } else if (specific->property == IMAGE_ANGLE) {
@@ -682,12 +682,12 @@ ACTION_END
 ACTION_START(objSetStyleOpa)
     WIDGET_PROP(obj);
     INT32_PROP(opa);
-    lv_obj_set_style_opa(obj, (lv_opa_t)opa, 0);
+    lv_obj_set_style_opa(obj, (lv_opa_t)opa, LV_PART_MAIN);
 ACTION_END
 
 ACTION_START(objGetStyleOpa)
     WIDGET_PROP(obj);
-    int32_t opa = (int32_t)lv_obj_get_style_opa(obj, 0);
+    int32_t opa = (int32_t)lv_obj_get_style_opa(obj, LV_PART_MAIN);
     RESULT(result, Value((int)opa, VALUE_TYPE_INT32));
 ACTION_END
 
