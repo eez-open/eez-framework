@@ -12,21 +12,14 @@
 
 #include <stdint.h>
 
+namespace eez {
+
 struct Image {
     uint32_t width;
     uint32_t height;
     uint32_t bpp;
     uint32_t lineOffset;
-    uint8_t *pixels;
+    uint8_t* pixels;
 };
 
-enum ImageDecodeResult {
-    IMAGE_DECODE_OK,
-    IMAGE_DECODE_ERR_FILE_NOT_FOUND,
-    IMAGE_DECODE_ERR_FILE_READ,
-    IMAGE_DECODE_ERR_NOT_ENOUGH_MEMORY,
-    IMAGE_DECODE_ERR_DECODE,
-    IMAGE_DECODE_ERR_IMAGE_SIZE_UNSUPPORTED
-};
-
-ImageDecodeResult imageDecode(const char *filePath, Image *image);
+}

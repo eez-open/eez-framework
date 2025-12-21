@@ -19,7 +19,6 @@
 #include <string>
 
 #include <dma2d.h>
-#include <i2c.h>
 #include <ltdc.h>
 
 #ifdef EEZ_PLATFORM_STM32F469I_DISCO
@@ -79,7 +78,11 @@ void copySyncedBufferToScreenshotBuffer() {
 ////////////////////////////////////////////////////////////////////////////////
 
 inline uint32_t vramOffset(uint16_t *vram, int x, int y) {
+#if DISPLAY_BPP == 32
+    return (uint32_t)((uint32_t *)vram + y * DISPLAY_WIDTH + x);
+#else
     return (uint32_t)(vram + y * DISPLAY_WIDTH + x);
+#endif
 }
 
 inline uint32_t vramOffsetRGB888(uint8_t *vram, int x, int y) {
@@ -93,7 +96,11 @@ inline uint32_t vramOffset(uint32_t *vram, int x, int y) {
 void fillRect(uint16_t *dst, int x, int y, int width, int height, uint16_t color) {
     if (g_opacity == 255) {
         hdma2d.Init.Mode = DMA2D_R2M;
+#if DISPLAY_BPP == 32
+        hdma2d.Init.ColorMode = DMA2D_OUTPUT_ARGB8888;
+#else
         hdma2d.Init.ColorMode = DMA2D_OUTPUT_RGB565;
+#endif
         hdma2d.Init.OutputOffset = DISPLAY_WIDTH - width;
 
         uint32_t colorBGRA;
@@ -118,11 +125,19 @@ void fillRect(uint16_t *dst, int x, int y, int width, int height, uint16_t color
 
         // blend aux. buffer with dst buffer
         hdma2d.Init.Mode = DMA2D_M2M_BLEND;
+#if DISPLAY_BPP == 32
+        hdma2d.Init.ColorMode = DMA2D_OUTPUT_ARGB8888;
+#else
         hdma2d.Init.ColorMode = DMA2D_OUTPUT_RGB565;
+#endif
         hdma2d.Init.OutputOffset = DISPLAY_WIDTH - width;
 
         hdma2d.LayerCfg[0].InputOffset = DISPLAY_WIDTH - width;
+#if DISPLAY_BPP == 32
+        hdma2d.LayerCfg[0].InputColorMode = DMA2D_INPUT_ARGB8888;
+#else
         hdma2d.LayerCfg[0].InputColorMode = DMA2D_INPUT_RGB565;
+#endif
         hdma2d.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
         hdma2d.LayerCfg[0].InputAlpha = 0;
 
@@ -149,14 +164,22 @@ void fillRect(void *dst, int x1, int y1, int x2, int y2) {
 }
 
 void bitBlt(void *src, int srcBpp, uint32_t srcLineOffset, uint16_t *dst, int x, int y, int width, int height) {
+#if DISPLAY_BPP == 32
+    hdma2d.Init.ColorMode = DMA2D_OUTPUT_ARGB8888;
+#else
     hdma2d.Init.ColorMode = DMA2D_OUTPUT_RGB565;
+#endif
     hdma2d.Init.OutputOffset = DISPLAY_WIDTH - width;
 
     if (srcBpp == 32) {
         hdma2d.Init.Mode = DMA2D_M2M_BLEND;
 
         hdma2d.LayerCfg[0].InputOffset = DISPLAY_WIDTH - width;
+#if DISPLAY_BPP == 32
+        hdma2d.LayerCfg[0].InputColorMode = DMA2D_INPUT_ARGB8888;
+#else
         hdma2d.LayerCfg[0].InputColorMode = DMA2D_INPUT_RGB565;
+#endif
         hdma2d.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
         hdma2d.LayerCfg[0].InputAlpha = 0;
 
@@ -178,7 +201,11 @@ void bitBlt(void *src, int srcBpp, uint32_t srcLineOffset, uint16_t *dst, int x,
         hdma2d.Init.Mode = DMA2D_M2M;
 
         hdma2d.LayerCfg[1].InputOffset = srcLineOffset;
+#if DISPLAY_BPP == 32
+        hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_ARGB8888;
+#else
         hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_RGB565;
+#endif
         hdma2d.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
         hdma2d.LayerCfg[1].InputAlpha = 0;
     }
@@ -211,11 +238,19 @@ void bitBlt(void *src, int x1, int y1, int x2, int y2) {
 
 void bitBlt(uint16_t *src, uint16_t *dst, int x, int y, int width, int height) {
     hdma2d.Init.Mode = DMA2D_M2M;
+#if DISPLAY_BPP == 32
+    hdma2d.Init.ColorMode = DMA2D_OUTPUT_ARGB8888;
+#else
     hdma2d.Init.ColorMode = DMA2D_OUTPUT_RGB565;
+#endif
     hdma2d.Init.OutputOffset = DISPLAY_WIDTH - width;
 
     hdma2d.LayerCfg[1].InputOffset = DISPLAY_WIDTH - width;
+#if DISPLAY_BPP == 32
+    hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_ARGB8888;
+#else
     hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_RGB565;
+#endif
     hdma2d.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
     hdma2d.LayerCfg[1].InputAlpha = 0;
 
@@ -236,7 +271,11 @@ static void bitBltRGB888(uint16_t *src, uint8_t *dst, int x, int y, int width, i
 #endif
 
     hdma2d.LayerCfg[1].InputOffset = DISPLAY_WIDTH - width;
+#if DISPLAY_BPP == 32
+    hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_ARGB8888;
+#else
     hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_RGB565;
+#endif
     hdma2d.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
     hdma2d.LayerCfg[1].InputAlpha = 0;
 
@@ -259,11 +298,19 @@ void bitBlt(void *src, void *dst, int x1, int y1, int x2, int y2) {
 
 void bitBlt(uint16_t *src, uint16_t *dst, int x, int y, int width, int height, int dstx, int dsty) {
     hdma2d.Init.Mode = DMA2D_M2M;
+#if DISPLAY_BPP == 32
+    hdma2d.Init.ColorMode = DMA2D_OUTPUT_ARGB8888;
+#else
     hdma2d.Init.ColorMode = DMA2D_OUTPUT_RGB565;
+#endif
     hdma2d.Init.OutputOffset = DISPLAY_WIDTH - width;
 
     hdma2d.LayerCfg[1].InputOffset = DISPLAY_WIDTH - width;
+#if DISPLAY_BPP == 32
+    hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_ARGB8888;
+#else
     hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_RGB565;
+#endif
     hdma2d.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
     hdma2d.LayerCfg[1].InputAlpha = 0;
 
@@ -285,11 +332,19 @@ void bitBlt(void *src, void *dst, int sx, int sy, int sw, int sh, int dx, int dy
 
     if (opacity == 255) {
         hdma2d.Init.Mode = DMA2D_M2M;
+#if DISPLAY_BPP == 32
+        hdma2d.Init.ColorMode = DMA2D_OUTPUT_ARGB8888;
+#else
         hdma2d.Init.ColorMode = DMA2D_OUTPUT_RGB565;
+#endif
         hdma2d.Init.OutputOffset = DISPLAY_WIDTH - sw;
 
         hdma2d.LayerCfg[1].InputOffset = DISPLAY_WIDTH - sw;
+#if DISPLAY_BPP == 32
+        hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_ARGB8888;
+#else
         hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_RGB565;
+#endif
         hdma2d.LayerCfg[1].AlphaMode = DMA2D_NO_MODIF_ALPHA;
         hdma2d.LayerCfg[1].InputAlpha = 0;
 
@@ -301,16 +356,28 @@ void bitBlt(void *src, void *dst, int sx, int sy, int sw, int sh, int dx, int dy
         g_waitDMA = true;
     } else {
         hdma2d.Init.Mode = DMA2D_M2M_BLEND;
+#if DISPLAY_BPP == 32
+        hdma2d.Init.ColorMode = DMA2D_OUTPUT_ARGB8888;
+#else
         hdma2d.Init.ColorMode = DMA2D_OUTPUT_RGB565;
+#endif
         hdma2d.Init.OutputOffset = DISPLAY_WIDTH - sw;
 
         hdma2d.LayerCfg[0].InputOffset = DISPLAY_WIDTH - sw;
+#if DISPLAY_BPP == 32
+        hdma2d.LayerCfg[0].InputColorMode = DMA2D_INPUT_ARGB8888;
+#else
         hdma2d.LayerCfg[0].InputColorMode = DMA2D_INPUT_RGB565;
+#endif
         hdma2d.LayerCfg[0].AlphaMode = DMA2D_COMBINE_ALPHA;
         hdma2d.LayerCfg[0].InputAlpha = 0xFF;
 
         hdma2d.LayerCfg[1].InputOffset = DISPLAY_WIDTH - sw;
+#if DISPLAY_BPP == 32
+        hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_ARGB8888;
+#else
         hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_RGB565;
+#endif
         hdma2d.LayerCfg[1].AlphaMode = DMA2D_COMBINE_ALPHA;
         hdma2d.LayerCfg[1].InputAlpha = opacity;
 
@@ -390,11 +457,19 @@ void drawStrInit() {
     // initialize everything except lineOffset
 
     hdma2d.Init.Mode = DMA2D_M2M_BLEND;
+#if DISPLAY_BPP == 32
+    hdma2d.Init.ColorMode = DMA2D_OUTPUT_ARGB8888;
+#else
     hdma2d.Init.ColorMode = DMA2D_OUTPUT_RGB565;
+#endif
     hdma2d.Init.OutputOffset = 0;
 
     // background
+#if DISPLAY_BPP == 32
+    hdma2d.LayerCfg[0].InputColorMode = DMA2D_INPUT_ARGB8888;
+#else
     hdma2d.LayerCfg[0].InputColorMode = DMA2D_INPUT_RGB565;
+#endif
     hdma2d.LayerCfg[0].AlphaMode = DMA2D_NO_MODIF_ALPHA;
     hdma2d.LayerCfg[0].InputAlpha = 0;
     hdma2d.LayerCfg[0].InputOffset = 0;

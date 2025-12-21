@@ -89,6 +89,10 @@ extern const char *g_discardMessage;
 void setOverrideStyleRule(int16_t fromStyle, int16_t toStyle);
 int overrideStyle(const WidgetCursor &widgetCursor, int styleId);
 
+#if !EEZ_OPTION_THREADS
+extern bool g_updateDisplay;
+#endif
+
 } // namespace gui
 } // namespace eez
 

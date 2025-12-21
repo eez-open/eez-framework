@@ -107,7 +107,7 @@ bool LineChartWidgetState::updateState() {
 
 	if (widgetCursor.flowState) {
         auto executionState = (flow::LineChartWidgetComponenentExecutionState *)widgetCursor.flowState->componenentExecutionStates[widget->componentIndex];
-        if (executionState->updated) {
+        if (executionState && executionState->updated) {
             executionState->updated = false;
             hasPreviousState = false;
         }

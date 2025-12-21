@@ -42,6 +42,10 @@ static bool g_wasBlinkTime;
 
 uint8_t g_selectedThemeIndex = THEME_ID_DEFAULT;
 
+#if !EEZ_OPTION_THREADS
+bool g_updateDisplay;
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void guiInit() {
@@ -59,6 +63,12 @@ void guiInit() {
 }
 
 void guiTick() {
+#if !EEZ_OPTION_THREADS
+	if (g_updateDisplay) {
+		display::update();
+	}
+#endif
+
     g_wasBlinkTime = g_isBlinkTime;
     g_isBlinkTime = (millis() % (2 * CONF_GUI_BLINK_TIME)) > CONF_GUI_BLINK_TIME;
 

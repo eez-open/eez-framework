@@ -715,7 +715,7 @@ extern "C" float eez_easeInCubic(float x) {
 }
 
 extern "C" float eez_easeOutCubic(float x) {
-    return 1 - pow(1 - x, 3);
+    return 1 - powf(1 - x, 3);
 }
 
 extern "C" float eez_easeInOutCubic(float x) {
@@ -786,7 +786,7 @@ extern "C" float eez_easeOutCirc(float x) {
 
 extern "C" float eez_easeInOutCirc(float x) {
     return x < 0.5
-        ? (1 - sqrtf(1 - pow(2 * x, 2))) / 2
+        ? (1 - sqrtf(1 - powf(2 * x, 2))) / 2
         : (sqrtf(1 - powf(-2 * x + 2, 2)) + 1) / 2;
 }
 

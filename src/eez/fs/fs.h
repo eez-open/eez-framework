@@ -10,6 +10,10 @@
 
 #pragma once
 
+#include <eez/conf-internal.h>
+
+#if EEZ_OPTION_FS
+
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -152,3 +156,5 @@ class SdFat {
 char *getConfFilePath(const char *file_name);
 
 } // namespace eez
+
+#endif

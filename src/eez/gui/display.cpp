@@ -270,14 +270,20 @@ void update() {
     } else if (g_displayState == TURNING_OFF) {
 		g_hooks.turnOffDisplayTick();
     } else if (g_displayState == OFF) {
-#if EEZ_OPTION_GUI_ANIMATIONS
-        if (g_animationState.enabled) {
-            display::finishAnimation();
-        }
-#endif
-        osDelay(16);
-        sendMessageToGuiThread(GUI_QUEUE_MESSAGE_TYPE_DISPLAY_VSYNC, 0, 0);
+		#if EEZ_OPTION_GUI_ANIMATIONS
+			if (g_animationState.enabled) {
+				display::finishAnimation();
+			}
+		#endif
+
+#if !defined(EEZ_PLATFORM_SIMULATOR)
+		#if EEZ_OPTION_THREADS
+        	osDelay(16);
+        	sendMessageToGuiThread(GUI_QUEUE_MESSAGE_TYPE_DISPLAY_VSYNC, 0, 0);
+		#endif
+
         return;
+#endif
     }
 
 #ifdef GUI_CALC_FPS
@@ -314,7 +320,7 @@ void update() {
 }
 
 const uint8_t *takeScreenshot() {
-#ifdef __EMSCRIPTEN__
+#if !EEZ_OPTION_THREADS || defined(__EMSCRIPTEN__)
     copySyncedBufferToScreenshotBuffer();
 #else
     while (g_screenshotAllocated) {

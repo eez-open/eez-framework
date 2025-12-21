@@ -19,7 +19,7 @@
 #include <string.h>
 #include <string>
 
-#if !defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
 #include <SDL.h>
 #include <SDL_image.h>
 #endif
@@ -45,7 +45,7 @@ namespace display {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#if !defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
 static SDL_Window *g_mainWindow;
 static SDL_Renderer *g_renderer;
 #endif
@@ -67,7 +67,7 @@ std::string getFullPath(std::string category, std::string path) {
 }
 
 void initDriver() {
-#if !defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
     // Set texture filtering to linear
     if (!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1")) {
         printf("Warning: Linear texture filtering not enabled!");
@@ -120,7 +120,7 @@ void initDriver() {
 }
 
 void syncBuffer() {
-#if !defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
     if (!g_mainWindow) {
 		return;
     }
@@ -144,9 +144,9 @@ void syncBuffer() {
         printf("Unable to render text surface! SDL Error: %s\n", SDL_GetError());
     }
     SDL_RenderPresent(g_renderer);
+#endif
 
     sendMessageToGuiThread(GUI_QUEUE_MESSAGE_TYPE_DISPLAY_VSYNC, 0, 0);
-#endif
 
     touch::tick();
 }

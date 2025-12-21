@@ -12,6 +12,12 @@
 
 #if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
 
+#ifndef __EMSCRIPTEN__
+#include <chrono>
+#endif
+
+#if EEZ_OPTION_THREADS
+
 #include "cmsis_os2.h"
 
 #include <assert.h>
@@ -19,7 +25,6 @@
 #include <string.h>
 
 #ifndef __EMSCRIPTEN__
-#include <chrono>
 #include <thread>
 #include <vector>
 #endif
@@ -100,11 +105,6 @@ osStatus osDelay(uint32_t millisec) {
     std::this_thread::sleep_for(std::chrono::milliseconds(millisec));
 #endif
     return osOK;
-}
-
-uint32_t osKernelGetTickCount() {
-    using namespace std::chrono;
-    return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -189,5 +189,13 @@ osStatus osMessageQueuePut(osMessageQueueId_t queue, const void *msg_ptr, uint8_
 
     return osOK;
 }
+
+#endif // EEZ_OPTION_THREADS
+
+uint32_t osKernelGetTickCount() {
+    using namespace std::chrono;
+    return (uint32_t)duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+}
+
 
 #endif // defined(EEZ_PLATFORM_SIMULATOR)

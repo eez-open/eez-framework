@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include <eez/conf-internal.h>
+
 #include <stdint.h>
 
 #if defined(EEZ_PLATFORM_STM32)
@@ -18,7 +20,7 @@
 #endif
 #endif
 
-#if defined(EEZ_PLATFORM_SIMULATOR) && !defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL && defined(EEZ_PLATFORM_SIMULATOR) && !defined(__EMSCRIPTEN__)
 #include <SDL.h>
 #endif
 
@@ -31,7 +33,7 @@ void onKeyboardEvent(USBH_HandleTypeDef *phost);
 #endif
 #endif
 
-#if defined(EEZ_PLATFORM_SIMULATOR) && !defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL && defined(EEZ_PLATFORM_SIMULATOR) && !defined(__EMSCRIPTEN__)
 void onKeyboardEvent(SDL_KeyboardEvent *key);
 #endif
 

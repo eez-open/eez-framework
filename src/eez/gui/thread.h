@@ -17,7 +17,9 @@
 namespace eez {
 namespace gui {
 
+#if EEZ_OPTION_THREADS
 void startThread();
+#endif
 
 enum {
     GUI_QUEUE_MESSAGE_TYPE_DISPLAY_VSYNC = 1,
@@ -40,7 +42,7 @@ enum {
 class AppContext;
 class Page;
 
-void sendMessageToGuiThread(uint8_t messageType, uint32_t messageParam = 0, uint32_t timeoutMillisec = osWaitForever);
+void sendMessageToGuiThread(uint8_t messageType, uint32_t messageParam = 0, uint32_t timeoutMillisec = 0xFFFFFFFF);
 void sendTouchEventToGuiThread(Event &touchEvent);
 bool pushPageInGuiThread(AppContext *appContext, int pageId, Page *page);
 bool showPageInGuiThread(AppContext *appContext, int pageId);

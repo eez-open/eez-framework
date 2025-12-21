@@ -15,17 +15,18 @@
 #include <string.h>
 #include <stdint.h>
 
-#include <i2c.h>
-
 #include <eez/core/os.h>
 #include <eez/core/debug.h>
 
 #include <eez/gui/gui.h>
 #include <eez/gui/touch.h>
 
-#ifdef EEZ_PLATFORM_STM32F469I_DISCO
+#if defined(EEZ_PLATFORM_STM32F469I_DISCO)
 #include "stm32469i_discovery_ts.h"
+#elif defined(EEZ_PLATFORM_STM32H7S78_DK)
+#include "stm32h7s78_discovery_ts.h"
 #else
+#include <i2c.h>
 #define TSC2007IPW
 //#define AR1021
 #endif
@@ -155,6 +156,19 @@ Error:
     		g_lastZ1Data = CONF_TOUCH_Z1_THRESHOLD + 1;
     		g_lastXData = TS_State.touchX[0];
     		g_lastYData = TS_State.touchY[0];
+    	} else {
+    		g_lastZ1Data = 0;
+    	}
+    }
+#endif
+
+#if defined(EEZ_PLATFORM_STM32H7S78_DK)
+    TS_State_t TS_State;
+    if (BSP_TS_GetState(0, &TS_State) == BSP_ERROR_NONE) {
+    	if (TS_State.TouchDetected) {
+    		g_lastZ1Data = CONF_TOUCH_Z1_THRESHOLD + 1;
+    		g_lastXData = TS_State.TouchX;
+    		g_lastYData = TS_State.TouchY;
     	} else {
     		g_lastZ1Data = 0;
     	}

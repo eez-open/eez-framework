@@ -112,7 +112,9 @@ static uint8_t *g_heap;
 #pragma GCC diagnostic ignored "-Wparentheses"
 #endif
 
+#if EEZ_OPTION_THREADS
 EEZ_MUTEX_DECLARE(alloc);
+#endif
 
 #if defined(EEZ_PLATFORM_STM32)
 #pragma GCC diagnostic pop
@@ -126,7 +128,9 @@ void initAllocHeap(uint8_t *heap, size_t heapSize) {
 	first->free = 1;
 	first->size = heapSize - sizeof(AllocBlock);
 
+#if EEZ_OPTION_THREADS
 	EEZ_MUTEX_CREATE(alloc);
+#endif
 }
 
 void *alloc(size_t size, uint32_t id) {
@@ -134,7 +138,10 @@ void *alloc(size_t size, uint32_t id) {
 		return nullptr;
 	}
 
+#if EEZ_OPTION_THREADS
 	if (EEZ_MUTEX_WAIT(alloc, osWaitForever)) {
+#endif
+
 		AllocBlock *firstBlock = (AllocBlock *)g_heap;
 
 		AllocBlock *block = firstBlock;
@@ -150,7 +157,9 @@ void *alloc(size_t size, uint32_t id) {
 		}
 
 		if (!block) {
+#if EEZ_OPTION_THREADS
 			EEZ_MUTEX_RELEASE(alloc);
+#endif
 			return nullptr;
 		}
 
@@ -169,10 +178,15 @@ void *alloc(size_t size, uint32_t id) {
 		block->free = 0;
 		block->id = id;
 
+#if EEZ_OPTION_THREADS
 		EEZ_MUTEX_RELEASE(alloc);
+#endif
 
 		return block + 1;
+
+#if EEZ_OPTION_THREADS
 	}
+#endif
 
 	return nullptr;
 }
@@ -182,7 +196,10 @@ void free(void *ptr) {
 		return;
 	}
 
+#if EEZ_OPTION_THREADS
 	if (EEZ_MUTEX_WAIT(alloc, osWaitForever)) {
+#endif
+
 		AllocBlock *firstBlock = (AllocBlock *)g_heap;
 
 		AllocBlock *prevBlock = nullptr;
@@ -195,7 +212,9 @@ void free(void *ptr) {
 
 		if (!block || block + 1 != ptr || block->free) {
 			assert(false);
+#if EEZ_OPTION_THREADS
 			EEZ_MUTEX_RELEASE(alloc);
+#endif
 			return;
 		}
 
@@ -223,8 +242,10 @@ void free(void *ptr) {
 			block->free = 1;
 		}
 
+#if EEZ_OPTION_THREADS
 		EEZ_MUTEX_RELEASE(alloc);
 	}
+#endif
 }
 
 template<typename T> void freeObject(T *ptr) {
@@ -252,7 +273,11 @@ void dumpAlloc(scpi_t *context) {
 void getAllocInfo(uint32_t &free, uint32_t &alloc) {
 	free = 0;
 	alloc = 0;
+
+#if EEZ_OPTION_THREADS
 	if (EEZ_MUTEX_WAIT(alloc, osWaitForever)) {
+#endif
+
 		AllocBlock *first = (AllocBlock *)g_heap;
 		AllocBlock *block = first;
 		while (block) {
@@ -263,8 +288,11 @@ void getAllocInfo(uint32_t &free, uint32_t &alloc) {
 			}
 			block = block->next;
 		}
+
+#if EEZ_OPTION_THREADS
 		EEZ_MUTEX_RELEASE(alloc);
 	}
+#endif
 }
 
 #endif

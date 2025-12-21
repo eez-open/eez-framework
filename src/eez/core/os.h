@@ -10,13 +10,15 @@
 
 #pragma once
 
+#include <eez/conf-internal.h>
+
 #include <stdint.h>
 
 #if defined(EEZ_FOR_LVGL)
 
 uint32_t osKernelGetTickCount(void);
 
-#else
+#elif EEZ_OPTION_THREADS
 
 #include "cmsis_os2.h"
 
@@ -29,14 +31,14 @@ uint32_t osKernelGetTickCount(void);
     osThreadId_t g_##NAME##TaskHandle; \
     const osThreadAttr_t g_##NAME##TaskAttributes = { \
         #NAME, \
-		0, \
-		0, \
-		0, \
-		0, \
+        0, \
+        0, \
+        0, \
+        0, \
         STACK_SIZE, \
         osPriority##PRIORITY, \
-		0, \
-		0, \
+        0, \
+        0, \
     }
 #define EEZ_THREAD_CREATE(NAME, THREAD_FUNC) g_##NAME##TaskHandle = osThreadNew(THREAD_FUNC, nullptr, &g_##NAME##TaskAttributes);
 #define EEZ_THREAD_TERMINATE(NAME) osThreadTerminate(g_##NAME##TaskHandle)
@@ -63,24 +65,27 @@ uint32_t osKernelGetTickCount(void);
 #endif
 
 #if defined(__EMSCRIPTEN__)
-#ifndef EM_PORT_API
-#	if defined(__EMSCRIPTEN__)
-#		include <emscripten.h>
-#		if defined(__cplusplus)
-#			define EM_PORT_API(rettype) extern "C" rettype EMSCRIPTEN_KEEPALIVE
-#		else
-#			define EM_PORT_API(rettype) rettype EMSCRIPTEN_KEEPALIVE
-#		endif
-#	else
-#		if defined(__cplusplus)
-#			define EM_PORT_API(rettype) extern "C" rettype
-#		else
-#			define EM_PORT_API(rettype) rettype
-#		endif
-#	endif
-#endif
+    #ifndef EM_PORT_API
+        #if defined(__EMSCRIPTEN__)
+            #include <emscripten.h>
+            #if defined(__cplusplus)
+                #define EM_PORT_API(rettype) extern "C" rettype EMSCRIPTEN_KEEPALIVE
+            #else
+                #define EM_PORT_API(rettype) rettype EMSCRIPTEN_KEEPALIVE
+            #endif
+        #else
+            #if defined(__cplusplus)
+                #define EM_PORT_API(rettype) extern "C" rettype
+            #else
+                #define EM_PORT_API(rettype) rettype
+            #endif
+        #endif
+    #endif
 #else
-#    define EM_PORT_API(rettype) rettype
+    #define EM_PORT_API(rettype) rettype
+
+    uint32_t osKernelGetTickCount();
+
 #endif
 
 namespace eez {
@@ -96,7 +101,10 @@ enum TestResult {
 
 uint32_t millis();
 
+#if EEZ_OPTION_THREADS
 extern bool g_shutdown;
+#endif
+
 void shutdown();
 
 } // namespace eez

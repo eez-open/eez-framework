@@ -23,8 +23,8 @@
 namespace eez {
 namespace gui {
 
+#if EEZ_OPTION_THREADS
 void mainLoop(void *);
-
 #ifndef GUI_THREAD_STACK_SIZE
 #define GUI_THREAD_STACK_SIZE 12 * 1024
 #endif
@@ -117,23 +117,38 @@ void oneIter() {
     guiTick();
 }
 
+#endif
+
 void sendMessageToGuiThread(uint8_t messageType, uint32_t messageParam, uint32_t timeoutMillisec) {
+#if EEZ_OPTION_THREADS
     guiMessageQueueObject obj;
     obj.type = messageType;
     obj.param = messageParam;
 	EEZ_MESSAGE_QUEUE_PUT(gui, obj, timeoutMillisec);
+#else
+	if (messageType == GUI_QUEUE_MESSAGE_TYPE_DISPLAY_VSYNC) {
+		g_updateDisplay = true;
+	} else {
+        g_hooks.onGuiQueueMessage(messageType, messageParam);
+    }
+#endif
 }
 
 void sendTouchEventToGuiThread(Event &touchEvent) {
 	touchEvent.time = millis();
 
+#if EEZ_OPTION_THREADS
     guiMessageQueueObject obj;
     obj.type = GUI_QUEUE_MESSAGE_TYPE_TOUCH_EVENT;
     obj.touchEvent = touchEvent;
 	EEZ_MESSAGE_QUEUE_PUT(gui, obj, 0);
+#else
+	processTouchEvent(touchEvent);
+#endif
 }
 
 bool pushPageInGuiThread(AppContext *appContext, int pageId, Page *page) {
+#if EEZ_OPTION_THREADS
     if (!isGuiThread()) {
         guiMessageQueueObject obj;
         obj.type = GUI_QUEUE_MESSAGE_TYPE_PUSH_PAGE;
@@ -143,10 +158,12 @@ bool pushPageInGuiThread(AppContext *appContext, int pageId, Page *page) {
         EEZ_MESSAGE_QUEUE_PUT(gui, obj, osWaitForever);
         return true;
     }
+#endif
     return false;
 }
 
 bool showPageInGuiThread(AppContext *appContext, int pageId) {
+#if EEZ_OPTION_THREADS
     if (!isGuiThread()) {
         guiMessageQueueObject obj;
         obj.type = GUI_QUEUE_MESSAGE_TYPE_SHOW_PAGE;
@@ -155,21 +172,26 @@ bool showPageInGuiThread(AppContext *appContext, int pageId) {
         EEZ_MESSAGE_QUEUE_PUT(gui, obj, osWaitForever);
         return true;
     }
+#endif
     return false;
 }
 
 bool isGuiThread() {
+#if EEZ_OPTION_THREADS
     return osThreadGetId() == g_guiTaskHandle;
+#else
+    return true;
+#endif
 }
 
 void suspendGuiThread() {
-#if !defined(EEZ_PLATFORM_SIMULATOR) && !defined(__EMSCRIPTEN__)
+#if EEZ_OPTION_THREADS && !defined(EEZ_PLATFORM_SIMULATOR) && !defined(__EMSCRIPTEN__)
 	vTaskSuspend((TaskHandle_t)g_guiTaskHandle);
 #endif
 }
 
 void resumeGuiThread() {
-#if !defined(EEZ_PLATFORM_SIMULATOR) && !defined(__EMSCRIPTEN__)
+#if EEZ_OPTION_THREADS && !defined(EEZ_PLATFORM_SIMULATOR) && !defined(__EMSCRIPTEN__)
 	vTaskResume((TaskHandle_t)g_guiTaskHandle);
 #endif
 }
