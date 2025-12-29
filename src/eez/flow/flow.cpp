@@ -279,6 +279,13 @@ int getPageIndex(FlowState *flowState) {
 	return flowState->flowIndex;
 }
 
+int getPageIndexIncludeParents(FlowState *flowState) {
+    if (flowState->parentFlowState) {
+        return getPageIndexIncludeParents(flowState->parentFlowState);
+    }
+	return flowState->flowIndex;
+}
+
 void deletePageFlowState(Assets *assets, int16_t pageIndex) {
     EEZ_UNUSED(assets);
     for (FlowState *flowState = g_firstFlowState; flowState; flowState = flowState->nextSibling) {

@@ -39,6 +39,7 @@ FlowState *getPageFlowState(Assets *assets, int16_t pageIndex, const WidgetCurso
 FlowState *getPageFlowState(Assets *assets, int16_t pageIndex);
 #endif
 int getPageIndex(FlowState *flowState);
+int getPageIndexIncludeParents(FlowState *flowState);
 
 void deletePageFlowState(Assets *assets, int16_t pageIndex);
 

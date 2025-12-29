@@ -933,7 +933,7 @@ static void do_OPERATION_TYPE_FLOW_IS_PAGE_ACTIVE(EvalStack &stack) {
 #if EEZ_OPTION_GUI
     bool isActive = false;
 
-    auto pageIndex = getPageIndex(stack.flowState);
+    auto pageIndex = getPageIndexIncludeParents(stack.flowState);
     if (pageIndex >= 0) {
         int16_t pageId = (int16_t)(pageIndex + 1);
         if (stack.flowState->assets != g_mainAssets) {
@@ -955,7 +955,7 @@ static void do_OPERATION_TYPE_FLOW_IS_PAGE_ACTIVE(EvalStack &stack) {
 
     stack.push(Value(isActive, VALUE_TYPE_BOOLEAN));
 #elif defined(EEZ_FOR_LVGL)
-    auto pageIndex = getPageIndex(stack.flowState);
+    auto pageIndex = getPageIndexIncludeParents(stack.flowState);
     stack.push(Value(pageIndex == g_currentScreen, VALUE_TYPE_BOOLEAN));
 #else
     stack.push(Value::makeError());
