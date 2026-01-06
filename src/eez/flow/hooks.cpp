@@ -161,7 +161,7 @@ int32_t (*getLvglGroupByNameHook)(const char *name) = getLvglGroupByName;
 int32_t (*getLvglStyleByNameHook)(const char *name) = getLvglStyleByName;
 const void *(*getLvglImageByNameHook)(const char *name) = getLvglImageByName;
 
-const const char *(*getLvglObjectNameFromIndexHook)(int32_t index) = getLvglObjectNameFromIndex;
+const char *(*getLvglObjectNameFromIndexHook)(int32_t index) = getLvglObjectNameFromIndex;
 
 
 void (*executeLvglActionHook)(int actionIndex) = executeLvglAction;

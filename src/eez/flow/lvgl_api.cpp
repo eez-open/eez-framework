@@ -121,7 +121,7 @@ static const void *getLvglImageByName(const char *name) {
 }
 
 static const char *getLvglObjectNameFromIndex(int32_t index) {
-    if (index >= 0 && index < g_numObjects) {
+    if (index >= 0 && index < (int32_t)g_numObjects) {
         return g_objectNames[index];
     }
     return 0;
