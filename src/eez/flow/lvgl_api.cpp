@@ -120,6 +120,13 @@ static const void *getLvglImageByName(const char *name) {
     return 0;
 }
 
+static const char *getLvglObjectNameFromIndex(int32_t index) {
+    if (index >= 0 && index < g_numObjects) {
+        return g_objectNames[index];
+    }
+    return 0;
+}
+
 uint8_t g_lastLVGLEventUserDataBuffer[64];
 uint8_t g_lastLVGLEventParamBuffer[64];
 static lv_event_t g_lastLVGLEvent;
@@ -258,6 +265,7 @@ extern "C" void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj
     eez::flow::getLvglGroupByNameHook = getLvglGroupByName;
     eez::flow::getLvglStyleByNameHook = getLvglStyleByName;
     eez::flow::getLvglImageByNameHook = getLvglImageByName;
+    eez::flow::getLvglObjectNameFromIndexHook = getLvglObjectNameFromIndex;
     eez::flow::executeLvglActionHook = executeLvglAction;
     eez::flow::getLvglGroupFromIndexHook = getLvglGroupFromIndex;
     eez::flow::lvglSetColorThemeHook = lvglSetColorTheme;

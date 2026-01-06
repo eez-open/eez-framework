@@ -408,6 +408,42 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+static char *g_fullObjectNameBuffer = nullptr;
+static size_t g_fullObjectNameBufferLength = 0;
+
+const char *getFullObjectName(FlowState *flowState, const char *objectName) {
+    int lvglWidgetStartIndex = 0;
+    for (FlowState *fs = flowState; fs; fs = fs->parentFlowState) {
+        lvglWidgetStartIndex += fs->lvglWidgetStartIndex;
+    }
+
+    if (lvglWidgetStartIndex == 0) {
+        return objectName;
+    }
+
+    const char *prefix = getLvglObjectNameFromIndexHook(lvglWidgetStartIndex - 1);
+
+    size_t prefixLength = strlen(prefix);
+    size_t objectNameLength = strlen(objectName);
+    size_t totalLength = prefixLength + 2 + objectNameLength + 1;
+
+    if (g_fullObjectNameBufferLength < totalLength) {
+        if (g_fullObjectNameBuffer) {
+            free(g_fullObjectNameBuffer);
+        }
+        g_fullObjectNameBuffer = (char *)malloc(totalLength);
+        g_fullObjectNameBufferLength = totalLength;
+    }
+
+    strcpy(g_fullObjectNameBuffer, prefix);
+    strcat(g_fullObjectNameBuffer, "__");
+    strcat(g_fullObjectNameBuffer, objectName);
+
+    return g_fullObjectNameBuffer;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 #define ACTION_START(NAME) static void NAME(FlowState *flowState, unsigned componentIndex, const ListOfAssetsPtr<Property> &properties, uint32_t actionIndex) { \
     const char *actionName = #NAME; \
     int propIndex = 0;
@@ -505,12 +541,13 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
         NAME = (lv_obj_t *)NAME##Value.getWidget(); \
     } else if (NAME##Value.isString()) { \
         const char *objectName = NAME##Value.getString(); \
-        int32_t widgetIndex = getLvglObjectByNameHook(objectName); \
+        const char *fullObjectName = getFullObjectName(flowState, objectName); \
+        int32_t widgetIndex = getLvglObjectByNameHook(fullObjectName); \
         if (widgetIndex == -1) { \
             throwError(flowState, componentIndex, FlowError::NotFoundInAction("Widget", objectName, actionName, actionIndex)); \
             return; \
         } \
-        NAME = getLvglObjectFromIndexHook(flowState->lvglWidgetStartIndex + widgetIndex); \
+        NAME = getLvglObjectFromIndexHook(widgetIndex); \
     } else { \
         int32_t widgetIndex = NAME##Value.getInt(); \
         for (FlowState *fs = flowState; fs; fs = fs->parentFlowState) widgetIndex += fs->lvglWidgetStartIndex; \
