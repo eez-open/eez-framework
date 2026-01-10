@@ -385,7 +385,6 @@ void drawGlyph(const uint8_t *src, uint32_t srcLineOffset, int x_glyph, int y_gl
 
 EM_PORT_API(uint8_t*) getSyncedBuffer() {
     using namespace eez::gui;
-    printf("T3\n");
     sendMessageToGuiThread(GUI_QUEUE_MESSAGE_TYPE_DISPLAY_VSYNC, 0, 0);
 	return (uint8_t*)display::g_syncedBuffer;
 }
