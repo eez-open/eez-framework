@@ -856,6 +856,9 @@ ACTION_START(qrCodeUpdate)
     STR_PROP(text);
 #if LV_USE_QRCODE
     lv_qrcode_update(obj, text, strlen(text));
+#else
+    EEZ_UNUSED(obj);
+    EEZ_UNUSED(text);
 #endif
 ACTION_END
 
