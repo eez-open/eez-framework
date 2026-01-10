@@ -83,3 +83,37 @@
 #endif
 
 #define EEZ_UNUSED(x) (void)(x)
+
+/* ============================
+   Portable diagnostic helpers
+   ============================ */
+
+/* Detect Clang */
+#if defined(__clang__)
+    #define DIAG_PRAGMA(x) _Pragma(#x)
+    #define DIAG_PUSH      DIAG_PRAGMA(clang diagnostic push)
+    #define DIAG_POP       DIAG_PRAGMA(clang diagnostic pop)
+    #define DIAG_IGNORE(w) DIAG_PRAGMA(clang diagnostic ignored w)
+
+/* Detect GCC (but not Clang masquerading as GCC) */
+#elif defined(__GNUC__)
+    #define DIAG_PRAGMA(x) _Pragma(#x)
+    #define DIAG_PUSH      DIAG_PRAGMA(GCC diagnostic push)
+    #define DIAG_POP       DIAG_PRAGMA(GCC diagnostic pop)
+    #define DIAG_IGNORE(w) DIAG_PRAGMA(GCC diagnostic ignored w)
+
+/* Detect MSVC */
+#elif defined(_MSC_VER)
+    #define DIAG_PRAGMA(x) __pragma(x)
+    #define DIAG_PUSH      DIAG_PRAGMA(warning(push))
+    #define DIAG_POP       DIAG_PRAGMA(warning(pop))
+
+    /* Convert GCC/Clang-style flags to MSVC warning numbers if needed */
+    #define DIAG_IGNORE(w) /* no-op unless you map flags manually */
+
+/* Fallback: unknown compiler → no-op */
+#else
+    #define DIAG_PUSH
+    #define DIAG_POP
+    #define DIAG_IGNORE(w)
+#endif
