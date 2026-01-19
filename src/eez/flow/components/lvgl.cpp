@@ -429,9 +429,9 @@ const char *getFullObjectName(FlowState *flowState, const char *objectName) {
 
     if (g_fullObjectNameBufferLength < totalLength) {
         if (g_fullObjectNameBuffer) {
-            free(g_fullObjectNameBuffer);
+            eez::free(g_fullObjectNameBuffer);
         }
-        g_fullObjectNameBuffer = (char *)malloc(totalLength);
+        g_fullObjectNameBuffer = (char *)eez::alloc(totalLength, 0xe4145ae4);
         g_fullObjectNameBufferLength = totalLength;
     }
 
