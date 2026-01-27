@@ -129,6 +129,11 @@ static const void *getLvglImageByName(const char *name) {
     return 0;
 }
 
+static const void *getLvglFontByName(const char *name) {
+    EEZ_UNUSED(name);
+    return 0;
+}
+
 static const char *getLvglObjectNameFromIndex(int32_t index) {
     EEZ_UNUSED(index);
     return 0;
@@ -160,6 +165,7 @@ int32_t (*getLvglObjectByNameHook)(const char *name) = getLvglObjectByName;
 int32_t (*getLvglGroupByNameHook)(const char *name) = getLvglGroupByName;
 int32_t (*getLvglStyleByNameHook)(const char *name) = getLvglStyleByName;
 const void *(*getLvglImageByNameHook)(const char *name) = getLvglImageByName;
+const void *(*getLvglFontByNameHook)(const char *name) = getLvglFontByName;
 
 const char *(*getLvglObjectNameFromIndexHook)(int32_t index) = getLvglObjectNameFromIndex;
 

@@ -49,6 +49,9 @@ static size_t g_numStyles;
 static const ext_img_desc_t *g_images;
 static size_t g_numImages;
 
+static const ext_font_desc_t *g_fonts;
+static size_t g_numFonts;
+
 static ActionExecFunc *g_actions;
 
 int16_t g_currentScreen = -1;
@@ -57,6 +60,8 @@ static const char **g_themeNames;
 static size_t g_numThemes;
 static void (*g_changeColorTheme)(uint32_t themeIndex);
 static uint32_t g_selectedThemeIndex;
+static uint32_t *g_themeColors;
+static size_t g_numColorsPerTheme;
 
 static void (*g_createScreenFunc)(int screenIndex);
 static void (*g_deleteScreenFunc)(int screenIndex);
@@ -120,6 +125,15 @@ static const void *getLvglImageByName(const char *name) {
     return 0;
 }
 
+static const void *getLvglFontByName(const char *name) {
+    for (size_t i = 0; i < g_numFonts; i++) {
+        if (strcmp(g_fonts[i].name, name) == 0) {
+            return g_fonts[i].font_ptr;
+        }
+    }
+    return 0;
+}
+
 static const char *getLvglObjectNameFromIndex(int32_t index) {
     if (index >= 0 && index < (int32_t)g_numObjects) {
         return g_objectNames[index];
@@ -135,10 +149,17 @@ static void executeLvglAction(int actionIndex) {
     g_actions[actionIndex](&g_lastLVGLEvent);
 }
 
-void eez_flow_init_themes(const char **themeNames, size_t numThemes, void (*changeColorTheme)(uint32_t themeIndex)) {
+EM_PORT_API(void) eez_flow_init_themes(const char **themeNames, size_t numThemes, void (*changeColorTheme)(uint32_t themeIndex), uint32_t *themeColors, size_t numColorsPerTheme) {
     g_themeNames = themeNames;
     g_numThemes = numThemes;
     g_changeColorTheme = changeColorTheme;
+    g_themeColors = themeColors;
+    g_numColorsPerTheme = numColorsPerTheme;
+}
+
+void eez_flow_init_fonts(const ext_font_desc_t *fonts, size_t numFonts) {
+    g_fonts = fonts;
+    g_numFonts = numFonts;
 }
 
 void eez_flow_set_create_screen_func(void (*createScreenFunc)(int screenIndex)) {
@@ -149,7 +170,7 @@ void eez_flow_set_delete_screen_func(void (*deleteScreenFunc)(int screenIndex)) 
     g_deleteScreenFunc = deleteScreenFunc;
 }
 
-static void lvglSetColorTheme(const char *themeName) {
+void eez_flow_set_theme(const char *themeName) {
     for (uint32_t i = 0; i < g_numThemes; i++) {
         if (strcmp(themeName, g_themeNames[i]) == 0) {
             g_selectedThemeIndex = i;
@@ -265,10 +286,11 @@ extern "C" void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj
     eez::flow::getLvglGroupByNameHook = getLvglGroupByName;
     eez::flow::getLvglStyleByNameHook = getLvglStyleByName;
     eez::flow::getLvglImageByNameHook = getLvglImageByName;
+    eez::flow::getLvglFontByNameHook = getLvglFontByName;
     eez::flow::getLvglObjectNameFromIndexHook = getLvglObjectNameFromIndex;
     eez::flow::executeLvglActionHook = executeLvglAction;
     eez::flow::getLvglGroupFromIndexHook = getLvglGroupFromIndex;
-    eez::flow::lvglSetColorThemeHook = lvglSetColorTheme;
+    eez::flow::lvglSetColorThemeHook = eez_flow_set_theme;
 
     eez::flow::start(eez::g_mainAssets);
 
@@ -599,6 +621,10 @@ extern "C" int compareRollerOptions(lv_roller_t *roller, const char *new_val, co
 
 uint32_t eez_flow_get_selected_theme_index() {
     return g_selectedThemeIndex;
+}
+
+uint32_t eez_flow_get_theme_color(uint32_t colorIndex) {
+    return *(g_themeColors + g_selectedThemeIndex * g_numColorsPerTheme + colorIndex);
 }
 
 #endif // EEZ_FOR_LVGL

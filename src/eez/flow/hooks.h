@@ -48,6 +48,7 @@ extern int32_t (*getLvglObjectByNameHook)(const char *name);
 extern int32_t (*getLvglGroupByNameHook)(const char *name);
 extern int32_t (*getLvglStyleByNameHook)(const char *name);
 extern const void *(*getLvglImageByNameHook)(const char *name);
+extern const void *(*getLvglFontByNameHook)(const char *name);
 
 extern const char *(*getLvglObjectNameFromIndexHook)(int32_t index);
 

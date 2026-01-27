@@ -51,6 +51,14 @@ typedef struct _ext_img_desc_t {
 } ext_img_desc_t;
 #endif
 
+#ifndef EXT_FONT_DESC_T
+#define EXT_FONT_DESC_T
+typedef struct _ext_font_desc_t {
+    const char *name;
+    const void *font_ptr;
+} ext_font_desc_t;
+#endif
+
 typedef void (*ActionExecFunc)(lv_event_t * e);
 void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj_t **objects, size_t numObjects, const ext_img_desc_t *images, size_t numImages, ActionExecFunc *actions);
 
@@ -65,7 +73,8 @@ void eez_flow_init_screen_names(const char **screenNames, size_t numScreens);
 void eez_flow_init_object_names(const char **objectNames, size_t numObjects);
 void eez_flow_init_group_names(const char **groupNames, size_t numGroups);
 void eez_flow_init_style_names(const char **styleNames, size_t numStyles);
-void eez_flow_init_themes(const char **themeNames, size_t numThemes, void (*changeColorTheme)(uint32_t themeIndex));
+void eez_flow_init_themes(const char **themeNames, size_t numThemes, void (*changeColorTheme)(uint32_t themeIndex), uint32_t *themeColors, size_t numColorsPerTheme);
+void eez_flow_init_fonts(const ext_font_desc_t *fonts, size_t numFonts);
 
 void eez_flow_set_create_screen_func(void (*createScreenFunc)(int screenIndex));
 void eez_flow_set_delete_screen_func(void (*deleteScreenFunc)(int screenIndex));
@@ -160,7 +169,9 @@ extern int g_eezFlowLvlgMeterTickIndex;
 // returns 0 if options are equal, 1 if options are different
 int compareRollerOptions(lv_roller_t *roller, const char *new_val, const char *cur_val, lv_roller_mode_t mode);
 
+void eez_flow_set_theme(const char *themeName);
 uint32_t eez_flow_get_selected_theme_index();
+uint32_t eez_flow_get_theme_color(uint32_t colorIndex);
 
 #ifdef __cplusplus
 }

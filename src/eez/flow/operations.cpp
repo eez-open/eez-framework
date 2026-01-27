@@ -1093,6 +1093,24 @@ static void do_OPERATION_TYPE_FLOW_THEMES(EvalStack &stack) {
     stack.push(arrayValue);
 }
 
+static void do_OPERATION_TYPE_FLOW_GET_THEME_COLOR(EvalStack &stack) {
+#if defined(EEZ_FOR_LVGL)
+    auto colorIndexValue = stack.pop();
+    if (colorIndexValue.isError()) {
+        stack.push(colorIndexValue);
+        return;
+    }
+
+    uint32_t colorIndex = colorIndexValue.getUInt32();
+
+    uint32_t color = eez_flow_get_theme_color(colorIndex);
+
+    stack.push(Value(color, VALUE_TYPE_UINT32));
+#else
+    stack.push(Value::makeError());
+#endif
+}
+
 static void do_OPERATION_TYPE_FLOW_PARSE_INTEGER(EvalStack &stack) {
     auto str = stack.pop();
     if (str.isError()) {
@@ -2897,6 +2915,7 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_EVENT_GET_ROTARY_DIFF,
     do_OPERATION_TYPE_BLOB_TO_STRING,
     do_OPERATION_TYPE_FLOW_THEMES,
+    do_OPERATION_TYPE_FLOW_GET_THEME_COLOR,
 };
 
 } // namespace flow

@@ -716,6 +716,81 @@ ACTION_START(objGetHeight)
     RESULT(result, Value((int)height, VALUE_TYPE_INT32));
 ACTION_END
 
+ACTION_START(objStyleSetProperty)
+    WIDGET_PROP(obj);
+    UINT32_PROP(property);
+
+    if (property == LV_STYLE_TEXT_FONT) {
+        // font
+        STR_PROP(str);
+
+        const void *ptr = getLvglFontByNameHook(str);
+        if (ptr) {
+            UINT32_PROP(part);
+            UINT32_PROP(state);
+            lv_style_value_t style_value;
+            style_value.ptr = ptr;
+            lv_obj_set_local_style_prop(obj, (lv_style_prop_t)property, style_value, part | state);
+        } else {
+            throwError(flowState, componentIndex, FlowError::NotFoundInAction("Font", str, "objStyleSetProperty", actionIndex));
+        }        
+    } else if (
+#if LVGL_VERSION_MAJOR >= 9        
+        property == LV_STYLE_BG_IMAGE_SRC ||
+        property == LV_STYLE_ARC_IMAGE_SRC
+#else
+        property == LV_STYLE_BG_IMG_SRC ||
+        property == LV_STYLE_ARC_IMG_SRC
+#endif
+    ) {
+        // image
+        STR_PROP(str);
+
+        const void *ptr = getLvglImageByNameHook(str);
+        if (ptr) {
+            UINT32_PROP(part);
+            UINT32_PROP(state);
+            lv_style_value_t style_value;
+            style_value.ptr = ptr;
+            lv_obj_set_local_style_prop(obj, (lv_style_prop_t)property, style_value, part | state);
+        } else {
+            throwError(flowState, componentIndex, FlowError::NotFoundInAction("Font", str, "objStyleSetProperty", actionIndex));
+        }        
+    } else if (
+        property == LV_STYLE_BG_COLOR ||
+        property == LV_STYLE_BG_GRAD_COLOR ||
+#if LVGL_VERSION_MAJOR >= 9        
+        property == LV_STYLE_BG_IMAGE_RECOLOR ||
+#else
+        property == LV_STYLE_BG_IMG_RECOLOR ||
+#endif
+        property == LV_STYLE_BORDER_COLOR ||
+        property == LV_STYLE_OUTLINE_COLOR ||
+        property == LV_STYLE_SHADOW_COLOR ||
+        property == LV_STYLE_IMG_RECOLOR ||
+        property == LV_STYLE_LINE_COLOR ||
+        property == LV_STYLE_ARC_COLOR ||
+        property == LV_STYLE_TEXT_COLOR
+    ) {
+        // color
+        UINT32_PROP(value);
+        UINT32_PROP(part);
+        UINT32_PROP(state);
+        lv_style_value_t style_value;
+        style_value.color = lv_color_hex(value);
+        lv_obj_set_local_style_prop(obj, (lv_style_prop_t)property, style_value, part | state);
+    } else  {
+        // number
+        UINT32_PROP(value);
+        UINT32_PROP(part);
+        UINT32_PROP(state);
+        lv_style_value_t style_value;
+        style_value.num = value;
+        lv_obj_set_local_style_prop(obj, (lv_style_prop_t)property, style_value, part | state);
+    }
+    lv_obj_update_layout(obj);
+ACTION_END
+
 ACTION_START(objSetStyleOpa)
     WIDGET_PROP(obj);
     INT32_PROP(opa);
@@ -1150,7 +1225,8 @@ static ActionType actions[] = {
     /* 55 */ &buttonMatrixClearButtonCtrl,
     /* 56 */ &sliderSetValueLeft,
     /* 57 */ &sliderSetRange,
-    /* 58 */ &qrCodeUpdate
+    /* 58 */ &qrCodeUpdate,
+    /* 59 */ &objStyleSetProperty
 };
 
 ////////////////////////////////////////////////////////////////////////////////
