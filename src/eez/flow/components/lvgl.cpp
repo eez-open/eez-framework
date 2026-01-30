@@ -1162,6 +1162,27 @@ ACTION_START(buttonMatrixClearButtonCtrl)
 #endif
 ACTION_END
 
+ACTION_START(tabviewSetActiveTab)
+    WIDGET_PROP(obj);
+    UINT32_PROP(tabIndex);
+    BOOL_PROP(animated);
+#if LVGL_VERSION_MAJOR >= 9
+    lv_tabview_set_active(obj, tabIndex, animated ? LV_ANIM_ON : LV_ANIM_OFF);
+#else
+    lv_tabview_set_act(obj, tabIndex, animated ? LV_ANIM_ON : LV_ANIM_OFF);
+#endif
+ACTION_END
+
+ACTION_START(tabviewGetActiveTab)
+    WIDGET_PROP(obj);
+#if LVGL_VERSION_MAJOR >= 9
+    uint32_t tabIndex = lv_tabview_get_tab_active(obj);
+#else
+    uint32_t tabIndex = (uint32_t)lv_tabview_get_tab_act(obj);
+#endif
+    RESULT(result, Value((int)tabIndex, VALUE_TYPE_INT32));
+ACTION_END
+
 ////////////////////////////////////////////////////////////////////////////////
 
 typedef void (*ActionType)(FlowState *flowState, unsigned componentIndex, const ListOfAssetsPtr<Property> &properties, uint32_t actionIndex);
@@ -1226,7 +1247,9 @@ static ActionType actions[] = {
     /* 56 */ &sliderSetValueLeft,
     /* 57 */ &sliderSetRange,
     /* 58 */ &qrCodeUpdate,
-    /* 59 */ &objStyleSetProperty
+    /* 59 */ &objStyleSetProperty,
+    /* 60 */ &tabviewSetActiveTab,
+    /* 61 */ &tabviewGetActiveTab
 };
 
 ////////////////////////////////////////////////////////////////////////////////
