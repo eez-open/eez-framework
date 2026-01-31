@@ -377,7 +377,7 @@ extern "C" void flowPropagateValueUint32(void *flowState, unsigned componentInde
     eez::flow::propagateValue((eez::flow::FlowState *)flowState, componentIndex, outputIndex, eez::Value(value, eez::VALUE_TYPE_UINT32));
 }
 
-extern "C" void flowPropagateValueLVGLEvent(void *flowState, unsigned componentIndex, unsigned outputIndex, lv_event_t *event) {
+EM_PORT_API(void) flowPropagateValueLVGLEvent(void *flowState, unsigned componentIndex, unsigned outputIndex, lv_event_t *event) {
     lv_event_code_t event_code = lv_event_get_code(event);
 
     uint32_t code = (uint32_t)event_code;
