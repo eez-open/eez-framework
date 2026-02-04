@@ -880,6 +880,13 @@ ACTION_START(arcSetValue)
     lv_arc_set_value(obj, value);
 ACTION_END
 
+ACTION_START(arcRotateObjToAngle)
+    WIDGET_PROP(arcObj);
+    WIDGET_PROP(obj);
+    INT32_PROP(offset);
+    lv_arc_rotate_obj_to_angle(arcObj, obj, offset);
+ACTION_END
+
 ACTION_START(barSetValue)
     WIDGET_PROP(obj);
     INT32_PROP(value);
@@ -1249,7 +1256,8 @@ static ActionType actions[] = {
     /* 58 */ &qrCodeUpdate,
     /* 59 */ &objStyleSetProperty,
     /* 60 */ &tabviewSetActiveTab,
-    /* 61 */ &tabviewGetActiveTab
+    /* 61 */ &tabviewGetActiveTab,
+    /* 62 */ &arcRotateObjToAngle
 };
 
 ////////////////////////////////////////////////////////////////////////////////
