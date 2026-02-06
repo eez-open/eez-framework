@@ -15,6 +15,11 @@
 #include <assert.h>
 #include <string.h>
 
+#if defined(__EMSCRIPTEN__)
+#include <emscripten/heap.h>
+#include <unistd.h>
+#endif
+
 #if defined(EEZ_FOR_LVGL)
 #ifdef LV_LVGL_H_INCLUDE_SIMPLE
 #include "lvgl.h"
@@ -30,9 +35,14 @@ namespace eez {
 
 #if defined(EEZ_FOR_LVGL)
 
+uint32_t g_freeMemoryAtStart;
+uint32_t g_allocMemoryAtStart;
+
 void initAllocHeap(uint8_t *heap, size_t heapSize) {
     EEZ_UNUSED(heap);
     EEZ_UNUSED(heapSize);
+
+	getAllocInfo(g_freeMemoryAtStart, g_allocMemoryAtStart);
 }
 
 void *alloc(size_t size, uint32_t id) {
@@ -62,15 +72,21 @@ template<typename T> void freeObject(T *ptr) {
 }
 
 void getAllocInfo(uint32_t &free, uint32_t &alloc) {
+#if LV_USE_STDLIB_MALLOC == LV_STDLIB_CLIB
+	size_t total_heap = emscripten_get_heap_size();
+	size_t heap_break = (size_t)sbrk(0);
+
+	free = total_heap - heap_break;
+	alloc = heap_break - g_allocMemoryAtStart;
+#else	
     lv_mem_monitor_t mon;
     lv_mem_monitor(&mon);
 	free = mon.free_size;
-	alloc = mon.total_size - mon.free_size;
+	alloc = mon.total_size - mon.free_size - g_allocMemoryAtStart;
+#endif
 }
 
 #elif defined(EEZ_DASHBOARD_API)
-
-#include <emscripten/heap.h>
 
 void initAllocHeap(uint8_t *heap, size_t heapSize) {
 }

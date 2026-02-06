@@ -27,6 +27,7 @@ using namespace eez::gui;
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/hooks.h>
 #include <eez/flow/watch_list.h>
+#include <eez/flow/components.h>
 #include <eez/flow/components/call_action.h>
 #include <eez/flow/components/on_event.h>
 
@@ -99,8 +100,8 @@ static bool isComponentReadyToRun(FlowState *flowState, unsigned componentIndex)
     }
 
     if ((component->type < defs_v3::COMPONENT_TYPE_START_ACTION && component->type != defs_v3::COMPONENT_TYPE_USER_WIDGET_WIDGET) || component->type >= defs_v3::FIRST_DASHBOARD_WIDGET_COMPONENT_TYPE) {
-        // always execute widget
-        return true;
+        // widget
+        return hasExecFunc(flowState, componentIndex);
     }
 
     if (component->type == defs_v3::COMPONENT_TYPE_START_ACTION) {

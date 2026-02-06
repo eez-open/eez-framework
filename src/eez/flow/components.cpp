@@ -157,6 +157,34 @@ void registerComponent(ComponentTypes componentType, ExecuteComponentFunctionTyp
 	}
 }
 
+bool hasExecFunc(FlowState *flowState, unsigned componentIndex) {
+	auto component = flowState->flow->components[componentIndex];
+
+	if (component->type >= defs_v3::FIRST_DASHBOARD_ACTION_COMPONENT_TYPE) {
+#if defined(EEZ_DASHBOARD_API)
+        return true
+#else
+        return false;
+#endif // EEZ_DASHBOARD_API
+    } else if (component->type >= defs_v3::COMPONENT_TYPE_START_ACTION) {
+		auto executeComponentFunction = g_executeComponentFunctions[component->type - defs_v3::COMPONENT_TYPE_START_ACTION];
+		return executeComponentFunction != nullptr;
+	}
+#if EEZ_OPTION_GUI
+    else if (component->type < 1000) {
+		if (component->type == defs_v3::COMPONENT_TYPE_USER_WIDGET_WIDGET) {
+            return true;
+        } else if (component->type == defs_v3::COMPONENT_TYPE_LINE_CHART_EMBEDDED_WIDGET) {
+			return true;
+		} else if (component->type == defs_v3::COMPONENT_TYPE_ROLLER_WIDGET) {
+			return true;
+		}
+		return false;
+	}
+#endif
+	return false;
+}
+
 void executeComponent(FlowState *flowState, unsigned componentIndex) {
 	auto component = flowState->flow->components[componentIndex];
 

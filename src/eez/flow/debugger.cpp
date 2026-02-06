@@ -33,7 +33,7 @@ namespace flow {
 enum MessagesToDebugger {
     MESSAGE_TO_DEBUGGER_STATE_CHANGED, // STATE
 
-    MESSAGE_TO_DEBUGGER_ADD_TO_QUEUE, // FLOW_STATE_INDEX, SOURCE_COMPONENT_INDEX, SOURCE_OUTPUT_INDEX, TARGET_COMPONENT_INDEX, TARGET_INPUT_INDEX, FREE_MEMORT, ALLOC_MEMORY
+    MESSAGE_TO_DEBUGGER_ADD_TO_QUEUE, // FLOW_STATE_INDEX, SOURCE_COMPONENT_INDEX, SOURCE_OUTPUT_INDEX, TARGET_COMPONENT_INDEX, TARGET_INPUT_INDEX, FREE_MEMORY, ALLOC_MEMORY
     MESSAGE_TO_DEBUGGER_REMOVE_FROM_QUEUE, // no params
 
     MESSAGE_TO_DEBUGGER_GLOBAL_VARIABLE_INIT, // GLOBAL_VARIABLE_INDEX, VALUE_ADDR, VALUE
@@ -529,7 +529,7 @@ void onAddToQueue(FlowState *flowState, int sourceComponentIndex, int sourceOutp
 			targetComponentIndex,
 			targetInputIndex,
             (unsigned int)free,
-            (unsigned int)ALLOC_BUFFER_SIZE
+            (unsigned int)alloc
 		);
         writeDebuggerBufferHook(buffer, strlen(buffer));
     }
