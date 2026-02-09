@@ -72,13 +72,13 @@ template<typename T> void freeObject(T *ptr) {
 }
 
 void getAllocInfo(uint32_t &free, uint32_t &alloc) {
-#if LV_USE_STDLIB_MALLOC == LV_STDLIB_CLIB
+#if defined(__EMSCRIPTEN__) && LV_USE_STDLIB_MALLOC == LV_STDLIB_CLIB
 	size_t total_heap = emscripten_get_heap_size();
 	size_t heap_break = (size_t)sbrk(0);
 
 	free = total_heap - heap_break;
 	alloc = heap_break - g_allocMemoryAtStart;
-#else	
+#else
     lv_mem_monitor_t mon;
     lv_mem_monitor(&mon);
 	free = mon.free_size;

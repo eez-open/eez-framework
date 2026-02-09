@@ -676,6 +676,20 @@ ACTION_START(objGetY)
     RESULT(result, Value((int)y, VALUE_TYPE_INT32));
 ACTION_END
 
+ACTION_START(objGetDisplayX)
+    WIDGET_PROP(obj);
+    lv_area_t area;
+    lv_obj_get_coords(obj, &area);
+    RESULT(result, Value((int)area.x1, VALUE_TYPE_INT32));
+ACTION_END
+
+ACTION_START(objGetDisplayY)
+    WIDGET_PROP(obj);
+    lv_area_t area;
+    lv_obj_get_coords(obj, &area);
+    RESULT(result, Value((int)area.y1, VALUE_TYPE_INT32));
+ACTION_END
+
 ACTION_START(objSetWidth)
     WIDGET_PROP(obj);
     INT32_PROP(width);
@@ -1257,7 +1271,9 @@ static ActionType actions[] = {
     /* 59 */ &objStyleSetProperty,
     /* 60 */ &tabviewSetActiveTab,
     /* 61 */ &tabviewGetActiveTab,
-    /* 62 */ &arcRotateObjToAngle
+    /* 62 */ &arcRotateObjToAngle,
+    /* 61 */ &objGetDisplayX,
+    /* 62 */ &objGetDisplayY
 };
 
 ////////////////////////////////////////////////////////////////////////////////
