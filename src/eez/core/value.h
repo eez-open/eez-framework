@@ -11,6 +11,7 @@
 #pragma once
 
 #include <string.h>
+#include <eez/conf-internal.h>
 #include <eez/core/value_types.h>
 #include <eez/core/alloc.h>
 #include <eez/flow/flow_defs_v3.h>

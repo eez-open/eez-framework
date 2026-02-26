@@ -162,7 +162,7 @@ bool hasExecFunc(FlowState *flowState, unsigned componentIndex) {
 
 	if (component->type >= defs_v3::FIRST_DASHBOARD_ACTION_COMPONENT_TYPE) {
 #if defined(EEZ_DASHBOARD_API)
-        return true
+        return true;
 #else
         return false;
 #endif // EEZ_DASHBOARD_API
