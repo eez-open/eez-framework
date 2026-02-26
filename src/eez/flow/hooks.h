@@ -13,7 +13,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <eez/core/value.h>
 #include <eez/flow/private.h>
 
 #if defined(EEZ_FOR_LVGL)
