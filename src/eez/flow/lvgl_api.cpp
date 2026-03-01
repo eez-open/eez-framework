@@ -141,8 +141,6 @@ static const char *getLvglObjectNameFromIndex(int32_t index) {
     return 0;
 }
 
-uint8_t g_lastLVGLEventUserDataBuffer[64];
-uint8_t g_lastLVGLEventParamBuffer[64];
 static lv_event_t g_lastLVGLEvent;
 
 static void executeLvglAction(int actionIndex) {
@@ -431,14 +429,6 @@ EM_PORT_API(void) flowPropagateValueLVGLEvent(void *flowState, unsigned componen
     );
 
     g_lastLVGLEvent = *event;
-    if (event->user_data) {
-        g_lastLVGLEvent.user_data = &g_lastLVGLEventUserDataBuffer;
-        memcpy(&g_lastLVGLEventUserDataBuffer, event->user_data, sizeof(g_lastLVGLEventUserDataBuffer));
-    }
-    if (event->param) {
-        g_lastLVGLEvent.param = &g_lastLVGLEventParamBuffer;
-        memcpy(&g_lastLVGLEventParamBuffer, event->param, sizeof(g_lastLVGLEventParamBuffer));
-    }
 }
 
 #ifndef EEZ_LVGL_TEMP_STRING_BUFFER_SIZE
