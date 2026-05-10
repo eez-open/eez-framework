@@ -250,7 +250,7 @@ uint16_t getActiveBackgroundColor(const WidgetCursor &widgetCursor, int16_t id, 
 }
 
 bool isBlinking(const WidgetCursor &widgetCursor, int16_t id) {
-    if (id == DATA_ID_NONE) {
+    if (id == EEZ_DATA_ID_NONE) {
         return false;
     }
 

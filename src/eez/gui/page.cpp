@@ -22,31 +22,6 @@
 #define RADIO_BUTTON_OFF_ICON (char)141
 #endif
 
-#if EEZ_GUI_DOCUMENT_API_VERSION == 1
-
-#define STYLE_ID_INFO_ALERT STYLE_ID_MESSAGE_BOX_INFO
-#define STYLE_ID_ERROR_ALERT STYLE_ID_MESSAGE_BOX_ERROR
-#define STYLE_ID_INFO_ALERT_BUTTON STYLE_ID_MESSAGE_BOX_INFO_BUTTON
-#define STYLE_ID_ERROR_ALERT_BUTTON STYLE_ID_MESSAGE_BOX_ERROR_BUTTON
-
-#define STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER STYLE_ID_DROP_DOWN_LIST_POPUP_CONTAINER
-#define STYLE_ID_SELECT_ENUM_ITEM_POPUP_ITEM STYLE_ID_DROP_DOWN_LIST_POPUP_ITEM
-#define STYLE_ID_SELECT_ENUM_ITEM_POPUP_DISABLED_ITEM STYLE_ID_DROP_DOWN_LIST_DISABLED_POPUP_ITEM
-
-#define STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER_S STYLE_ID_DROP_DOWN_LIST_POPUP_CONTAINER
-#define STYLE_ID_SELECT_ENUM_ITEM_POPUP_ITEM_S STYLE_ID_DROP_DOWN_LIST_POPUP_ITEM
-#define STYLE_ID_SELECT_ENUM_ITEM_POPUP_DISABLED_ITEM_S STYLE_ID_DROP_DOWN_LIST_DISABLED_POPUP_ITEM
-
-#define STYLE_ID_MENU_WITH_BUTTONS_CONTAINER STYLE_ID_MESSAGE_BOX_QUESTION_CONTAINER
-#define STYLE_ID_MENU_WITH_BUTTONS_MESSAGE STYLE_ID_MESSAGE_BOX_QUESTION_MESSAGE
-#define STYLE_ID_MENU_WITH_BUTTONS_BUTTON STYLE_ID_MESSAGE_BOX_QUESTION_BUTTON
-
-#else
-
-#define STYLE_ID_INFO_ALERT_BUTTON STYLE_ID_ERROR_ALERT_BUTTON
-
-#endif
-
 namespace eez {
 namespace gui {
 
@@ -190,9 +165,9 @@ void ToastMessagePage::init(AppContext *appContext, ToastType type, const Value&
 
     lastActiveWidget = WidgetCursor();
 
-    auto styleId = type == INFO_TOAST ? STYLE_ID_INFO_ALERT : STYLE_ID_ERROR_ALERT;
+    auto styleId = type == INFO_TOAST ? EEZ_STYLE_ID_INFO_ALERT : EEZ_STYLE_ID_ERROR_ALERT;
     auto style = getStyle(styleId);
-    auto actionStyle = getStyle(INFO_TOAST ? STYLE_ID_INFO_ALERT_BUTTON : STYLE_ID_ERROR_ALERT_BUTTON);
+    auto actionStyle = getStyle(INFO_TOAST ? EEZ_STYLE_ID_INFO_ALERT_BUTTON : EEZ_STYLE_ID_ERROR_ALERT_BUTTON);
 
     font::Font font = styleGetFont(style);
 
@@ -237,8 +212,8 @@ void ToastMessagePage::init(AppContext *appContext, ToastType type, const Value&
         style->paddingBottom + style->borderSizeBottom;
 
     containerRectangleWidget.type = WIDGET_TYPE_RECTANGLE;
-    containerRectangleWidget.data = DATA_ID_NONE;
-    containerRectangleWidget.action = ACTION_ID_NONE;
+    containerRectangleWidget.data = EEZ_DATA_ID_NONE;
+    containerRectangleWidget.action = EEZ_ACTION_ID_NONE;
     containerRectangleWidget.style = styleId;
     containerRectangleWidget.flags.ignoreLuminosity = 0;
     containerRectangleWidget.flags.invertColors = 1;
@@ -250,8 +225,8 @@ void ToastMessagePage::init(AppContext *appContext, ToastType type, const Value&
     int yText = style->paddingTop;
 
     line2Widget.type = WIDGET_TYPE_TEXT;
-    line1Widget.data = DATA_ID_NONE;
-    line1Widget.action = ACTION_ID_NONE;
+    line1Widget.data = EEZ_DATA_ID_NONE;
+    line1Widget.action = EEZ_ACTION_ID_NONE;
     line1Widget.style = styleId;
     line1Widget.text = line1;
     line1Widget.flags = 0;
@@ -264,8 +239,8 @@ void ToastMessagePage::init(AppContext *appContext, ToastType type, const Value&
 
     if (line2) {
         line2Widget.type = WIDGET_TYPE_TEXT;
-        line2Widget.data = DATA_ID_NONE;
-        line2Widget.action = ACTION_ID_NONE;
+        line2Widget.data = EEZ_DATA_ID_NONE;
+        line2Widget.action = EEZ_ACTION_ID_NONE;
         line2Widget.style = styleId;
         line2Widget.text = line2;
         line2Widget.flags = 0;
@@ -278,8 +253,8 @@ void ToastMessagePage::init(AppContext *appContext, ToastType type, const Value&
 
         if (line3) {
             line3Widget.type = WIDGET_TYPE_TEXT;
-            line3Widget.data = DATA_ID_NONE;
-            line3Widget.action = ACTION_ID_NONE;
+            line3Widget.data = EEZ_DATA_ID_NONE;
+            line3Widget.action = EEZ_ACTION_ID_NONE;
             line3Widget.style = styleId;
             line3Widget.text = line3;
             line3Widget.flags = 0;
@@ -299,8 +274,8 @@ void ToastMessagePage::init(AppContext *appContext, ToastType type, const Value&
 
     if (actionLabel) {
         actionWidget.type = WIDGET_TYPE_BUTTON;
-        actionWidget.data = DATA_ID_NONE;
-        actionWidget.style = INFO_TOAST ? STYLE_ID_INFO_ALERT_BUTTON : STYLE_ID_ERROR_ALERT_BUTTON;
+        actionWidget.data = EEZ_DATA_ID_NONE;
+        actionWidget.style = INFO_TOAST ? EEZ_STYLE_ID_INFO_ALERT_BUTTON : EEZ_STYLE_ID_ERROR_ALERT_BUTTON;
         actionWidget.text = actionLabel;
         actionWidget.x = style->paddingLeft + (textWidth - actionLabelWidth) / 2;
         actionWidget.y = style->paddingTop + yText;
@@ -595,8 +570,8 @@ bool SelectFromEnumPage::isDisabled(int i) {
 }
 
 bool SelectFromEnumPage::calcSize() {
-    const Style *containerStyle = getStyle(smallFont ? STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER_S : STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER);
-    const Style *itemStyle = getStyle(smallFont ? STYLE_ID_SELECT_ENUM_ITEM_POPUP_ITEM_S : STYLE_ID_SELECT_ENUM_ITEM_POPUP_ITEM);
+    const Style *containerStyle = getStyle(smallFont ? EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER_S : EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER);
+    const Style *itemStyle = getStyle(smallFont ? EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_ITEM_S : EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_ITEM);
 
     font::Font font = styleGetFont(itemStyle);
 
@@ -672,9 +647,9 @@ void SelectFromEnumPage::updateInternalPage() {
 		return;
     }
 
-    const Style *containerStyle = getStyle(smallFont ? STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER_S : STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER);
-	const Style *itemStyle = getStyle(smallFont ? STYLE_ID_SELECT_ENUM_ITEM_POPUP_ITEM_S : STYLE_ID_SELECT_ENUM_ITEM_POPUP_ITEM);
-	const Style *disabledItemStyle = getStyle(smallFont ? STYLE_ID_SELECT_ENUM_ITEM_POPUP_DISABLED_ITEM_S : STYLE_ID_SELECT_ENUM_ITEM_POPUP_DISABLED_ITEM);
+    const Style *containerStyle = getStyle(smallFont ? EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER_S : EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER);
+	const Style *itemStyle = getStyle(smallFont ? EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_ITEM_S : EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_ITEM);
+	const Style *disabledItemStyle = getStyle(smallFont ? EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_DISABLED_ITEM_S : EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_DISABLED_ITEM);
 
     // draw background
     display::setColor(containerStyle->backgroundColor);
@@ -733,7 +708,7 @@ void SelectFromEnumPage::doSelectEnumItem() {
 }
 
 void SelectFromEnumPage::getItemPosition(int itemIndex, int &xItem, int &yItem) {
-    const Style *containerStyle = getStyle(smallFont ? STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER_S : STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER);
+    const Style *containerStyle = getStyle(smallFont ? EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER_S : EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER);
 
     if (numColumns == 1 || itemIndex < (numItems + 1) / 2) {
         xItem = x + containerStyle->paddingLeft;
@@ -785,16 +760,16 @@ void MenuWithButtonsPage::init(AppContext *appContext, const char *message, cons
     m_callback = callback;
 
     m_containerRectangleWidget.type = WIDGET_TYPE_RECTANGLE;
-    m_containerRectangleWidget.data = DATA_ID_NONE;
-    m_containerRectangleWidget.action = ACTION_ID_NONE;
-    m_containerRectangleWidget.style = STYLE_ID_MENU_WITH_BUTTONS_CONTAINER;
+    m_containerRectangleWidget.data = EEZ_DATA_ID_NONE;
+    m_containerRectangleWidget.action = EEZ_ACTION_ID_NONE;
+    m_containerRectangleWidget.style = EEZ_STYLE_ID_MENU_WITH_BUTTONS_CONTAINER;
     m_containerRectangleWidget.flags.ignoreLuminosity = 0;
 	m_containerRectangleWidget.flags.invertColors = 1;
 
     m_messageTextWidget.type = WIDGET_TYPE_TEXT;
-    m_messageTextWidget.data = DATA_ID_NONE;
-    m_messageTextWidget.action = ACTION_ID_NONE;
-    m_messageTextWidget.style = STYLE_ID_MENU_WITH_BUTTONS_MESSAGE;
+    m_messageTextWidget.data = EEZ_DATA_ID_NONE;
+    m_messageTextWidget.action = EEZ_ACTION_ID_NONE;
+    m_messageTextWidget.style = EEZ_STYLE_ID_MENU_WITH_BUTTONS_MESSAGE;
     m_messageTextWidget.text = message;
     m_messageTextWidget.flags = 0;
     TextWidget_autoSize(m_messageTextWidget);
@@ -803,9 +778,9 @@ void MenuWithButtonsPage::init(AppContext *appContext, const char *message, cons
 
     for (i = 0; menuItems[i]; i++) {
         m_buttonTextWidgets[i].type = WIDGET_TYPE_TEXT;
-        m_buttonTextWidgets[i].data = DATA_ID_NONE;
+        m_buttonTextWidgets[i].data = EEZ_DATA_ID_NONE;
         m_buttonTextWidgets[i].action = ACTION_ID_INTERNAL_MENU_WITH_BUTTONS;
-        m_buttonTextWidgets[i].style = STYLE_ID_MENU_WITH_BUTTONS_BUTTON;
+        m_buttonTextWidgets[i].style = EEZ_STYLE_ID_MENU_WITH_BUTTONS_BUTTON;
         m_buttonTextWidgets[i].text = menuItems[i];
         m_buttonTextWidgets[i].flags = 0;
         TextWidget_autoSize(m_buttonTextWidgets[i]);
@@ -813,8 +788,8 @@ void MenuWithButtonsPage::init(AppContext *appContext, const char *message, cons
 
     m_numButtonTextWidgets = i;
 
-    const Style *styleContainer = getStyle(STYLE_ID_MENU_WITH_BUTTONS_CONTAINER);
-    const Style *styleButton = getStyle(STYLE_ID_MENU_WITH_BUTTONS_BUTTON);
+    const Style *styleContainer = getStyle(EEZ_STYLE_ID_MENU_WITH_BUTTONS_CONTAINER);
+    const Style *styleButton = getStyle(EEZ_STYLE_ID_MENU_WITH_BUTTONS_BUTTON);
 
     int maxMenuItemWidth = 0;
     for (size_t i = 0; i < m_numButtonTextWidgets; i++) {
@@ -952,16 +927,16 @@ void QuestionPage::init(AppContext *appContext, const Value &message, const Valu
     m_callback = callback;
 
     m_containerRectangleWidget.type = WIDGET_TYPE_RECTANGLE;
-    m_containerRectangleWidget.data = DATA_ID_NONE;
-    m_containerRectangleWidget.action = ACTION_ID_NONE;
-    m_containerRectangleWidget.style = STYLE_ID_MENU_WITH_BUTTONS_CONTAINER;
+    m_containerRectangleWidget.data = EEZ_DATA_ID_NONE;
+    m_containerRectangleWidget.action = EEZ_ACTION_ID_NONE;
+    m_containerRectangleWidget.style = EEZ_STYLE_ID_MENU_WITH_BUTTONS_CONTAINER;
     m_containerRectangleWidget.flags.ignoreLuminosity = 0;
 	m_containerRectangleWidget.flags.invertColors = 1;
 
     m_messageTextWidget.type = WIDGET_TYPE_TEXT;
-    m_messageTextWidget.data = DATA_ID_NONE;
-    m_messageTextWidget.action = ACTION_ID_NONE;
-    m_messageTextWidget.style = STYLE_ID_MENU_WITH_BUTTONS_MESSAGE;
+    m_messageTextWidget.data = EEZ_DATA_ID_NONE;
+    m_messageTextWidget.action = EEZ_ACTION_ID_NONE;
+    m_messageTextWidget.style = EEZ_STYLE_ID_MENU_WITH_BUTTONS_MESSAGE;
     m_messageTextWidget.text = message.getString();
     m_messageTextWidget.flags = 0;
     TextWidget_autoSize(m_messageTextWidget);
@@ -970,9 +945,9 @@ void QuestionPage::init(AppContext *appContext, const Value &message, const Valu
 
     for (uint32_t i = 0; i < buttonsArray->arraySize; i++) {
         m_buttonTextWidgets[i].type = WIDGET_TYPE_TEXT;
-        m_buttonTextWidgets[i].data = DATA_ID_NONE;
+        m_buttonTextWidgets[i].data = EEZ_DATA_ID_NONE;
         m_buttonTextWidgets[i].action = ACTION_ID_INTERNAL_QUESTION_PAGE_BUTTON;
-        m_buttonTextWidgets[i].style = STYLE_ID_MENU_WITH_BUTTONS_BUTTON;
+        m_buttonTextWidgets[i].style = EEZ_STYLE_ID_MENU_WITH_BUTTONS_BUTTON;
         m_buttonTextWidgets[i].text = buttonsArray->values[i].getString();
         m_buttonTextWidgets[i].flags = 0;
         TextWidget_autoSize(m_buttonTextWidgets[i]);
@@ -980,8 +955,8 @@ void QuestionPage::init(AppContext *appContext, const Value &message, const Valu
 
     m_numButtonTextWidgets = buttonsArray->arraySize;
 
-    const Style *styleContainer = getStyle(STYLE_ID_MENU_WITH_BUTTONS_CONTAINER);
-    const Style *styleButton = getStyle(STYLE_ID_MENU_WITH_BUTTONS_BUTTON);
+    const Style *styleContainer = getStyle(EEZ_STYLE_ID_MENU_WITH_BUTTONS_CONTAINER);
+    const Style *styleButton = getStyle(EEZ_STYLE_ID_MENU_WITH_BUTTONS_BUTTON);
 
     int maxMenuItemWidth = 0;
     for (size_t i = 0; i < m_numButtonTextWidgets; i++) {

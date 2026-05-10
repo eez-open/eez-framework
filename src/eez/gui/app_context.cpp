@@ -166,7 +166,7 @@ void AppContext::pushPage(int pageId, Page *page) {
     int previousPageId = getActivePageId();
 
     // advance stack pointer
-    if (getActivePageId() != PAGE_ID_NONE && getActivePageId() != PAGE_ID_ASYNC_OPERATION_IN_PROGRESS && getActivePageId() != INTERNAL_PAGE_ID_TOAST_MESSAGE) {
+    if (getActivePageId() != EEZ_PAGE_ID_NONE && getActivePageId() != EEZ_PAGE_ID_ASYNC_OPERATION_IN_PROGRESS && getActivePageId() != INTERNAL_PAGE_ID_TOAST_MESSAGE) {
         m_pageNavigationStackPointer++;
         assert (m_pageNavigationStackPointer < CONF_GUI_PAGE_NAVIGATION_STACK_SIZE);
     }
@@ -263,7 +263,7 @@ void AppContext::onPageTouch(const WidgetCursor &foundWidget, Event &touchEvent)
     }
 #endif
 
-    if (activePageId != PAGE_ID_NONE && !isPageInternal(activePageId)) {
+    if (activePageId != EEZ_PAGE_ID_NONE && !isPageInternal(activePageId)) {
         auto page = getPageAsset(activePageId);
         if ((page->flags & CLOSE_PAGE_IF_TOUCHED_OUTSIDE_FLAG) != 0) {
             int xPage;
@@ -282,7 +282,7 @@ void AppContext::onPageTouch(const WidgetCursor &foundWidget, Event &touchEvent)
 
                 if (widgetCursor.widget) {
                    auto action = getWidgetAction(widgetCursor);
-                   if (action != ACTION_ID_NONE && canExecuteActionWhenTouchedOutsideOfActivePage(activePageId, action)) {
+                   if (action != EEZ_ACTION_ID_NONE && canExecuteActionWhenTouchedOutsideOfActivePage(activePageId, action)) {
                        processTouchEvent(touchEvent);
                    }
                 }
@@ -419,11 +419,11 @@ bool AppContext::isPageFullyCovered(int pageNavigationStackIndex) {
 }
 
 int AppContext::getLongTouchActionHook(const WidgetCursor &widgetCursor) {
-    return ACTION_ID_NONE;
+    return EEZ_ACTION_ID_NONE;
 }
 
 void AppContext::yesNoDialog(int yesNoPageId, const char *message, void (*yes_callback)(), void (*no_callback)(), void (*cancel_callback)()) {
-    set(WidgetCursor(), DATA_ID_ALERT_MESSAGE, Value(message));
+    set(WidgetCursor(), EEZ_DATA_ID_ALERT_MESSAGE, Value(message));
 
     m_dialogYesCallback = yes_callback;
     m_dialogNoCallback = no_callback;
@@ -433,7 +433,7 @@ void AppContext::yesNoDialog(int yesNoPageId, const char *message, void (*yes_ca
 }
 
 void AppContext::yesNoDialog(int yesNoPageId, Value value, void(*yes_callback)(), void(*no_callback)(), void(*cancel_callback)()) {
-	set(WidgetCursor(), DATA_ID_ALERT_MESSAGE, value);
+	set(WidgetCursor(), EEZ_DATA_ID_ALERT_MESSAGE, value);
 
 	m_dialogYesCallback = yes_callback;
 	m_dialogNoCallback = no_callback;

@@ -38,19 +38,6 @@ namespace display {
 
 #define TRANSPARENT_COLOR_INDEX 0xFFFF
 
-#define COLOR_BLACK 0x0000
-#define COLOR_WHITE 0xFFFF
-#define COLOR_RED 0xF800
-#define COLOR_GREEN 0x0400
-#define COLOR_BLUE 0x001F
-
-// C: rrrrrggggggbbbbb
-#define RGB_TO_COLOR(R, G, B) (uint16_t((R)&0xF8) << 8) | (uint16_t((G)&0xFC) << 3) | (((B)&0xF8) >> 3)
-
-#define COLOR_TO_R(C) (uint8_t(((C) >> 11) << 3))
-#define COLOR_TO_G(C) (uint8_t((((C) >> 5) << 2) & 0xFF))
-#define COLOR_TO_B(C) (uint8_t(((C) << 3) & 0xFF))
-
 extern VideoBuffer g_renderBuffer;
 
 void init();
@@ -86,24 +73,39 @@ extern uint32_t g_fpsAvg;
 void drawFpsGraph(int x, int y, int w, int h, const Style *style);
 #endif
 
-
-uint32_t color16to32(uint16_t color, uint8_t opacity = 255);
-uint16_t color32to16(uint32_t color);
-uint32_t blendColor(uint32_t fgColor, uint32_t bgColor);
-
 inline int getDisplayWidth() { return DISPLAY_WIDTH; }
 inline int getDisplayHeight() { return DISPLAY_HEIGHT;  }
 
-uint16_t getColor16FromIndex(uint16_t color);
+#if DISPLAY_BPP == 16
+typedef uint16_t Color;
+#else
+typedef uint32_t Color;
+#endif
 
+Color getColorFromIndex(uint16_t colorIndex);
+
+struct ColorRGBA {
+	uint8_t r, g, b, a;
+};
+void getColorRGBAFromIndex(uint16_t color, ColorRGBA *colorRGBA);
+
+// get foreground color
+Color getColor();
+
+// set foreground color by index
+void setColor(uint16_t colorIndex, bool ignoreLuminocity = false);
+
+// set foreground color by value
 void setColor(uint8_t r, uint8_t g, uint8_t b);
-void setColor16(uint16_t color16);
-void setColor(uint16_t color, bool ignoreLuminocity = false);
-uint16_t getColor();
+void setColorByValue(Color color);
 
+Color getBackColor();
+
+// set background color by index
+void setBackColor(uint16_t colorIndex, bool ignoreLuminocity = false);
+
+// set background color by value
 void setBackColor(uint8_t r, uint8_t g, uint8_t b);
-void setBackColor(uint16_t color, bool ignoreLuminocity = false);
-uint16_t getBackColor();
 
 uint8_t setOpacity(uint8_t opacity);
 uint8_t getOpacity();
@@ -124,6 +126,9 @@ void fillRect(void *dst, int x1, int y1, int x2, int y2);
 void bitBlt(void *src, int x1, int y1, int x2, int y2);
 void bitBlt(void *src, void *dst, int x1, int y1, int x2, int y2);
 void bitBlt(void *src, void *dst, int sx, int sy, int sw, int sh, int dx, int dy, uint8_t opacity); // also used for buffer rendering (see endRendering)
+
+// used by ThorVG
+void bitBlt(void *src, int srcBpp, uint32_t srcLineOffset, uint16_t *dst, int x, int y, int width, int height);
 
 // these are implemented by calling basic drawing operations
 void drawHLine(int x, int y, int l);
@@ -177,6 +182,17 @@ int getCharIndexAtPosition(int xPos, const char *text, int textLength, int x, in
 int getCursorXPosition(int cursorPosition, const char *text, int textLength, int x, int y, int clip_x1, int clip_y1, int clip_x2,int clip_y2, gui::font::Font &font);
 int8_t measureGlyph(int32_t encoding, gui::font::Font &font);
 int measureStr(const char *text, int textLength, gui::font::Font &font, int max_width = 0);
+
+enum DisplayState {
+    OFF,
+    TURNING_ON,
+    ON,
+    TURNING_OFF
+};
+
+extern DisplayState g_displayState;
+
+void markRenderBufferDirty(void);
 
 } // namespace display
 } // namespace gui

@@ -152,7 +152,7 @@ void DisplayDataWidgetState::render() {
         &color, &backgroundColor, &activeColor, &activeBackgroundColor,
         data.getType() == VALUE_TYPE_FLOAT
 #if OPTION_KEYPAD
-        || widget->data == DATA_ID_KEYPAD_EDIT_UNIT
+        || widget->data == EEZ_DATA_ID_KEYPAD_EDIT_UNIT
 #endif
         , // useSmallerFontIfDoesNotFit
         cursorPosition,

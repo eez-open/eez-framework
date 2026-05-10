@@ -19,6 +19,8 @@
 //
 //----------------------------------------------------------------------------
 
+#include <eez/conf-internal.h>
+
 #ifndef AGG2D_INCLUDED
 #define AGG2D_INCLUDED
 
@@ -58,16 +60,24 @@ class Agg2D
 #else
     typedef agg::rgba8  ColorType;
 #endif
-    typedef agg::order_rgba ComponentOrder; // Platform dependent!
+
+    typedef agg::order_rgba ComponentOrder;
+
     typedef agg::blender_rgba<ColorType, ComponentOrder>             Blender;
     typedef agg::comp_op_adaptor_rgba<ColorType, ComponentOrder>     BlenderComp;
     typedef agg::blender_rgba_pre<ColorType, ComponentOrder>         BlenderPre;
     typedef agg::comp_op_adaptor_rgba_pre<ColorType, ComponentOrder> BlenderCompPre;
 
 #if defined(EEZ_PLATFORM_STM32)
-	typedef agg::pixfmt_rgb565         PixFormat;
+#if DISPLAY_BPP == 16
+    typedef agg::pixfmt_rgb565       PixFormat;
+#elif DISPLAY_BPP == 24
+    typedef agg::pixfmt_bgr24        PixFormat;
+#elif DISPLAY_BPP == 32
+    typedef agg::pixfmt_alpha_blend_bgra<agg::blender_bgra32, agg::rendering_buffer>         PixFormat;
+#endif
 #else
-	typedef agg::pixfmt_alpha_blend_rgba<Blender, agg::rendering_buffer>         PixFormat;
+	typedef agg::pixfmt_alpha_blend_rgba<agg::blender_rgba32, agg::rendering_buffer>         PixFormat;
 #endif
 
     typedef agg::pixfmt_custom_blend_rgba<BlenderComp, agg::rendering_buffer>    PixFormatComp;

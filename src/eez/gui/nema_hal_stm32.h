@@ -7,19 +7,20 @@
  * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
+ 
 #pragma once
 
-namespace eez {
-namespace mcu {
-namespace touch {
+#include <eez/conf-internal.h>
 
-void read(bool &isPressed, int &x, int &y);
+#if defined(EEZ_NEMA_GFX)
 
-#if defined(EEZ_STM32_CUSTOM_TOUCH_MEASURE_CALLBACK)
-extern "C" void eez_stm32_touch_measure_callback(int *x, int *y, int *pressed);
+#include <nema_cmdlist.h>
+
+void nema_hal_stm32_init();
+
+extern bool nema_hal_stm32_ready;
+
+/* Reusable NemaGFX objects (allocated once, reused every frame). */
+extern nema_cmdlist_t nema_hal_stm32_cmd_list;
+
 #endif
-
-} // namespace touch
-} // namespace mcu
-} // namespace eez

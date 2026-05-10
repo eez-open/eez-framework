@@ -40,7 +40,7 @@ namespace gui {
 bool g_isBlinkTime;
 static bool g_wasBlinkTime;
 
-uint8_t g_selectedThemeIndex = THEME_ID_DEFAULT;
+uint8_t g_selectedThemeIndex = EEZ_THEME_ID_DEFAULT;
 
 #if !EEZ_OPTION_THREADS
 bool g_updateDisplay;
@@ -51,7 +51,7 @@ bool g_updateDisplay;
 void guiInit() {
 #ifndef GUI_SKIP_LOAD_MAIN_ASSETS
     if (!g_mainAssets) {
-        loadMainAssets(assets, sizeof(assets));
+        loadMainAssets(eezAssets, eezAssetsSize);
     }
 #endif
 
@@ -86,7 +86,7 @@ bool isInternalAction(int actionId) {
 }
 
 void executeAction(const WidgetCursor &widgetCursor, int actionId, void *param) {
-    if (actionId == ACTION_ID_NONE) {
+    if (actionId == EEZ_ACTION_ID_NONE) {
         return;
     }
 
@@ -147,7 +147,7 @@ static OverrideStyleRule g_overrideStyleRules[10];
 
 void setOverrideStyleRule(int16_t fromStyle, int16_t toStyle) {
     for (size_t i = 0; i < sizeof(g_overrideStyleRules) / sizeof(OverrideStyleRule); i++) {
-        if (g_overrideStyleRules[i].fromStyle == STYLE_ID_NONE) {
+        if (g_overrideStyleRules[i].fromStyle == EEZ_STYLE_ID_NONE) {
             g_overrideStyleRules[i].fromStyle = fromStyle;
             g_overrideStyleRules[i].toStyle = toStyle;
         } else if (g_overrideStyleRules[i].fromStyle == fromStyle) {
@@ -158,9 +158,9 @@ void setOverrideStyleRule(int16_t fromStyle, int16_t toStyle) {
 }
 
 int overrideStyle(const WidgetCursor &widgetCursor, int styleId) {
-    if (g_overrideStyleRules[0].fromStyle != STYLE_ID_NONE) {
+    if (g_overrideStyleRules[0].fromStyle != EEZ_STYLE_ID_NONE) {
         for (size_t i = 0; i < sizeof(g_overrideStyleRules) / sizeof(OverrideStyleRule); i++) {
-            if (g_overrideStyleRules[i].fromStyle == STYLE_ID_NONE) {
+            if (g_overrideStyleRules[i].fromStyle == EEZ_STYLE_ID_NONE) {
                 break;
             }
             if (g_overrideStyleRules[i].fromStyle == styleId) {
@@ -174,6 +174,16 @@ int overrideStyle(const WidgetCursor &widgetCursor, int styleId) {
     }
     return styleId;
 }
+
+int getWidgetAction(const WidgetCursor &widgetCursor) {
+    if (widgetCursor.widget->type == WIDGET_TYPE_INPUT) {
+        if (widgetCursor.widget->action == 0) {
+		    return EEZ_ACTION_ID_EDIT;
+        }
+    }
+	return widgetCursor.widget->action;
+}
+
 
 } // namespace gui
 } // namespace eez

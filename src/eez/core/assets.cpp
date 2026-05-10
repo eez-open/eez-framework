@@ -204,11 +204,11 @@ const gui::Style *getStyle(int styleID) {
 		auto assets = g_widgetCursor.assets;
 		int id = -styleID - 1;
 		if (assets == nullptr || assets == g_mainAssets || id >= (int)assets->styles.count) {
-			return getStyle(STYLE_ID_DEFAULT);
+			return getStyle(EEZ_STYLE_ID_DEFAULT);
 		}
 		return assets->styles[id];
 	}
-	return getStyle(STYLE_ID_DEFAULT);
+	return getStyle(EEZ_STYLE_ID_DEFAULT);
 }
 
 const gui::FontData *getFontData(int fontID) {

@@ -13,6 +13,7 @@
 #include <eez/gui/widgets/button.h>
 #include <eez/gui/widgets/rectangle.h>
 #include <eez/gui/widgets/text.h>
+#include <eez/gui/data.h>
 
 namespace eez {
 namespace gui {

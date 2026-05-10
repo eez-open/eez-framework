@@ -12,6 +12,8 @@
 
 #if EEZ_OPTION_GUI_ANIMATIONS
 
+#include <eez/gui/geometry.h>
+
 namespace eez {
 namespace gui {
 

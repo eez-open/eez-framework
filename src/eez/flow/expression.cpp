@@ -159,49 +159,10 @@ bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *ins
     g_stack.errorMessage = savedErrorMessage;
 
     if (g_stack.sp == savedSp + 1) {
-#if EEZ_OPTION_GUI
-        if (operation == DATA_OPERATION_GET_TEXT_REFRESH_RATE) {
-            result = g_stack.pop();
-            if (!result.isError()) {
-                if (result.getType() == VALUE_TYPE_NATIVE_VARIABLE) {
-                    auto nativeVariableId = result.getInt();
-                    result = Value(getTextRefreshRate(g_widgetCursor, nativeVariableId), VALUE_TYPE_UINT32);
-                } else {
-                    result = 0;
-                }
-                return true;
-            }
-        } else if (operation == DATA_OPERATION_GET_TEXT_CURSOR_POSITION) {
-            result = g_stack.pop();
-            if (!result.isError()) {
-                if (result.getType() == VALUE_TYPE_NATIVE_VARIABLE) {
-                    auto nativeVariableId = result.getInt();
-                    result = Value(getTextCursorPosition(g_widgetCursor, nativeVariableId), VALUE_TYPE_INT32);
-                } else {
-                    result = Value();
-                }
-                return true;
-            }
-        }  else if (operation == DATA_OPERATION_GET_CANVAS_REFRESH_STATE) {
-            result = g_stack.pop();
-            if (!result.isError()) {
-                if (result.getType() == VALUE_TYPE_NATIVE_VARIABLE) {
-                    auto nativeVariableId = result.getInt();
-                    result = getCanvasRefreshState(g_widgetCursor, nativeVariableId);
-                } else {
-                    result = Value();
-                }
-                return true;
-            }
-        } else {
-#endif
-            result = g_stack.pop().getValue();
-            if (!result.isError()) {
-                return true;
-            }
-#if EEZ_OPTION_GUI
+        result = g_stack.pop().getValue();
+        if (!result.isError()) {
+            return true;
         }
-#endif
     }
 
     FlowError flowError = errorMessage.setDescription(g_stack.errorMessage);
@@ -330,7 +291,7 @@ int16_t getNativeVariableId(const WidgetCursor &widgetCursor) {
 		}
 	}
 
-	return DATA_ID_NONE;
+	return EEZ_DATA_ID_NONE;
 }
 #endif
 

@@ -21,7 +21,7 @@
 //#include <bb3/system.h>
 //#include <bb3/psu/psu.h>
 
-#if defined(EEZ_PLATFORM_STM32) && !CONF_SURVIVE_MODE
+#if defined(EEZ_PLATFORM_STM32)
 #define USE_EEPROM 1
 #else
 #define USE_EEPROM 0
@@ -46,18 +46,7 @@ namespace eez {
 namespace eeprom {
 
 #if defined(EEZ_PLATFORM_STM32)
-// opcodes
-static const uint8_t WREN = 6;
-static const uint8_t WRDI = 4;
-static const uint8_t RDSR = 5;
-static const uint8_t WRSR = 1;
-static const uint8_t READ = 3;
-static const uint8_t WRITE = 2;
 
-// EEPROM AT24C256C
-// I2C-Compatible (2-Wire) Serial EEPROM
-// 256-Kbit (32,768 x 8)
-// http://ww1.microchip.com/downloads/en/devicedoc/atmel-8568-seeprom-at24c256c-datasheet.pdf
 #ifndef EEPROM_I2C_ADDRESS
 #define EEPROM_I2C_ADDRESS (0x50 << 1)
 #endif

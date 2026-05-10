@@ -125,9 +125,11 @@ void GaugeWidgetState::render() {
 
 	auto isActive = flags.active;
 
-	// auto colorBackground = getColor16FromIndex(style->background_color);
-	auto colorBorder = getColor16FromIndex(isActive ? style->activeColor : style->color);
-	auto colorBar = getColor16FromIndex(isActive ? barStyle->activeColor : barStyle->color);
+	ColorRGBA colorBorder;
+	getColorRGBAFromIndex(isActive ? style->activeColor : style->color, &colorBorder);
+
+	ColorRGBA colorBar;
+	getColorRGBAFromIndex(isActive ? barStyle->activeColor : barStyle->color, &colorBar);
 
 	auto xCenter = widgetCursor.w / 2;
 	auto yCenter = widgetCursor.h - 8;
@@ -147,7 +149,7 @@ void GaugeWidgetState::render() {
 	// draw frame
 	if (style->borderSizeLeft > 0) {
 		graphics.lineWidth(style->borderSizeLeft);
-		graphics.lineColor(COLOR_TO_R(colorBorder), COLOR_TO_G(colorBorder), COLOR_TO_B(colorBorder));
+		graphics.lineColor(colorBorder.r, colorBorder.g, colorBorder.b, colorBorder.a);
 		graphics.noFill();
 		graphics.roundedRect(
 			style->borderSizeLeft / 2.0,
@@ -174,7 +176,7 @@ void GaugeWidgetState::render() {
 	auto radBorderInner = radBorderOuter - BORDER_WIDTH;
 	graphics.resetPath();
 	graphics.noFill();
-	graphics.lineColor(COLOR_TO_R(colorBorder), COLOR_TO_G(colorBorder), COLOR_TO_B(colorBorder));
+	graphics.lineColor(colorBorder.r, colorBorder.g, colorBorder.b, colorBorder.a);
 	graphics.lineWidth(1.5);
 	arcBar(graphics, xCenter, yCenter, radBorderOuter, radBorderInner, 0);
 	graphics.drawPath();
@@ -185,7 +187,7 @@ void GaugeWidgetState::render() {
 	auto angle = remap(value, min, 180.0f, max, 0.0f);
 	graphics.resetPath();
 	graphics.noLine();
-	graphics.fillColor(COLOR_TO_R(colorBar), COLOR_TO_G(colorBar), COLOR_TO_B(colorBar));
+	graphics.fillColor(colorBar.r, colorBar.g, colorBar.b, colorBar.a);
 	graphics.lineWidth(1.5);
 	arcBar(graphics, xCenter, yCenter, radBarOuter, radBarInner, angle);
 	graphics.drawPath();
@@ -203,8 +205,9 @@ void GaugeWidgetState::render() {
 
 		graphics.resetPath();
 		graphics.noFill();
-		auto thresholdColor = getColor16FromIndex(isActive ? thresholdStyle->activeColor : thresholdStyle->color);
-		graphics.lineColor(COLOR_TO_R(thresholdColor), COLOR_TO_G(thresholdColor), COLOR_TO_B(thresholdColor));
+		ColorRGBA thresholdColor;
+		getColorRGBAFromIndex(isActive ? thresholdStyle->activeColor : thresholdStyle->color, &thresholdColor);
+		graphics.lineColor(thresholdColor.r, thresholdColor.g, thresholdColor.b, thresholdColor.a);
 		graphics.lineWidth(THRESHOLD_LINE_WIDTH);
 		graphics.moveTo(x1, y1);
 		graphics.lineTo(x2, y2);
@@ -228,8 +231,9 @@ void GaugeWidgetState::render() {
 
 			graphics.resetPath();
 			graphics.noFill();
-			auto tickColor = getColor16FromIndex(isActive ? ticksStyle->activeColor : ticksStyle->color);
-			graphics.lineColor(COLOR_TO_R(tickColor), COLOR_TO_G(tickColor), COLOR_TO_B(tickColor));
+			ColorRGBA tickColor;
+			getColorRGBAFromIndex(isActive ? ticksStyle->activeColor : ticksStyle->color, &tickColor);
+			graphics.lineColor(tickColor.r, tickColor.g, tickColor.b, tickColor.a);
 			graphics.lineWidth(TICK_LINE_WIDTH);
 			graphics.moveTo(x1, y1);
 			graphics.lineTo(x2, y2);

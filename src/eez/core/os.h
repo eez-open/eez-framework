@@ -66,26 +66,16 @@ uint32_t osKernelGetTickCount(void);
 
 #if defined(__EMSCRIPTEN__)
     #ifndef EM_PORT_API
-        #if defined(__EMSCRIPTEN__)
-            #include <emscripten.h>
-            #if defined(__cplusplus)
-                #define EM_PORT_API(rettype) extern "C" rettype EMSCRIPTEN_KEEPALIVE
-            #else
-                #define EM_PORT_API(rettype) rettype EMSCRIPTEN_KEEPALIVE
-            #endif
+        #include <emscripten.h>
+        #if defined(__cplusplus)
+            #define EM_PORT_API(rettype) extern "C" rettype EMSCRIPTEN_KEEPALIVE
         #else
-            #if defined(__cplusplus)
-                #define EM_PORT_API(rettype) extern "C" rettype
-            #else
-                #define EM_PORT_API(rettype) rettype
-            #endif
+            #define EM_PORT_API(rettype) rettype EMSCRIPTEN_KEEPALIVE
         #endif
     #endif
 #else
     #define EM_PORT_API(rettype) rettype
-
     uint32_t osKernelGetTickCount();
-
 #endif
 
 namespace eez {

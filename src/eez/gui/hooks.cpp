@@ -13,7 +13,7 @@
 #if EEZ_OPTION_GUI
 
 #include <eez/gui/gui.h>
-#include <eez/gui/display-private.h>
+#include <eez/gui/display.h>
 #if OPTION_KEYPAD
 #include <eez/gui/keypad.h>
 #endif
@@ -25,7 +25,7 @@ namespace eez {
 namespace gui {
 
 static int getExtraLongTouchAction() {
-    return ACTION_ID_NONE;
+    return EEZ_ACTION_ID_NONE;
 }
 
 static float getDefaultAnimationDuration() {
@@ -42,13 +42,13 @@ static void externalData(int16_t id, DataOperationEnum operation, const WidgetCu
 
 static int resolveExternalPage(int pageId, Assets **assets) {
     *assets = g_mainAssets;
-    return PAGE_ID_NONE;
+    return EEZ_PAGE_ID_NONE;
 }
 
 static OnTouchFunctionType getWidgetTouchFunctionHook(const WidgetCursor &widgetCursor) {
 #if OPTION_KEYPAD
-	auto data = widgetCursor.widget->data < 0 ? (g_mainAssets->flowDefinition ? flow::getNativeVariableId(widgetCursor) : DATA_ID_NONE) : widgetCursor.widget->data;
-	if (data == DATA_ID_KEYPAD_TEXT) {
+	auto data = widgetCursor.widget->data < 0 ? (g_mainAssets->flowDefinition ? flow::getNativeVariableId(widgetCursor) : 0) : widgetCursor.widget->data;
+	if (data == EEZ_DATA_ID_KEYPAD_TEXT) {
         return eez::gui::onKeypadTextTouch;
     }
 #endif

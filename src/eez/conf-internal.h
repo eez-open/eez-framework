@@ -117,3 +117,7 @@
     #define DIAG_POP
     #define DIAG_IGNORE(w)
 #endif
+
+#ifndef EXTRAM_DATA
+#define EXTRAM_DATA
+#endif

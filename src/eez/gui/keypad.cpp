@@ -270,7 +270,7 @@ int Keypad::getXScroll(const WidgetCursor &widgetCursor) {
 ////////////////////////////////////////////////////////////////////////////////
 
 NumericKeypadOptions::NumericKeypadOptions() {
-    pageId = PAGE_ID_NUMERIC_KEYPAD;
+    pageId = EEZ_PAGE_ID_NUMERIC_KEYPAD;
 
     this->slotIndex = -1;
     this->subchannelIndex = -1;

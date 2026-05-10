@@ -125,7 +125,7 @@ void processTouchEvent(Event &touchEvent) {
                 g_extraLongTouchGenerated = true;
 				g_touchActionExecuted = true;
 				int action = g_hooks.getExtraLongTouchAction();
-				if (action != ACTION_ID_NONE) {
+				if (action != EEZ_ACTION_ID_NONE) {
 					executeAction(WidgetCursor(), action);
 				}
             }
@@ -198,7 +198,7 @@ static void onWidgetDefaultTouch(const WidgetCursor &widgetCursor, Event &touchE
         g_touchActionExecuted = false;
         g_touchActionExecutedAtDown = false;
 
-        if (action == ACTION_ID_DRAG_OVERLAY) {
+        if (action == EEZ_ACTION_ID_DRAG_OVERLAY) {
             dragOverlay(touchEvent);
             g_activeWidget = widgetCursor;
         } else if (widgetCursor.appContext->testExecuteActionOnTouchDown(action)) {
@@ -211,7 +211,7 @@ static void onWidgetDefaultTouch(const WidgetCursor &widgetCursor, Event &touchE
             g_activeWidget = widgetCursor;
         }
     } else if (touchEvent.type == EVENT_TYPE_TOUCH_MOVE) {
-        if (action == ACTION_ID_DRAG_OVERLAY) {
+        if (action == EEZ_ACTION_ID_DRAG_OVERLAY) {
             dragOverlay(touchEvent);
         }
     } else if (touchEvent.type == EVENT_TYPE_AUTO_REPEAT) {
@@ -222,7 +222,7 @@ static void onWidgetDefaultTouch(const WidgetCursor &widgetCursor, Event &touchE
     } else if (touchEvent.type == EVENT_TYPE_LONG_TOUCH) {
         g_touchActionExecuted = true;
         int action = widgetCursor.appContext->getLongTouchActionHook(widgetCursor);
-        if (action != ACTION_ID_NONE) {
+        if (action != EEZ_ACTION_ID_NONE) {
             g_isLongTouch = true;
             executeAction(widgetCursor, action);
             g_isLongTouch = false;
@@ -230,7 +230,7 @@ static void onWidgetDefaultTouch(const WidgetCursor &widgetCursor, Event &touchE
     } else if (touchEvent.type == EVENT_TYPE_TOUCH_UP) {
         if (!g_touchActionExecutedAtDown) {
             if (!g_touchActionExecuted) {
-                if (action == ACTION_ID_DRAG_OVERLAY) {
+                if (action == EEZ_ACTION_ID_DRAG_OVERLAY) {
                     dragOverlay(touchEvent);
                 } else {
                     executeAction(widgetCursor, action);

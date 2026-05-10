@@ -31,7 +31,7 @@ namespace gui {
 bool AppViewWidgetState::updateState() {
     WIDGET_STATE_START(Widget)
 
-    if (widgetCursor.widget->data != DATA_ID_NONE) {
+    if (widgetCursor.widget->data != EEZ_DATA_ID_NONE) {
         Value appContextValue = get(widgetCursor, widgetCursor.widget->data);
         appContext = (AppContext *)appContextValue.getVoidPointer();;
     } else {
@@ -52,7 +52,7 @@ void AppViewWidgetState::enumChildren() {
 	auto savedAppContext = widgetCursor.appContext;
     widgetCursor.appContext = appContext;
 
-    if (appContext->getActivePageId() != PAGE_ID_NONE) {
+    if (appContext->getActivePageId() != EEZ_PAGE_ID_NONE) {
         for (int i = 0; i <= appContext->m_pageNavigationStackPointer; i++) {
 			if (!appContext->isPageFullyCovered(i)) {
 				appContext->updatePage(i, widgetCursor);

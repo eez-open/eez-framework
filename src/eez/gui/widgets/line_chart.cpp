@@ -341,8 +341,10 @@ void LineChartWidgetState::render() {
 
             startPixelsDraw();
 
-            auto color16 = getColor16FromIndex(color);
-            graphics.fillColor(COLOR_TO_R(color16), COLOR_TO_G(color16), COLOR_TO_B(color16));
+            ColorRGBA colorRGBA;
+            getColorRGBAFromIndex(color, &colorRGBA);
+            graphics.fillColor(colorRGBA.r, colorRGBA.g, colorRGBA.b, colorRGBA.a);
+            
             graphics.noLine();
             graphics.ellipse(
                 -widgetCursor.x + x + (LEGEND_ICON_WIDTH - 4) / 2,
@@ -575,8 +577,9 @@ void LineChartWidgetState::render() {
                 }
             }
 
-            auto color16 = getColor16FromIndex(component->lines[lineIndex]->color);
-            graphics.lineColor(COLOR_TO_R(color16), COLOR_TO_G(color16), COLOR_TO_B(color16));
+            ColorRGBA colorRGBA;
+            getColorRGBAFromIndex(component->lines[lineIndex]->color, &colorRGBA);
+            graphics.lineColor(colorRGBA.r, colorRGBA.g, colorRGBA.b, colorRGBA.a);
             graphics.lineWidth(component->lines[lineIndex]->width);
             graphics.noFill();
             graphics.drawPath();

@@ -39,6 +39,9 @@ struct UserWidgetWidgetExecutionState : public ComponenentExecutionState {
 };
 
 static UserWidgetWidgetExecutionState *createUserWidgetFlowState(FlowState *flowState, uint16_t userWidgetWidgetComponentIndex, int16_t pageId) {
+    if (pageId == -1) {
+        return 0;
+    }
     auto userWidgetFlowState = initPageFlowState(flowState->assets, pageId, flowState, userWidgetWidgetComponentIndex);
 
     // init user properties

@@ -363,7 +363,7 @@ static void findWidgetStep() {
         int distance = dx * dx + dy * dy;
 
         auto action = getWidgetAction(widgetCursor);
-        if (action == ACTION_ID_DRAG_OVERLAY) {
+        if (action == EEZ_ACTION_ID_DRAG_OVERLAY) {
             if (overlay && !overlay->state) {
                 return;
             }
@@ -382,7 +382,7 @@ static void findWidgetStep() {
 
                 // if found widget is AppView, make sure we set right AppContext
                 if (widget->type == WIDGET_TYPE_APP_VIEW) {
-                    if (widget->data != DATA_ID_NONE) {
+                    if (widget->data != EEZ_DATA_ID_NONE) {
                         Value appContextValue = get(widgetCursor, widget->data);
                         g_foundWidget.appContext = (AppContext *)appContextValue.getVoidPointer();
                     }

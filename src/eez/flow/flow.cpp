@@ -224,23 +224,25 @@ FlowState *getPageFlowState(Assets *assets, int16_t pageIndex, const WidgetCurso
 
 		return getUserWidgetFlowState(flowState, userWidgetWidgetComponentIndex, pageIndex);
 	} else {
-		auto page = assets->pages[pageIndex];
-		if (!(page->flags & PAGE_IS_USED_AS_USER_WIDGET)) {
-            FlowState *flowState;
-            for (flowState = g_firstFlowState; flowState; flowState = flowState->nextSibling) {
-                if (flowState->assets == assets && flowState->flowIndex == pageIndex) {
-                    break;
+        if (pageIndex >= 0 && pageIndex < (int16_t)assets->pages.count) {
+		    auto page = assets->pages[pageIndex];
+		    if (!(page->flags & PAGE_IS_USED_AS_USER_WIDGET)) {
+                FlowState *flowState;
+                for (flowState = g_firstFlowState; flowState; flowState = flowState->nextSibling) {
+                    if (flowState->assets == assets && flowState->flowIndex == pageIndex) {
+                        break;
+                    }
                 }
-            }
 
-            if (flowState) {
-                flowState->deleteOnNextTick = false;
-			} else {
-				flowState = initPageFlowState(assets, pageIndex, nullptr, 0);
-            }
+                if (flowState) {
+                    flowState->deleteOnNextTick = false;
+			    } else {
+				    flowState = initPageFlowState(assets, pageIndex, nullptr, 0);
+                }
 
-			return flowState;
-		}
+			    return flowState;
+		    }
+        }
 	}
 
 	return nullptr;
@@ -576,6 +578,8 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCurs
         } else if (operation == DATA_OPERATION_GET_TEXT_REFRESH_RATE) {
             getValue(flowDataId, operation, widgetCursor, value);
         } else if (operation == DATA_OPERATION_GET_BITMAP_IMAGE) {
+            getValue(flowDataId, operation, widgetCursor, value);
+        } else if (operation == DATA_OPERATION_GET_OVERLAY_DATA) {
             getValue(flowDataId, operation, widgetCursor, value);
         }
 #if OPTION_KEYPAD
