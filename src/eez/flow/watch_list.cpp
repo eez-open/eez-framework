@@ -89,7 +89,6 @@ void visitWatchList() {
         if (canFreeFlowState(node->flowState)) {
             // remove this watch
             freeFlowState(node->flowState);
-            watchListRemove(node);
         } else {
             incRefCounterForFlowState(node->flowState);
         }

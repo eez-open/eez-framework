@@ -16,14 +16,13 @@
 #include <math.h>
 #include <string.h>
 
-#include <eez/core/step_values.h>
-
 #include <eez/core/action.h>
 #include <eez/core/unit.h>
 #include <eez/core/alloc.h>
 #include <eez/core/util.h>
 #include <eez/core/value.h>
 #include <eez/core/value_types.h>
+#include <eez/core/step_values.h>
 
 #include <eez/gui/event.h>
 

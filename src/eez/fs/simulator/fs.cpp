@@ -10,7 +10,7 @@
 
 #include <eez/conf-internal.h>
 
-#if (defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)) && !defined(EEZ_FOR_LVGL)
+#if EEZ_OPTION_FS && (defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)) && !defined(EEZ_FOR_LVGL)
 
 #include <eez/fs/fs.h>
 

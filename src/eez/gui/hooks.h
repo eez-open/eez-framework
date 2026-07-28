@@ -18,6 +18,7 @@ struct Hooks {
     float (*getDefaultAnimationDuration)();
     void (*executeExternalAction)(const WidgetCursor &widgetCursor, int16_t actionId, void *param);
     void (*externalData)(int16_t id, DataOperationEnum operation, const WidgetCursor &widgetCursor, Value &value);
+    int (*resolveExternalPage)(int pageId, Assets **assets);
     OnTouchFunctionType (*getWidgetTouchFunction)(const WidgetCursor &widgetCursor);
     Page *(*getPageFromId)(int pageId);
     void (*setFocusCursor)(const WidgetCursor& cursor, int16_t dataId);

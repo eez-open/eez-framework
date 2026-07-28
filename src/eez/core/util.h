@@ -136,6 +136,8 @@ void getBaseFileName(const char *path, char *baseName, unsigned baseNameSize);
 typedef float (*EasingFuncType)(float x);
 extern EasingFuncType g_easingFuncs[];
 
+uint32_t millis();
+
 class Interval {
 public:
 	// Returns true when called for the first time,

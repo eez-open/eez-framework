@@ -44,8 +44,8 @@ static int32_t anim_callback_get_width(lv_anim_t * a) { return lv_obj_get_width(
 static void anim_callback_set_height(void *obj, int32_t v) { lv_obj_set_height((lv_obj_t *)obj, v); }
 static int32_t anim_callback_get_height(lv_anim_t * a) { return lv_obj_get_height((lv_obj_t *)a->user_data); }
 
-static void anim_callback_set_opacity(void *obj, int32_t v) { lv_obj_set_style_opa((lv_obj_t *)obj, v, 0); }
-static int32_t anim_callback_get_opacity(lv_anim_t * a) { return lv_obj_get_style_opa((lv_obj_t *)a->user_data, 0); }
+static void anim_callback_set_opacity(void *obj, int32_t v) { lv_obj_set_style_opa((lv_obj_t *)obj, v, LV_PART_MAIN); }
+static int32_t anim_callback_get_opacity(lv_anim_t * a) { return lv_obj_get_style_opa((lv_obj_t *)a->user_data, LV_PART_MAIN); }
 
 static void anim_callback_set_image_zoom(void *obj, int32_t v) { lv_img_set_zoom((lv_obj_t *)obj, v); }
 static int32_t anim_callback_get_image_zoom(lv_anim_t * a) { return lv_img_get_zoom((lv_obj_t *)a->user_data); }
@@ -264,13 +264,9 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                     } else if (specific->property == BASIC_HEIGHT) {
                         lv_obj_set_height(target, intValue);
                     } else if (specific->property == BASIC_OPACITY) {
-                        lv_obj_set_style_opa(target, intValue, 0);
+                        lv_obj_set_style_opa(target, intValue, LV_PART_MAIN);
                     } else if (specific->property == DROPDOWN_SELECTED) {
- #if LVGL_VERSION_MAJOR >= 9 && LVGL_VERSION_MINOR >= 3
-                        lv_dropdown_set_selected(target, intValue, LV_ANIM_OFF);
-#else
                         lv_dropdown_set_selected(target, intValue);
-#endif
                     } else if (specific->property == IMAGE_ANGLE) {
                         lv_img_set_angle(target, intValue);
                     } else if (specific->property == IMAGE_ZOOM) {
@@ -412,6 +408,42 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+static char *g_fullObjectNameBuffer = nullptr;
+static size_t g_fullObjectNameBufferLength = 0;
+
+const char *getFullObjectName(FlowState *flowState, const char *objectName) {
+    int lvglWidgetStartIndex = 0;
+    for (FlowState *fs = flowState; fs; fs = fs->parentFlowState) {
+        lvglWidgetStartIndex += fs->lvglWidgetStartIndex;
+    }
+
+    if (lvglWidgetStartIndex == 0) {
+        return objectName;
+    }
+
+    const char *prefix = getLvglObjectNameFromIndexHook(lvglWidgetStartIndex - 1);
+
+    size_t prefixLength = strlen(prefix);
+    size_t objectNameLength = strlen(objectName);
+    size_t totalLength = prefixLength + 2 + objectNameLength + 1;
+
+    if (g_fullObjectNameBufferLength < totalLength) {
+        if (g_fullObjectNameBuffer) {
+            eez::free(g_fullObjectNameBuffer);
+        }
+        g_fullObjectNameBuffer = (char *)eez::alloc(totalLength, 0xe4145ae4);
+        g_fullObjectNameBufferLength = totalLength;
+    }
+
+    strcpy(g_fullObjectNameBuffer, prefix);
+    strcat(g_fullObjectNameBuffer, "__");
+    strcat(g_fullObjectNameBuffer, objectName);
+
+    return g_fullObjectNameBuffer;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 #define ACTION_START(NAME) static void NAME(FlowState *flowState, unsigned componentIndex, const ListOfAssetsPtr<Property> &properties, uint32_t actionIndex) { \
     const char *actionName = #NAME; \
     int propIndex = 0;
@@ -509,12 +541,13 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
         NAME = (lv_obj_t *)NAME##Value.getWidget(); \
     } else if (NAME##Value.isString()) { \
         const char *objectName = NAME##Value.getString(); \
-        int32_t widgetIndex = getLvglObjectByNameHook(objectName); \
+        const char *fullObjectName = getFullObjectName(flowState, objectName); \
+        int32_t widgetIndex = getLvglObjectByNameHook(fullObjectName); \
         if (widgetIndex == -1) { \
             throwError(flowState, componentIndex, FlowError::NotFoundInAction("Widget", objectName, actionName, actionIndex)); \
             return; \
         } \
-        NAME = getLvglObjectFromIndexHook(flowState->lvglWidgetStartIndex + widgetIndex); \
+        NAME = getLvglObjectFromIndexHook(widgetIndex); \
     } else { \
         int32_t widgetIndex = NAME##Value.getInt(); \
         for (FlowState *fs = flowState; fs; fs = fs->parentFlowState) widgetIndex += fs->lvglWidgetStartIndex; \
@@ -643,6 +676,20 @@ ACTION_START(objGetY)
     RESULT(result, Value((int)y, VALUE_TYPE_INT32));
 ACTION_END
 
+ACTION_START(objGetDisplayX)
+    WIDGET_PROP(obj);
+    lv_area_t area;
+    lv_obj_get_coords(obj, &area);
+    RESULT(result, Value((int)area.x1, VALUE_TYPE_INT32));
+ACTION_END
+
+ACTION_START(objGetDisplayY)
+    WIDGET_PROP(obj);
+    lv_area_t area;
+    lv_obj_get_coords(obj, &area);
+    RESULT(result, Value((int)area.y1, VALUE_TYPE_INT32));
+ACTION_END
+
 ACTION_START(objSetWidth)
     WIDGET_PROP(obj);
     INT32_PROP(width);
@@ -683,15 +730,90 @@ ACTION_START(objGetHeight)
     RESULT(result, Value((int)height, VALUE_TYPE_INT32));
 ACTION_END
 
+ACTION_START(objStyleSetProperty)
+    WIDGET_PROP(obj);
+    UINT32_PROP(property);
+
+    if (property == LV_STYLE_TEXT_FONT) {
+        // font
+        STR_PROP(str);
+
+        const void *ptr = getLvglFontByNameHook(str);
+        if (ptr) {
+            UINT32_PROP(part);
+            UINT32_PROP(state);
+            lv_style_value_t style_value;
+            style_value.ptr = ptr;
+            lv_obj_set_local_style_prop(obj, (lv_style_prop_t)property, style_value, part | state);
+        } else {
+            throwError(flowState, componentIndex, FlowError::NotFoundInAction("Font", str, "objStyleSetProperty", actionIndex));
+        }        
+    } else if (
+#if LVGL_VERSION_MAJOR >= 9        
+        property == LV_STYLE_BG_IMAGE_SRC ||
+        property == LV_STYLE_ARC_IMAGE_SRC
+#else
+        property == LV_STYLE_BG_IMG_SRC ||
+        property == LV_STYLE_ARC_IMG_SRC
+#endif
+    ) {
+        // image
+        STR_PROP(str);
+
+        const void *ptr = getLvglImageByNameHook(str);
+        if (ptr) {
+            UINT32_PROP(part);
+            UINT32_PROP(state);
+            lv_style_value_t style_value;
+            style_value.ptr = ptr;
+            lv_obj_set_local_style_prop(obj, (lv_style_prop_t)property, style_value, part | state);
+        } else {
+            throwError(flowState, componentIndex, FlowError::NotFoundInAction("Font", str, "objStyleSetProperty", actionIndex));
+        }        
+    } else if (
+        property == LV_STYLE_BG_COLOR ||
+        property == LV_STYLE_BG_GRAD_COLOR ||
+#if LVGL_VERSION_MAJOR >= 9        
+        property == LV_STYLE_BG_IMAGE_RECOLOR ||
+#else
+        property == LV_STYLE_BG_IMG_RECOLOR ||
+#endif
+        property == LV_STYLE_BORDER_COLOR ||
+        property == LV_STYLE_OUTLINE_COLOR ||
+        property == LV_STYLE_SHADOW_COLOR ||
+        property == LV_STYLE_IMG_RECOLOR ||
+        property == LV_STYLE_LINE_COLOR ||
+        property == LV_STYLE_ARC_COLOR ||
+        property == LV_STYLE_TEXT_COLOR
+    ) {
+        // color
+        UINT32_PROP(value);
+        UINT32_PROP(part);
+        UINT32_PROP(state);
+        lv_style_value_t style_value;
+        style_value.color = lv_color_hex(value);
+        lv_obj_set_local_style_prop(obj, (lv_style_prop_t)property, style_value, part | state);
+    } else  {
+        // number
+        UINT32_PROP(value);
+        UINT32_PROP(part);
+        UINT32_PROP(state);
+        lv_style_value_t style_value;
+        style_value.num = value;
+        lv_obj_set_local_style_prop(obj, (lv_style_prop_t)property, style_value, part | state);
+    }
+    lv_obj_update_layout(obj);
+ACTION_END
+
 ACTION_START(objSetStyleOpa)
     WIDGET_PROP(obj);
     INT32_PROP(opa);
-    lv_obj_set_style_opa(obj, (lv_opa_t)opa, 0);
+    lv_obj_set_style_opa(obj, (lv_opa_t)opa, LV_PART_MAIN);
 ACTION_END
 
 ACTION_START(objGetStyleOpa)
     WIDGET_PROP(obj);
-    int32_t opa = (int32_t)lv_obj_get_style_opa(obj, 0);
+    int32_t opa = (int32_t)lv_obj_get_style_opa(obj, LV_PART_MAIN);
     RESULT(result, Value((int)opa, VALUE_TYPE_INT32));
 ACTION_END
 
@@ -772,6 +894,13 @@ ACTION_START(arcSetValue)
     lv_arc_set_value(obj, value);
 ACTION_END
 
+ACTION_START(arcRotateObjToAngle)
+    WIDGET_PROP(arcObj);
+    WIDGET_PROP(obj);
+    INT32_PROP(offset);
+    lv_arc_rotate_obj_to_angle(arcObj, obj, offset);
+ACTION_END
+
 ACTION_START(barSetValue)
     WIDGET_PROP(obj);
     INT32_PROP(value);
@@ -783,15 +912,10 @@ ACTION_START(dropdownSetSelected)
     WIDGET_PROP(obj);
     UINT32_PROP(value);
 #if LVGL_VERSION_MAJOR >= 9
-#if LVGL_VERSION_MINOR >= 3
-    lv_dropdown_set_selected(obj, value, LV_ANIM_OFF);
-#else
     lv_dropdown_set_selected(obj, value);
-#endif
 #else
     lv_dropdown_set_selected(obj, (uint16_t)value);
 #endif
-
 ACTION_END
 
 ACTION_START(imageSetSrc)
@@ -828,6 +952,9 @@ ACTION_START(qrCodeUpdate)
     STR_PROP(text);
 #if LV_USE_QRCODE
     lv_qrcode_update(obj, text, strlen(text));
+#else
+    EEZ_UNUSED(obj);
+    EEZ_UNUSED(text);
 #endif
 ACTION_END
 
@@ -1056,6 +1183,27 @@ ACTION_START(buttonMatrixClearButtonCtrl)
 #endif
 ACTION_END
 
+ACTION_START(tabviewSetActiveTab)
+    WIDGET_PROP(obj);
+    UINT32_PROP(tabIndex);
+    BOOL_PROP(animated);
+#if LVGL_VERSION_MAJOR >= 9
+    lv_tabview_set_active(obj, tabIndex, animated ? LV_ANIM_ON : LV_ANIM_OFF);
+#else
+    lv_tabview_set_act(obj, tabIndex, animated ? LV_ANIM_ON : LV_ANIM_OFF);
+#endif
+ACTION_END
+
+ACTION_START(tabviewGetActiveTab)
+    WIDGET_PROP(obj);
+#if LVGL_VERSION_MAJOR >= 9
+    uint32_t tabIndex = lv_tabview_get_tab_active(obj);
+#else
+    uint32_t tabIndex = (uint32_t)lv_tabview_get_tab_act(obj);
+#endif
+    RESULT(result, Value((int)tabIndex, VALUE_TYPE_INT32));
+ACTION_END
+
 ////////////////////////////////////////////////////////////////////////////////
 
 typedef void (*ActionType)(FlowState *flowState, unsigned componentIndex, const ListOfAssetsPtr<Property> &properties, uint32_t actionIndex);
@@ -1119,7 +1267,13 @@ static ActionType actions[] = {
     /* 55 */ &buttonMatrixClearButtonCtrl,
     /* 56 */ &sliderSetValueLeft,
     /* 57 */ &sliderSetRange,
-    /* 58 */ &qrCodeUpdate
+    /* 58 */ &qrCodeUpdate,
+    /* 59 */ &objStyleSetProperty,
+    /* 60 */ &tabviewSetActiveTab,
+    /* 61 */ &tabviewGetActiveTab,
+    /* 62 */ &arcRotateObjToAngle,
+    /* 61 */ &objGetDisplayX,
+    /* 62 */ &objGetDisplayY
 };
 
 ////////////////////////////////////////////////////////////////////////////////

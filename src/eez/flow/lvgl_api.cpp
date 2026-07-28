@@ -49,6 +49,9 @@ static size_t g_numStyles;
 static const ext_img_desc_t *g_images;
 static size_t g_numImages;
 
+static const ext_font_desc_t *g_fonts;
+static size_t g_numFonts;
+
 static ActionExecFunc *g_actions;
 
 int16_t g_currentScreen = -1;
@@ -57,6 +60,8 @@ static const char **g_themeNames;
 static size_t g_numThemes;
 static void (*g_changeColorTheme)(uint32_t themeIndex);
 static uint32_t g_selectedThemeIndex;
+static uint32_t *g_themeColors;
+static size_t g_numColorsPerTheme;
 
 static void (*g_createScreenFunc)(int screenIndex);
 static void (*g_deleteScreenFunc)(int screenIndex);
@@ -120,18 +125,39 @@ static const void *getLvglImageByName(const char *name) {
     return 0;
 }
 
-uint8_t g_lastLVGLEventUserDataBuffer[64];
-uint8_t g_lastLVGLEventParamBuffer[64];
+static const void *getLvglFontByName(const char *name) {
+    for (size_t i = 0; i < g_numFonts; i++) {
+        if (strcmp(g_fonts[i].name, name) == 0) {
+            return g_fonts[i].font_ptr;
+        }
+    }
+    return 0;
+}
+
+static const char *getLvglObjectNameFromIndex(int32_t index) {
+    if (index >= 0 && index < (int32_t)g_numObjects) {
+        return g_objectNames[index];
+    }
+    return 0;
+}
+
 static lv_event_t g_lastLVGLEvent;
 
 static void executeLvglAction(int actionIndex) {
     g_actions[actionIndex](&g_lastLVGLEvent);
 }
 
-void eez_flow_init_themes(const char **themeNames, size_t numThemes, void (*changeColorTheme)(uint32_t themeIndex)) {
+EM_PORT_API(void) eez_flow_init_themes(const char **themeNames, size_t numThemes, void (*changeColorTheme)(uint32_t themeIndex), uint32_t *themeColors, size_t numColorsPerTheme) {
     g_themeNames = themeNames;
     g_numThemes = numThemes;
     g_changeColorTheme = changeColorTheme;
+    g_themeColors = themeColors;
+    g_numColorsPerTheme = numColorsPerTheme;
+}
+
+void eez_flow_init_fonts(const ext_font_desc_t *fonts, size_t numFonts) {
+    g_fonts = fonts;
+    g_numFonts = numFonts;
 }
 
 void eez_flow_set_create_screen_func(void (*createScreenFunc)(int screenIndex)) {
@@ -142,7 +168,7 @@ void eez_flow_set_delete_screen_func(void (*deleteScreenFunc)(int screenIndex)) 
     g_deleteScreenFunc = deleteScreenFunc;
 }
 
-static void lvglSetColorTheme(const char *themeName) {
+void eez_flow_set_theme(const char *themeName) {
     for (uint32_t i = 0; i < g_numThemes; i++) {
         if (strcmp(themeName, g_themeNames[i]) == 0) {
             g_selectedThemeIndex = i;
@@ -258,9 +284,11 @@ extern "C" void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj
     eez::flow::getLvglGroupByNameHook = getLvglGroupByName;
     eez::flow::getLvglStyleByNameHook = getLvglStyleByName;
     eez::flow::getLvglImageByNameHook = getLvglImageByName;
+    eez::flow::getLvglFontByNameHook = getLvglFontByName;
+    eez::flow::getLvglObjectNameFromIndexHook = getLvglObjectNameFromIndex;
     eez::flow::executeLvglActionHook = executeLvglAction;
     eez::flow::getLvglGroupFromIndexHook = getLvglGroupFromIndex;
-    eez::flow::lvglSetColorThemeHook = lvglSetColorTheme;
+    eez::flow::lvglSetColorThemeHook = eez_flow_set_theme;
 
     eez::flow::start(eez::g_mainAssets);
 
@@ -347,7 +375,7 @@ extern "C" void flowPropagateValueUint32(void *flowState, unsigned componentInde
     eez::flow::propagateValue((eez::flow::FlowState *)flowState, componentIndex, outputIndex, eez::Value(value, eez::VALUE_TYPE_UINT32));
 }
 
-extern "C" void flowPropagateValueLVGLEvent(void *flowState, unsigned componentIndex, unsigned outputIndex, lv_event_t *event) {
+EM_PORT_API(void) flowPropagateValueLVGLEvent(void *flowState, unsigned componentIndex, unsigned outputIndex, lv_event_t *event) {
     lv_event_code_t event_code = lv_event_get_code(event);
 
     uint32_t code = (uint32_t)event_code;
@@ -401,14 +429,6 @@ extern "C" void flowPropagateValueLVGLEvent(void *flowState, unsigned componentI
     );
 
     g_lastLVGLEvent = *event;
-    if (event->user_data) {
-        g_lastLVGLEvent.user_data = &g_lastLVGLEventUserDataBuffer;
-        memcpy(&g_lastLVGLEventUserDataBuffer, event->user_data, sizeof(g_lastLVGLEventUserDataBuffer));
-    }
-    if (event->param) {
-        g_lastLVGLEvent.param = &g_lastLVGLEventParamBuffer;
-        memcpy(&g_lastLVGLEventParamBuffer, event->param, sizeof(g_lastLVGLEventParamBuffer));
-    }
 }
 
 #ifndef EEZ_LVGL_TEMP_STRING_BUFFER_SIZE
@@ -559,30 +579,42 @@ void deletePageFlowState(unsigned pageIndex) {
     eez::flow::deletePageFlowState(eez::g_mainAssets, (int16_t)pageIndex);
 }
 
-extern "C" bool compareRollerOptions(lv_roller_t *roller, const char *new_val, const char *cur_val, lv_roller_mode_t mode) {
-    if (mode == LV_ROLLER_MODE_NORMAL) {
-        return strcmp(new_val, cur_val) != 0;
-    }
+// returns 0 if options are equal, 1 if options are different
+extern "C" int compareRollerOptions(lv_roller_t *roller, const char *new_val, const char *cur_val, lv_roller_mode_t mode) {
+    EEZ_UNUSED(mode);
 
-    auto n = strlen(new_val);
+    uint32_t new_option_count = 1;
 
-#if LVGL_VERSION_MAJOR >= 9
-    size_t numPages = roller->inf_page_cnt;
-#else
-    size_t numPages = LV_ROLLER_INF_PAGES;
-#endif
+    for (int i = 0; ; i++) {
+        if (new_val[i] == '\0') {
+            if (cur_val[i] != '\0' && cur_val[i] != '\n') {
+                return 1;
+            }
+            break;
+        }
 
-    for (size_t i = 0; i < numPages * (n + 1); i += n + 1) {
-        if (strncmp(new_val, cur_val + i, n) != 0) {
-            return true;
+        if (new_val[i] != cur_val[i]) {
+            return 1;
+        }
+ 
+        if (new_val[i] == '\n') {
+            new_option_count++;
         }
     }
 
-    return false;
+#if LVGL_VERSION_MAJOR >= 9
+    return lv_roller_get_option_count((const lv_obj_t *)roller) == new_option_count ? 0 : 1;    
+#else
+    return lv_roller_get_option_cnt((const lv_obj_t *)roller) == new_option_count ? 0 : 1;    
+#endif
 }
 
 uint32_t eez_flow_get_selected_theme_index() {
     return g_selectedThemeIndex;
+}
+
+uint32_t eez_flow_get_theme_color(uint32_t colorIndex) {
+    return *(g_themeColors + g_selectedThemeIndex * g_numColorsPerTheme + colorIndex);
 }
 
 #endif // EEZ_FOR_LVGL

@@ -15,17 +15,20 @@
 #include <string.h>
 #include <stdint.h>
 
-#include <i2c.h>
-
 #include <eez/core/os.h>
 #include <eez/core/debug.h>
 
 #include <eez/gui/gui.h>
 #include <eez/gui/touch.h>
 
-#ifdef EEZ_PLATFORM_STM32F469I_DISCO
+#include <eez/platform/touch.h>
+
+#if defined(EEZ_PLATFORM_STM32F469I_DISCO)
 #include "stm32469i_discovery_ts.h"
+#elif defined(EEZ_PLATFORM_STM32H7S78_DK)
+#include "stm32h7s78_discovery_ts.h"
 #else
+#include <i2c.h>
 #define TSC2007IPW
 //#define AR1021
 #endif
@@ -80,6 +83,18 @@ static int16_t g_lastYData = -1;
 static int16_t g_lastZ1Data = 0;
 
 void touchMeasure() {
+#if defined(EEZ_STM32_CUSTOM_TOUCH_MEASURE_CALLBACK)
+    int x, y, pressed;
+    eez_stm32_touch_measure_callback(&x, &y, &pressed);
+	if (pressed) {
+		g_lastZ1Data = CONF_TOUCH_Z1_THRESHOLD + 1;
+		g_lastXData = x;
+		g_lastYData = y;
+	} else {
+		g_lastZ1Data = 0;
+	}
+#else
+
 #if defined(TSC2007IPW)
     static int g_errorCounter = 0;
 
@@ -159,6 +174,21 @@ Error:
     		g_lastZ1Data = 0;
     	}
     }
+#endif
+
+#if defined(EEZ_PLATFORM_STM32H7S78_DK)
+    TS_State_t TS_State;
+    if (BSP_TS_GetState(0, &TS_State) == BSP_ERROR_NONE) {
+    	if (TS_State.TouchDetected) {
+    		g_lastZ1Data = CONF_TOUCH_Z1_THRESHOLD + 1;
+    		g_lastXData = TS_State.TouchX;
+    		g_lastYData = TS_State.TouchY;
+    	} else {
+    		g_lastZ1Data = 0;
+    	}
+    }
+#endif
+
 #endif
 }
 

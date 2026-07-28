@@ -933,10 +933,10 @@ static void do_OPERATION_TYPE_FLOW_IS_PAGE_ACTIVE(EvalStack &stack) {
 #if EEZ_OPTION_GUI
     bool isActive = false;
 
-    auto pageIndex = getPageIndex(stack.flowState);
+    auto pageIndex = getPageIndexIncludeParents(stack.flowState);
     if (pageIndex >= 0) {
         int16_t pageId = (int16_t)(pageIndex + 1);
-        if (stack.flowState->assets == g_externalAssets) {
+        if (stack.flowState->assets != g_mainAssets) {
             pageId = -pageId;
         }
 
@@ -955,7 +955,7 @@ static void do_OPERATION_TYPE_FLOW_IS_PAGE_ACTIVE(EvalStack &stack) {
 
     stack.push(Value(isActive, VALUE_TYPE_BOOLEAN));
 #elif defined(EEZ_FOR_LVGL)
-    auto pageIndex = getPageIndex(stack.flowState);
+    auto pageIndex = getPageIndexIncludeParents(stack.flowState);
     stack.push(Value(pageIndex == g_currentScreen, VALUE_TYPE_BOOLEAN));
 #else
     stack.push(Value::makeError());
@@ -1091,6 +1091,24 @@ static void do_OPERATION_TYPE_FLOW_THEMES(EvalStack &stack) {
     }
 
     stack.push(arrayValue);
+}
+
+static void do_OPERATION_TYPE_FLOW_GET_THEME_COLOR(EvalStack &stack) {
+#if defined(EEZ_FOR_LVGL)
+    auto colorIndexValue = stack.pop();
+    if (colorIndexValue.isError()) {
+        stack.push(colorIndexValue);
+        return;
+    }
+
+    uint32_t colorIndex = colorIndexValue.getUInt32();
+
+    uint32_t color = eez_flow_get_theme_color(colorIndex);
+
+    stack.push(Value(color, VALUE_TYPE_UINT32));
+#else
+    stack.push(Value::makeError());
+#endif
 }
 
 static void do_OPERATION_TYPE_FLOW_PARSE_INTEGER(EvalStack &stack) {
@@ -1911,7 +1929,6 @@ static void do_OPERATION_TYPE_STRING_FIND(EvalStack &stack) {
     stack.push(Value(-1, VALUE_TYPE_INT32));
 }
 
-#if !defined(EEZ_DASHBOARD_API)
 typedef enum {
     type_int,
     type_signed_char,
@@ -1973,7 +1990,6 @@ static size_t do_string_format(FormatType type, const Value& b, char *result, si
 
     return snprintf(result, result_size, format, b.getString());
 }
-#endif
 
 static void do_OPERATION_TYPE_STRING_FORMAT(EvalStack &stack) {
     auto a = stack.pop().getValue();
@@ -1994,8 +2010,11 @@ static void do_OPERATION_TYPE_STRING_FORMAT(EvalStack &stack) {
     }
 
 #if defined(EEZ_DASHBOARD_API)
-    stack.push(operationStringFormat(a.getString(), &b));
-#else
+    if (stack.flowState->assets->assetsType == ASSETS_TYPE_DASHBOARD) {
+        stack.push(operationStringFormat(a.getString(), &b));
+    } else {
+#endif
+
     const char *format = a.getString();
     size_t formatLength = strlen(format);
     if (formatLength == 0) {
@@ -2073,11 +2092,12 @@ static void do_OPERATION_TYPE_STRING_FORMAT(EvalStack &stack) {
     char *resultStr = (char *)eez::alloc(resultStrLen + 1, 0x987ee4eb);
     do_string_format(type, b, resultStr, resultStrLen + 1, format);
 
-
-
     stack.push(Value::makeStringRef(resultStr, -1, 0x1e1227fd));
 
     eez::free(resultStr);
+
+#if defined(EEZ_DASHBOARD_API)
+    }
 #endif
 }
 
@@ -2575,6 +2595,54 @@ static void do_OPERATION_TYPE_LVGL_METER_TICK_INDEX(EvalStack &stack) {
     stack.push(g_eezFlowLvlgMeterTickIndex);
 }
 
+static void do_OPERATION_TYPE_LVGL_COLOR_DARKEN(EvalStack &stack) {
+#if defined(EEZ_FOR_LVGL)
+    Value color = stack.pop().getValue();
+    Value level = stack.pop().getValue();
+
+    if (!color.isInt32OrLess() || !level.isInt32OrLess()) {
+        stack.push(Value::makeError());
+        return;        
+    }
+
+    auto adjustedColor = lv_color_darken(lv_color_hex(color.getUInt32()), (uint8_t)level.getUInt32());
+
+#if LVGL_VERSION_MAJOR >= 9
+    uint32_t result = lv_color_to_u32(adjustedColor);
+#else
+    uint32_t result = lv_color_to32(adjustedColor);
+#endif
+    
+    stack.push(Value(result, VALUE_TYPE_UINT32));
+#else
+    stack.push(Value::makeError());
+#endif
+}
+
+static void do_OPERATION_TYPE_LVGL_COLOR_LIGHTEN(EvalStack &stack) {
+#if defined(EEZ_FOR_LVGL)
+    Value color = stack.pop().getValue();
+    Value level = stack.pop().getValue();
+
+    if (!color.isInt32OrLess() || !level.isInt32OrLess()) {
+        stack.push(Value::makeError());
+        return;        
+    }
+
+    auto adjustedColor = lv_color_lighten(lv_color_hex(color.getUInt32()), (uint8_t)level.getUInt32());
+
+#if LVGL_VERSION_MAJOR >= 9
+    uint32_t result = lv_color_to_u32(adjustedColor);
+#else
+    uint32_t result = lv_color_to32(adjustedColor);
+#endif
+    
+    stack.push(Value(result, VALUE_TYPE_UINT32));
+#else
+    stack.push(Value::makeError());
+#endif
+}
+
 static void do_OPERATION_TYPE_CRYPTO_SHA256(EvalStack &stack) {
 #if EEZ_FOR_LVGL_SHA256_OPTION
     auto value = stack.pop().getValue();
@@ -2895,6 +2963,9 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_EVENT_GET_ROTARY_DIFF,
     do_OPERATION_TYPE_BLOB_TO_STRING,
     do_OPERATION_TYPE_FLOW_THEMES,
+    do_OPERATION_TYPE_FLOW_GET_THEME_COLOR,
+    do_OPERATION_TYPE_LVGL_COLOR_DARKEN,
+    do_OPERATION_TYPE_LVGL_COLOR_LIGHTEN,
 };
 
 } // namespace flow

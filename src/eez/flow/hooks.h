@@ -13,7 +13,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <eez/core/value.h>
 #include <eez/flow/private.h>
 
 #if defined(EEZ_FOR_LVGL)
@@ -48,6 +47,9 @@ extern int32_t (*getLvglObjectByNameHook)(const char *name);
 extern int32_t (*getLvglGroupByNameHook)(const char *name);
 extern int32_t (*getLvglStyleByNameHook)(const char *name);
 extern const void *(*getLvglImageByNameHook)(const char *name);
+extern const void *(*getLvglFontByNameHook)(const char *name);
+
+extern const char *(*getLvglObjectNameFromIndexHook)(int32_t index);
 
 extern void (*executeLvglActionHook)(int actionIndex);
 

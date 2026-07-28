@@ -21,7 +21,7 @@
 //#include <bb3/system.h>
 //#include <bb3/psu/psu.h>
 
-#if defined(EEZ_PLATFORM_STM32) && !CONF_SURVIVE_MODE
+#if defined(EEZ_PLATFORM_STM32)
 #define USE_EEPROM 1
 #else
 #define USE_EEPROM 0
@@ -46,18 +46,7 @@ namespace eez {
 namespace eeprom {
 
 #if defined(EEZ_PLATFORM_STM32)
-// opcodes
-static const uint8_t WREN = 6;
-static const uint8_t WRDI = 4;
-static const uint8_t RDSR = 5;
-static const uint8_t WRSR = 1;
-static const uint8_t READ = 3;
-static const uint8_t WRITE = 2;
 
-// EEPROM AT24C256C
-// I2C-Compatible (2-Wire) Serial EEPROM
-// 256-Kbit (32,768 x 8)
-// http://ww1.microchip.com/downloads/en/devicedoc/atmel-8568-seeprom-at24c256c-datasheet.pdf
 #ifndef EEPROM_I2C_ADDRESS
 #define EEPROM_I2C_ADDRESS (0x50 << 1)
 #endif
@@ -93,14 +82,20 @@ bool readFromEEPROM(uint8_t *buffer, uint16_t bufferSize, uint16_t address) {
 
         HAL_StatusTypeDef returnValue;
 
-        vTaskSuspendAll();
+#if EEZ_OPTION_THREADS
+      	vTaskSuspendAll();
+#endif
         returnValue = HAL_I2C_Master_Transmit(&EEPROM_I2C_HANDLE, EEPROM_I2C_ADDRESS, data, 2, HAL_MAX_DELAY);
         if (returnValue != HAL_OK) {
-            xTaskResumeAll();
+#if EEZ_OPTION_THREADS
+           	xTaskResumeAll();
+#endif
             return false;
         }
         returnValue = HAL_I2C_Master_Receive(&EEPROM_I2C_HANDLE, EEPROM_I2C_ADDRESS, buffer + i, chunkSize, HAL_MAX_DELAY);
+#if EEZ_OPTION_THREADS
         xTaskResumeAll();
+#endif
         if (returnValue != HAL_OK) {
             return false;
         }
@@ -121,15 +116,23 @@ bool writeToEEPROM(const uint8_t *buffer, uint16_t bufferSize, uint16_t address)
 
         HAL_StatusTypeDef returnValue;
 
+#if EEZ_OPTION_THREADS
         vTaskSuspendAll();
+#endif
         returnValue = HAL_I2C_Mem_Write(&EEPROM_I2C_HANDLE, EEPROM_I2C_ADDRESS, chunkAddress, I2C_MEMADD_SIZE_16BIT, (uint8_t *)buffer + i, chunkSize, HAL_MAX_DELAY);
+#if EEZ_OPTION_THREADS
         xTaskResumeAll();
+#endif
 
         if (returnValue != HAL_OK) {
             return false;
         }
 
+#if EEZ_OPTION_THREADS
         osDelay(5);
+#else
+        HAL_Delay(5);
+#endif
 
         // verify
         uint8_t verify[MAX_WRITE_CHUNK_SIZE];
@@ -139,14 +142,20 @@ bool writeToEEPROM(const uint8_t *buffer, uint16_t bufferSize, uint16_t address)
                 I2C_MEM_ADD_LSB(chunkAddress)
         };
 
+#if EEZ_OPTION_THREADS
         vTaskSuspendAll();
+#endif
         returnValue = HAL_I2C_Master_Transmit(&EEPROM_I2C_HANDLE, EEPROM_I2C_ADDRESS, data, 2, HAL_MAX_DELAY);
         if (returnValue != HAL_OK) {
-            xTaskResumeAll();
+#if EEZ_OPTION_THREADS
+        	xTaskResumeAll();
+#endif
             return false;
         }
         returnValue = HAL_I2C_Master_Receive(&EEPROM_I2C_HANDLE, EEPROM_I2C_ADDRESS, verify, chunkSize, HAL_MAX_DELAY);
+#if EEZ_OPTION_THREADS
         xTaskResumeAll();
+#endif
         if (returnValue != HAL_OK) {
             return false;
         }
@@ -171,7 +180,7 @@ const char *EEPROM_FILE_PATH = "/EEPROM.state";
 bool read(uint8_t *buffer, uint16_t bufferSize, uint16_t address) {
 #if USE_EEPROM
     return readFromEEPROM(buffer, bufferSize, address);
-#else
+#elif EEZ_OPTION_FS
     File file;
     if (!file.open(EEPROM_FILE_PATH, FILE_READ)) {
         return false;
@@ -183,13 +192,15 @@ bool read(uint8_t *buffer, uint16_t bufferSize, uint16_t address) {
     }
     file.close();
     return true;
+#else
+	return false;
 #endif
 }
 
 bool write(const uint8_t *buffer, uint16_t bufferSize, uint16_t address) {
 #if USE_EEPROM
     return writeToEEPROM(buffer, bufferSize, address);
-#else
+#elif EEZ_OPTION_FS
     File file;
     if (!file.open(EEPROM_FILE_PATH, FILE_OPEN_ALWAYS | FILE_WRITE)) {
         return false;
@@ -198,6 +209,8 @@ bool write(const uint8_t *buffer, uint16_t bufferSize, uint16_t address) {
     file.write(buffer, bufferSize);
     file.close();
     return true;
+#else
+    return false;
 #endif
 }
 

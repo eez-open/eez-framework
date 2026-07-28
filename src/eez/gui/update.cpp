@@ -44,8 +44,8 @@ void updateScreen() {
 		g_rootWidget = &g_rootAppViewWidget;
 
 		g_rootWidget->type = WIDGET_TYPE_APP_VIEW;
-		g_rootWidget->data = DATA_ID_NONE;
-		g_rootWidget->action = ACTION_ID_NONE;
+		g_rootWidget->data = EEZ_DATA_ID_NONE;
+		g_rootWidget->action = EEZ_ACTION_ID_NONE;
 		g_rootWidget->x = 0;
 		g_rootWidget->y = 0;
 		g_rootWidget->width = display::getDisplayWidth();

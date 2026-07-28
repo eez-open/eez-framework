@@ -27,6 +27,7 @@ using namespace eez::gui;
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/hooks.h>
 #include <eez/flow/watch_list.h>
+#include <eez/flow/components.h>
 #include <eez/flow/components/call_action.h>
 #include <eez/flow/components/on_event.h>
 
@@ -54,9 +55,14 @@ inline Value getEmptyInputValue() {
 }
 
 void initGlobalVariables(Assets *assets) {
-    if (!g_mainAssetsUncompressed) {
+    // Only part of assets that can be modified during runtime are global variables.
+    
+    if (assets->external || g_mainAssetsAreMutable) {
+        // We can use globalVariables from assets memory
         return;
     }
+
+    // assets are stored in ROM, i.e. not mutable, so we need to allocate another buffer in RAM for global variables
 
 	auto flowDefinition = static_cast<FlowDefinition *>(assets->flowDefinition);
 
@@ -94,8 +100,8 @@ static bool isComponentReadyToRun(FlowState *flowState, unsigned componentIndex)
     }
 
     if ((component->type < defs_v3::COMPONENT_TYPE_START_ACTION && component->type != defs_v3::COMPONENT_TYPE_USER_WIDGET_WIDGET) || component->type >= defs_v3::FIRST_DASHBOARD_WIDGET_COMPONENT_TYPE) {
-        // always execute widget
-        return true;
+        // widget
+        return hasExecFunc(flowState, componentIndex);
     }
 
     if (component->type == defs_v3::COMPONENT_TYPE_START_ACTION) {
@@ -167,9 +173,9 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
 		)
 	) FlowState;
 
-	flowState->flowStateIndex = (int)((uint8_t *)flowState - ALLOC_BUFFER);
 	flowState->assets = assets;
-	flowState->flowDefinition = static_cast<FlowDefinition *>(assets->flowDefinition);
+
+    flowState->flowStateIndex = (int)((uint8_t *)flowState - ALLOC_BUFFER);
 	flowState->flow = flowDefinition->flows[flowIndex];
 	flowState->flowIndex = flowIndex;
 	flowState->error = false;
@@ -236,7 +242,7 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
 
 	for (unsigned i = 0; i < flow->localVariables.count; i++) {
 		auto value = flow->localVariables[i];
-		flowState->values[flow->componentInputs.count + i] = *value;
+		flowState->values[flow->componentInputs.count + i] = value->clone();
 	}
 
 	for (unsigned i = 0; i < flow->components.count; i++) {
@@ -435,7 +441,7 @@ void propagateValue(FlowState *flowState, unsigned componentIndex, unsigned outp
 }
 
 void propagateValue(FlowState *flowState, unsigned componentIndex, unsigned outputIndex) {
-	auto &nullValue = *flowState->flowDefinition->constants[NULL_VALUE_INDEX];
+	auto &nullValue = *flowState->assets->flowDefinition->constants[NULL_VALUE_INDEX];
 	propagateValue(flowState, componentIndex, outputIndex, nullValue);
 }
 

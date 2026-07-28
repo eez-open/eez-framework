@@ -40,10 +40,8 @@ using namespace eez::gui;
 
 namespace eez {
 
-bool g_isMainAssetsLoaded;
 Assets *g_mainAssets;
-bool g_mainAssetsUncompressed;
-Assets *g_externalAssets;
+bool g_mainAssetsAreMutable;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -117,6 +115,7 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 #endif
 }
 
+#if defined(EEZ_FOR_LVGL) || defined(EEZ_DASHBOARD_API)
 static void allocMemoryForDecompressedAssets(const uint8_t *assetsData, uint32_t assetsDataSize, uint8_t *&decompressedAssetsMemoryBuffer, uint32_t &decompressedAssetsMemoryBufferSize) {
     EEZ_UNUSED(assetsDataSize);
 
@@ -140,12 +139,16 @@ static void allocMemoryForDecompressedAssets(const uint8_t *assetsData, uint32_t
 
     decompressedAssetsMemoryBuffer = (uint8_t *)eez::alloc(decompressedAssetsMemoryBufferSize, 0x587da194);
 }
+#endif
 
 void loadMainAssets(const uint8_t *assets, uint32_t assetsSize) {
     auto header = (Header *)assets;
     if (header->tag == HEADER_TAG) {
+		// assets are stored inside ROM as uncompressed data,
+		// so we don't need to allocate memory from RAM.
+		// Also, see initGlobalVariables.
         g_mainAssets = (Assets *)(assets + sizeof(uint32_t)/* skip HEADER_TAG*/);
-        g_mainAssetsUncompressed = true;
+		g_mainAssetsAreMutable = false;
     } else {
 #if defined(EEZ_FOR_LVGL) || defined(EEZ_DASHBOARD_API)
         uint8_t *DECOMPRESSED_ASSETS_START_ADDRESS = 0;
@@ -153,22 +156,11 @@ void loadMainAssets(const uint8_t *assets, uint32_t assetsSize) {
         allocMemoryForDecompressedAssets(assets, assetsSize, DECOMPRESSED_ASSETS_START_ADDRESS, MAX_DECOMPRESSED_ASSETS_SIZE);
 #endif
         g_mainAssets = (Assets *)DECOMPRESSED_ASSETS_START_ADDRESS;
-        g_mainAssetsUncompressed = false;
+		g_mainAssetsAreMutable = true;
         g_mainAssets->external = false;
         auto decompressedSize = decompressAssetsData(assets, assetsSize, g_mainAssets, MAX_DECOMPRESSED_ASSETS_SIZE, nullptr);
         assert(decompressedSize);
     }
-    g_isMainAssetsLoaded = true;
-}
-
-void unloadExternalAssets() {
-	if (g_externalAssets) {
-#if EEZ_OPTION_GUI
-		removeExternalPagesFromTheStack();
-#endif
-		free(g_externalAssets);
-		g_externalAssets = nullptr;
-	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -179,47 +171,57 @@ const gui::PageAsset* getPageAsset(int pageId) {
 	if (pageId > 0) {
 		return g_mainAssets->pages[pageId - 1];
 	} else if (pageId < 0) {
-		if (g_externalAssets == nullptr) {
-			return nullptr;
+		Assets* assets = nullptr;
+		int externalPageId = g_hooks.resolveExternalPage(pageId, &assets);
+		if (assets != nullptr) {
+			return assets->pages[externalPageId - 1];
 		}
-		return g_externalAssets->pages[-pageId - 1];
 	}
 	return nullptr;
 }
 
 const gui::PageAsset *getPageAsset(int pageId, WidgetCursor& widgetCursor) {
-	if (pageId < 0) {
-		widgetCursor.assets = g_externalAssets;
-		widgetCursor.flowState = flow::getPageFlowState(g_externalAssets, -pageId - 1, widgetCursor);
-	} else {
+	if (pageId > 0) {
 	    widgetCursor.assets = g_mainAssets;
-		if (g_mainAssets->flowDefinition) {
-			widgetCursor.flowState = flow::getPageFlowState(g_mainAssets, pageId - 1, widgetCursor);
+		widgetCursor.flowState = flow::getPageFlowState(g_mainAssets, pageId - 1, widgetCursor);
+		return g_mainAssets->pages[pageId - 1];
+	} else if (pageId < 0) {
+		Assets* assets = widgetCursor.assets;
+		int externalPageId = g_hooks.resolveExternalPage(pageId, &assets);
+		if (assets) {
+			widgetCursor.assets = assets;
+			widgetCursor.flowState = flow::getPageFlowState(assets, externalPageId - 1, widgetCursor);
+			return assets->pages[externalPageId - 1];
 		}
     }
-	return getPageAsset(pageId);
+	return nullptr;
 }
 
 const gui::Style *getStyle(int styleID) {
 	if (styleID > 0) {
 		return g_mainAssets->styles[styleID - 1];
 	} else if (styleID < 0) {
-		if (g_externalAssets == nullptr) {
-			return getStyle(STYLE_ID_DEFAULT);
+		auto assets = g_widgetCursor.assets;
+		int id = -styleID - 1;
+		if (assets == nullptr || assets == g_mainAssets || id >= (int)assets->styles.count) {
+			return getStyle(EEZ_STYLE_ID_DEFAULT);
 		}
-		return g_externalAssets->styles[-styleID - 1];
+		return assets->styles[id];
 	}
-	return getStyle(STYLE_ID_DEFAULT);
+	return getStyle(EEZ_STYLE_ID_DEFAULT);
 }
 
 const gui::FontData *getFontData(int fontID) {
 	if (fontID > 0) {
 		return g_mainAssets->fonts[fontID - 1];
 	} else if (fontID < 0) {
-		if (g_externalAssets == nullptr) {
+		auto assets = g_widgetCursor.assets;
+		int id = -fontID - 1;
+		if (assets == nullptr || assets == g_mainAssets || id >= (int)assets->fonts.count) {
 			return nullptr;
 		}
-		return g_externalAssets->fonts[-fontID - 1];
+		return assets->fonts[id];
+
 	}
 	return nullptr;
 }
@@ -228,10 +230,12 @@ const gui::Bitmap *getBitmap(int bitmapID) {
 	if (bitmapID > 0) {
 		return g_mainAssets->bitmaps[bitmapID - 1];
 	} else if (bitmapID < 0) {
-		if (g_externalAssets == nullptr) {
+		auto assets = g_widgetCursor.assets;
+		int id = -bitmapID - 1;
+		if (assets == nullptr || assets == g_mainAssets || id >= (int)assets->bitmaps.count) {
 			return nullptr;
 		}
-		return g_externalAssets->bitmaps[-bitmapID - 1];
+		return assets->bitmaps[id];		
 	}
 	return nullptr;
 }
@@ -285,10 +289,6 @@ const uint16_t *getThemeColors(int themeIndex) {
 
 const uint16_t *getColors() {
 	return static_cast<uint16_t *>(g_mainAssets->colorsDefinition->colors.items);
-}
-
-int getExternalAssetsMainPageId() {
-	return -1;
 }
 
 #if EEZ_OPTION_GUI

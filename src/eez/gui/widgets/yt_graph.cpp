@@ -33,8 +33,8 @@ struct YTGraphDrawHelper {
     float min[2];
     float max[2];
 
-    uint16_t color16;
-    uint16_t dataColor16[2];
+    display::Color color;
+    display::Color dataColor[2];
 
     uint32_t numPositions;
     uint32_t position;
@@ -55,8 +55,8 @@ struct YTGraphDrawHelper {
 
         const Style* y1Style = ytDataGetStyle(widgetCursor, widget->data, 0);
         const Style* y2Style = ytDataGetStyle(widgetCursor, widget->data, 1);
-        dataColor16[0] = display::getColor16FromIndex(y1Style->color);
-        dataColor16[1] = display::getColor16FromIndex(y2Style->color);
+        dataColor[0] = display::getColorFromIndex(y1Style->color);
+        dataColor[1] = display::getColorFromIndex(y2Style->color);
 
         ytDataGetValue = ytDataGetGetValueFunc(widgetCursor, widget->data);
     }
@@ -99,7 +99,7 @@ struct YTGraphDrawHelper {
 			return;
 		}
 
-        display::setColor16(dataColor16[valueIndex]);
+        display::setColorByValue(dataColor[valueIndex]);
 
         if (yPrevValue == INT_MIN || abs(yPrevValue - yValue) <= 1) {
             display::drawPixel(x, widgetCursor.y + yValue);
@@ -124,7 +124,7 @@ struct YTGraphDrawHelper {
     void drawStep() {
         if (y[0] != INT_MIN && y[1] != INT_MIN && abs(yPrev[0] - y[0]) <= 1 && abs(yPrev[1] - y[1]) <= 1 && y[0] == y[1]) {
 			if (y[0] >= 0 && y[0] < widgetCursor.h) {
-				display::setColor16(position % 2 ? dataColor16[1] : dataColor16[0]);
+				display::setColorByValue(position % 2 ? dataColor[1] : dataColor[0]);
 				display::drawPixel(x, widgetCursor.y + y[0]);
 			}
         } else {
@@ -138,7 +138,7 @@ struct YTGraphDrawHelper {
 
         int x1 = widgetCursor.x + startPosition % graphWidth;
         int x2 = widgetCursor.x + (endPosition - 1) % graphWidth;
-        display::setColor16(color16);
+        display::setColorByValue(color);
         if (x1 <= x2) {
             display::fillRect(x1, widgetCursor.y, x2, widgetCursor.y + widgetCursor.h - 1);
         } else {
@@ -187,7 +187,7 @@ struct YTGraphDrawHelper {
         yPrev[0] = getYValue(0, previousHistoryValuePosition);
         yPrev[1] = getYValue(1, previousHistoryValuePosition);
 
-        display::setColor16(color16);
+        display::setColorByValue(color);
         display::fillRect(startX, widgetCursor.y, endX - 1, widgetCursor.y + widgetCursor.h - 1);
 
         display::startPixelsDraw();
@@ -214,7 +214,7 @@ struct YTGraphStaticDrawHelper {
 
     Style* style;
 
-    uint16_t dataColor16;
+    display::Color dataColor;
 
     uint32_t numPositions;
     uint32_t position;
@@ -269,7 +269,7 @@ struct YTGraphStaticDrawHelper {
             return;
         }
 
-        display::setColor16(dataColor16);
+        display::setColorByValue(dataColor);
 
         int yFrom;
         int yTo;
@@ -351,7 +351,7 @@ struct YTGraphStaticDrawHelper {
             offset = widgetState->valueOffset[m_valueIndex];
 
             const Style* style = ytDataGetStyle(widgetCursor, widget->data, m_valueIndex);
-            dataColor16 = display::getColor16FromIndex(style->color);
+            dataColor = display::getColorFromIndex(style->color);
 
             getYValue(position > 0 ? position - 1 : 0, yPrevMin, yPrevMax);
 
@@ -423,7 +423,7 @@ struct YTGraphStaticDrawHelper {
 		if (widgetState->bookmarks) {
 			for (int x = 0; x < widgetCursor.w; x++) {
 				if (widgetState->bookmarks[x]) {
-					display::setColor(COLOR_ID_BOOKMARK);
+					display::setColor(EEZ_COLOR_ID_BOOKMARK);
 					display::drawVLine(startX + x, widgetCursor.y, widgetCursor.h - 1);
 				}
 			}
@@ -553,7 +553,7 @@ void YTGraphWidgetState::render() {
         }
 
         YTGraphDrawHelper drawHelper(widgetCursor);
-        drawHelper.color16 = display::getColor16FromIndex(flags.active ? style->color : style->backgroundColor);
+        drawHelper.color = display::getColorFromIndex(flags.active ? style->color : style->backgroundColor);
         if (ytGraphUpdateMethod == YT_GRAPH_UPDATE_METHOD_SCAN_LINE) {
             drawHelper.drawScanLine(previousHistoryValuePosition, historyValuePosition, graphWidth);
 

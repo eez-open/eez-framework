@@ -765,6 +765,7 @@ enum ShadowGlpyh {
 	SHADOW_GLYPH_BOTTOM_RIGHT,
 };
 
+#ifndef SHADOW_GLYPH_TOP_PX
 static const int T = 4;
 static const int R = 7;
 static const int B = 10;
@@ -772,9 +773,18 @@ static const int L = 7;
 
 static const int W = 20;
 static const int H = 20;
+#else
+static const int T = SHADOW_GLYPH_TOP_PX;
+static const int R = SHADOW_GLYPH_RIGHT_PX;
+static const int B = SHADOW_GLYPH_BOTTOM_PX;
+static const int L = SHADOW_GLYPH_LEFT_PX;
+
+static const int W = SHADOW_GLYPH_WIDTH_PX;
+static const int H = SHADOW_GLYPH_HEIGHT_PX;
+#endif
 
 void drawShadowGlyph(ShadowGlpyh shadowGlyph, int x, int y, int xClip = -1, int yClip = -1) {
-	font::Font font(getFontData(FONT_ID_SHADOW));
+	font::Font font(getFontData(EEZ_FONT_ID_SHADOW));
 
 	if (xClip == -1) {
 		xClip = x + W - 1;
@@ -782,7 +792,7 @@ void drawShadowGlyph(ShadowGlpyh shadowGlyph, int x, int y, int xClip = -1, int 
 	if (yClip == -1) {
 		yClip = y + H - 1;
 	}
-	char glyph = 32 + shadowGlyph;
+    char glyph = 32 + shadowGlyph;
 	display::drawStr(&glyph, 1, x, y, x, y, xClip, yClip, font, -1);
 }
 

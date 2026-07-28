@@ -11,6 +11,7 @@
 #include <eez/conf-internal.h>
 
 #include <assert.h>
+#include <stdlib.h>
 
 #include <eez/core/memory.h>
 

@@ -11,6 +11,7 @@
 #pragma once
 
 #include <string.h>
+#include <eez/conf-internal.h>
 #include <eez/core/value_types.h>
 #include <eez/core/alloc.h>
 #include <eez/flow/flow_defs_v3.h>
@@ -270,40 +271,19 @@ struct Value {
             unit = 0;
             options = 0;
 
-#if __GNUC__ && defined( __has_warning )
-#   if __has_warning( "-Wdangling-pointer" )
-#       define SUPPRESSING
-#       pragma GCC diagnostic push
-#       pragma GCC diagnostic ignored "-Wdangling-pointer"
-#   endif
-#endif
-
+            DIAG_PUSH
+            DIAG_IGNORE("-Wdangling-pointer")
             strValue = (const char *)((uint8_t *)&value.int32Value + value.int32Value);
-
-#ifdef SUPPRESSING
-#   undef SUPPRESSING
-#   pragma GCC diagnostic pop
-#endif
-
+            DIAG_POP
         } else if (value.type == VALUE_TYPE_ARRAY_ASSET) {
             type = VALUE_TYPE_ARRAY;
             unit = 0;
             options = 0;
 
-#if __GNUC__ && defined( __has_warning )
-#   if __has_warning( "-Wdangling-pointer" )
-#       define SUPPRESSING
-#       pragma GCC diagnostic push
-#       pragma GCC diagnostic ignored "-Wdangling-pointer"
-#   endif
-#endif
+            DIAG_PUSH
+            DIAG_IGNORE("-Wdangling-pointer")
             arrayValue = (ArrayValue *)((uint8_t *)&value.int32Value + value.int32Value);
-
-#ifdef SUPPRESSING
-#   undef SUPPRESSING
-#   pragma GCC diagnostic pop
-#endif
-
+            DIAG_POP
         } else {
             type = value.type;
             unit = value.unit;

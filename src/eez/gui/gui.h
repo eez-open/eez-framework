@@ -12,14 +12,6 @@
 
 #include <eez/conf-internal.h>
 
-#ifndef PAGE_ID_ASYNC_OPERATION_IN_PROGRESS
-#define PAGE_ID_ASYNC_OPERATION_IN_PROGRESS 0
-#endif
-
-#ifndef COLOR_ID_BOOKMARK
-#define COLOR_ID_BOOKMARK 0
-#endif
-
 #ifndef MAX_KEYPAD_TEXT_LENGTH
 #define MAX_KEYPAD_TEXT_LENGTH 128
 #endif
@@ -30,6 +22,7 @@
 
 #include <eez/core/assets.h>
 #include <eez/gui/display.h>
+#include <eez/gui/widget.h>
 
 enum {
     FIRST_INTERNAL_PAGE_ID = 32000,
@@ -70,17 +63,7 @@ bool isFocusWidget(const WidgetCursor &widgetCursor);
 void refreshScreen();
 inline bool isPageInternal(int pageId) { return pageId > FIRST_INTERNAL_PAGE_ID; }
 
-bool isExternalPageOnStack();
-void removeExternalPagesFromTheStack();
-
-inline int getWidgetAction(const WidgetCursor &widgetCursor) {
-    if (widgetCursor.widget->type == WIDGET_TYPE_INPUT) {
-        if (widgetCursor.widget->action == ACTION_ID_NONE) {
-		    return ACTION_ID_EDIT;
-        }
-    }
-	return widgetCursor.widget->action;
-}
+int getWidgetAction(const WidgetCursor &widgetCursor);
 
 void executeAction(const WidgetCursor &widgetCursor, int actionId, void *param = nullptr);
 void executeInternalAction(int actionId);
@@ -89,11 +72,51 @@ AppContext *getAppContextFromId(int16_t id);
 
 extern const char *g_discardMessage;
 
-extern void (*loadMainAssets)(const uint8_t *assets, uint32_t assetsSize);
-extern Assets *&g_mainAssets;
-
 void setOverrideStyleRule(int16_t fromStyle, int16_t toStyle);
 int overrideStyle(const WidgetCursor &widgetCursor, int styleId);
+
+#if !EEZ_OPTION_THREADS
+extern bool g_updateDisplay;
+#endif
+
+extern const uint8_t *eezAssets;
+extern const uint32_t eezAssetsSize;
+
+static const int EEZ_DATA_ID_NONE = 0;
+extern const int EEZ_DATA_ID_KEYPAD_EDIT_UNIT;
+extern const int EEZ_DATA_ID_KEYPAD_TEXT;
+extern const int EEZ_DATA_ID_ALERT_MESSAGE;
+
+static const int EEZ_ACTION_ID_NONE = 0;
+extern const int EEZ_ACTION_ID_DRAG_OVERLAY;
+extern const int EEZ_ACTION_ID_EDIT;
+extern const int EEZ_ACTION_ID_SCROLL;
+
+static const int EEZ_PAGE_ID_NONE = 0;
+extern const int EEZ_PAGE_ID_ASYNC_OPERATION_IN_PROGRESS;
+extern const int EEZ_PAGE_ID_NUMERIC_KEYPAD;
+
+static const int EEZ_STYLE_ID_NONE = 0;
+extern const int EEZ_STYLE_ID_DEFAULT;
+extern const int EEZ_STYLE_ID_INFO_ALERT;
+extern const int EEZ_STYLE_ID_INFO_ALERT_BUTTON;
+extern const int EEZ_STYLE_ID_ERROR_ALERT;
+extern const int EEZ_STYLE_ID_ERROR_ALERT_BUTTON;
+extern const int EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER_S;
+extern const int EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER;
+extern const int EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_ITEM_S;
+extern const int EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_ITEM;
+extern const int EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_DISABLED_ITEM_S;
+extern const int EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_DISABLED_ITEM;
+extern const int EEZ_STYLE_ID_MENU_WITH_BUTTONS_CONTAINER;
+extern const int EEZ_STYLE_ID_MENU_WITH_BUTTONS_MESSAGE;
+extern const int EEZ_STYLE_ID_MENU_WITH_BUTTONS_BUTTON;
+
+extern const int EEZ_THEME_ID_LEGACY;
+extern const int EEZ_THEME_ID_DEFAULT;
+extern const int EEZ_COLOR_ID_BOOKMARK;
+extern const int EEZ_COLOR_ID_BACKDROP;
+extern const int EEZ_FONT_ID_SHADOW;
 
 } // namespace gui
 } // namespace eez

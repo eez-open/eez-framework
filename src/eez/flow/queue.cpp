@@ -21,7 +21,7 @@ namespace flow {
 #define EEZ_FLOW_QUEUE_SIZE 1000
 #endif
 static const unsigned QUEUE_SIZE = EEZ_FLOW_QUEUE_SIZE;
-static struct {
+static EXTRAM_DATA struct {
 	FlowState *flowState;
 	unsigned componentIndex;
     bool continuousTask;

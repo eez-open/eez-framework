@@ -30,8 +30,8 @@ bool QRCodeWidgetState::updateState() {
     WIDGET_STATE_END()
 }
 
-uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX];
-uint8_t tempBuffer[qrcodegen_BUFFER_LEN_MAX];
+uint8_t EXTRAM_DATA qrcode[qrcodegen_BUFFER_LEN_MAX];
+uint8_t EXTRAM_DATA tempBuffer[qrcodegen_BUFFER_LEN_MAX];
 
 void QRCodeWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
@@ -63,7 +63,8 @@ void QRCodeWidgetState::render() {
 	display::aggInit(aggDrawing);
 	auto &graphics = aggDrawing.graphics;
 
-    auto color16 = display::getColor16FromIndex(style->color);
+    display::ColorRGBA colorRGBA;
+    display::getColorRGBAFromIndex(style->color, &colorRGBA);
 
     graphics.resetPath();
 
@@ -82,7 +83,7 @@ void QRCodeWidgetState::render() {
 		}
 	}
 
-    graphics.fillColor(COLOR_TO_R(color16), COLOR_TO_G(color16), COLOR_TO_B(color16));
+    graphics.fillColor(colorRGBA.r, colorRGBA.g, colorRGBA.b, colorRGBA.a);
     graphics.noLine();
     graphics.drawPath();
 }

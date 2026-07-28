@@ -33,7 +33,7 @@ namespace flow {
 enum MessagesToDebugger {
     MESSAGE_TO_DEBUGGER_STATE_CHANGED, // STATE
 
-    MESSAGE_TO_DEBUGGER_ADD_TO_QUEUE, // FLOW_STATE_INDEX, SOURCE_COMPONENT_INDEX, SOURCE_OUTPUT_INDEX, TARGET_COMPONENT_INDEX, TARGET_INPUT_INDEX, FREE_MEMORT, ALLOC_MEMORY
+    MESSAGE_TO_DEBUGGER_ADD_TO_QUEUE, // FLOW_STATE_INDEX, SOURCE_COMPONENT_INDEX, SOURCE_OUTPUT_INDEX, TARGET_COMPONENT_INDEX, TARGET_INPUT_INDEX, FREE_MEMORY, ALLOC_MEMORY
     MESSAGE_TO_DEBUGGER_REMOVE_FROM_QUEUE, // no params
 
     MESSAGE_TO_DEBUGGER_GLOBAL_VARIABLE_INIT, // GLOBAL_VARIABLE_INDEX, VALUE_ADDR, VALUE
@@ -475,7 +475,7 @@ static void writeValue(const Value &value) {
 ////////////////////////////////////////////////////////////////////////////////
 
 void onStarted(Assets *assets) {
-    if (isSubscribedTo(MESSAGE_TO_DEBUGGER_GLOBAL_VARIABLE_INIT)) {
+    if (!assets->external && isSubscribedTo(MESSAGE_TO_DEBUGGER_GLOBAL_VARIABLE_INIT)) {
 		auto flowDefinition = static_cast<FlowDefinition *>(assets->flowDefinition);
 
         if (g_globalVariables) {
@@ -529,7 +529,7 @@ void onAddToQueue(FlowState *flowState, int sourceComponentIndex, int sourceOutp
 			targetComponentIndex,
 			targetInputIndex,
             (unsigned int)free,
-            (unsigned int)ALLOC_BUFFER_SIZE
+            (unsigned int)alloc
 		);
         writeDebuggerBufferHook(buffer, strlen(buffer));
     }
@@ -786,31 +786,19 @@ void onPageChanged(int previousPageId, int activePageId, bool activePageIsFromSt
     }
 
     if (!previousPageIsStillOnStack) {
-        if (previousPageId > 0 && previousPageId < FIRST_INTERNAL_PAGE_ID) {
-            auto flowState = getPageFlowState(g_mainAssets, previousPageId - 1, WidgetCursor());
-            if (flowState) {
-                onEvent(flowState, FLOW_EVENT_CLOSE_PAGE, Value());
-            }
-        } else if (previousPageId < 0) {
-            auto flowState = getPageFlowState(g_externalAssets, -previousPageId - 1, WidgetCursor());
-            if (flowState) {
-                onEvent(flowState, FLOW_EVENT_CLOSE_PAGE, Value());
-            }
-        }
+		WidgetCursor widgetCursor;
+		getPageAsset(previousPageId, widgetCursor);
+		if (widgetCursor.flowState) {
+			onEvent(widgetCursor.flowState, FLOW_EVENT_CLOSE_PAGE, Value());
+		}
     }
 
     if (!activePageIsFromStack) {
-        if (activePageId > 0 && activePageId < FIRST_INTERNAL_PAGE_ID) {
-            auto flowState = getPageFlowState(g_mainAssets, activePageId - 1, WidgetCursor());
-            if (flowState) {
-                onEvent(flowState, FLOW_EVENT_OPEN_PAGE, Value());
-            }
-        } else if (activePageId < 0) {
-            auto flowState = getPageFlowState(g_externalAssets, -activePageId - 1, WidgetCursor());
-            if (flowState) {
-                onEvent(flowState, FLOW_EVENT_OPEN_PAGE, Value());
-            }
-        }
+		WidgetCursor widgetCursor;
+		getPageAsset(activePageId, widgetCursor);
+		if (widgetCursor.flowState) {
+			onEvent(widgetCursor.flowState, FLOW_EVENT_OPEN_PAGE, Value());
+		}
     }
 
 	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_PAGE_CHANGED)) {

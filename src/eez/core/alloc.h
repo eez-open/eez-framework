@@ -31,8 +31,10 @@ template<class T> struct ObjectAllocator {
 		return new (ptr) T;
 	}
 	static void deallocate(T* ptr) {
-		ptr->~T();
-		free(ptr);
+		if (ptr) {
+			ptr->~T();
+			free(ptr);
+		}
 	}
 };
 

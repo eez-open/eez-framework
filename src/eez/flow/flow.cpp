@@ -74,14 +74,16 @@ unsigned start(Assets *assets) {
 
     initGlobalVariables(assets);
 
-	queueReset();
-    watchListReset();
+    if (!assets->external) {
+	    queueReset();
+        watchListReset();
+    }
 
-	scpiComponentInitHook();
+    scpiComponentInitHook();
 
 	onStarted(assets);
 
-	return 1;
+    return 1;
 }
 
 void tick() {
@@ -156,15 +158,29 @@ void tick() {
 	finishToDebuggerMessageHook();
 
     // delete flow states marked with deleteOnNextTick
-    for (FlowState *flowState = g_firstFlowState; flowState; flowState = flowState->nextSibling) {
+    for (FlowState *flowState = g_firstFlowState; flowState; ) {
+        FlowState* nextFlowState = flowState->nextSibling;
         if (flowState->deleteOnNextTick) {
             freeFlowState(flowState);
         }
+        flowState = nextFlowState;
     }
 }
 
-void stop() {
-    g_isStopping = true;
+void stop(Assets* assets) {
+    if (!assets) {
+        assets = g_mainAssets;
+    }
+
+    if (assets->external) {
+        for (FlowState *flowState = g_firstFlowState; flowState; flowState = flowState->nextSibling) {
+            if (flowState->assets == assets) {
+                flowState->deleteOnNextTick = true;
+            }
+        }
+    } else {
+        g_isStopping = true;
+    }
 }
 
 void doStop() {
@@ -201,32 +217,32 @@ FlowState *getPageFlowState(Assets *assets, int16_t pageIndex, const WidgetCurso
 		return nullptr;
 	}
 
-	if (widgetCursor.widget && widgetCursor.widget->type == WIDGET_TYPE_USER_WIDGET) {
-		if (widgetCursor.flowState) {
-			auto userWidgetWidget = (UserWidgetWidget *)widgetCursor.widget;
-			auto flowState = widgetCursor.flowState;
-			auto userWidgetWidgetComponentIndex = userWidgetWidget->componentIndex;
+	if (widgetCursor.widget && widgetCursor.widget->type == WIDGET_TYPE_USER_WIDGET && widgetCursor.flowState) {
+		auto userWidgetWidget = (UserWidgetWidget *)widgetCursor.widget;
+		auto flowState = widgetCursor.flowState;
+		auto userWidgetWidgetComponentIndex = userWidgetWidget->componentIndex;
 
-			return getUserWidgetFlowState(flowState, userWidgetWidgetComponentIndex, pageIndex);
-		}
+		return getUserWidgetFlowState(flowState, userWidgetWidgetComponentIndex, pageIndex);
 	} else {
-		auto page = assets->pages[pageIndex];
-		if (!(page->flags & PAGE_IS_USED_AS_USER_WIDGET)) {
-            FlowState *flowState;
-            for (flowState = g_firstFlowState; flowState; flowState = flowState->nextSibling) {
-                if (flowState->flowIndex == pageIndex) {
-                    break;
+        if (pageIndex >= 0 && pageIndex < (int16_t)assets->pages.count) {
+		    auto page = assets->pages[pageIndex];
+		    if (!(page->flags & PAGE_IS_USED_AS_USER_WIDGET)) {
+                FlowState *flowState;
+                for (flowState = g_firstFlowState; flowState; flowState = flowState->nextSibling) {
+                    if (flowState->assets == assets && flowState->flowIndex == pageIndex) {
+                        break;
+                    }
                 }
-            }
 
-            if (flowState) {
-                flowState->deleteOnNextTick = false;
-			} else {
-				flowState = initPageFlowState(assets, pageIndex, nullptr, 0);
-            }
+                if (flowState) {
+                    flowState->deleteOnNextTick = false;
+			    } else {
+				    flowState = initPageFlowState(assets, pageIndex, nullptr, 0);
+                }
 
-			return flowState;
-		}
+			    return flowState;
+		    }
+        }
 	}
 
 	return nullptr;
@@ -265,6 +281,13 @@ int getPageIndex(FlowState *flowState) {
 	return flowState->flowIndex;
 }
 
+int getPageIndexIncludeParents(FlowState *flowState) {
+    if (flowState->parentFlowState) {
+        return getPageIndexIncludeParents(flowState->parentFlowState);
+    }
+	return flowState->flowIndex;
+}
+
 void deletePageFlowState(Assets *assets, int16_t pageIndex) {
     EEZ_UNUSED(assets);
     for (FlowState *flowState = g_firstFlowState; flowState; flowState = flowState->nextSibling) {
@@ -281,7 +304,7 @@ Value getGlobalVariable(uint32_t globalVariableIndex) {
 
 Value getGlobalVariable(Assets *assets, uint32_t globalVariableIndex) {
     if (globalVariableIndex < assets->flowDefinition->globalVariables.count) {
-        return g_globalVariables ? g_globalVariables->values[globalVariableIndex] : *assets->flowDefinition->globalVariables[globalVariableIndex];
+        return g_globalVariables && !assets->external ? g_globalVariables->values[globalVariableIndex] : *assets->flowDefinition->globalVariables[globalVariableIndex];
     }
     return Value();
 }
@@ -292,7 +315,7 @@ void setGlobalVariable(uint32_t globalVariableIndex, const Value &value) {
 
 void setGlobalVariable(Assets *assets, uint32_t globalVariableIndex, const Value &value) {
     if (globalVariableIndex < assets->flowDefinition->globalVariables.count) {
-        if (g_globalVariables) {
+        if (g_globalVariables && !assets->external) {
             g_globalVariables->values[globalVariableIndex] = value;
         } else {
             *assets->flowDefinition->globalVariables[globalVariableIndex] = value;
@@ -351,6 +374,10 @@ void executeFlowAction(const WidgetCursor &widgetCursor, int16_t actionId, void 
 	}
 
 	auto flowState = widgetCursor.flowState;
+    if (!flowState) {
+        return;
+    }
+
 	actionId = -actionId - 1;
 
 	auto flow = flowState->flow;
@@ -406,6 +433,9 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCurs
 	}
 
 	auto flowState = widgetCursor.flowState;
+    if (!flowState) {
+        return;
+    }
 
 	auto flowDataId = -dataId - 1;
 
@@ -548,6 +578,8 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCurs
         } else if (operation == DATA_OPERATION_GET_TEXT_REFRESH_RATE) {
             getValue(flowDataId, operation, widgetCursor, value);
         } else if (operation == DATA_OPERATION_GET_BITMAP_IMAGE) {
+            getValue(flowDataId, operation, widgetCursor, value);
+        } else if (operation == DATA_OPERATION_GET_OVERLAY_DATA) {
             getValue(flowDataId, operation, widgetCursor, value);
         }
 #if OPTION_KEYPAD

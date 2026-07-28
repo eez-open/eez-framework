@@ -21,7 +21,7 @@ namespace gui {
 class Page;
 
 struct PageOnStack {
-    int pageId = PAGE_ID_NONE;
+    int pageId = EEZ_PAGE_ID_NONE;
     Page *page = nullptr;
     int displayBufferIndex = -1;
     float timelinePosition;
@@ -40,6 +40,7 @@ public:
     virtual void stateManagment();
 
     void showPage(int pageId);
+    void replacePage(int pageId, Page *page = nullptr);
     void pushPage(int pageId, Page *page = nullptr);
     void popPage();
     void removePageFromStack(int pageId);
@@ -60,15 +61,11 @@ public:
 
     int getPreviousPageId() {
         int index = getActivePageStackPointer();
-        return index == 0 ? PAGE_ID_NONE : m_pageNavigationStack[index - 1].pageId;
+        return index == 0 ? 0 : m_pageNavigationStack[index - 1].pageId;
     }
-
-    void replacePage(int pageId, Page *page = nullptr);
 
     Page *getPage(int pageId);
     bool isPageOnStack(int pageId);
-    bool isExternalPageOnStack();
-	void removeExternalPagesFromTheStack();
 
     int getNumPagesOnStack() {
         return m_pageNavigationStackPointer + 1;

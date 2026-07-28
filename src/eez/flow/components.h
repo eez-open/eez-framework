@@ -23,5 +23,7 @@ void registerComponent(ComponentTypes componentType, ExecuteComponentFunctionTyp
 
 void executeComponent(FlowState *flowState, unsigned componentIndex);
 
+bool hasExecFunc(FlowState *flowState, unsigned componentIndex);
+
 } // flow
 } // eez

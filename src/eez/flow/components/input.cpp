@@ -54,7 +54,7 @@ bool getCallActionValue(FlowState *flowState, unsigned componentIndex, Value &va
     auto &parentComponentInputs = callActionComponent->inputs;
     auto parentFlowInputIndex = parentComponentInputs[callActionComponentInputIndex];
 
-    auto parentFlow = flowState->flowDefinition->flows[flowState->parentFlowState->flowIndex];
+    auto parentFlow = flowState->assets->flowDefinition->flows[flowState->parentFlowState->flowIndex];
     if (parentFlowInputIndex >= parentFlow->componentInputs.count) {
         throwError(flowState, componentIndex, FlowError::Plain("Invalid input index of parent component in Input"));
         return false;

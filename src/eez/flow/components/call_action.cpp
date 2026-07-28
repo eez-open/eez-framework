@@ -29,12 +29,12 @@ unsigned g_executeActionComponentIndex;
 void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIndex, const Value& inputValue) {
     // if componentIndex == -1 then execute flow at flowIndex without CallAction component
 
-	if (flowIndex >= (int)flowState->flowDefinition->flows.count) {
+	if (flowIndex >= (int)flowState->assets->flowDefinition->flows.count) {
         // native action
         g_executeActionFlowState = flowState;
         g_executeActionComponentIndex = componentIndex;
 
-		executeActionFunction(flowIndex - flowState->flowDefinition->flows.count);
+		executeActionFunction(flowIndex - flowState->assets->flowDefinition->flows.count);
 
         if ((int)componentIndex != -1 && !flowState->componenentAsyncStates[componentIndex]) {
 		    propagateValueThroughSeqout(flowState, componentIndex);

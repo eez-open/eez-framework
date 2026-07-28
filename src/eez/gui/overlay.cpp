@@ -23,7 +23,7 @@ bool isOverlay(const  WidgetCursor &widgetCursor) {
         return false;
     }
     auto containerWidget = (const ContainerWidget *)widgetCursor.widget;
-    return containerWidget->overlay != DATA_ID_NONE;
+    return containerWidget->overlay != EEZ_DATA_ID_NONE;
 }
 
 Overlay *getOverlay(const WidgetCursor &widgetCursor) {
@@ -31,7 +31,7 @@ Overlay *getOverlay(const WidgetCursor &widgetCursor) {
         return nullptr;
     }
     auto containerWidget = (const ContainerWidget *)widgetCursor.widget;
-    if (containerWidget->overlay == DATA_ID_NONE) {
+    if (containerWidget->overlay == EEZ_DATA_ID_NONE) {
         return nullptr;
     }
     Value overlayValue;
