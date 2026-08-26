@@ -1880,9 +1880,10 @@ void fillRect(int x1, int y1, int x2, int y2) {
             }
         }
     } else {
+        uint32_t fc = (g_fc & 0x00FFFFFF) | (g_opacity << 24);
         for (uint32_t *dstEnd = dst + height * DISPLAY_WIDTH; dst != dstEnd; dst += nl) {
             for (uint32_t *lineEnd = dst + width; dst != lineEnd; dst++) {
-                *dst = blendColor(g_fc, *dst);
+                *dst = blendColor(fc, *dst);
             }
         }
     }

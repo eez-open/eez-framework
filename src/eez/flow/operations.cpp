@@ -2591,6 +2591,51 @@ static void do_OPERATION_TYPE_ARRAY_CLONE(EvalStack &stack) {
     stack.push(resultArray);
 }
 
+static bool arrayDeepEqual(const Value &a1, const Value &b1) {
+    auto a = a1.getValue();
+    auto b = b1.getValue();
+
+    if (a.isArray() && b.isArray()) {
+        auto aArray = a.getArray();
+        auto bArray = b.getArray();
+
+        if (aArray->arraySize != bArray->arraySize) {
+            return false;
+        }
+
+        for (uint32_t elementIndex = 0; elementIndex < aArray->arraySize; elementIndex++) {
+            if (!arrayDeepEqual(aArray->values[elementIndex], bArray->values[elementIndex])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    if (a.isArray() != b.isArray()) {
+        return false;
+    }
+
+    return is_equal(a, b);
+}
+
+static void do_OPERATION_TYPE_ARRAY_DEEP_EQUAL(EvalStack &stack) {
+    auto b = stack.pop().getValue();
+    auto a = stack.pop().getValue();
+
+    if (a.isError()) {
+        stack.push(a);
+        return;
+    }
+
+    if (b.isError()) {
+        stack.push(b);
+        return;
+    }
+
+    stack.push(Value(arrayDeepEqual(a, b), VALUE_TYPE_BOOLEAN));
+}
+
 static void do_OPERATION_TYPE_LVGL_METER_TICK_INDEX(EvalStack &stack) {
     stack.push(g_eezFlowLvlgMeterTickIndex);
 }
@@ -2966,6 +3011,7 @@ EvalOperation g_evalOperations[] = {
     do_OPERATION_TYPE_FLOW_GET_THEME_COLOR,
     do_OPERATION_TYPE_LVGL_COLOR_DARKEN,
     do_OPERATION_TYPE_LVGL_COLOR_LIGHTEN,
+    do_OPERATION_TYPE_ARRAY_DEEP_EQUAL,
 };
 
 } // namespace flow
