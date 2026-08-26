@@ -2591,7 +2591,7 @@ static void do_OPERATION_TYPE_ARRAY_CLONE(EvalStack &stack) {
     stack.push(resultArray);
 }
 
-static bool arrayDeepEqual(const Value &a1, const Value &b1) {
+static bool arrayIsEqual(const Value &a1, const Value &b1) {
     auto a = a1.getValue();
     auto b = b1.getValue();
 
@@ -2604,7 +2604,7 @@ static bool arrayDeepEqual(const Value &a1, const Value &b1) {
         }
 
         for (uint32_t elementIndex = 0; elementIndex < aArray->arraySize; elementIndex++) {
-            if (!arrayDeepEqual(aArray->values[elementIndex], bArray->values[elementIndex])) {
+            if (!arrayIsEqual(aArray->values[elementIndex], bArray->values[elementIndex])) {
                 return false;
             }
         }
@@ -2619,7 +2619,7 @@ static bool arrayDeepEqual(const Value &a1, const Value &b1) {
     return is_equal(a, b);
 }
 
-static void do_OPERATION_TYPE_ARRAY_DEEP_EQUAL(EvalStack &stack) {
+static void do_OPERATION_TYPE_ARRAY_IS_EQUAL(EvalStack &stack) {
     auto b = stack.pop().getValue();
     auto a = stack.pop().getValue();
 
@@ -2633,7 +2633,7 @@ static void do_OPERATION_TYPE_ARRAY_DEEP_EQUAL(EvalStack &stack) {
         return;
     }
 
-    stack.push(Value(arrayDeepEqual(a, b), VALUE_TYPE_BOOLEAN));
+    stack.push(Value(arrayIsEqual(a, b), VALUE_TYPE_BOOLEAN));
 }
 
 static void do_OPERATION_TYPE_LVGL_METER_TICK_INDEX(EvalStack &stack) {
@@ -3011,9 +3011,9 @@ EvalOperation g_evalOperations[] = {
     /* 90 */ do_OPERATION_TYPE_FLOW_GET_THEME_COLOR,
     /* 91 */ do_OPERATION_TYPE_LVGL_COLOR_DARKEN,
     /* 92 */ do_OPERATION_TYPE_LVGL_COLOR_LIGHTEN,
-    /* 93 */ do_OPERATION_TYPE_ARRAY_DEEP_EQUAL,
+    /* 93 */ do_OPERATION_TYPE_ARRAY_IS_EQUAL,
     /* 94 */ do_OPERATION_TYPE_ARRAY_CLONE, // Struct.clone is same as Array.clone (internally, structs are stored as arrays)
-    /* 95 */ do_OPERATION_TYPE_ARRAY_DEEP_EQUAL, // Struct.deepEqual is same as Array.deepEqual
+    /* 95 */ do_OPERATION_TYPE_ARRAY_IS_EQUAL, // Struct.deepEqual is same as Array.deepEqual
 };
 
 } // namespace flow
