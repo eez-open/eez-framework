@@ -92,6 +92,7 @@ struct FlowState {
 };
 
 extern int g_selectedLanguage;
+extern const char *(*g_translateHook)(const char *textId);
 extern FlowState *g_firstFlowState;
 extern FlowState *g_lastFlowState;
 

@@ -1058,6 +1058,12 @@ static void do_OPERATION_TYPE_FLOW_LANGUAGES(EvalStack &stack) {
 static void do_OPERATION_TYPE_FLOW_TRANSLATE(EvalStack &stack) {
     auto textResourceIndexValue = stack.pop();
 
+    if (textResourceIndexValue.isString()) {
+        const char *textId = textResourceIndexValue.getString();
+        stack.push(g_translateHook ? g_translateHook(textId) : textId);
+        return;
+    }
+
     int err;
     int textResourceIndex = textResourceIndexValue.toInt32(&err);
     if (err) {

@@ -363,6 +363,10 @@ extern "C" void flowOnPageLoaded(unsigned pageIndex) {
     eez::flow::getPageFlowState(eez::g_mainAssets, pageIndex);
 }
 
+extern "C" void eez_flow_set_translate_hook(const char *(*hook)(const char *textId)) {
+    eez::flow::g_translateHook = hook;
+}
+
 extern "C" void flowPropagateValue(void *flowState, unsigned componentIndex, unsigned outputIndex) {
     eez::flow::propagateValue((eez::flow::FlowState *)flowState, componentIndex, outputIndex);
 }
