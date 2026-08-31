@@ -53,6 +53,7 @@ static const uint32_t FLOW_TICK_MAX_DURATION_MS = EEZ_FLOW_TICK_MAX_DURATION_MS;
 static unsigned g_tick_max_duration_count = 0;
 
 int g_selectedLanguage = 0;
+const char *(*g_translateHook)(const char *textId) = nullptr;
 FlowState *g_firstFlowState;
 FlowState *g_lastFlowState;
 

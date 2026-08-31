@@ -102,6 +102,10 @@ void flowOnPageLoaded(unsigned pageIndex);
 void *getFlowState(void *flowState, unsigned userWidgetComponentIndexOrPageIndex);
 void deletePageFlowState(unsigned pageIndex);
 
+// register the function used to translate T"..." texts in flow expressions
+// (e.g. lv_i18n_get_text); if not set, the raw text id is used
+void eez_flow_set_translate_hook(const char *(*hook)(const char *textId));
+
 void flowPropagateValue(void *flowState, unsigned componentIndex, unsigned outputIndex);
 void flowPropagateValueInt32(void *flowState, unsigned componentIndex, unsigned outputIndex, int32_t value);
 void flowPropagateValueUint32(void *flowState, unsigned componentIndex, unsigned outputIndex, uint32_t value);
