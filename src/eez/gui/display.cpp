@@ -1206,17 +1206,79 @@ int8_t measureGlyph(int32_t encoding, gui::font::Font &font) {
     return glyph->dx;
 }
 
-int measureStr(const char *text, int textLength, gui::font::Font &font, int max_width) {
+// Text can contain font tags, see convertFontTags in Studio:
+// FONT_START_CHAR followed by a character whose code point is the font index
+// switches to that font, FONT_END_CHAR switches back to the default font.
+static const utf8_int32_t FONT_START_CHAR = 0xE000;
+static const utf8_int32_t FONT_END_CHAR = 0xE001;
+
+static void setFontByIndex(int fontIndex, gui::font::Font &defaultFont) {
+    // in a project with master project font index is negative
+    auto fontData = getFontData(-fontIndex);
+    if (!fontData && g_mainAssets && fontIndex > 0 && fontIndex <= (int)g_mainAssets->fonts.count) {
+        fontData = getFontData(fontIndex);
+    }
+    g_font = fontData ? gui::font::Font(fontData) : defaultFont;
+}
+
+// Returns true if encoding is a font tag marker (and applies it). In case of
+// FONT_START_CHAR the font index character is consumed from the text.
+static bool handleFontTag(utf8_int32_t encoding, const char *&text, int &i, int textLength, gui::font::Font &defaultFont) {
+    if (encoding == FONT_START_CHAR) {
+        utf8_int32_t fontIndex = 0;
+        if (textLength == -1 || i + 1 < textLength) {
+            text = utf8codepoint(text, &fontIndex);
+            ++i;
+        }
+        setFontByIndex((int)fontIndex, defaultFont);
+        return true;
+    }
+    if (encoding == FONT_END_CHAR) {
+        g_font = defaultFont;
+        return true;
+    }
+    return false;
+}
+
+// Returns font index that is active at the end of the text, 0 for default font.
+int getFontIndexAtEnd(const char *text, int textLength, int fontIndex) {
+    for (int i = 0; textLength == -1 || i < textLength; ++i) {
+        utf8_int32_t encoding;
+        text = utf8codepoint(text, &encoding);
+        if (!encoding) {
+            break;
+        }
+        if (encoding == FONT_START_CHAR) {
+            utf8_int32_t index = 0;
+            if (textLength == -1 || i + 1 < textLength) {
+                text = utf8codepoint(text, &index);
+                ++i;
+            }
+            fontIndex = (int)index;
+        } else if (encoding == FONT_END_CHAR) {
+            fontIndex = 0;
+        }
+    }
+    return fontIndex;
+}
+
+int measureStr(const char *text, int textLength, gui::font::Font &font, int max_width, int startFontIndex) {
     g_font = font;
+    if (startFontIndex) {
+        setFontByIndex(startFontIndex, font);
+    }
 
     int width = 0;
 
     if (textLength == -1) {
-        while (true) {
+        for (int i = 0; true; ++i) {
             utf8_int32_t encoding;
             text = utf8codepoint(text, &encoding);
             if (!encoding) {
                 break;
+            }
+            if (handleFontTag(encoding, text, i, textLength, font)) {
+                continue;
             }
             int glyph_width = measureGlyph(encoding);
             if (max_width > 0 && width + glyph_width > max_width) {
@@ -1231,6 +1293,9 @@ int measureStr(const char *text, int textLength, gui::font::Font &font, int max_
             if (!encoding) {
                 break;
             }
+            if (handleFontTag(encoding, text, i, textLength, font)) {
+                continue;
+            }
             int glyph_width = measureGlyph(encoding);
             if (max_width > 0 && width + glyph_width > max_width) {
                 return max_width;
@@ -1242,8 +1307,11 @@ int measureStr(const char *text, int textLength, gui::font::Font &font, int max_
     return width;
 }
 
-void drawStr(const char *text, int textLength, int x, int y, int clip_x1, int clip_y1, int clip_x2, int clip_y2, gui::font::Font &font, int cursorPosition) {
+void drawStr(const char *text, int textLength, int x, int y, int clip_x1, int clip_y1, int clip_x2, int clip_y2, gui::font::Font &font, int cursorPosition, int startFontIndex) {
     g_font = font;
+    if (startFontIndex) {
+        setFontByIndex(startFontIndex, font);
+    }
 
     drawStrInit();
 
@@ -1264,6 +1332,10 @@ void drawStr(const char *text, int textLength, int x, int y, int clip_x1, int cl
 
         if (i == cursorPosition) {
             xCursor = x;
+        }
+
+        if (handleFontTag(encoding, text, i, textLength, font)) {
+            continue;
         }
 
         auto x1 = x;
@@ -1332,6 +1404,8 @@ int getCharIndexAtPosition(int xPos, const char *text, int textLength, int x, in
         textLength = utf8len(text);
     }
 
+    g_font = font;
+
     int i;
 
     for (i = 0; i < textLength; ++i) {
@@ -1341,7 +1415,11 @@ int getCharIndexAtPosition(int xPos, const char *text, int textLength, int x, in
             break;
         }
 
-        auto glyph = font.getGlyph(encoding);
+        if (handleFontTag(encoding, text, i, textLength, font)) {
+            continue;
+        }
+
+        auto glyph = g_font.getGlyph(encoding);
         auto dx = 0;
         if (glyph) {
             dx = glyph->dx;
@@ -1360,6 +1438,8 @@ int getCursorXPosition(int cursorPosition, const char *text, int textLength, int
         textLength = utf8len(text);
     }
 
+    g_font = font;
+
     for (int i = 0; i < textLength; ++i) {
         utf8_int32_t encoding;
         text = utf8codepoint(text, &encoding);
@@ -1371,7 +1451,11 @@ int getCursorXPosition(int cursorPosition, const char *text, int textLength, int
             return x;
         }
 
-        auto glyph = font.getGlyph(encoding);
+        if (handleFontTag(encoding, text, i, textLength, font)) {
+            continue;
+        }
+
+        auto glyph = g_font.getGlyph(encoding);
         if (glyph) {
             x += glyph->dx;
         }

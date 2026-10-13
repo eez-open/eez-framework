@@ -2923,6 +2923,10 @@ static void do_OPERATION_TYPE_EVENT_GET_ROTARY_DIFF(EvalStack &stack) {
 #endif
 }
 
+static void do_OPERATION_TYPE_DIB_MODULE_FIELD(EvalStack &stack) {
+    stack.push(Value::makeError());
+}
+
 EvalOperation g_evalOperations[] = {
     /* 0 */ do_OPERATION_TYPE_ADD,
     /* 1 */ do_OPERATION_TYPE_SUB,
@@ -3020,6 +3024,7 @@ EvalOperation g_evalOperations[] = {
     /* 93 */ do_OPERATION_TYPE_ARRAY_IS_EQUAL,
     /* 94 */ do_OPERATION_TYPE_ARRAY_CLONE, // Struct.clone is same as Array.clone (internally, structs are stored as arrays)
     /* 95 */ do_OPERATION_TYPE_ARRAY_IS_EQUAL, // Struct.deepEqual is same as Array.deepEqual
+    /* 96 */ do_OPERATION_TYPE_DIB_MODULE_FIELD,
 };
 
 } // namespace flow

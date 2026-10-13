@@ -52,6 +52,8 @@
     VALUE_TYPE(JSON_MEMBER_VALUE)                  /* 36 */ \
     VALUE_TYPE(EVENT)                              /* 37 */ \
     VALUE_TYPE(PROPERTY_REF)                       /* 38 */ \
+    VALUE_TYPE(DIB_FIELD)                          /* 39 */ \
+    VALUE_TYPE(DYNAMIC_ARRAY)                          /* 40 */ \
     CUSTOM_VALUE_TYPES
 
 namespace eez {

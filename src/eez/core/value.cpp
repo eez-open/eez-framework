@@ -467,6 +467,21 @@ static const char *ARRAY_REF_value_type_name(const Value &value) {
     return "array";
 }
 
+static bool compare_DYNAMIC_ARRAY_value(const Value &a, const Value &b) {
+    return a.type == b.type && a.pVoidValue == b.pVoidValue;
+}
+
+static void DYNAMIC_ARRAY_value_to_text(const Value &value, char *text, int count) {
+    EEZ_UNUSED(value);
+    EEZ_UNUSED(count);
+    text[0] = 0;
+}
+
+static const char *DYNAMIC_ARRAY_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
+    return "array";
+}
+
 static bool compare_STRING_REF_value(const Value &a, const Value &b) {
 	return compare_STRING_value(a, b);
 }
@@ -661,6 +676,7 @@ static const char *FLOW_OUTPUT_value_type_name(const Value &value) {
 
 #if EEZ_OPTION_GUI
 using namespace gui;
+
 static bool compare_NATIVE_VARIABLE_value(const Value &a, const Value &b) {
     auto aValue = get(g_widgetCursor, a.getInt());
     auto bValue = get(g_widgetCursor, b.getInt());
@@ -673,6 +689,22 @@ static void NATIVE_VARIABLE_value_to_text(const Value &value, char *text, int co
 }
 
 static const char *NATIVE_VARIABLE_value_type_name(const Value &value) {
+    auto aValue = get(g_widgetCursor, value.getInt());
+    return g_valueTypeNames[aValue.type](aValue);
+}
+
+static bool compare_DIB_FIELD_value(const Value &a, const Value &b) {
+    auto aValue = get(g_widgetCursor, a.getInt());
+    auto bValue = get(g_widgetCursor, b.getInt());
+	return aValue == bValue;
+}
+
+static void DIB_FIELD_value_to_text(const Value &value, char *text, int count) {
+    auto aValue = get(g_widgetCursor, value.getInt());
+    aValue.toText(text, count);
+}
+
+static const char *DIB_FIELD_value_type_name(const Value &value) {
     auto aValue = get(g_widgetCursor, value.getInt());
     return g_valueTypeNames[aValue.type](aValue);
 }
@@ -694,6 +726,24 @@ static const char *NATIVE_VARIABLE_value_type_name(const Value &value) {
     EEZ_UNUSED(value);
     return "";
 }
+
+static bool compare_DIB_FIELD_value(const Value &a, const Value &b) {
+    EEZ_UNUSED(a);
+    EEZ_UNUSED(b);
+    return false;
+}
+
+static void DIB_FIELD_value_to_text(const Value &value, char *text, int count) {
+    EEZ_UNUSED(value);
+    EEZ_UNUSED(count);
+    *text = 0;
+}
+
+static const char *DIB_FIELD_value_type_name(const Value &value) {
+    EEZ_UNUSED(value);
+    return "";
+}
+
 #endif
 
 static bool compare_ERROR_value(const Value &a, const Value &b) {

@@ -17,6 +17,7 @@
 #include <math.h>
 
 #include <eez/core/util.h>
+#include <eez/core/utf8.h>
 
 #include <eez/gui/gui.h>
 
@@ -456,6 +457,19 @@ enum MultilineTextRenderStep {
     RENDER
 };
 
+// textLength of display::measureStr is in code points, while word boundaries
+// are found in bytes
+static int countCodepoints(const char *text, int numBytes) {
+    int count = 0;
+    const char *end = text + numBytes;
+    while (text < end) {
+        utf8_int32_t encoding;
+        text = utf8codepoint(text, &encoding);
+        ++count;
+    }
+    return count;
+}
+
 struct MultilineTextRender {
     const char *text;
     int x1;
@@ -476,6 +490,16 @@ struct MultilineTextRender {
     char line[CONF_MULTILINE_TEXT_MAX_LINE_LENGTH + 1];
     int lineIndent;
     int lineWidth;
+
+    // font tags can span multiple words and lines, so track the active font
+    // index (0 is the default font) at the start of the line and at the end of
+    // the text added so far
+    int lineStartFontIndex;
+    int currentFontIndex;
+
+    // vertical clip of the text area, glyphs of a larger font can overflow the line
+    int clipY1;
+    int clipY2;
 
     void appendToLine(const char *str, size_t n) {
         size_t j = strlen(line);
@@ -498,7 +522,7 @@ struct MultilineTextRender {
                     x = x1 + int((x2 - x1 + 1 - lineWidth) / 2);
                 }
 
-                display::drawStr(line, -1, x + lineIndent, y, x, y, x + lineWidth - 1, y + font.getHeight() - 1, font, -1);
+                display::drawStr(line, -1, x + lineIndent, y, x1, clipY1, x2, clipY2, font, -1, lineStartFontIndex);
             } else {
                 textHeight = MAX(textHeight, y + lineHeight - y1);
             }
@@ -515,6 +539,7 @@ struct MultilineTextRender {
 
         line[0] = 0;
         lineWidth = lineIndent = firstLineIndent;
+        lineStartFontIndex = currentFontIndex = 0;
 
         int i = 0;
         while (true) {
@@ -522,12 +547,12 @@ struct MultilineTextRender {
             while (text[i] != 0 && text[i] != ' ' && text[i] != '\n')
                 ++i;
 
-            int width = display::measureStr(text + j, i - j, font);
+            int width = display::measureStr(text + j, countCodepoints(text + j, i - j), font, 0, currentFontIndex);
 
             while (lineWidth + (line[0] ? spaceWidth : 0) + width > x2 - x1 + 1) {
 				if (!line[0]) {
 					i--;
-					width = display::measureStr(text + j, i - j, font);
+					width = display::measureStr(text + j, countCodepoints(text + j, i - j), font, 0, currentFontIndex);
 					continue;
 				}
 
@@ -547,8 +572,12 @@ struct MultilineTextRender {
                 appendToLine(" ", 1);
                 lineWidth += spaceWidth;
             }
+            if (!line[0]) {
+                lineStartFontIndex = currentFontIndex;
+            }
             appendToLine(text + j, i - j);
             lineWidth += width;
+            currentFontIndex = display::getFontIndexAtEnd(text + j, countCodepoints(text + j, i - j), currentFontIndex);
 
             while (text[i] == ' ') {
                 ++i;
@@ -625,6 +654,9 @@ struct MultilineTextRender {
         x2 -= style->paddingRight;
         y1 += style->paddingTop;
         y2 -= style->paddingBottom;
+
+        clipY1 = y1;
+        clipY2 = y2;
 
         int textHeight = executeStep(MEASURE);
 
