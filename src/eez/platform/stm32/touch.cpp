@@ -83,9 +83,9 @@ static int16_t g_lastYData = -1;
 static int16_t g_lastZ1Data = 0;
 
 void touchMeasure() {
-#if defined(EEZ_STM32_CUSTOM_TOUCH_MEASURE_CALLBACK)
+#if defined(EEZ_CUSTOM_TOUCH_MEASURE_CALLBACK)
     int x, y, pressed;
-    eez_stm32_touch_measure_callback(&x, &y, &pressed);
+    eez_custom_touch_measure_callback(&x, &y, &pressed);
 	if (pressed) {
 		g_lastZ1Data = CONF_TOUCH_Z1_THRESHOLD + 1;
 		g_lastXData = x;

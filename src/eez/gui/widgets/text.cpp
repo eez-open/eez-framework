@@ -21,6 +21,8 @@
 #include <eez/gui/widgets/text.h>
 
 #define IGNORE_LUMINOSITY_FLAG 1
+#define FIT_TO_CONTENT_WIDTH_FLAG 2
+#define FIT_TO_CONTENT_HEIGHT_FLAG 4
 
 static const size_t MAX_TEXT_LEN = 128;
 
@@ -47,7 +49,56 @@ bool TextWidgetState::updateState() {
     const char *text = widget->text ? static_cast<const char *>(widget->text) : nullptr;
 	WIDGET_STATE(data, !(text && text[0]) && widget->data ? get(widgetCursor, widget->data) : 0);
 
+    if (widget->flags & (FIT_TO_CONTENT_WIDTH_FLAG | FIT_TO_CONTENT_HEIGHT_FLAG)) {
+        font::Font font = styleGetFont(style);
+
+        // must be kept in sync with TextWidget_autoSize
+        if (widget->flags & FIT_TO_CONTENT_WIDTH_FLAG) {
+            int textWidth = 0;
+            if (font) {
+                if (text && text[0]) {
+                    textWidth = display::measureStr(text, -1, font, 0);
+                } else if (widget->data) {
+                    if (data.isString()) {
+                        const char *str = data.getString();
+                        textWidth = str ? display::measureStr(str, -1, font, 0) : 0;
+                    } else {
+                        char textBuffer[MAX_TEXT_LEN + 1];
+                        data.toText(textBuffer, sizeof(textBuffer));
+                        textWidth = display::measureStr(textBuffer, -1, font, 0);
+                    }
+                }
+            }
+            WIDGET_STATE(fitW, (int16_t)(style->borderSizeLeft + style->paddingLeft + textWidth + style->paddingRight + style->borderSizeRight));
+        } else {
+            fitW = widgetCursor.w;
+        }
+
+        if (widget->flags & FIT_TO_CONTENT_HEIGHT_FLAG) {
+            int textHeight = font ? font.getHeight() : 0;
+            WIDGET_STATE(fitH, (int16_t)(style->borderSizeTop + style->paddingTop + textHeight + style->paddingBottom + style->borderSizeBottom));
+        } else {
+            fitH = widgetCursor.h;
+        }
+
+        applyFitToContent();
+    }
+
     WIDGET_STATE_END()
+}
+
+void TextWidgetState::applyFitToContent() {
+    auto widget = (const TextWidget *)g_widgetCursor.widget;
+    if (widget->flags & FIT_TO_CONTENT_WIDTH_FLAG) {
+        if (g_isRTL) {
+            // keep the right edge, see doStaticLayout
+            g_widgetCursor.x += g_widgetCursor.w - fitW;
+        }
+        g_widgetCursor.w = fitW;
+    }
+    if (widget->flags & FIT_TO_CONTENT_HEIGHT_FLAG) {
+        g_widgetCursor.h = fitH;
+    }
 }
 
 void TextWidgetState::render() {
@@ -56,6 +107,31 @@ void TextWidgetState::render() {
     auto widget = (const TextWidget *)widgetCursor.widget;
     const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
     const char *text = widget->text ? static_cast<const char *>(widget->text) : nullptr;
+
+    if (widget->flags & (FIT_TO_CONTENT_WIDTH_FLAG | FIT_TO_CONTENT_HEIGHT_FLAG)) {
+        // previously rendered area is not covered by the new one
+        // (i.e. widget shrunk), clear it
+        if (
+            renderedW > 0 && renderedH > 0 &&
+            (
+                renderedX < widgetCursor.x ||
+                renderedY < widgetCursor.y ||
+                renderedX + renderedW > widgetCursor.x + widgetCursor.w ||
+                renderedY + renderedH > widgetCursor.y + widgetCursor.h
+            )
+        ) {
+            int x1 = renderedX;
+            int y1 = renderedY;
+            int x2 = renderedX + renderedW - 1;
+            int y2 = renderedY + renderedH - 1;
+            drawBorderAndBackground(x1, y1, x2, y2, nullptr, TRANSPARENT_COLOR_INDEX);
+        }
+
+        renderedX = widgetCursor.x;
+        renderedY = widgetCursor.y;
+        renderedW = widgetCursor.w;
+        renderedH = widgetCursor.h;
+    }
 
     uint16_t overrideColor                 = flags.focused ? style->focusColor           : g_hooks.overrideStyleColor(widgetCursor, style);
     uint16_t overrideBackgroundColor       = flags.focused ? style->focusBackgroundColor : style->backgroundColor;

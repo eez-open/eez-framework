@@ -30,7 +30,8 @@ enum UpDownWidgetSegment {
 struct UpDownWidgetState : public WidgetState {
 	WidgetStateFlags flags;
 	Value data;
-	UpDownWidgetSegment segment;
+	UpDownWidgetSegment oldSegment;
+	UpDownWidgetSegment newSegment;
     Value min;
     Value max;
 

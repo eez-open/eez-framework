@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <eez/gui/scrolling.h>
+
 namespace eez {
 namespace gui {
 
@@ -27,12 +29,10 @@ struct ListWidget : public Widget {
     uint8_t gap;
 };
 
-struct ListWidgetState : public WidgetState {
-    int startPosition;
-    int count;
-
+struct ListWidgetState : public ScrollableWidgetState {
     bool updateState() override;
     void enumChildren() override;
+    void render() override;
 };
 
 } // namespace gui

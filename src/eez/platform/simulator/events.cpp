@@ -10,7 +10,7 @@
 
 #include <eez/conf-internal.h>
 
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
+#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__) || defined(EEZ_PLATFORM_CM5_RASPI) 
 
 #if EEZ_OPTION_GUI
 
@@ -18,6 +18,10 @@
 
 #if EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
 #include <SDL.h>
+#endif
+
+#if defined(EEZ_PLATFORM_CM5_RASPI) && defined(EEZ_USE_WAYLAND)
+#include <layer_shell_display.h>
 #endif
 
 #include <eez/core/encoder.h>
@@ -38,7 +42,9 @@ int g_mouseY;
 bool g_mouseButton1IsPressed;
 
 void readEvents() {
-#if EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
+#if defined(EEZ_PLATFORM_CM5_RASPI) && defined(EEZ_USE_WAYLAND)
+    eez::cm5::pollLayerShellDisplay();
+#elif EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
     int yMouseWheel = 0;
     bool mouseButton2IsUp = false;
 
@@ -89,7 +95,6 @@ bool isMiddleButtonPressed() {
 #if EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
     int x;
     int y;
-	osDelay(1000);
     auto buttons = SDL_GetMouseState(&x, &y);
     return buttons & SDL_BUTTON(2) ? true : false;
 #else

@@ -105,7 +105,7 @@ static bool isComponentReadyToRun(FlowState *flowState, unsigned componentIndex)
     }
 
     if (component->type == defs_v3::COMPONENT_TYPE_START_ACTION) {
-        if (flowState->parentComponent && flowState->parentComponentIndex != -1) {
+        if (flowState->parentComponent && flowState->parentComponentIndex != -1 && flowState->parentComponent->inputs.count > 0) {
             auto flowInputIndex = flowState->parentComponent->inputs[0];
             auto value = flowState->parentFlowState->values[flowInputIndex];
             return value.getType() != VALUE_TYPE_UNDEFINED;
@@ -501,6 +501,8 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
 #else
 		setVar(dstValue.getInt(), srcValue);
 #endif
+	}  else if (dstValue.getType() == VALUE_TYPE_DIB_FIELD) {
+		flow::setDibFieldHook(dstValue.getUInt32(), srcValue);
 	} else {
 		Value *pDstValue;
         uint32_t dstValueType = VALUE_TYPE_UNDEFINED;
@@ -525,6 +527,18 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
                 } else {
                     blobRef->blob[arrayElementValue->elementIndex] = elementValue;
                     // TODO: onValueChanged
+                }
+                return;
+            } else if (arrayElementValue->arrayValue.isDynamicArray()) {
+                auto dynamicArray = arrayElementValue->arrayValue.getDynamicArray();
+                if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= (int)dynamicArray->arraySize) {
+                    throwError(flowState, componentIndex, FlowError::Plain("Can not assign, array element index out of bounds"));
+                    return;
+                }
+                if (dynamicArray->setElement) {
+                    dynamicArray->setElement(arrayElementValue->elementIndex, srcValue);
+                } else {
+                    throwError(flowState, componentIndex, FlowError::Plain("Can not assign, array element is read-only"));
                 }
                 return;
             } else {

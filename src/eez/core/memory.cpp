@@ -25,7 +25,7 @@
 
 namespace eez {
 
-#if (defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)) && !defined(EEZ_FOR_LVGL) && !defined(EEZ_DASHBOARD_API)
+#if (defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__) || defined(EEZ_PLATFORM_CM5_RASPI)) && !defined(EEZ_FOR_LVGL) && !defined(EEZ_DASHBOARD_API)
 uint8_t g_memory[MEMORY_SIZE] = { 0 };
 #endif
 
@@ -46,6 +46,7 @@ uint8_t *FLOW_TO_DEBUGGER_MESSAGE_BUFFER;
     uint8_t *SCREENSHOOT_BUFFER_START_ADDRESS;
 
     uint8_t *GUI_STATE_BUFFER;
+    uint32_t g_maxGuiStateSize;
 #endif
 
 uint8_t *ALLOC_BUFFER = 0;

@@ -41,6 +41,17 @@ struct YTGraphWidgetState : public WidgetState {
 
 	uint32_t previousHistoryValuePosition;
 	bool refreshBackground;
+    // all the values must be drawn again (from previousHistoryValuePosition)
+    bool redrawAll = false;
+
+    // graph pixels for YT_GRAPH_UPDATE_METHOD_SCROLL and YT_GRAPH_UPDATE_METHOD_SCAN_LINE (see YTGraphCanvas)
+    void *buffer = nullptr;
+    int bufferWidth = 0;
+    int bufferHeight = 0;
+    // values up to this position are drawn into the buffer
+    uint32_t bufferHistoryValuePosition = 0;
+
+    ~YTGraphWidgetState() override;
 
     bool updateState() override;
     void render() override;

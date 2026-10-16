@@ -66,7 +66,7 @@ void mainLoop(void *) {
 
     while (1) {
 
-#ifdef EEZ_PLATFORM_SIMULATOR
+#if defined(EEZ_PLATFORM_SIMULATOR) || defined(EEZ_PLATFORM_CM5_RASPI)
     if (g_shutdown) {
         break;
     }
@@ -90,6 +90,7 @@ void processGuiQueue(uint32_t timeout) {
 
     if (type == GUI_QUEUE_MESSAGE_TYPE_DISPLAY_VSYNC) {
         display::update();
+        guiTick();
     } else if (type == GUI_QUEUE_MESSAGE_TYPE_TOUCH_EVENT) {
         processTouchEvent(obj.touchEvent);
     } else if (type == GUI_QUEUE_MESSAGE_TYPE_SHOW_PAGE) {
@@ -114,7 +115,6 @@ void processGuiQueue(uint32_t timeout) {
 
 void oneIter() {
 	processGuiQueue(100);
-    guiTick();
 }
 
 #endif
@@ -185,13 +185,13 @@ bool isGuiThread() {
 }
 
 void suspendGuiThread() {
-#if EEZ_OPTION_THREADS && !defined(EEZ_PLATFORM_SIMULATOR) && !defined(__EMSCRIPTEN__)
+#if EEZ_OPTION_THREADS && !defined(EEZ_PLATFORM_SIMULATOR) && !defined(__EMSCRIPTEN__) && !defined(EEZ_PLATFORM_CM5_RASPI)
 	vTaskSuspend((TaskHandle_t)g_guiTaskHandle);
 #endif
 }
 
 void resumeGuiThread() {
-#if EEZ_OPTION_THREADS && !defined(EEZ_PLATFORM_SIMULATOR) && !defined(__EMSCRIPTEN__)
+#if EEZ_OPTION_THREADS && !defined(EEZ_PLATFORM_SIMULATOR) && !defined(__EMSCRIPTEN__) && !defined(EEZ_PLATFORM_CM5_RASPI)
 	vTaskResume((TaskHandle_t)g_guiTaskHandle);
 #endif
 }

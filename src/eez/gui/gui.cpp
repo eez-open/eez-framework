@@ -69,6 +69,8 @@ void guiTick() {
 	}
 #endif
 
+    processPostponedTouchEvents();
+
     g_wasBlinkTime = g_isBlinkTime;
     g_isBlinkTime = (millis() % (2 * CONF_GUI_BLINK_TIME)) > CONF_GUI_BLINK_TIME;
 

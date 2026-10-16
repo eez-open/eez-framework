@@ -63,5 +63,8 @@ extern double (*getDateNowHook)();
 
 extern void (*onFlowErrorHook)(FlowState *flowState, int componentIndex, const char *errorMessage);
 
+extern Value (*getDibFieldHook)(uint32_t dibFieldId);
+extern void (*setDibFieldHook)(uint32_t dibFieldId, const Value &sourceValue);
+
 } // flow
 } // eez

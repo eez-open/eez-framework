@@ -33,6 +33,8 @@ bool g_widgetStateStructureChanged;
 
 WidgetCursor g_widgetCursor;
 
+alignas(8) EXTRAM_DATA uint8_t tmp_GUI_STATE_BUFFER[GUI_STATE_BUFFER_SIZE];
+
 void refreshScreen() {
 	g_refreshScreen = true;
 }
@@ -69,7 +71,7 @@ void updateScreen() {
 	}
 
 	bool hasPreviousState = g_widgetStateStart != nullptr;
-	g_widgetStateStart = (WidgetState *)GUI_STATE_BUFFER;
+	g_widgetStateStart = (WidgetState *)tmp_GUI_STATE_BUFFER;
 
     g_isActiveWidget = false;
 
@@ -88,12 +90,14 @@ void updateScreen() {
     g_widgetCursor.w = g_rootWidget->width;
     g_widgetCursor.h = g_rootWidget->height;
 
+    beginWidgetStatesUpdate(hasPreviousState);
+
     if (g_mainAssets->assetsType != ASSETS_TYPE_DASHBOARD) {
         enumWidget();
     }
 
 	g_widgetStateEnd = g_widgetCursor.currentState;
-	g_widgetStateStructureChanged = !g_widgetCursor.hasPreviousState;
+	g_widgetStateStructureChanged = endWidgetStatesUpdate();
 
 	if (g_foundWidgetAtDownInvalid) {
 		WidgetCursor widgetCursor;

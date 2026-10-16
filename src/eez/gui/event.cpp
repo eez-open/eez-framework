@@ -25,11 +25,31 @@
 
 #include <eez/gui/gui.h>
 #include <eez/gui/thread.h>
+#include <eez/gui/scrolling.h>
 
 #define CONF_GUI_LONG_TOUCH_TIMEOUT_MS 1000
 #define CONF_GUI_KEYPAD_FIRST_AUTO_REPEAT_DELAY_MS 300
 #define CONF_GUI_KEYPAD_NEXT_AUTO_REPEAT_DELAY_MS 50
 #define CONF_GUI_EXTRA_LONG_TOUCH_TIMEOUT_MS 15000
+
+// While a scrollable list under the finger can still take over the touch,
+// touch down is sent to the pressed widget with this delay. If the list
+// takes over the touch before that, the widget doesn't get the touch at all.
+#define CONF_GUI_TOUCH_SCROLL_TOUCH_DOWN_DELAY_MS 100
+
+// Touch that starts this soon after the page has changed, near the position
+// where the previous touch ended, is ignored. It is an accidental double tap
+// (or a touch screen bounce), the user didn't have time to see the new page.
+// Set to 0 to disable.
+#ifndef CONF_GUI_IGNORE_TOUCH_AFTER_PAGE_CHANGE_MS
+#define CONF_GUI_IGNORE_TOUCH_AFTER_PAGE_CHANGE_MS 300
+#endif
+
+// Max. distance in pixels from the previous touch for the touch to be ignored,
+// 0 means that touch is ignored at any position.
+#ifndef CONF_GUI_IGNORE_TOUCH_AFTER_PAGE_CHANGE_RADIUS
+#define CONF_GUI_IGNORE_TOUCH_AFTER_PAGE_CHANGE_RADIUS 50
+#endif
 
 namespace eez {
 namespace gui {
@@ -49,9 +69,31 @@ static OnTouchFunctionType g_onTouchFunction;
 static bool g_longTouchGenerated;
 static bool g_extraLongTouchGenerated;
 
+static bool g_touchScrollCaptured;
+
+static bool g_touchDownPending;
+static Event g_pendingTouchDownEvent;
+static uint32_t g_pendingTouchDownTimeMs;
+
+// After postponed touch down is sent on touch up, touch up is postponed
+// for one GUI tick, so that the pressed widget is rendered at least once.
+static bool g_touchUpPending;
+static Event g_pendingTouchUpEvent;
+
+// whole touch, from touch down to touch up, is ignored
+static bool g_touchIgnored;
+
+static bool g_lastTouchUpValid;
+static Event g_lastTouchUpEvent;
+
+// processTouchEvent is reentered when the page touched outside is closed
+static int g_processTouchEventDepth;
+
 ////////////////////////////////////////////////////////////////////////////////
 
 static void processTouchEvent(EventType type, Event &touchEvent);
+static void doProcessTouchEvent(Event &touchEvent);
+static bool isAccidentalTouchDown(const Event &touchEvent);
 static void onPageTouch(const WidgetCursor &foundWidget, Event &touchEvent);
 static void onWidgetDefaultTouch(const WidgetCursor &widgetCursor, Event &touchEvent);
 static void onWidgetTouch(const WidgetCursor &widgetCursor, Event &touchEvent);
@@ -94,10 +136,15 @@ void onTouchEvent(bool pressed, int x, int y, Event &lastEvent) {
 	}
 }
 
-void processTouchEvent(Event &touchEvent) {
+static void doProcessTouchEvent(Event &touchEvent) {
 	if (g_hooks.isEventHandlingDisabled()) {
 		return;
 	}
+
+    if (touchEvent.type != EVENT_TYPE_TOUCH_NONE) {
+        // finish the previous touch first
+        processPostponedTouchEvents();
+    }
 
     static uint32_t m_lastAutoRepeatEventTimeMs;
     static uint32_t m_touchDownTimeMs;
@@ -136,25 +183,181 @@ void processTouchEvent(Event &touchEvent) {
             }
         } else if (touchEvent.type == EVENT_TYPE_TOUCH_UP) {
             processTouchEvent(EVENT_TYPE_TOUCH_UP, touchEvent);
+            g_lastTouchUpValid = true;
+            g_lastTouchUpEvent = touchEvent;
         }
     }
 }
 
+void processTouchEvent(Event &touchEvent) {
+    g_processTouchEventDepth++;
+    doProcessTouchEvent(touchEvent);
+    g_processTouchEventDepth--;
+}
+
+static bool isPageChangedRecently(AppContext *appContext, uint32_t timeMs) {
+    // also true if the page has changed after the touch has started
+    return appContext && int32_t(timeMs - appContext->getShowPageTime()) < CONF_GUI_IGNORE_TOUCH_AFTER_PAGE_CHANGE_MS;
+}
+
+static bool isAccidentalTouchDown(const Event &touchEvent) {
+    if (CONF_GUI_IGNORE_TOUCH_AFTER_PAGE_CHANGE_MS == 0) {
+        return false;
+    }
+
+    // touch down sent again after the page touched outside is closed
+    if (g_processTouchEventDepth > 1) {
+        return false;
+    }
+
+    if (!g_lastTouchUpValid || int32_t(touchEvent.time - g_lastTouchUpEvent.time) >= CONF_GUI_IGNORE_TOUCH_AFTER_PAGE_CHANGE_MS) {
+        return false;
+    }
+
+    if (CONF_GUI_IGNORE_TOUCH_AFTER_PAGE_CHANGE_RADIUS > 0) {
+        int dx = touchEvent.x - g_lastTouchUpEvent.x;
+        int dy = touchEvent.y - g_lastTouchUpEvent.y;
+        if (dx * dx + dy * dy > CONF_GUI_IGNORE_TOUCH_AFTER_PAGE_CHANGE_RADIUS * CONF_GUI_IGNORE_TOUCH_AFTER_PAGE_CHANGE_RADIUS) {
+            return false;
+        }
+    }
+
+    return isPageChangedRecently(getRootAppContext(), touchEvent.time) ||
+        (g_foundWidgetAtDown.appContext && isPageChangedRecently(g_foundWidgetAtDown.appContext, touchEvent.time));
+}
+
+// List can take over the touch from the widget pressed at touch down only
+// if that widget has not done anything yet that can't be undone.
+static bool canTouchScrollCapture(bool atTouchDown) {
+    if (g_longTouchGenerated) {
+        return false;
+    }
+
+    if (g_onTouchFunction == onPageTouch) {
+        return true;
+    }
+
+    if (g_onTouchFunction == onWidgetDefaultTouch) {
+        // at touch down the widget hasn't received the event yet
+        if (!atTouchDown && (g_touchActionExecutedAtDown || g_touchActionExecuted)) {
+            return false;
+        }
+
+        // widget is gone if the action executed at touch down changed the page
+        if (!g_foundWidgetAtDown) {
+            return false;
+        }
+
+        return getWidgetAction(g_foundWidgetAtDown) != EEZ_ACTION_ID_DRAG_OVERLAY;
+    }
+
+    // widgets with their own touch handling (slider, scroll bar, ...) keep the touch
+    return false;
+}
+
+static void captureTouchScroll() {
+    g_touchScrollCaptured = true;
+
+    // cancel the press of the widget found at touch down
+    g_activeWidget = 0;
+    g_touchActionExecuted = true;
+
+    g_foundWidgetAtDown = getTouchScrollList();
+    g_onTouchFunction = touchScrollOnTouch;
+}
+
+static void sendPendingTouchDown() {
+    g_touchDownPending = false;
+    if (g_onTouchFunction) {
+        Event event = g_pendingTouchDownEvent;
+        event.type = EVENT_TYPE_TOUCH_DOWN;
+        g_onTouchFunction(g_foundWidgetAtDown, event);
+    }
+}
+
 static void processTouchEvent(EventType type, Event &touchEvent) {
+    if (type != EVENT_TYPE_TOUCH_DOWN && g_touchIgnored) {
+        return;
+    }
+
     if (type == EVENT_TYPE_TOUCH_DOWN) {
         g_foundWidgetAtDown = findWidget(touchEvent.x, touchEvent.y);
+
+        g_touchIgnored = isAccidentalTouchDown(touchEvent);
+        if (g_touchIgnored) {
+            g_foundWidgetAtDown = 0;
+            g_onTouchFunction = nullptr;
+            g_activeWidget = 0;
+            g_touchDownPending = false;
+            g_touchScrollCaptured = false;
+            return;
+        }
+
         g_onTouchFunction = getWidgetTouchFunction(g_foundWidgetAtDown);
         if (!g_onTouchFunction) {
             g_onTouchFunction = onPageTouch;
         }
+
+        // widget hasn't received this touch yet
+        g_touchActionExecuted = false;
+        g_touchActionExecutedAtDown = false;
+        g_touchDownPending = false;
+
+        g_touchScrollCaptured = false;
+        if (touchScrollBegin(canTouchScrollCapture(true) ? getFoundWidgetScrollLists() : ScrollLists(), touchEvent)) {
+            // touch stopped the moving list, it doesn't go to the widget under the finger
+            captureTouchScroll();
+            return;
+        }
+
+        if (isTouchScrollPending()) {
+            // postpone touch down, the list can still take over the touch
+            g_touchDownPending = true;
+            g_pendingTouchDownEvent = touchEvent;
+            g_pendingTouchDownTimeMs = millis();
+            return;
+        }
+    } else if (type == EVENT_TYPE_TOUCH_MOVE) {
+        if (!g_touchScrollCaptured && canTouchScrollCapture(false) && touchScrollShouldCapture(touchEvent)) {
+            // widget never gets the postponed touch down
+            g_touchDownPending = false;
+            captureTouchScroll();
+        } else if (
+            g_touchDownPending &&
+            (!isTouchScrollPending() || int32_t(millis() - g_pendingTouchDownTimeMs) >= CONF_GUI_TOUCH_SCROLL_TOUCH_DOWN_DELAY_MS)
+        ) {
+            sendPendingTouchDown();
+        }
     } else if (type == EVENT_TYPE_TOUCH_UP) {
+        if (g_touchDownPending) {
+            // tap: widget gets touch down now and touch up in the next GUI tick
+            sendPendingTouchDown();
+            g_touchUpPending = true;
+            g_pendingTouchUpEvent = touchEvent;
+            return;
+        }
         g_activeWidget = 0;
+        if (!g_touchScrollCaptured) {
+            touchScrollEnd();
+        }
+    }
+
+    if (g_touchDownPending) {
+        // nothing is sent to the widget before touch down
+        return;
     }
 
     if (g_onTouchFunction) {
         Event event = touchEvent;
         event.type = type;
         g_onTouchFunction(g_foundWidgetAtDown, event);
+    }
+}
+
+void processPostponedTouchEvents() {
+    if (g_touchUpPending) {
+        g_touchUpPending = false;
+        processTouchEvent(EVENT_TYPE_TOUCH_UP, g_pendingTouchUpEvent);
     }
 }
 

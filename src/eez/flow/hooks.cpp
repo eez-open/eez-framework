@@ -196,6 +196,10 @@ double (*getDateNowHook)() = nullptr;
 
 void (*onFlowErrorHook)(FlowState *flowState, int componentIndex, const char *errorMessage) = nullptr;
 
+Value (*getDibFieldHook)(uint32_t dibFieldId) = nullptr;
+void (*setDibFieldHook)(uint32_t dibFieldId, const Value &sourceValue) = nullptr;
+
+
 } // namespace flow
 } // namespace eez
 

@@ -569,6 +569,7 @@ bool SelectFromEnumPage::isDisabled(int i) {
     return disabledCallback && disabledCallback(getValue(i));
 }
 
+// returns false if it doesn't fit vertically and numColumns is 1
 bool SelectFromEnumPage::calcSize() {
     const Style *containerStyle = getStyle(smallFont ? EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER_S : EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER);
     const Style *itemStyle = getStyle(smallFont ? EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_ITEM_S : EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_ITEM);
@@ -604,8 +605,8 @@ bool SelectFromEnumPage::calcSize() {
         width = rect.w;
     }
 
-    height = containerStyle->paddingTop + (numColumns == 2 ? (numItems + 1) / 2 : numItems) * itemHeight + containerStyle->paddingBottom;
-    if (height >rect.h) {
+    height = containerStyle->paddingTop + (numColumns == 2 ? (numItems + 1) / 2 : (numItems + 1)) * itemHeight + containerStyle->paddingBottom;
+    if (height > rect.h) {
         if (numColumns == 1) {
             return false;
         }

@@ -29,17 +29,38 @@ namespace gui {
 #define LIST_TYPE_VERTICAL 1
 #define LIST_TYPE_HORIZONTAL 2
 
+// List can be stretched by the container layout (w and h are the list size
+// after the layout). Item is stretched along with the list only in the
+// dimension in which it has the same size as the list in the design.
+static int getItemWidth(const ListWidget *widget, int w) {
+    auto itemWidget = static_cast<const Widget *>(widget->itemWidget);
+    return itemWidget->width == widget->width ? w : itemWidget->width;
+}
+
+static int getItemHeight(const ListWidget *widget, int h) {
+    auto itemWidget = static_cast<const Widget *>(widget->itemWidget);
+    return itemWidget->height == widget->height ? h : itemWidget->height;
+}
+
 bool ListWidgetState::updateState() {
     WIDGET_STATE_START(ListWidget);
 
-    auto newStartPosition = ytDataGetPosition(widgetCursor, widget->data);
-    if ((int)newStartPosition != startPosition) {
-        startPosition = newStartPosition;
-        hasPreviousState = false;
-    }
     auto newCount = eez::gui::count(widgetCursor, widget->data);
     if (newCount != count) {
         count = newCount;
+        hasPreviousState = false;
+    }
+
+    isVertical = widget->listType == LIST_TYPE_VERTICAL;
+    lineExtent = isVertical ? getItemHeight(widget, widgetCursor.h) : getItemWidth(widget, widgetCursor.w);
+    pitch = lineExtent + widget->gap;
+    itemsPerLine = 1;
+
+    // number of items that completely fit inside the list
+    int extent = isVertical ? widgetCursor.h : widgetCursor.w;
+    int visibleLines = pitch > 0 ? (extent + widget->gap) / pitch : 0;
+
+    if (updateScrollState(widgetCursor, widget->data, visibleLines)) {
         hasPreviousState = false;
     }
 
@@ -50,83 +71,71 @@ void ListWidgetState::enumChildren() {
     WidgetCursor &widgetCursor = g_widgetCursor;
 
     auto widget = (const ListWidget *)widgetCursor.widget;
-    const Style *style = getStyle(widget->style);
 
-    auto childWidget = static_cast<const Widget *>(widget->itemWidget);
-    widgetCursor.widget = childWidget;
+    EnumChildrenContext context;
+    beginEnumChildren(context);
 
-    auto savedX = widgetCursor.x;
-    auto savedY = widgetCursor.y;
+    int itemW = getItemWidth(widget, context.savedW);
+    int itemH = getItemHeight(widget, context.savedH);
 
-    auto savedCursor = widgetCursor.cursor;
+    int extent = isVertical ? context.savedH : context.savedW;
 
-    int offset = 0;
+    widgetCursor.widget = static_cast<const Widget *>(widget->itemWidget);
+
+    // While scrolling, enumerate one item more, so that the number of
+    // enumerated items doesn't change on every item boundary.
+    int limit = context.scrolling ? extent + pitch : extent;
+
+    int offset = -context.renderPixelOffset;
 
     Value oldValue;
 
-    auto width = widgetCursor.w;
-    auto height = widgetCursor.h;
-
-    for (int index = startPosition; ; ++index) {
-        if (index >= 0 && index < count) {
-            select(widgetCursor, widget->data, index, oldValue);
-
-            widgetCursor.w = childWidget->width;
-            widgetCursor.h = childWidget->height;
-
-            if (widget->listType == LIST_TYPE_VERTICAL) {
-                if (offset < height) {
-                    widgetCursor.y = savedY + offset;
-                    widgetCursor.pushIterator(index);
-                    enumWidget();
-                    widgetCursor.popIterator();
-                    offset += childWidget->height + widget->gap;
-                } else {
-                    break;
-                }
-            } else {
-                if (offset < width) {
-                    widgetCursor.x = savedX + offset;
-                    widgetCursor.pushIterator(index);
-                    enumWidget();
-                    widgetCursor.popIterator();
-                    offset += childWidget->width + widget->gap;
-                } else {
-                    break;
-                }
-            }
-        } else {
-            widgetCursor.w = childWidget->width;
-            widgetCursor.h = childWidget->height;
-
-            if (widget->listType == LIST_TYPE_VERTICAL) {
-                if (offset < height) {
-                    widgetCursor.y = savedY + offset;
-                    drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, MIN(widgetCursor.h, height - offset), style, false, false, true);
-                    offset += childWidget->height + widget->gap;
-                } else {
-                    break;
-                }
-            } else {
-                if (offset < width) {
-                    widgetCursor.x = savedX + offset;
-                    drawRectangle(widgetCursor.x, widgetCursor.y, MIN(widgetCursor.w, width - offset), widgetCursor.h, style, false, false, true);
-                    offset += childWidget->width + widget->gap;
-                } else {
-                    break;
-                }
-            }
+    for (int index = startPosition; index >= 0 && index < count && offset < limit; ++index, offset += pitch) {
+        if (offset + lineExtent <= 0) {
+            // item is completely outside of the list
+            continue;
         }
+
+        select(widgetCursor, widget->data, index, oldValue);
+
+        widgetCursor.x = isVertical ? context.savedX : context.savedX + offset;
+        widgetCursor.y = isVertical ? context.savedY + offset : context.savedY;
+        widgetCursor.w = itemW;
+        widgetCursor.h = itemH;
+
+        widgetCursor.pushIterator(index);
+        enumWidget();
+        widgetCursor.popIterator();
     }
 
     deselect(widgetCursor, widget->data, oldValue);
 
-    widgetCursor.widget = widget;
+    endEnumChildren(context);
+}
 
-    widgetCursor.x = savedX;
-    widgetCursor.y = savedY;
+void ListWidgetState::render() {
+    WidgetCursor &widgetCursor = g_widgetCursor;
 
-    widgetCursor.cursor = savedCursor;
+    ScrollableWidgetState::render();
+
+    auto widget = (const ListWidget *)widgetCursor.widget;
+    const Style *style = getStyle(widget->style);
+
+    auto n = count - startPosition;
+
+    if (widget->listType == LIST_TYPE_VERTICAL) {
+        auto offset = n * getItemHeight(widget, widgetCursor.h) + (n - 1) * widget->gap;
+        auto height = widgetCursor.h;
+        if (offset < height) {
+            drawRectangle(widgetCursor.x, widgetCursor.y + offset, widgetCursor.w, MIN(widgetCursor.h, height - offset), style, false, false, true);
+        }
+    } else {
+        auto offset = n * getItemWidth(widget, widgetCursor.w) + (n - 1) * widget->gap;
+        auto width = widgetCursor.w;
+        if (offset < width) {
+            drawRectangle(widgetCursor.x + offset, widgetCursor.y, MIN(widgetCursor.w, width - offset), widgetCursor.h, style, false, false, true);
+        }
+    }
 }
 
 } // namespace gui

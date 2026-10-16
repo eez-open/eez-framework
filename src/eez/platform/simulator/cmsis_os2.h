@@ -14,6 +14,7 @@
 #include <queue>
 
 #ifndef __EMSCRIPTEN__
+#include <condition_variable>
 #include <mutex>
 #include <thread>
 #endif
@@ -112,6 +113,9 @@ struct MessageQueue {
 	uint32_t elementSize;
 #ifndef __EMSCRIPTEN__
 	std::mutex mutex;
+	// signaled when an element is put, so osMessageQueueGet wakes up right
+	// away (without polling)
+	std::condition_variable elementPut;
 #endif
 };
 

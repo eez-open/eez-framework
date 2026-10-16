@@ -25,10 +25,61 @@
 namespace eez {
 namespace gui {
 
+// Pixels of the graph drawn with YT_GRAPH_UPDATE_METHOD_SCROLL and
+// YT_GRAPH_UPDATE_METHOD_SCAN_LINE. Graph is drawn incrementally (only the new
+// values) into this buffer and then the whole buffer is copied to the display,
+// so the graph can be rendered again at any time, e.g. when it is overlapped by
+// some other widget (see doStaticLayoutWithOverlapping).
+struct YTGraphCanvas {
+    display::Color *pixels;
+    int w;
+    int h;
+    display::Color color;
+
+    void setColor(display::Color color_) {
+        color = color_;
+    }
+
+    void drawPixel(int x, int y) {
+        if (x >= 0 && x < w && y >= 0 && y < h) {
+            pixels[y * w + x] = color;
+        }
+    }
+
+    void fillRect(int x1, int y1, int x2, int y2) {
+        if (x1 < 0) x1 = 0;
+        if (y1 < 0) y1 = 0;
+        if (x2 > w - 1) x2 = w - 1;
+        if (y2 > h - 1) y2 = h - 1;
+        for (int y = y1; y <= y2; y++) {
+            auto p = pixels + y * w + x1;
+            for (int x = x1; x <= x2; x++) {
+                *p++ = color;
+            }
+        }
+    }
+
+    void drawVLine(int x, int y, int l) {
+        fillRect(x, y, x, y + l);
+    }
+
+    // moves all the pixels n columns to the left
+    void scrollLeft(int n) {
+        if (n <= 0 || n >= w) {
+            return;
+        }
+        for (int y = 0; y < h; y++) {
+            auto row = pixels + y * w;
+            memmove(row, row + n, (w - n) * sizeof(display::Color));
+        }
+    }
+};
+
 // used for YT_GRAPH_UPDATE_METHOD_SCROLL and YT_GRAPH_UPDATE_METHOD_SCAN_LINE
 struct YTGraphDrawHelper {
     const WidgetCursor &widgetCursor;
     const Widget *widget;
+    YTGraphCanvas &canvas;
 
     float min[2];
     float max[2];
@@ -46,7 +97,7 @@ struct YTGraphDrawHelper {
 
     Value::YtDataGetValueFunctionPointer ytDataGetValue;
 
-    YTGraphDrawHelper(const WidgetCursor &widgetCursor_) : widgetCursor(widgetCursor_), widget(widgetCursor.widget) {
+    YTGraphDrawHelper(const WidgetCursor &widgetCursor_, YTGraphCanvas &canvas_) : widgetCursor(widgetCursor_), widget(widgetCursor.widget), canvas(canvas_) {
         min[0] = ytDataGetMin(widgetCursor, widget->data, 0).getFloat();
         max[0] = ytDataGetMax(widgetCursor, widget->data, 0).getFloat();
 
@@ -72,8 +123,8 @@ struct YTGraphDrawHelper {
             return INT_MIN;
         }
 
-        int y = (int)round((widgetCursor.h - 1) * (value - min[valueIndex]) / (max[valueIndex] - min[valueIndex]));
-        return widgetCursor.h - 1 - y;
+        int y = (int)round((canvas.h - 1) * (value - min[valueIndex]) / (max[valueIndex] - min[valueIndex]));
+        return canvas.h - 1 - y;
     }
 
     void drawValue(int valueIndex) {
@@ -89,43 +140,41 @@ struct YTGraphDrawHelper {
             yValue = 0;
         } else if (yPrevValue < 0 && yValue >= 0) {
             yPrevValue = 0;
-        } else if (yPrevValue < widgetCursor.h && yValue >= widgetCursor.h) {
-            yValue = widgetCursor.h - 1;
-        } else if (yPrevValue >= widgetCursor.h && yValue < widgetCursor.h) {
-            yPrevValue = widgetCursor.h - 1;
+        } else if (yPrevValue < canvas.h && yValue >= canvas.h) {
+            yValue = canvas.h - 1;
+        } else if (yPrevValue >= canvas.h && yValue < canvas.h) {
+            yPrevValue = canvas.h - 1;
         }
 
-		if (yValue < 0 || yPrevValue < 0 || yValue >= widgetCursor.h || yPrevValue >= widgetCursor.h) {
+		if (yValue < 0 || yPrevValue < 0 || yValue >= canvas.h || yPrevValue >= canvas.h) {
 			return;
 		}
 
-        display::setColorByValue(dataColor[valueIndex]);
+        canvas.setColor(dataColor[valueIndex]);
 
         if (yPrevValue == INT_MIN || abs(yPrevValue - yValue) <= 1) {
-            display::drawPixel(x, widgetCursor.y + yValue);
+            canvas.drawPixel(x, yValue);
         } else {
             int y1;
             int y2;
             if (yPrevValue < yValue) {
-                //display::drawVLine(x, widgetCursor.y + yPrevValue + 1, yValue - yPrevValue - 1);
-                y1 = widgetCursor.y + yPrevValue + 1;
+                y1 = yPrevValue + 1;
                 y2 = y1 + yValue - yPrevValue;
             } else {
-                //display::drawVLine(x, widgetCursor.y + yValue, yPrevValue - yValue - 1);
-                y1 = widgetCursor.y + yValue;
+                y1 = yValue;
                 y2 = y1 + yPrevValue - yValue;
             }
             for (int y = y1; y < y2; y++) {
-                display::drawPixel(x, y);
+                canvas.drawPixel(x, y);
             }
         }
     }
 
     void drawStep() {
         if (y[0] != INT_MIN && y[1] != INT_MIN && abs(yPrev[0] - y[0]) <= 1 && abs(yPrev[1] - y[1]) <= 1 && y[0] == y[1]) {
-			if (y[0] >= 0 && y[0] < widgetCursor.h) {
-				display::setColorByValue(position % 2 ? dataColor[1] : dataColor[0]);
-				display::drawPixel(x, widgetCursor.y + y[0]);
+			if (y[0] >= 0 && y[0] < canvas.h) {
+				canvas.setColor(position % 2 ? dataColor[1] : dataColor[0]);
+				canvas.drawPixel(x, y[0]);
 			}
         } else {
             drawValue(0);
@@ -136,19 +185,18 @@ struct YTGraphDrawHelper {
     void drawScanLine(uint32_t startPosition, uint32_t endPosition, uint16_t graphWidth) {
         numPositions = endPosition;
 
-        int x1 = widgetCursor.x + startPosition % graphWidth;
-        int x2 = widgetCursor.x + (endPosition - 1) % graphWidth;
-        display::setColorByValue(color);
+        int x1 = startPosition % graphWidth;
+        int x2 = (endPosition - 1) % graphWidth;
+        canvas.setColor(color);
         if (x1 <= x2) {
-            display::fillRect(x1, widgetCursor.y, x2, widgetCursor.y + widgetCursor.h - 1);
+            canvas.fillRect(x1, 0, x2, canvas.h - 1);
         } else {
-            display::fillRect(x1, widgetCursor.y, widgetCursor.x + widgetCursor.w - 1, widgetCursor.y + widgetCursor.h - 1);
-            display::fillRect(widgetCursor.x, widgetCursor.y, x2, widgetCursor.y + widgetCursor.h - 1);
+            canvas.fillRect(x1, 0, canvas.w - 1, canvas.h - 1);
+            canvas.fillRect(0, 0, x2, canvas.h - 1);
         }
 
-        display::startPixelsDraw();
         for (position = startPosition; position < endPosition; ++position) {
-            x = widgetCursor.x + position % graphWidth;
+            x = position % graphWidth;
 
             y[0] = getYValue(0, position);
             yPrev[0] = getYValue(0, position == 0 ? position : position - 1);
@@ -158,7 +206,6 @@ struct YTGraphDrawHelper {
 
             drawStep();
         }
-        display::endPixelsDraw();
     }
 
     void drawScrolling(uint32_t previousHistoryValuePosition, uint32_t currentHistoryValuePosition, uint32_t numPositions_, uint16_t graphWidth) {
@@ -168,16 +215,10 @@ struct YTGraphDrawHelper {
         }
 
         if (numPointsToDraw < graphWidth) {
-            display::bitBlt(
-                widgetCursor.x + numPointsToDraw,
-                widgetCursor.y,
-                widgetCursor.x + graphWidth - 1,
-                widgetCursor.y + widgetCursor.h - 1,
-                widgetCursor.x,
-                widgetCursor.y);
+            canvas.scrollLeft(numPointsToDraw);
         }
 
-        int endX = widgetCursor.x + graphWidth;
+        int endX = graphWidth;
         int startX = endX - numPointsToDraw;
 
         position = previousHistoryValuePosition + 1;
@@ -187,10 +228,9 @@ struct YTGraphDrawHelper {
         yPrev[0] = getYValue(0, previousHistoryValuePosition);
         yPrev[1] = getYValue(1, previousHistoryValuePosition);
 
-        display::setColorByValue(color);
-        display::fillRect(startX, widgetCursor.y, endX - 1, widgetCursor.y + widgetCursor.h - 1);
+        canvas.setColor(color);
+        canvas.fillRect(startX, 0, endX - 1, canvas.h - 1);
 
-        display::startPixelsDraw();
         for (x = startX; x < endX; x++, position++) {
             y[0] = getYValue(0, position);
             y[1] = getYValue(1, position);
@@ -200,7 +240,6 @@ struct YTGraphDrawHelper {
             yPrev[0] = y[0];
             yPrev[1] = y[1];
         }
-        display::endPixelsDraw();
     }
 };
 
@@ -494,6 +533,10 @@ struct YTGraphStaticDrawHelper {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+YTGraphWidgetState::~YTGraphWidgetState() {
+    eez::free(buffer);
+}
+
 bool YTGraphWidgetState::updateState() {
     WIDGET_STATE_START(YTGraphWidget);
 
@@ -513,6 +556,7 @@ bool YTGraphWidgetState::updateState() {
         uint16_t graphWidth = (uint16_t)widgetCursor.w;
     	previousHistoryValuePosition = new_historyValuePosition - graphWidth;
         hasPreviousState = false;
+        redrawAll = true;
     }
 
     WIDGET_STATE(historyValuePosition, new_historyValuePosition);
@@ -547,62 +591,107 @@ void YTGraphWidgetState::render() {
     } else {
         const Style* style = getStyle(widget->style);
 
-        if (refreshBackground) {
-            display::setColor(style->backgroundColor);
-            display::fillRect(widgetCursor.x, widgetCursor.y, widgetCursor.x + (int)widgetCursor.w - 1, widgetCursor.y + (int)widgetCursor.h - 1);
+        int w = widgetCursor.w;
+        int h = widgetCursor.h;
+        if (w <= 0 || h <= 0) {
+            return;
         }
 
-        YTGraphDrawHelper drawHelper(widgetCursor);
-        drawHelper.color = display::getColorFromIndex(flags.active ? style->color : style->backgroundColor);
-        if (ytGraphUpdateMethod == YT_GRAPH_UPDATE_METHOD_SCAN_LINE) {
-            drawHelper.drawScanLine(previousHistoryValuePosition, historyValuePosition, graphWidth);
-
-            int x = widgetCursor.x;
-
-            // draw cursor
-            display::setColor(style->color);
-            display::drawVLine(x + historyValuePosition % graphWidth, widgetCursor.y, (int)widgetCursor.h - 1);
-            display::drawVLine(x + (historyValuePosition + 1) % graphWidth, widgetCursor.y, (int)widgetCursor.h - 1);
-
-            // draw blank lines
-            int x1 = x + (historyValuePosition + 2) % graphWidth;
-            int x2 = x + (historyValuePosition + CONF_GUI_YT_GRAPH_BLANK_PIXELS_AFTER_CURSOR) % graphWidth;
-
-            display::setColor(style->backgroundColor);
-            if (x1 < x2) {
-                display::fillRect(x1, widgetCursor.y, x2, widgetCursor.y + (int)widgetCursor.h - 1);
-            } else {
-                display::fillRect(x1, widgetCursor.y, x + graphWidth - 1, widgetCursor.y + (int)widgetCursor.h - 1);
-                display::fillRect(x, widgetCursor.y, x2, widgetCursor.y + (int)widgetCursor.h - 1);
+        if (!buffer || bufferWidth != w || bufferHeight != h) {
+            eez::free(buffer);
+            buffer = eez::alloc(w * h * sizeof(display::Color), 0x3c5e81d7);
+            if (!buffer) {
+                bufferWidth = 0;
+                bufferHeight = 0;
+                return;
             }
-        } else if (ytGraphUpdateMethod == YT_GRAPH_UPDATE_METHOD_SCROLL) {
-            drawHelper.drawScrolling(previousHistoryValuePosition, historyValuePosition, numHistoryValues, graphWidth);
+            bufferWidth = w;
+            bufferHeight = h;
+            refreshBackground = true;
+            redrawAll = true;
         }
+
+        // Render can be called more than once for the same state (e.g. when
+        // overlapped by other widget), so only the values that are not already
+        // in the buffer are drawn.
+        uint32_t startPosition;
+        if (
+            refreshBackground || redrawAll ||
+            bufferHistoryValuePosition > historyValuePosition ||
+            historyValuePosition - bufferHistoryValuePosition > graphWidth
+        ) {
+            // whole graph
+            startPosition = historyValuePosition - graphWidth;
+        } else {
+            startPosition = bufferHistoryValuePosition;
+        }
+
+        if (refreshBackground || startPosition != historyValuePosition) {
+            YTGraphCanvas canvas = { (display::Color *)buffer, w, h, 0 };
+
+            // buffer could be still in use by the previous drawBitmap
+            display::startPixelsDraw();
+
+            if (refreshBackground) {
+                canvas.setColor(display::getColorFromIndex(style->backgroundColor));
+                canvas.fillRect(0, 0, w - 1, h - 1);
+            }
+
+            if (startPosition != historyValuePosition) {
+                YTGraphDrawHelper drawHelper(widgetCursor, canvas);
+                drawHelper.color = display::getColorFromIndex(flags.active ? style->color : style->backgroundColor);
+                if (ytGraphUpdateMethod == YT_GRAPH_UPDATE_METHOD_SCAN_LINE) {
+                    drawHelper.drawScanLine(startPosition, historyValuePosition, graphWidth);
+
+                    // draw cursor
+                    canvas.setColor(display::getColorFromIndex(style->color));
+                    canvas.drawVLine(historyValuePosition % graphWidth, 0, h - 1);
+                    canvas.drawVLine((historyValuePosition + 1) % graphWidth, 0, h - 1);
+
+                    // draw blank lines
+                    int x1 = (historyValuePosition + 2) % graphWidth;
+                    int x2 = (historyValuePosition + CONF_GUI_YT_GRAPH_BLANK_PIXELS_AFTER_CURSOR) % graphWidth;
+
+                    canvas.setColor(display::getColorFromIndex(style->backgroundColor));
+                    if (x1 < x2) {
+                        canvas.fillRect(x1, 0, x2, h - 1);
+                    } else {
+                        canvas.fillRect(x1, 0, graphWidth - 1, h - 1);
+                        canvas.fillRect(0, 0, x2, h - 1);
+                    }
+                } else if (ytGraphUpdateMethod == YT_GRAPH_UPDATE_METHOD_SCROLL) {
+                    drawHelper.drawScrolling(startPosition, historyValuePosition, numHistoryValues, graphWidth);
+                }
+            }
+
+            bufferHistoryValuePosition = historyValuePosition;
+            refreshBackground = false;
+            redrawAll = false;
+        }
+
+        Image image;
+        image.width = w;
+        image.height = h;
+        image.bpp = DISPLAY_BPP;
+        image.lineOffset = 0;
+        image.pixels = (uint8_t *)buffer;
+        display::drawBitmap(&image, widgetCursor.x, widgetCursor.y);
     }
 }
 
 bool YTGraphWidgetState::hasOnTouch() {
-    return true;
+    return ytDataGetGraphUpdateMethod(g_widgetCursor, g_widgetCursor.widget->data) == YT_GRAPH_UPDATE_METHOD_STATIC;
 }
 
 void YTGraphWidgetState::onTouch(const WidgetCursor &widgetCursor, Event &touchEvent) {
-    if (ytDataGetGraphUpdateMethod(widgetCursor, widgetCursor.widget->data) == YT_GRAPH_UPDATE_METHOD_STATIC) {
-        if (touchEvent.type == EVENT_TYPE_TOUCH_DOWN || touchEvent.type == EVENT_TYPE_TOUCH_MOVE) {
-			TouchDrag touchDrag = {
-				widgetCursor,
-				touchEvent.type,
-				touchEvent.x - widgetCursor.x,
-				touchEvent.y - widgetCursor.y
-			};
-            ytDataTouchDrag(widgetCursor, widgetCursor.widget->data, &touchDrag);
-        }
-    } else {
-        if (touchEvent.type == EVENT_TYPE_TOUCH_DOWN) {
-            if (widgetCursor.appContext->isWidgetActionEnabled(widgetCursor)) {
-                auto action = getWidgetAction(widgetCursor);
-                executeAction(widgetCursor, action);
-            }
-        }
+    if (touchEvent.type == EVENT_TYPE_TOUCH_DOWN || touchEvent.type == EVENT_TYPE_TOUCH_MOVE) {
+        TouchDrag touchDrag = {
+            widgetCursor,
+            touchEvent.type,
+            touchEvent.x - widgetCursor.x,
+            touchEvent.y - widgetCursor.y
+        };
+        ytDataTouchDrag(widgetCursor, widgetCursor.widget->data, &touchDrag);
     }
 }
 

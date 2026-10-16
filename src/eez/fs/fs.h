@@ -21,7 +21,7 @@
 #include <fatfs.h>
 #endif
 
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
+#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__) || defined(EEZ_PLATFORM_CM5_RASPI)
 #include <filesystem>
 #endif
 
@@ -133,7 +133,7 @@ class File {
 
   private:
     bool m_isOpen{false};
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
+#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__) || defined(EEZ_PLATFORM_CM5_RASPI)
     FILE *m_fp{NULL};
 #else
     FIL m_file;

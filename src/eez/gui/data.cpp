@@ -25,6 +25,7 @@
 #include <eez/core/util.h>
 
 #include <eez/gui/gui.h>
+#include <eez/flow/flow.h>
 
 namespace eez {
 namespace gui {
@@ -65,12 +66,18 @@ void select(WidgetCursor &widgetCursor, int16_t id, int index, Value &oldValue) 
 
     DATA_OPERATION_FUNCTION(id, DATA_OPERATION_SELECT, widgetCursor, indexValue);
 
-    if (index == 0) {
+    // save the value from the first select (the first selected index is not
+    // necessarily 0, e.g. in the scrolled list)
+    if (oldValue.getType() == VALUE_TYPE_UNDEFINED) {
         oldValue = indexValue;
     }
 }
 
 void deselect(WidgetCursor &widgetCursor, int16_t id, Value &oldValue) {
+    if (oldValue.getType() == VALUE_TYPE_UNDEFINED) {
+        // nothing was selected
+        return;
+    }
     DATA_OPERATION_FUNCTION(id, DATA_OPERATION_DESELECT, widgetCursor, oldValue);
 }
 
@@ -447,15 +454,6 @@ int getXScroll(const WidgetCursor &widgetCursor) {
     Value value((void *)&widgetCursor, VALUE_TYPE_POINTER);
     DATA_OPERATION_FUNCTION(widget->data, DATA_OPERATION_GET_X_SCROLL, widgetCursor, value);
     return value.getType() == VALUE_TYPE_INT32 ? value.getInt() : 0;
-}
-
-void getSlotAndSubchannelIndex(const WidgetCursor &widgetCursor, int16_t id, int &slotIndex, int &subchannelIndex) {
-	Value value;
-	DATA_OPERATION_FUNCTION(id, DATA_OPERATION_GET_SLOT_AND_SUBCHANNEL_INDEX, widgetCursor, value);
-	if (value.getType() == VALUE_TYPE_UINT32) {
-		slotIndex = value.getFirstInt16();
-		subchannelIndex = value.getSecondInt16();
-	}
 }
 
 bool isMicroAmperAllowed(const WidgetCursor &widgetCursor, int16_t id) {

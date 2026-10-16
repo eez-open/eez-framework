@@ -18,7 +18,7 @@
 #if defined(EEZ_PLATFORM_STM32)
 	typedef uint16_t *VideoBuffer;
 #endif
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
+#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__) || defined(EEZ_PLATFORM_CM5_RASPI)
 	typedef uint32_t *VideoBuffer;
 #endif
 
@@ -60,6 +60,49 @@ void beginRendering();
 int beginBufferRendering();
 void endBufferRendering(int bufferIndex, int x, int y, int width, int height, bool withShadow, uint8_t opacity, int xOffset, int yOffset, gui::Rect *backdrop);
 void endRendering();
+
+// The background of the render buffer currently drawn into (call it right after
+// beginBufferRendering) is what is below it, i.e. the render buffers drawn before
+// it composed in the same way as in endRendering, plus its own backdrop. Used by
+// the page with transparent background. Returns true if the background changed
+// since the previous frame, so the whole buffer must be drawn again.
+bool setBufferBackgroundBelow(int x, int y, int width, int height, gui::Rect *backdrop);
+// draws the background set with setBufferBackgroundBelow (does nothing if not set)
+void drawBufferBackground(int x1, int y1, int x2, int y2);
+
+// All drawing to the render buffer is clipped to the clip rectangle, which is
+// the whole display by default (x2 and y2 are inclusive).
+struct ClipRect {
+    int x1;
+    int y1;
+    int x2;
+    int y2;
+};
+// Sets the clip rectangle to the intersection of the current clip rectangle and
+// the given rectangle. Returns the previous clip rectangle, which must be restored
+// with restoreClipRect.
+ClipRect intersectClipRect(int x, int y, int width, int height);
+void restoreClipRect(const ClipRect &previousClipRect);
+const ClipRect &getClipRect();
+
+// Collects the bounding rectangle (inclusive, empty when x1 > x2) of everything
+// drawn into the current buffer between beginDamageProbe and endDamageProbe.
+// Probes can be nested, what is collected by the inner probe is also added to
+// the outer probe.
+struct DamageProbe {
+    int x1;
+    int y1;
+    int x2;
+    int y2;
+
+    bool isEmpty() const { return x1 > x2 || y1 > y2; }
+
+    // internal
+    DamageProbe *parent;
+    const void *target;
+};
+void beginDamageProbe(DamageProbe &probe);
+void endDamageProbe(DamageProbe &probe);
 
 VideoBuffer getBufferPointer();
 
@@ -194,6 +237,9 @@ enum DisplayState {
 extern DisplayState g_displayState;
 
 void markRenderBufferDirty(void);
+// render buffer is dirty if something was drawn since the last clear
+bool isRenderBufferDirty(void);
+void clearRenderBufferDirty(void);
 
 } // namespace display
 } // namespace gui

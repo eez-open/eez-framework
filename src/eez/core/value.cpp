@@ -1354,6 +1354,10 @@ bool Value::toBool(int *err) const {
         return array->arraySize != 0;
 	}
 
+	if (isDynamicArray()) {
+		return getDynamicArray()->arraySize != 0;
+	}
+
     if (isJson()) {
         return int32Value != 0;
     }

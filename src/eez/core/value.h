@@ -93,6 +93,7 @@ struct Ref {
 };
 
 struct ArrayValue;
+struct DynamicArrayValue;
 struct ArrayElementValue;
 struct BlobRef;
 struct PropertyRef;
@@ -323,7 +324,7 @@ struct Value {
     }
 
     bool isIndirectValueType() const {
-        return type == VALUE_TYPE_VALUE_PTR || type == VALUE_TYPE_NATIVE_VARIABLE || type == VALUE_TYPE_ARRAY_ELEMENT_VALUE || type == VALUE_TYPE_JSON_MEMBER_VALUE || type == VALUE_TYPE_PROPERTY_REF;
+        return type == VALUE_TYPE_VALUE_PTR || type == VALUE_TYPE_NATIVE_VARIABLE || type == VALUE_TYPE_DIB_FIELD || type == VALUE_TYPE_ARRAY_ELEMENT_VALUE || type == VALUE_TYPE_JSON_MEMBER_VALUE || type == VALUE_TYPE_PROPERTY_REF;
     }
 
     Value getValue() const;
@@ -374,6 +375,10 @@ struct Value {
 
     bool isArray() const {
         return type == VALUE_TYPE_ARRAY || type == VALUE_TYPE_ARRAY_ASSET || type == VALUE_TYPE_ARRAY_REF;
+    }
+
+    bool isDynamicArray() const {
+        return type == VALUE_TYPE_DYNAMIC_ARRAY;
     }
 
 	bool isBlob() const {
@@ -444,6 +449,14 @@ struct Value {
 
     const ArrayValue *getArray() const;
     ArrayValue *getArray();
+
+    const DynamicArrayValue *getDynamicArray() const {
+        return (const DynamicArrayValue *)pVoidValue;
+    }
+
+    static Value makeDynamicArray(const DynamicArrayValue *dynamicArrayValue) {
+        return Value((void *)dynamicArrayValue, VALUE_TYPE_DYNAMIC_ARRAY);
+    }
 
     //////////
 
@@ -616,6 +629,15 @@ struct ArrayValue {
 	Value values[1];
 };
 
+// Array (or struct) whose elements are not stored as Values, but are read and written
+// on demand through the callbacks. Instances are expected to be static (not owned by Value).
+struct DynamicArrayValue {
+    uint32_t arraySize;
+    uint32_t arrayType;
+    Value (*getElement)(uint32_t elementIndex);
+    void (*setElement)(uint32_t elementIndex, const Value &value);
+};
+
 struct ArrayValueRef : public Ref {
     ~ArrayValueRef();
 	ArrayValue arrayValue;
@@ -678,6 +700,10 @@ namespace flow {
 }
 #endif
 
+namespace flow {
+    extern Value (*getDibFieldHook)(uint32_t dibFieldId);
+}
+
 inline Value Value::getValue() const {
     if (type == VALUE_TYPE_VALUE_PTR) {
         return pValueValue->getValue();
@@ -690,6 +716,10 @@ inline Value Value::getValue() const {
         return getVar(int32Value);
 #endif
     }
+    if (type == VALUE_TYPE_DIB_FIELD) {
+        using namespace flow;
+        return getDibFieldHook(uint32Value);
+    }
     if (type == VALUE_TYPE_ARRAY_ELEMENT_VALUE) {
         auto arrayElementValue = (ArrayElementValue *)refValue;
         if (arrayElementValue->arrayValue.isBlob()) {
@@ -698,6 +728,12 @@ inline Value Value::getValue() const {
                 return Value();
             }
             return Value((uint32_t)blobRef->blob[arrayElementValue->elementIndex], VALUE_TYPE_UINT32);
+        } else if (arrayElementValue->arrayValue.isDynamicArray()) {
+            auto dynamicArray = arrayElementValue->arrayValue.getDynamicArray();
+            if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= (int)dynamicArray->arraySize) {
+                return Value();
+            }
+            return dynamicArray->getElement(arrayElementValue->elementIndex);
         } else {
             auto array = arrayElementValue->arrayValue.getArray();
 

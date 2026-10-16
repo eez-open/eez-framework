@@ -111,7 +111,7 @@ void nema_hal_stm32_init() {
  * ring buffer itself, command lists, and any temporary GPU buffers.
  * Increase if allocation failures (tsi_malloc returning NULL) are observed.
  */
-#define NEMA_POOL0_SIZE_BYTES (32 * 64 * 1024)
+#define NEMA_POOL0_SIZE_BYTES (16 * 64 * 1024)
 
 /*
  * s_nemaPool0 — backing storage for tsi_malloc pool 0.

@@ -33,6 +33,8 @@ struct Event {
 
 void onTouchEvent(bool pressed, int x, int y, Event &lastEvent);
 void processTouchEvent(Event &event);
+// Called once per GUI tick, sends touch events postponed until the next tick.
+void processPostponedTouchEvents();
 
 extern bool g_isLongTouch;
 

@@ -20,7 +20,7 @@
 #endif
 #endif
 
-#if EEZ_USE_SDL && defined(EEZ_PLATFORM_SIMULATOR) && !defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL && (defined(EEZ_PLATFORM_SIMULATOR) || defined(EEZ_PLATFORM_CM5_RASPI)) && !defined(__EMSCRIPTEN__)
 #include <SDL.h>
 #endif
 
@@ -33,7 +33,7 @@ void onKeyboardEvent(USBH_HandleTypeDef *phost);
 #endif
 #endif
 
-#if EEZ_USE_SDL && defined(EEZ_PLATFORM_SIMULATOR) && !defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL && (defined(EEZ_PLATFORM_SIMULATOR) || defined(EEZ_PLATFORM_CM5_RASPI)) && !defined(__EMSCRIPTEN__)
 void onKeyboardEvent(SDL_KeyboardEvent *key);
 #endif
 

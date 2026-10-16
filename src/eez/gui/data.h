@@ -128,7 +128,10 @@ enum DataOperationEnum {
 };
 
 int count(const WidgetCursor &widgetCursor, int16_t id);
+// oldValue must be undefined before the first select, it receives the value
+// returned by the first select, which is restored by deselect
 void select(WidgetCursor &widgetCursor, int16_t id, int index, Value &oldValue);
+// does nothing if nothing was selected
 void deselect(WidgetCursor &widgetCursor, int16_t id, Value &oldValue);
 
 void setContext(WidgetCursor &widgetCursor, int16_t id, Value &oldContext, Value &newContext);
@@ -210,8 +213,6 @@ void ytDataTouchDrag(const WidgetCursor &widgetCursor, int16_t id, TouchDrag *to
 
 int getTextCursorPosition(const WidgetCursor &widgetCursor, int16_t id);
 int getXScroll(const WidgetCursor &widgetCursor);
-
-void getSlotAndSubchannelIndex(const WidgetCursor &widgetCursor, int16_t id, int &slotIndex, int &subchannelIndex);
 
 bool isMicroAmperAllowed(const WidgetCursor &widgetCursor, int16_t id);
 bool isAmperAllowed(const WidgetCursor &widgetCursor, int16_t id);

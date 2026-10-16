@@ -10,7 +10,7 @@
 
 #include <eez/conf-internal.h>
 
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
+#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__) || defined(EEZ_PLATFORM_CM5_RASPI)
 
 #if EEZ_OPTION_GUI
 
@@ -24,6 +24,12 @@
 #include <eez/core/mouse.h>
 #endif
 
+#if defined(EEZ_PLATFORM_CM5_RASPI)
+extern int g_last_touch_x;
+extern int g_last_touch_y;
+extern int g_last_touch_pressed;
+#endif
+
 using namespace eez::platform::simulator;
 
 namespace eez {
@@ -34,6 +40,17 @@ void read(bool &isPressed, int &x, int &y) {
     readEvents();
 
     using namespace eez::gui;
+
+#if defined(EEZ_PLATFORM_CM5_RASPI)
+    int touchX = 0, touchY = 0, touchPressed = 0;
+    eez_custom_touch_measure_callback(&touchX, &touchY, &touchPressed);
+    if (touchPressed) {
+        isPressed = true;
+        x = touchX;
+        y = touchY;
+        return;
+    }
+#endif
 
 #if OPTION_MOUSE
     if (mouse::isMouseEnabled()) {
@@ -60,25 +77,41 @@ namespace gui {
 
 void data_touch_raw_x(DataOperationEnum operation, const WidgetCursor &widgetCursor, Value &value) {
     if (operation == DATA_OPERATION_GET) {
+#if defined(EEZ_PLATFORM_CM5_RASPI)
+        value = g_last_touch_pressed ? g_last_touch_x : g_mouseX;
+#else
         value = g_mouseX;
+#endif
     }
 }
 
 void data_touch_raw_y(DataOperationEnum operation, const WidgetCursor &widgetCursor, Value &value) {
     if (operation == DATA_OPERATION_GET) {
+#if defined(EEZ_PLATFORM_CM5_RASPI)
+        value = g_last_touch_pressed ? g_last_touch_y : g_mouseY;
+#else
         value = g_mouseY;
+#endif
     }
 }
 
 void data_touch_raw_z1(DataOperationEnum operation, const WidgetCursor &widgetCursor, Value &value) {
     if (operation == DATA_OPERATION_GET) {
+#if defined(EEZ_PLATFORM_CM5_RASPI)
+        value = g_last_touch_pressed ? 100 : 0;
+#else
         value = 0;
+#endif
     }
 }
 
 void data_touch_raw_pressed(DataOperationEnum operation, const WidgetCursor &widgetCursor, Value &value) {
     if (operation == DATA_OPERATION_GET) {
+#if defined(EEZ_PLATFORM_CM5_RASPI)
+        value = g_last_touch_pressed ? 1 : g_mouseButton1IsPressed;
+#else
         value = g_mouseButton1IsPressed;
+#endif
     }
 }
 

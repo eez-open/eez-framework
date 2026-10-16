@@ -223,7 +223,7 @@ FlowState *getPageFlowState(Assets *assets, int16_t pageIndex, const WidgetCurso
 		auto flowState = widgetCursor.flowState;
 		auto userWidgetWidgetComponentIndex = userWidgetWidget->componentIndex;
 
-		return getUserWidgetFlowState(flowState, userWidgetWidgetComponentIndex, pageIndex);
+		return getUserWidgetFlowState(widgetCursor.assets, flowState, userWidgetWidgetComponentIndex, pageIndex);
 	} else {
         if (pageIndex >= 0 && pageIndex < (int16_t)assets->pages.count) {
 		    auto page = assets->pages[pageIndex];
@@ -428,6 +428,23 @@ void executeFlowAction(const WidgetCursor &widgetCursor, int16_t actionId, void 
 	}
 }
 
+static bool isScrollbarState(const Value &arrayValue) {
+    if (arrayValue.isArray()) {
+        return arrayValue.getArray()->arrayType == defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE;
+    }
+    if (arrayValue.isDynamicArray()) {
+        return arrayValue.getDynamicArray()->arrayType == defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE;
+    }
+    return false;
+}
+
+static Value getScrollbarStateField(const Value &arrayValue, uint32_t field) {
+    if (arrayValue.isArray()) {
+        return arrayValue.getArray()->values[field];
+    }
+    return arrayValue.getDynamicArray()->getElement(field);
+}
+
 void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCursor &widgetCursor, Value &value) {
 	if (isFlowStopped()) {
 		return;
@@ -454,13 +471,12 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCurs
 		} else if (operation == DATA_OPERATION_COUNT) {
 			Value arrayValue;
 			getValue(flowDataId, operation, widgetCursor, arrayValue);
-			if (arrayValue.isArray()) {
-                auto array = arrayValue.getArray();
-                if (array->arrayType == defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE) {
-                    value = array->values[defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE_FIELD_NUM_ITEMS];
-                } else {
-				    value = array->arraySize;
-                }
+			if (isScrollbarState(arrayValue)) {
+                value = getScrollbarStateField(arrayValue, defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE_FIELD_NUM_ITEMS);
+			} else if (arrayValue.isArray()) {
+				value = arrayValue.getArray()->arraySize;
+			} else if (arrayValue.isDynamicArray()) {
+                value = arrayValue.getDynamicArray()->arraySize;
 			} else {
                 value = arrayValue;
             }
@@ -505,73 +521,58 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCurs
 		} else if (operation == DATA_OPERATION_YT_DATA_GET_SIZE) {
             Value arrayValue;
             getValue(flowDataId, operation, widgetCursor, arrayValue);
-            if (arrayValue.isArray()) {
-                auto array = arrayValue.getArray();
-                if (array->arrayType == defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE) {
-                    value = array->values[defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE_FIELD_NUM_ITEMS].toInt32();
-                } else {
-                    value = 0;
-                }
+            if (isScrollbarState(arrayValue)) {
+                value = getScrollbarStateField(arrayValue, defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE_FIELD_NUM_ITEMS).toInt32();
             } else {
-                value = 0;
+                // not supported, value stays undefined
+                value = Value();
             }
         } else if (operation == DATA_OPERATION_YT_DATA_GET_PAGE_SIZE) {
             Value arrayValue;
             getValue(flowDataId, operation, widgetCursor, arrayValue);
-            if (arrayValue.isArray()) {
-                auto array = arrayValue.getArray();
-                if (array->arrayType == defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE) {
-                    value = array->values[defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE_FIELD_ITEMS_PER_PAGE].toInt32();
-                } else {
-                    value = 0;
-                }
+            if (isScrollbarState(arrayValue)) {
+                value = getScrollbarStateField(arrayValue, defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE_FIELD_ITEMS_PER_PAGE).toInt32();
             } else {
                 value = 0;
             }
         } else if (operation == DATA_OPERATION_YT_DATA_GET_POSITION_INCREMENT) {
             Value arrayValue;
             getValue(flowDataId, operation, widgetCursor, arrayValue);
-            if (arrayValue.isArray()) {
-                auto array = arrayValue.getArray();
-                if (array->arrayType == defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE) {
-                    value = array->values[defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE_FIELD_POSITION_INCREMENT].toInt32();
-                } else {
-                    value = 0;
-                }
+            if (isScrollbarState(arrayValue)) {
+                value = getScrollbarStateField(arrayValue, defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE_FIELD_POSITION_INCREMENT).toInt32();
             } else {
                 value = 0;
             }
         } else if (operation == DATA_OPERATION_YT_DATA_GET_POSITION) {
             Value arrayValue;
             getValue(flowDataId, operation, widgetCursor, arrayValue);
-            if (arrayValue.isArray()) {
-                auto array = arrayValue.getArray();
-                if (array->arrayType == defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE) {
-                    value = array->values[defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE_FIELD_POSITION].toInt32();
-                } else {
-                    value = 0;
-                }
+            if (isScrollbarState(arrayValue)) {
+                value = getScrollbarStateField(arrayValue, defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE_FIELD_POSITION).toInt32();
             } else {
                 value = 0;
             }
         } else if (operation == DATA_OPERATION_YT_DATA_SET_POSITION) {
             Value arrayValue;
             getValue(flowDataId, operation, widgetCursor, arrayValue);
-            if (arrayValue.isArray()) {
-                auto array = arrayValue.getArray();
-                if (array->arrayType == defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE) {
-                    auto newPosition = value.getInt();
-                    auto numItems = array->values[defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE_FIELD_NUM_ITEMS].getInt();
-                    auto itemsPerPage = array->values[defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE_FIELD_ITEMS_PER_PAGE].getInt();
-                    if (newPosition < 0) {
-                        newPosition = 0;
-                    } else if (newPosition > numItems - itemsPerPage) {
-                        newPosition = numItems - itemsPerPage;
-                    }
+            if (isScrollbarState(arrayValue)) {
+                auto newPosition = value.getInt();
+                auto numItems = getScrollbarStateField(arrayValue, defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE_FIELD_NUM_ITEMS).getInt();
+                auto itemsPerPage = getScrollbarStateField(arrayValue, defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE_FIELD_ITEMS_PER_PAGE).getInt();
+                if (newPosition > numItems - itemsPerPage) {
+                    newPosition = numItems - itemsPerPage;
+                }
+                if (newPosition < 0) {
+                    newPosition = 0;
+                }
+                if (arrayValue.isArray()) {
+                    auto array = arrayValue.getArray();
                     array->values[defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE_FIELD_POSITION] = newPosition;
                     onValueChanged(&array->values[defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE_FIELD_POSITION]);
                 } else {
-                    value = 0;
+                    auto dynamicArray = arrayValue.getDynamicArray();
+                    if (dynamicArray->setElement) {
+                        dynamicArray->setElement(defs_v3::SYSTEM_STRUCTURE_SCROLLBAR_STATE_FIELD_POSITION, Value(newPosition, VALUE_TYPE_INT32));
+                    }
                 }
             } else {
                 value = 0;

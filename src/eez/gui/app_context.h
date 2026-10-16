@@ -33,6 +33,8 @@ class AppContext {
     friend struct AppViewWidgetState;
 
 public:
+    int app_context_id;
+
 	Rect rect;
 
     AppContext();
@@ -67,6 +69,10 @@ public:
     Page *getPage(int pageId);
     bool isPageOnStack(int pageId);
 
+    uint32_t getShowPageTime() {
+        return m_showPageTime;
+    }
+
     int getNumPagesOnStack() {
         return m_pageNavigationStackPointer + 1;
     }
@@ -82,6 +88,9 @@ public:
     virtual bool isAutoRepeatAction(int action);
 
     virtual bool isWidgetActionEnabled(const WidgetCursor &widgetCursor);
+
+    // can List widget be scrolled by dragging it with a finger
+    virtual bool isTouchScrollEnabled(const WidgetCursor &widgetCursor);
 
     virtual int getLongTouchActionHook(const WidgetCursor &widgetCursor);
 
@@ -115,6 +124,8 @@ protected:
     uint32_t m_showPageTime;
 
     virtual void onPageChanged(int previousPageId, int activePageId, bool activePageIsFromStack, bool previousPageIsStillOnStack);
+    virtual void onBeforePushPage(int pageId);
+    virtual void onBeforeShowPage(int pageId);
 
     void doShowPage(int index, Page *page, int previousPageId, bool activePageIsFromStack, bool previousPageIsStillOnStack);
     void setPage(int pageId);

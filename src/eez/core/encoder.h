@@ -14,7 +14,7 @@ namespace eez {
 namespace mcu {
 namespace encoder {
 
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
+#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__) || defined(EEZ_PLATFORM_CM5_RASPI)
 void write(int counter, bool clicked);
 void setButtonState(bool pressed);
 #endif

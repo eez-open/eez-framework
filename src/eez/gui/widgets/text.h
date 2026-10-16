@@ -22,8 +22,22 @@ struct TextWidgetState : public WidgetState {
 	WidgetStateFlags flags;
 	Value data;
 
+    // widget size when "Fit to content" is enabled
+    int16_t fitW = 0;
+    int16_t fitH = 0;
+
+    // last rendered rectangle, used to clear the area left over when the
+    // widget shrinks because of "Fit to content"
+    int16_t renderedX = 0;
+    int16_t renderedY = 0;
+    int16_t renderedW = 0;
+    int16_t renderedH = 0;
+
     bool updateState() override;
     void render() override;
+
+    // sets g_widgetCursor size to the size calculated in updateState
+    void applyFitToContent();
 };
 
 void TextWidget_autoSize(TextWidget& widget);

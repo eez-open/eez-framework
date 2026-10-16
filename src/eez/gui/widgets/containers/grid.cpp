@@ -29,11 +29,39 @@ namespace gui {
 #define GRID_FLOW_ROW 1
 #define GRID_FLOW_COLUMN 2
 
+// Grid is scrolled by rows (vertically) if items flow in rows,
+// or by columns (horizontally) if items flow in columns.
 bool GridWidgetState::updateState() {
     WIDGET_STATE_START(GridWidget);
 
-    startPosition = ytDataGetPosition(widgetCursor, widget->data);
-    count = eez::gui::count(widgetCursor, widget->data);
+    auto newCount = eez::gui::count(widgetCursor, widget->data);
+    if (newCount != count) {
+        count = newCount;
+        hasPreviousState = false;
+    }
+
+    auto itemWidget = static_cast<const Widget *>(widget->itemWidget);
+
+    isVertical = widget->gridFlow != GRID_FLOW_COLUMN;
+
+    int extent = isVertical ? widgetCursor.h : widgetCursor.w;
+    int cross = isVertical ? widgetCursor.w : widgetCursor.h;
+    int itemCross = isVertical ? itemWidget->width : itemWidget->height;
+
+    lineExtent = isVertical ? itemWidget->height : itemWidget->width;
+    pitch = lineExtent;
+
+    itemsPerLine = itemCross > 0 ? cross / itemCross : 0;
+    if (itemsPerLine < 1) {
+        itemsPerLine = 1;
+    }
+
+    // number of lines that completely fit inside the grid
+    int visibleLines = pitch > 0 ? extent / pitch : 0;
+
+    if (updateScrollState(widgetCursor, widget->data, visibleLines)) {
+        hasPreviousState = false;
+    }
 
     WIDGET_STATE_END()
 }
@@ -41,68 +69,62 @@ bool GridWidgetState::updateState() {
 void GridWidgetState::enumChildren() {
     WidgetCursor &widgetCursor = g_widgetCursor;
 
-    if (count > 0) {
-        auto widget = (const GridWidget *)widgetCursor.widget;
+    auto widget = (const GridWidget *)widgetCursor.widget;
 
-        const Widget *childWidget = static_cast<const Widget *>(widget->itemWidget);
-		widgetCursor.widget = childWidget;
+    EnumChildrenContext context;
+    beginEnumChildren(context);
 
-        auto savedX = widgetCursor.x;
-        auto savedY = widgetCursor.y;
+    const Widget *childWidget = static_cast<const Widget *>(widget->itemWidget);
 
-        auto savedCursor = widgetCursor.cursor;
+    int itemW = childWidget->width;
+    int itemH = childWidget->height;
 
-        int xOffset = 0;
-        int yOffset = 0;
+    int extent = isVertical ? context.savedH : context.savedW;
+    int crossPitch = isVertical ? itemW : itemH;
 
-        Value oldValue;
+    widgetCursor.widget = childWidget;
 
-        auto width = widgetCursor.w;
-        auto height = widgetCursor.h;
+    // While scrolling, pixel offset is relative to the start of the line, and
+    // one line more is enumerated, so that the number of enumerated items
+    // doesn't change on every line boundary. Partially visible line is shown
+    // only if the grid is scrollable, otherwise only lines that completely fit.
+    int firstIndex = context.scrolling ? startPosition / itemsPerLine * itemsPerLine : startPosition;
+    int limit;
+    if (context.scrolling) {
+        limit = extent + pitch;
+    } else if (touchScrollable) {
+        limit = extent;
+    } else {
+        limit = MAX(extent - pitch + 1, 1);
+    }
 
-        for (int index = startPosition; index < count; ++index) {
+    int offset = -context.renderPixelOffset;
+
+    Value oldValue;
+
+    for (int index = firstIndex; index >= 0 && index < count && offset < limit; offset += pitch) {
+        for (int i = 0; i < itemsPerLine && index < count; ++i, ++index) {
+            if (offset + pitch <= 0) {
+                // line is completely outside of the grid
+                continue;
+            }
+
             select(widgetCursor, widget->data, index, oldValue);
 
-			widgetCursor.x = savedX + xOffset;
-			widgetCursor.y = savedY + yOffset;
-            widgetCursor.w = childWidget->width;
-            widgetCursor.h = childWidget->height;
+            widgetCursor.x = isVertical ? context.savedX + i * crossPitch : context.savedX + offset;
+            widgetCursor.y = isVertical ? context.savedY + offset : context.savedY + i * crossPitch;
+            widgetCursor.w = itemW;
+            widgetCursor.h = itemH;
 
-			widgetCursor.pushIterator(index);
+            widgetCursor.pushIterator(index);
             enumWidget();
-			widgetCursor.popIterator();
-
-            if (widget->gridFlow == GRID_FLOW_ROW) {
-                xOffset += childWidget->width;
-
-                if (xOffset + childWidget->width > width) {
-                    yOffset += childWidget->height;
-                    if (yOffset + childWidget->height > height) {
-                        break;
-                    }
-                    xOffset = 0;
-                }
-            } else {
-                yOffset += childWidget->height;
-                if (yOffset + childWidget->height > height) {
-                    xOffset += childWidget->width;
-                    if (xOffset + childWidget->width > width) {
-                        break;
-                    }
-                    yOffset = 0;
-                }
-            }
+            widgetCursor.popIterator();
         }
+    }
 
-        deselect(widgetCursor, widget->data, oldValue);
+    deselect(widgetCursor, widget->data, oldValue);
 
-		widgetCursor.widget = widget;
-
-		widgetCursor.x = savedX;
-		widgetCursor.y = savedY;
-
-        widgetCursor.cursor = savedCursor;
-	}
+    endEnumChildren(context);
 }
 
 } // namespace gui

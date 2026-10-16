@@ -10,7 +10,7 @@
 
 #include <eez/conf-internal.h>
 
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
+#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__) || defined(EEZ_PLATFORM_CM5_RASPI)
 
 #ifndef __EMSCRIPTEN__
 #include <chrono>
@@ -27,6 +27,10 @@
 #ifndef __EMSCRIPTEN__
 #include <thread>
 #include <vector>
+
+#if defined(__linux__)
+#include <pthread.h>
+#endif
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -49,6 +53,14 @@ osThreadId_t osThreadNew(osThreadFunc_t func, void *, const osThreadAttr_t *attr
     return thread;
 #else
     auto t = new std::thread(func, nullptr);
+#if defined(__linux__)
+    // shown by profilers, debuggers and top -H, max 15 characters
+    if (attr && attr->name) {
+        char name[16];
+        snprintf(name, sizeof(name), "%s", attr->name);
+        pthread_setname_np(t->native_handle(), name);
+    }
+#endif
     return t->get_id();
 #endif
 }
@@ -140,36 +152,31 @@ osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size, cons
 }
 
 osStatus osMessageQueueGet(osMessageQueueId_t queue, void *msg_ptr, uint8_t *, uint32_t timeout) {
-#ifndef __EMSCRIPTEN__
-    if (timeout == 0) timeout = 1;
-    queue->mutex.lock();
-#endif
-
-    while (queue->elements.empty()) {
 #ifdef __EMSCRIPTEN__
+    if (queue->elements.empty()) {
         return osError;
+    }
 #else
-        queue->mutex.unlock();
+    std::unique_lock<std::mutex> lock(queue->mutex);
 
-        osDelay(1);
-
-		timeout -= 1;
-        if (timeout == 0) {
+    // Wait for the element without polling (osDelay loop), so the message
+    // is received as soon as it is put. Timeout 0 doesn't wait.
+    auto hasElement = [queue] { return !queue->elements.empty(); };
+    if (timeout == 0) {
+        if (!hasElement()) {
             return osError;
         }
-
-        queue->mutex.lock();
-#endif
+    } else if (timeout == osWaitForever) {
+        queue->elementPut.wait(lock, hasElement);
+    } else if (!queue->elementPut.wait_for(lock, std::chrono::milliseconds(timeout), hasElement)) {
+        return osError;
     }
+#endif
 
     auto data = queue->elements.front();
     queue->elements.pop();
     memcpy(msg_ptr, data, queue->elementSize);
     delete [] data;
-
-#ifndef __EMSCRIPTEN__
-    queue->mutex.unlock();
-#endif
 
     return osOK;
 }
@@ -185,6 +192,7 @@ osStatus osMessageQueuePut(osMessageQueueId_t queue, const void *msg_ptr, uint8_
 
 #ifndef __EMSCRIPTEN__
     queue->mutex.unlock();
+    queue->elementPut.notify_one();
 #endif
 
     return osOK;

@@ -25,7 +25,7 @@ namespace eez {
         #if defined(EEZ_PLATFORM_STM32)
             static uint8_t * const MEMORY_BEGIN = (uint8_t *)0xc0000000u;
         #endif
-        #if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
+        #if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__) || defined(EEZ_PLATFORM_CM5_RASPI)
             extern uint8_t g_memory[];
             static uint8_t * const MEMORY_BEGIN = g_memory;
         #endif
@@ -78,7 +78,7 @@ extern uint32_t ALLOC_BUFFER_SIZE;
         #if defined(EEZ_PLATFORM_STM32)
             static const uint32_t FLOW_TO_DEBUGGER_MESSAGE_BUFFER_SIZE = 32 * 1024;
         #endif
-        #if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
+        #if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__) || defined(EEZ_PLATFORM_CM5_RASPI)
             static const uint32_t FLOW_TO_DEBUGGER_MESSAGE_BUFFER_SIZE = 1024 * 1024;
         #endif
     #endif
@@ -102,6 +102,7 @@ extern uint32_t ALLOC_BUFFER_SIZE;
     extern uint8_t* SCREENSHOOT_BUFFER_START_ADDRESS;
 
     extern uint8_t* GUI_STATE_BUFFER;
+    extern uint32_t g_maxGuiStateSize;
 #endif
 
 void initMemory();

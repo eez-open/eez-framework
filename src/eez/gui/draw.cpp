@@ -13,6 +13,8 @@
 #if EEZ_OPTION_GUI
 
 #include <string.h>
+#include <algorithm>
+#include <vector>
 #define _USE_MATH_DEFINES
 #include <math.h>
 
@@ -43,6 +45,18 @@ bool styleIsVertAlignBottom(const Style *style) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+// AGG renderer is expensive to construct (and allocates its buffers on first use), so reuse it
+static display::AggDrawing &beginAggDrawing() {
+    static display::AggDrawing aggDrawing;
+    display::startPixelsDraw();
+    display::aggInit(aggDrawing);
+    return aggDrawing;
+}
+
+static void endAggDrawing() {
+    display::endPixelsDraw();
+}
 
 void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *style, uint16_t color, bool ignoreLuminocity) {
     const WidgetCursor& widgetCursor = g_widgetCursor;
@@ -96,6 +110,22 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 			}
 		} else {
 			startStackPointer = 0;
+		}
+
+		bool hasOpaqueBackground = false;
+		if (widgetCursor.backgroundStyleStackPointer > 0) {
+			auto &backgroundStyle = widgetCursor.backgroundStyleStack[startStackPointer];
+			auto color = backgroundStyle.active ? backgroundStyle.style->activeBackgroundColor : backgroundStyle.style->backgroundColor;
+			if (color != TRANSPARENT_COLOR_INDEX && backgroundStyle.style->opacity == 255) {
+				hasOpaqueBackground = true;
+			} else if (backgroundStyle.style->backgroundImage) {
+				auto bitmap = getBitmap(backgroundStyle.style->backgroundImage);
+				hasOpaqueBackground = bitmap && bitmap->bpp != 32;
+			}
+		}
+		if (!hasOpaqueBackground) {
+			// e.g. page with transparent background, what is below the page is the background
+			display::drawBufferBackground(x1, y1, x2, y2);
 		}
 
 		for (size_t i = startStackPointer; i < widgetCursor.backgroundStyleStackPointer; i++) {
@@ -175,8 +205,7 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
             }
 
             auto savedOpacity = display::setOpacity(style->opacity);
-            display::AggDrawing aggDrawing;
-            display::aggInit(aggDrawing);
+            auto &aggDrawing = beginAggDrawing();
             display::fillRoundedRect(
                 aggDrawing,
 				x1, y1, x2, y2,
@@ -185,6 +214,7 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 				style->borderRadiusBRX, style->borderRadiusBRY, style->borderRadiusBLX, style->borderRadiusBLY,
 				style->borderColor != TRANSPARENT_COLOR_INDEX, color != TRANSPARENT_COLOR_INDEX
 			);
+            endAggDrawing();
             display::setOpacity(savedOpacity);
 
             lineWidth++;
@@ -221,8 +251,7 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 			if (color != TRANSPARENT_COLOR_INDEX) {
 				display::setBackColor(color, ignoreLuminocity);
 		        auto savedOpacity = display::setOpacity(style->opacity);
-                display::AggDrawing aggDrawing;
-                display::aggInit(aggDrawing);
+                auto &aggDrawing = beginAggDrawing();
                 display::fillRoundedRect(
                     aggDrawing,
 					x1, y1, x2, y2,
@@ -231,6 +260,7 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 					style->borderRadiusBRX, style->borderRadiusBRY, style->borderRadiusBLX, style->borderRadiusBLY,
 					style->borderColor != TRANSPARENT_COLOR_INDEX, color != TRANSPARENT_COLOR_INDEX
 				);
+                endAggDrawing();
 		        display::setOpacity(savedOpacity);
 			}
 			return;
@@ -300,14 +330,38 @@ void drawText(
 		drawBorderAndBackground(x1, y1, x2, y2, style, backgroundColor, ignoreLuminocity);
 	}
 
+    uint16_t color;
+
+    if (active || blink) {
+        if (overrideActiveColor) {
+            color = *overrideActiveColor;
+        } else {
+            color = style->activeColor;
+        }
+    }  else {
+        if (overrideColor) {
+            color = *overrideColor;
+        } else {
+            color = style->color;
+        }
+    }
+
+    if (color == TRANSPARENT_COLOR_INDEX) {
+        return;
+    }
+
     font::Font font = styleGetFont(style);
 	if (!font) {
 		return;
 	}
 
-    int width = display::measureStr(text, textLength, font, 0);
-    while (useSmallerFontIfDoesNotFit && width > x2 - x1 + 1 && g_hooks.styleGetSmallerFont(font)) {
+    // text width is not needed for the left aligned text
+    int width = 0;
+    if (useSmallerFontIfDoesNotFit || !styleIsHorzAlignLeft(style)) {
         width = display::measureStr(text, textLength, font, 0);
+        while (useSmallerFontIfDoesNotFit && width > x2 - x1 + 1 && g_hooks.styleGetSmallerFont(font)) {
+            width = display::measureStr(text, textLength, font, 0);
+        }
     }
     int height = font.getHeight();
 
@@ -331,31 +385,12 @@ void drawText(
     } else {
         y_offset = y1 + ((y2 - y1 + 1) - height) / 2;
     }
-    if (y_offset < 0) {
+    // box above the display (e.g. list item while touch scrolling) is not snapped
+    if (y_offset < 0 && y1 >= 0) {
         y_offset = y1;
     }
 
     // draw text
-    uint16_t color;
-
-    if (active || blink) {
-        if (overrideActiveColor) {
-            color = *overrideActiveColor;
-        } else {
-            color = style->activeColor;
-        }
-    }  else {
-        if (overrideColor) {
-            color = *overrideColor;
-        } else {
-            color = style->color;
-        }
-    }
-
-    if (color == TRANSPARENT_COLOR_INDEX) {
-        return;
-    }
-
     display::setColor(color, ignoreLuminocity);
     display::drawStr(text, textLength, x_offset - xScroll, y_offset, x1, y1, x2, y2, font, cursorPosition);
 }
@@ -398,7 +433,8 @@ int getCharIndexAtPosition(int xPos, const char *text, int textLength, int x, in
     } else {
         y_offset = y1 + ((y2 - y1 + 1) - height) / 2;
     }
-    if (y_offset < 0) {
+    // box above the display (e.g. list item while touch scrolling) is not snapped
+    if (y_offset < 0 && y1 >= 0) {
         y_offset = y1;
     }
 
@@ -441,7 +477,8 @@ int getCursorXPosition(int cursorPosition, const char *text, int textLength, int
     } else {
         y_offset = y1 + ((y2 - y1 + 1) - height) / 2;
     }
-    if (y_offset < 0) {
+    // box above the display (e.g. list item while touch scrolling) is not snapped
+    if (y_offset < 0 && y1 >= 0) {
         y_offset = y1;
     }
 
@@ -451,24 +488,6 @@ int getCursorXPosition(int cursorPosition, const char *text, int textLength, int
 ////////////////////////////////////////////////////////////////////////////////
 
 static const unsigned int CONF_MULTILINE_TEXT_MAX_LINE_LENGTH = 1000;
-
-enum MultilineTextRenderStep {
-    MEASURE,
-    RENDER
-};
-
-// textLength of display::measureStr is in code points, while word boundaries
-// are found in bytes
-static int countCodepoints(const char *text, int numBytes) {
-    int count = 0;
-    const char *end = text + numBytes;
-    while (text < end) {
-        utf8_int32_t encoding;
-        text = utf8codepoint(text, &encoding);
-        ++count;
-    }
-    return count;
-}
 
 struct MultilineTextRender {
     const char *text;
@@ -488,6 +507,7 @@ struct MultilineTextRender {
     int textHeight;
 
     char line[CONF_MULTILINE_TEXT_MAX_LINE_LENGTH + 1];
+    size_t lineLength;
     int lineIndent;
     int lineWidth;
 
@@ -497,46 +517,63 @@ struct MultilineTextRender {
     int lineStartFontIndex;
     int currentFontIndex;
 
-    // vertical clip of the text area, glyphs of a larger font can overflow the line
-    int clipY1;
-    int clipY2;
+    // lines laid out by layout(), when recording is enabled
+    struct LineInfo {
+        size_t offset; // in linesText
+        int y;
+        int width;
+        int indent;
+        int fontIndex;
+    };
+    std::vector<LineInfo> *lines = nullptr;
+    std::vector<char> *linesText = nullptr;
 
-    void appendToLine(const char *str, size_t n) {
-        size_t j = strlen(line);
-        for (size_t i = 0; i < n && j < CONF_MULTILINE_TEXT_MAX_LINE_LENGTH; i++, j++) {
-            line[j] = str[i];
+    // number of code points in n bytes of UTF-8 text
+    static int countCodepoints(const char *str, int n) {
+        int count = 0;
+        const char *end = str + n;
+        while (str < end) {
+            utf8_int32_t encoding;
+            str = utf8codepoint(str, &encoding);
+            ++count;
         }
-        line[j] = 0;
+        return count;
     }
 
-    void flushLine(int y, MultilineTextRenderStep step) {
-        if (line[0] && lineWidth) {
-            if (step == RENDER) {
-                int x;
+    // width of n bytes of UTF-8 text, starting in the currentFontIndex font
+    int measureBytes(const char *str, int n) {
+        return display::measureStr(str, countCodepoints(str, n), font, 0, currentFontIndex);
+    }
 
-                if (styleIsHorzAlignLeft(style)) {
-                    x = x1;
-                } else if (styleIsHorzAlignRight(style)) {
-                    x = x2 + 1 - lineWidth;
-                } else {
-                    x = x1 + int((x2 - x1 + 1 - lineWidth) / 2);
-                }
+    void appendToLine(const char *str, size_t n) {
+        for (size_t i = 0; i < n && lineLength < CONF_MULTILINE_TEXT_MAX_LINE_LENGTH; i++) {
+            line[lineLength++] = str[i];
+        }
+        line[lineLength] = 0;
+    }
 
-                display::drawStr(line, -1, x + lineIndent, y, x1, clipY1, x2, clipY2, font, -1, lineStartFontIndex);
-            } else {
-                textHeight = MAX(textHeight, y + lineHeight - y1);
+    void flushLine(int y) {
+        if (lineLength && lineWidth) {
+            if (lines) {
+                lines->push_back({ linesText->size(), y, lineWidth, lineIndent, lineStartFontIndex });
+                linesText->insert(linesText->end(), line, line + lineLength + 1);
             }
 
+            textHeight = MAX(textHeight, y + lineHeight - y1);
+
+            lineLength = 0;
             line[0] = 0;
             lineWidth = lineIndent = hangingIndent;
         }
     }
 
-    int executeStep(MultilineTextRenderStep step) {
+    // breaks text into lines, returns text height
+    int layout() {
         textHeight = 0;
 
         int y = y1;
 
+        lineLength = 0;
         line[0] = 0;
         lineWidth = lineIndent = firstLineIndent;
         lineStartFontIndex = currentFontIndex = 0;
@@ -547,16 +584,28 @@ struct MultilineTextRender {
             while (text[i] != 0 && text[i] != ' ' && text[i] != '\n')
                 ++i;
 
-            int width = display::measureStr(text + j, countCodepoints(text + j, i - j), font, 0, currentFontIndex);
+            int width = measureBytes(text + j, i - j);
 
-            while (lineWidth + (line[0] ? spaceWidth : 0) + width > x2 - x1 + 1) {
-				if (!line[0]) {
-					i--;
-					width = display::measureStr(text + j, countCodepoints(text + j, i - j), font, 0, currentFontIndex);
+            while (lineWidth + (lineLength ? spaceWidth : 0) + width > x2 - x1 + 1) {
+				if (!lineLength) {
+                    // word doesn't fit even into the empty line, cut off the last character
+                    if (i <= j) {
+                        break;
+                    }
+                    int k = i;
+                    do {
+                        --k;
+                    } while (k > j && (text[k] & 0xC0) == 0x80);
+                    if (k == j) {
+                        // keep at least one character, even if it doesn't fit
+                        break;
+                    }
+                    i = k;
+                    width = measureBytes(text + j, i - j);
 					continue;
 				}
 
-                flushLine(y, step);
+                flushLine(y);
 
                 y += lineHeight;
                 if (y + lineHeight - 1 > y2) {
@@ -568,11 +617,11 @@ struct MultilineTextRender {
                 break;
             }
 
-            if (line[0]) {
+            if (lineLength) {
                 appendToLine(" ", 1);
                 lineWidth += spaceWidth;
             }
-            if (!line[0]) {
+            if (!lineLength) {
                 lineStartFontIndex = currentFontIndex;
             }
             appendToLine(text + j, i - j);
@@ -584,7 +633,7 @@ struct MultilineTextRender {
             }
 
             if (text[i] == 0 || text[i] == '\n') {
-                flushLine(y, step);
+                flushLine(y);
 
                 y += lineHeight;
 
@@ -603,9 +652,23 @@ struct MultilineTextRender {
             }
         }
 
-        flushLine(y, step);
+        flushLine(y);
 
         return textHeight + font.getHeight() - lineHeight;
+    }
+
+    bool initFont() {
+        font = styleGetFont(style);
+
+        lineHeight = (int)(0.9 * font.getHeight());
+        if (lineHeight <= 0) {
+            return false;
+        }
+
+        auto spaceGlyph = font.getGlyph(' ');
+        spaceWidth = spaceGlyph ? spaceGlyph->dx : 0;
+
+        return true;
     }
 
     int measure() {
@@ -614,62 +677,68 @@ struct MultilineTextRender {
         x2 -= style->borderSizeRight;
         y2 -= style->borderSizeBottom;
 
-        font = styleGetFont(style);
-
-        lineHeight = (int)(0.9 * font.getHeight());
-        if (lineHeight <= 0) {
+        if (!initFont()) {
             return 0;
         }
-
-        auto spaceGlyph = font.getGlyph(' ');
-        spaceWidth = spaceGlyph->dx;
 
         x1 += style->paddingLeft;
         x2 -= style->paddingRight;
         y1 += style->paddingTop;
         y2 -= style->paddingBottom;
 
-        return executeStep(MEASURE);
+        return layout();
     }
 
     void render() {
         drawBorderAndBackground(x1, y1, x2, y2, style, active ? style->activeBackgroundColor : style->backgroundColor);
 
-        //
-        font = styleGetFont(style);
-
-        lineHeight = (int)(0.9 * font.getHeight());
-        if (lineHeight <= 0) {
+        if (!initFont()) {
             return;
         }
 
-        auto spaceGlyph = font.getGlyph(' ');
-        spaceWidth = spaceGlyph->dx;
-
-        // draw text
         uint16_t color = active ? style->activeColor : style->color;
-        display::setColor(color);
+        if (color == TRANSPARENT_COLOR_INDEX) {
+            return;
+        }
 
         x1 += style->paddingLeft;
         x2 -= style->paddingRight;
         y1 += style->paddingTop;
         y2 -= style->paddingBottom;
 
-        clipY1 = y1;
-        clipY2 = y2;
+        // layout once, remember the lines and draw them after vertical alignment is known
+        static std::vector<LineInfo> s_lines;
+        static std::vector<char> s_linesText;
+        s_lines.clear();
+        s_linesText.clear();
+        lines = &s_lines;
+        linesText = &s_linesText;
 
-        int textHeight = executeStep(MEASURE);
+        int textHeight = layout();
 
+        int dy;
         if (styleIsVertAlignTop(style)) {
+            dy = 0;
         } else if (styleIsVertAlignBottom(style)) {
-            y1 = y2 + 1 - textHeight;
+            dy = y2 + 1 - textHeight - y1;
         } else {
-            y1 += (int)((y2 - y1 + 1 - textHeight) / 2);
+            dy = (int)((y2 - y1 + 1 - textHeight) / 2);
         }
-        y2 = y1 + textHeight - 1;
 
-        if (color != TRANSPARENT_COLOR_INDEX) {
-            executeStep(RENDER);
+        display::setColor(color);
+
+        for (auto &lineInfo : s_lines) {
+            int x;
+            if (styleIsHorzAlignLeft(style)) {
+                x = x1;
+            } else if (styleIsHorzAlignRight(style)) {
+                x = x2 + 1 - lineInfo.width;
+            } else {
+                x = x1 + int((x2 - x1 + 1 - lineInfo.width) / 2);
+            }
+
+            int y = lineInfo.y + dy;
+            display::drawStr(s_linesText.data() + lineInfo.offset, -1, x + lineInfo.indent, y, x1, y1, x2, y2, font, -1, lineInfo.fontIndex);
         }
     }
 };
@@ -724,7 +793,7 @@ void drawBitmap(Image *image, int x, int y, int w, int h, const Style *style, bo
         x_offset = x2 - style->paddingRight - width;
     else
         x_offset = x1 + ((x2 - x1) - width) / 2;
-    if (x_offset < 0)
+    if (x_offset < 0 && x1 >= 0)
         x_offset = x1;
 
     int y_offset;
@@ -734,7 +803,7 @@ void drawBitmap(Image *image, int x, int y, int w, int h, const Style *style, bo
         y_offset = y2 - style->paddingBottom - height;
     else
         y_offset = y1 + ((y2 - y1) - height) / 2;
-    if (y_offset < 0)
+    if (y_offset < 0 && y1 >= 0)
         y_offset = y1;
 
     // draw background
@@ -815,6 +884,227 @@ static const int W = SHADOW_GLYPH_WIDTH_PX;
 static const int H = SHADOW_GLYPH_HEIGHT_PX;
 #endif
 
+#ifndef CONF_SHADOW_OFFSET_X
+#define CONF_SHADOW_OFFSET_X 3
+#endif
+#ifndef CONF_SHADOW_OFFSET_Y
+#define CONF_SHADOW_OFFSET_Y 6
+#endif
+#ifndef CONF_SHADOW_BLUR
+#define CONF_SHADOW_BLUR 16
+#endif
+#ifndef CONF_SHADOW_SPREAD
+#define CONF_SHADOW_SPREAD -2
+#endif
+#ifndef CONF_SHADOW_CORNER_RADIUS
+#define CONF_SHADOW_CORNER_RADIUS 3
+#endif
+#ifndef CONF_SHADOW_OPACITY
+#define CONF_SHADOW_OPACITY 160
+#endif
+
+static ShadowParams g_shadowParams = {
+    CONF_SHADOW_OFFSET_X, CONF_SHADOW_OFFSET_Y, CONF_SHADOW_BLUR, CONF_SHADOW_SPREAD, CONF_SHADOW_CORNER_RADIUS,
+    0, 0, 0,
+    CONF_SHADOW_OPACITY
+};
+static uint32_t g_shadowParamsVersion;
+
+void setShadowParams(const ShadowParams &params) {
+    g_shadowParams = params;
+    g_shadowParamsVersion++;
+}
+
+const ShadowParams &getShadowParams() {
+    return g_shadowParams;
+}
+
+#if EEZ_USE_SDL
+#define EEZ_SW_SHADOW 1
+
+static float shadowSigma() {
+    return g_shadowParams.blur > 1 ? g_shadowParams.blur / 2.0f : 0.5f;
+}
+
+// how far the shadow reaches beyond the shadow box
+static int shadowReach() {
+    return (int)ceilf(3.0f * shadowSigma());
+}
+
+static void getShadowExtents(int &left, int &top, int &right, int &bottom) {
+    int reach = shadowReach() + g_shadowParams.spread;
+    left = std::max(reach - g_shadowParams.offsetX, 0);
+    right = std::max(reach + g_shadowParams.offsetX, 0);
+    top = std::max(reach - g_shadowParams.offsetY, 0);
+    bottom = std::max(reach + g_shadowParams.offsetY, 0);
+}
+
+// fast erf approximation, max error ~5e-4
+static inline float erfApprox(float x) {
+    float s = x < 0 ? -1.0f : 1.0f;
+    float a = fabsf(x);
+    float t = 1.0f + (0.278393f + (0.230389f + 0.078108f * (a * a)) * a) * a;
+    t *= t;
+    return s - s / (t * t);
+}
+
+static inline float gaussian(float x, float sigma) {
+    return expf(-(x * x) / (2.0f * sigma * sigma)) / (2.5066283f * sigma);
+}
+
+// horizontal integral of the rounded box at vertical distance y from its center
+static inline float roundedBoxShadowX(float x, float y, float sigma, float corner, float halfW, float halfH) {
+    float delta = std::min(halfH - corner - fabsf(y), 0.0f);
+    float curved = halfW - corner + sqrtf(std::max(0.0f, corner * corner - delta * delta));
+    float k = 0.70710678f / sigma;
+    return 0.5f * (erfApprox((x + curved) * k) - erfApprox((x - curved) * k));
+}
+
+// gaussian blurred rounded box coverage at point (x, y) relative to the box center
+// (https://madebyevan.com/shaders/fast-rounded-rectangle-shadows/)
+static float roundedBoxShadow(float x, float y, float halfW, float halfH, float sigma, float corner) {
+    float low = y - halfH;
+    float high = y + halfH;
+    float start = std::min(std::max(-3.0f * sigma, low), high);
+    float end = std::min(std::max(3.0f * sigma, low), high);
+    float step = (end - start) / 4.0f;
+    float yy = start + step * 0.5f;
+    float value = 0.0f;
+    for (int i = 0; i < 4; i++) {
+        value += roundedBoxShadowX(x, y - yy, sigma, corner, halfW, halfH) * gaussian(yy, sigma) * step;
+        yy += step;
+    }
+    return value;
+}
+
+static void drawShadowSW(int x1, int y1, int x2, int y2) {
+    // shadow box
+    int bx1 = x1 - g_shadowParams.spread + g_shadowParams.offsetX;
+    int by1 = y1 - g_shadowParams.spread + g_shadowParams.offsetY;
+    int bw = x2 - x1 + 1 + 2 * g_shadowParams.spread;
+    int bh = y2 - y1 + 1 + 2 * g_shadowParams.spread;
+    if (bw <= 0 || bh <= 0) {
+        return;
+    }
+
+    int reach = shadowReach();
+    int mw = bw + 2 * reach;
+    int mh = bh + 2 * reach;
+
+    // alpha mask depends only on box size and params, so cache it
+    // (a few masks, there can be more windows with shadow on the screen)
+    struct ShadowMask {
+        std::vector<uint8_t> data;
+        int w = -1;
+        int h = -1;
+        uint32_t version = 0;
+        uint32_t lastUsed = 0;
+    };
+    static const int NUM_CACHED_MASKS = 4;
+    static ShadowMask masks[NUM_CACHED_MASKS];
+    static uint32_t useCounter;
+
+    ShadowMask *shadowMask = nullptr;
+    for (int i = 0; i < NUM_CACHED_MASKS; i++) {
+        if (masks[i].w == bw && masks[i].h == bh && masks[i].version == g_shadowParamsVersion) {
+            shadowMask = &masks[i];
+            break;
+        }
+    }
+
+    if (!shadowMask) {
+        // replace least recently used
+        shadowMask = &masks[0];
+        for (int i = 1; i < NUM_CACHED_MASKS; i++) {
+            if (masks[i].lastUsed < shadowMask->lastUsed) {
+                shadowMask = &masks[i];
+            }
+        }
+
+        shadowMask->w = bw;
+        shadowMask->h = bh;
+        shadowMask->version = g_shadowParamsVersion;
+        auto &mask = shadowMask->data;
+        mask.resize(mw * mh);
+
+        float sigma = shadowSigma();
+        float halfW = bw / 2.0f;
+        float halfH = bh / 2.0f;
+        float corner = std::min((float)std::max(g_shadowParams.cornerRadius, 0), std::min(halfW, halfH));
+
+        // deep inside the box (farther than corner + 3 sigma from the edges) the shadow is fully opaque
+        int inner = reach + (int)ceilf(corner) + reach + 1;
+
+        // the mask is symmetric, compute one quadrant and mirror it
+        int qw = (mw + 1) / 2;
+        int qh = (mh + 1) / 2;
+        for (int my = 0; my < qh; my++) {
+            float py = my + 0.5f - mh / 2.0f;
+            for (int mx = 0; mx < qw; mx++) {
+                uint8_t a;
+                if (mx >= inner && my >= inner) {
+                    a = 255;
+                } else {
+                    float px = mx + 0.5f - mw / 2.0f;
+                    float v = roundedBoxShadow(px, py, halfW, halfH, sigma, corner);
+                    a = (uint8_t)std::min(std::max((int)(v * 255.0f + 0.5f), 0), 255);
+                }
+                mask[my * mw + mx] = a;
+                mask[my * mw + (mw - 1 - mx)] = a;
+                mask[(mh - 1 - my) * mw + mx] = a;
+                mask[(mh - 1 - my) * mw + (mw - 1 - mx)] = a;
+            }
+        }
+    }
+
+    shadowMask->lastUsed = ++useCounter;
+    const auto &mask = shadowMask->data;
+
+    int mx1 = bx1 - reach;
+    int my1 = by1 - reach;
+
+    int displayWidth = display::getDisplayWidth();
+
+    // clip to the current clip rectangle (it is inside the display)
+    auto &clipRect = display::getClipRect();
+    int sx1 = std::max(mx1, clipRect.x1);
+    int sy1 = std::max(my1, clipRect.y1);
+    int sx2 = std::min(mx1 + mw, clipRect.x2 + 1);
+    int sy2 = std::min(my1 + mh, clipRect.y2 + 1);
+
+    const int sr = g_shadowParams.r;
+    const int sg = g_shadowParams.g;
+    const int sb = g_shadowParams.b;
+    const int opacity = g_shadowParams.opacity;
+
+    uint32_t *buffer = (uint32_t *)display::getBufferPointer();
+
+    for (int y = sy1; y < sy2; y++) {
+        const uint8_t *maskRow = mask.data() + (y - my1) * mw;
+        uint32_t *dstRow = buffer + y * displayWidth;
+        bool insideRows = y >= y1 && y <= y2;
+        for (int x = sx1; x < sx2; x++) {
+            // skip area covered by the window itself
+            if (insideRows && x >= x1 && x <= x2) {
+                x = x2;
+                continue;
+            }
+
+            int a = maskRow[x - mx1] * opacity;
+            if (a < 255) {
+                continue;
+            }
+            a = (a + 128) >> 8;
+
+            uint8_t *p = (uint8_t *)(dstRow + x);
+            p[0] = (uint8_t)(p[0] + (((sr - p[0]) * a) >> 8));
+            p[1] = (uint8_t)(p[1] + (((sg - p[1]) * a) >> 8));
+            p[2] = (uint8_t)(p[2] + (((sb - p[2]) * a) >> 8));
+        }
+    }
+}
+#endif
+
 void drawShadowGlyph(ShadowGlpyh shadowGlyph, int x, int y, int xClip = -1, int yClip = -1) {
 	font::Font font(getFontData(EEZ_FONT_ID_SHADOW));
 
@@ -825,10 +1115,14 @@ void drawShadowGlyph(ShadowGlpyh shadowGlyph, int x, int y, int xClip = -1, int 
 		yClip = y + H - 1;
 	}
     char glyph = 32 + shadowGlyph;
+    
 	display::drawStr(&glyph, 1, x, y, x, y, xClip, yClip, font, -1);
 }
 
 void drawShadow(int x1, int y1, int x2, int y2) {
+#if defined(EEZ_SW_SHADOW)
+    drawShadowSW(x1, y1, x2, y2);
+#else
 	display::setColor(64, 64, 64);
 
 	int left = x1 - L;
@@ -853,38 +1147,61 @@ void drawShadow(int x1, int y1, int x2, int y2) {
 		drawShadowGlyph(SHADOW_GLYPH_BOTTOM, x, bottom, right - 1);
 	}
 	drawShadowGlyph(SHADOW_GLYPH_BOTTOM_RIGHT, right, bottom);
+#endif
 }
 
 void expandRectWithShadow(int &x1, int &y1, int &x2, int &y2) {
+#if defined(EEZ_SW_SHADOW)
+    int left, top, right, bottom;
+    getShadowExtents(left, top, right, bottom);
+    x1 -= left;
+    y1 -= top;
+    x2 += right;
+    y2 += bottom;
+#else
 	x1 -= L;
 	y1 -= T;
 	x2 += R;
 	y2 += B;
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void drawLine(int x1, int y1, int x2, int y2) {
-    display::startPixelsDraw();
-
-    int dx = x2 - x1;
-    int dy = y2 - y1;
-
-    int length;
-    if (abs(dx) > abs(dy)) {
-        length = abs(dx);
-    } else {
-        length = abs(dy);
+    if (y1 == y2) {
+        // horizontal
+        display::fillRect(MIN(x1, x2), y1, MAX(x1, x2), y1);
+        return;
     }
 
-    float xinc = (float)dx / length;
-    float yinc = (float)dy / length;
-    float x = (float)x1;
-    float y = (float)y1;
-    for (int i = 0; i < length; i++) {
-        display::drawPixel((int)roundf(x), (int)roundf(y));
-        x += xinc;
-        y += yinc;
+    if (x1 == x2) {
+        // vertical
+        display::fillRect(x1, MIN(y1, y2), x1, MAX(y1, y2));
+        return;
+    }
+
+    display::startPixelsDraw();
+
+    // Bresenham
+    int dx = abs(x2 - x1), sx = x1 < x2 ? 1 : -1;
+    int dy = -abs(y2 - y1), sy = y1 < y2 ? 1 : -1;
+    int err = dx + dy;
+
+    while (true) {
+        display::drawPixel(x1, y1);
+        if (x1 == x2 && y1 == y2) {
+            break;
+        }
+        int e2 = 2 * err;
+        if (e2 >= dy) {
+            err += dy;
+            x1 += sx;
+        }
+        if (e2 <= dx) {
+            err += dx;
+            y1 += sy;
+        }
     }
 
     display::endPixelsDraw();

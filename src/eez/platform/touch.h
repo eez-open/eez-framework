@@ -16,8 +16,8 @@ namespace touch {
 
 void read(bool &isPressed, int &x, int &y);
 
-#if defined(EEZ_STM32_CUSTOM_TOUCH_MEASURE_CALLBACK)
-extern "C" void eez_stm32_touch_measure_callback(int *x, int *y, int *pressed);
+#if defined(EEZ_CUSTOM_TOUCH_MEASURE_CALLBACK)
+extern "C" void eez_custom_touch_measure_callback(int *x, int *y, int *pressed);
 #endif
 
 } // namespace touch

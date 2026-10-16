@@ -65,6 +65,10 @@ bool AppContext::isActivePageInternal() {
     return isPageInternal(getActivePageId());
 }
 
+bool AppContext::isTouchScrollEnabled(const WidgetCursor &widgetCursor) {
+    return true;
+}
+
 bool AppContext::isWidgetActionEnabled(const WidgetCursor &widgetCursor) {
     const Widget *widget = widgetCursor.widget;
     auto action = getWidgetAction(widgetCursor);
@@ -92,6 +96,12 @@ bool AppContext::isFocusWidget(const WidgetCursor &widgetCursor) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+void AppContext::onBeforePushPage(int pageId) {
+}
+
+void AppContext::onBeforeShowPage(int pageId) {
+}
 
 void AppContext::onPageChanged(int previousPageId, int activePageId, bool activePageIsFromStack, bool previousPageIsStillOnStack) {
     display::turnOn();
@@ -162,6 +172,8 @@ void AppContext::pushPage(int pageId, Page *page) {
     if (pushPageInGuiThread(this, pageId, page)) {
         return;
     }
+
+    onBeforePushPage(pageId);
 
     int previousPageId = getActivePageId();
 
@@ -235,6 +247,8 @@ void AppContext::showPage(int pageId) {
         return;
     }
 
+    onBeforeShowPage(pageId);
+
     if (pageId != getActivePageId()) {
         setPage(pageId);
     }
@@ -293,6 +307,36 @@ void AppContext::onPageTouch(const WidgetCursor &foundWidget, Event &touchEvent)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+// page with transparent background shows what is below it
+static bool isPageTransparent(int pageId) {
+    if (isPageInternal(pageId)) {
+        return false;
+    }
+
+    Assets *assets = g_mainAssets;
+    const PageAsset *page = nullptr;
+    if (pageId > 0) {
+        page = g_mainAssets->pages[pageId - 1];
+    } else if (pageId < 0) {
+        assets = g_widgetCursor.assets;
+        int externalPageId = g_hooks.resolveExternalPage(pageId, &assets);
+        if (assets) {
+            page = assets->pages[externalPageId - 1];
+        }
+    }
+    if (!page) {
+        return false;
+    }
+
+    // style of the external page is from its assets
+    auto savedAssets = g_widgetCursor.assets;
+    g_widgetCursor.assets = assets;
+    auto style = getStyle(page->style);
+    g_widgetCursor.assets = savedAssets;
+
+    return style->backgroundColor == TRANSPARENT_COLOR_INDEX || style->opacity != 255;
+}
+
 void AppContext::updatePage(int i, WidgetCursor &widgetCursor) {
 	if (g_findCallback == nullptr) {
 		m_pageNavigationStack[i].displayBufferIndex = display::beginBufferRendering();
@@ -305,6 +349,7 @@ void AppContext::updatePage(int i, WidgetCursor &widgetCursor) {
     int width;
     int height;
     bool withShadow;
+    Rect *backdrop;
 
     if (isPageInternal(m_pageNavigationStack[i].pageId)) {
         auto internalPage = ((InternalPage *)m_pageNavigationStack[i].page);
@@ -314,6 +359,7 @@ void AppContext::updatePage(int i, WidgetCursor &widgetCursor) {
 		width = internalPage->width;
 		height = internalPage->height;
 		withShadow = true;
+		backdrop = g_hooks.activePageHasBackdrop() ? &rect : nullptr;
 
         widgetCursor.w = width;
         widgetCursor.h = height;
@@ -326,6 +372,7 @@ void AppContext::updatePage(int i, WidgetCursor &widgetCursor) {
     } else {
         auto page = getPageAsset(m_pageNavigationStack[i].pageId, widgetCursor);
 
+        auto savedHasPreviousState = widgetCursor.hasPreviousState;
         if (widgetCursor.flowState && widgetCursor.flowState->timelinePosition != m_pageNavigationStack[i].timelinePosition) {
             widgetCursor.hasPreviousState = false;
             m_pageNavigationStack[i].timelinePosition = widgetCursor.flowState->timelinePosition;
@@ -346,7 +393,16 @@ void AppContext::updatePage(int i, WidgetCursor &widgetCursor) {
             height = page->height;
         }
 
-        withShadow = page->x > 0;
+        bool transparent = isPageTransparent(m_pageNavigationStack[i].pageId);
+
+        if (transparent) {
+            // never with shadow, but always with backdrop (also when the page is full size)
+            withShadow = false;
+            backdrop = &rect;
+        } else {
+            withShadow = page->x > 0;
+            backdrop = withShadow && g_hooks.activePageHasBackdrop() ? &rect : nullptr;
+        }
 
         auto savedX = widgetCursor.x;
         auto savedY = widgetCursor.y;
@@ -357,17 +413,42 @@ void AppContext::updatePage(int i, WidgetCursor &widgetCursor) {
         widgetCursor.w = width;
         widgetCursor.h = height;
 
+        auto savedRefreshed = widgetCursor.refreshed;
+
+        BackgroundStyle savedBackgroundStyleStack[BACKGROUND_STYLE_STACK_SIZE];
+        auto savedBackgroundStyleStackPointer = widgetCursor.backgroundStyleStackPointer;
+
+        if (transparent && g_findCallback == nullptr) {
+            // what is below the page is its background (see drawBorderAndBackground),
+            // so the backgrounds outside of the page are not used
+            memcpy(savedBackgroundStyleStack, widgetCursor.backgroundStyleStack, sizeof(savedBackgroundStyleStack));
+            widgetCursor.backgroundStyleStackPointer = 0;
+
+            bool backgroundChanged = display::setBufferBackgroundBelow(x, y, width, height, backdrop);
+            if (backgroundChanged || widgetCursor.refreshed) {
+                display::drawBufferBackground(x, y, x + width - 1, y + height - 1);
+                widgetCursor.refreshed = true;
+            }
+        }
+
         enumWidget();
+
+        if (transparent && g_findCallback == nullptr) {
+            widgetCursor.refreshed = savedRefreshed;
+            memcpy(widgetCursor.backgroundStyleStack, savedBackgroundStyleStack, sizeof(savedBackgroundStyleStack));
+            widgetCursor.backgroundStyleStackPointer = savedBackgroundStyleStackPointer;
+        }
 
         widgetCursor.x = savedX;
         widgetCursor.y = savedY;
 
         widgetCursor.widget = savedWidget;
+        widgetCursor.hasPreviousState = savedHasPreviousState;
     }
 
 	if (g_findCallback == nullptr) {
         pageRenderCustom(i, widgetCursor);
-		display::endBufferRendering(m_pageNavigationStack[i].displayBufferIndex, x, y, width, height, withShadow, 255, 0, 0, withShadow && g_hooks.activePageHasBackdrop() ? &rect : nullptr);
+		display::endBufferRendering(m_pageNavigationStack[i].displayBufferIndex, x, y, width, height, withShadow, 255, 0, 0, backdrop);
 	}
 
     m_updatePageIndex = -1;
@@ -407,6 +488,11 @@ bool AppContext::isPageFullyCovered(int pageNavigationStackIndex) {
     getPageRect(m_pageNavigationStack[pageNavigationStackIndex].pageId, m_pageNavigationStack[pageNavigationStackIndex].page, xPage, yPage, wPage, hPage);
 
     for (int i = pageNavigationStackIndex + 1; i <= m_pageNavigationStackPointer; i++) {
+        if (isPageTransparent(m_pageNavigationStack[i].pageId)) {
+            // page below is seen through
+            continue;
+        }
+
         int xPageAbove, yPageAbove, wPageAbove, hPageAbove;
         getPageRect(m_pageNavigationStack[i].pageId, m_pageNavigationStack[i].page, xPageAbove, yPageAbove, wPageAbove, hPageAbove);
 

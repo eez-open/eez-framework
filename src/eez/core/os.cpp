@@ -47,7 +47,7 @@ uint32_t millis() {
 	return HAL_GetTick();
 #elif defined(__EMSCRIPTEN__)
 	return (uint32_t)emscripten_get_now();
-#elif defined(EEZ_PLATFORM_SIMULATOR)
+#elif defined(EEZ_PLATFORM_SIMULATOR) || defined(EEZ_PLATFORM_CM5_RASPI)
 	return osKernelGetTickCount();
 #elif defined(EEZ_PLATFORM_ESP32)
 	return (unsigned long) (esp_timer_get_time() / 1000ULL);

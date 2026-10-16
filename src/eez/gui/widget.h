@@ -205,6 +205,12 @@ struct WidgetStateFlags {
 
 struct WidgetState {
 	uint16_t type;
+    // state is moved to the new frame states (used for previous frame states only)
+    bool moved;
+    // size in bytes of this state and the states of all its descendants
+    uint32_t subtreeSize;
+    // widget for which this state is created
+    const Widget *widget;
     int x;
     int y;
     int w;
@@ -265,11 +271,28 @@ void enumNoneWidget();
 extern bool g_foundWidgetAtDownInvalid;
 void freeWidgetStates(WidgetState *topWidgetState);
 
+// called around the enumeration of all widgets in updateScreen
+void beginWidgetStatesUpdate(bool hasPreviousState);
+bool endWidgetStatesUpdate();
+
 typedef void (*EnumWidgetsCallback)();
 extern EnumWidgetsCallback g_findCallback;
 void forEachWidget(EnumWidgetsCallback callback);
 
 WidgetCursor findWidget(int16_t x, int16_t y, bool clicked = true);
+
+static const int MAX_NESTED_SCROLL_LISTS = 4;
+
+// scrollable lists, from the outermost to the innermost
+struct ScrollLists {
+    WidgetCursor lists[MAX_NESTED_SCROLL_LISTS];
+    int count = 0;
+};
+
+// scrollable Lists that are (or enclose) the widget returned by the last findWidget call
+const ScrollLists &getFoundWidgetScrollLists();
+// findWidget ignores the widgets outside of this rectangle (w == 0 means no clipping)
+extern Rect g_findClipRect;
 
 typedef void (*OnTouchFunctionType)(const WidgetCursor &widgetCursor, Event &touchEvent);
 OnTouchFunctionType getWidgetTouchFunction(const WidgetCursor &widgetCursor);
@@ -295,6 +318,25 @@ void doStaticLayout(
     int containerOriginalHeight,
     int containerWidth,
     int containerHeight
+);
+
+// Same as doStaticLayout, but child widgets can overlap. When something is drawn
+// over the area shared by multiple child widgets, that area is repainted:
+// container background (style) and then all the child widgets in that area.
+// true while widgets are repainted by doStaticLayoutWithOverlapping, i.e. while
+// widgets are enumerated with forEachWidget and rendered (enumChildren should
+// draw what it would draw after rendering the children)
+bool isRepaintingOverlappingWidgets();
+
+void doStaticLayoutWithOverlapping(
+    WidgetCursor& widgetCursor,
+    const ListOfAssetsPtr<Widget> &widgets,
+    int containerOriginalWidth,
+    int containerOriginalHeight,
+    int containerWidth,
+    int containerHeight,
+    const Style *containerStyle,
+    bool containerActive
 );
 
 } // namespace gui

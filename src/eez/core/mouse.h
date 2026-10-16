@@ -22,7 +22,7 @@ void updateDisplay();
 
 void onPageChanged();
 
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
+#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__) || defined(EEZ_PLATFORM_CM5_RASPI)
 void onMouseEvent(bool mouseButton1IsPressed, int mouseX, int mouseY);
 #endif
 

@@ -2319,6 +2319,11 @@ static void do_OPERATION_TYPE_ARRAY_LENGTH(EvalStack &stack) {
         return;
     }
 
+    if (a.isDynamicArray()) {
+        stack.push(Value(a.getDynamicArray()->arraySize, VALUE_TYPE_UINT32));
+        return;
+    }
+
     if (a.isBlob()) {
         auto blobRef = a.getBlob();
         stack.push(Value(blobRef->len, VALUE_TYPE_UINT32));
@@ -2924,7 +2929,9 @@ static void do_OPERATION_TYPE_EVENT_GET_ROTARY_DIFF(EvalStack &stack) {
 }
 
 static void do_OPERATION_TYPE_DIB_MODULE_FIELD(EvalStack &stack) {
-    stack.push(Value::makeError());
+    uint16_t globalVariableIndex = stack.pop().getValue().getUInt16();
+    uint16_t slotIndex = (uint16_t)stack.flowState->assets->reserved;
+    stack.push(Value((slotIndex << 16) | globalVariableIndex, VALUE_TYPE_DIB_FIELD));
 }
 
 EvalOperation g_evalOperations[] = {

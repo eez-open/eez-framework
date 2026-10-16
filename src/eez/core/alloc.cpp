@@ -28,6 +28,12 @@
 #endif
 #endif
 
+#if defined(EEZ_PLATFORM_CM5_RASPI)
+#include <stdlib.h>
+#include <stdint.h>
+#include <malloc.h>
+#endif
+
 #include <eez/core/alloc.h>
 #include <eez/core/os.h>
 
@@ -107,6 +113,49 @@ template<typename T> void freeObject(T *ptr) {
 void getAllocInfo(uint32_t &free, uint32_t &alloc) {
 	free = emscripten_get_heap_max() - emscripten_get_heap_size();
 	alloc = emscripten_get_heap_size();
+}
+
+#elif defined(EEZ_PLATFORM_CM5_RASPI)
+
+void initAllocHeap(uint8_t *heap, size_t heapSize) {
+}
+
+void *alloc(size_t size, uint32_t id) {
+    return ::malloc(size);
+}
+
+void free(void *ptr) {
+    ::free(ptr);
+}
+
+template<typename T> void freeObject(T *ptr) {
+	ptr->~T();
+	::free(ptr);
+}
+
+void getAllocInfo(uint32_t &free, uint32_t &alloc) {
+	struct mallinfo2 mi = mallinfo2();
+
+	// bytes in use: heap chunks + mmap-ed chunks
+	size_t allocBytes = mi.uordblks + mi.hblkhd;
+
+	// free: memory available to the system + free chunks retained by malloc
+	size_t freeBytes = mi.fordblks;
+	FILE *fp = fopen("/proc/meminfo", "r");
+	if (fp) {
+		char line[128];
+		unsigned long kb;
+		while (fgets(line, sizeof(line), fp)) {
+			if (sscanf(line, "MemAvailable: %lu kB", &kb) == 1) {
+				freeBytes += (size_t)kb * 1024;
+				break;
+			}
+		}
+		fclose(fp);
+	}
+
+	free = freeBytes > UINT32_MAX ? UINT32_MAX : (uint32_t)freeBytes;
+	alloc = allocBytes > UINT32_MAX ? UINT32_MAX : (uint32_t)allocBytes;
 }
 
 #else

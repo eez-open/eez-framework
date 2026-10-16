@@ -36,6 +36,8 @@ bool UpDownWidgetState::updateState() {
         WIDGET_STATE(max, get(widgetCursor, widget->max));
     }
 
+    WIDGET_STATE(oldSegment, newSegment);
+
     WIDGET_STATE_END()
 }
 
@@ -53,7 +55,7 @@ void UpDownWidgetState::render() {
             static_cast<const char *>(widget->downButtonText), -1,
             widgetCursor.x, widgetCursor.y, buttonWidth, widgetCursor.h,
             buttonsStyle,
-            flags.active && segment == UP_DOWN_WIDGET_SEGMENT_DOWN_BUTTON
+            flags.active && newSegment == UP_DOWN_WIDGET_SEGMENT_DOWN_BUTTON
         );
     }
 
@@ -71,13 +73,15 @@ void UpDownWidgetState::render() {
             static_cast<const char *>(widget->upButtonText), -1,
             widgetCursor.x + widgetCursor.w - buttonWidth, widgetCursor.y, buttonWidth, widgetCursor.h,
             buttonsStyle,
-            flags.active && segment == UP_DOWN_WIDGET_SEGMENT_UP_BUTTON
+            flags.active && newSegment == UP_DOWN_WIDGET_SEGMENT_UP_BUTTON
         );
     }
+
+    oldSegment = newSegment;
 }
 
 void UpDownWidgetState::upDown(const WidgetCursor &widgetCursor, UpDownWidgetSegment segment_) {
-    segment = segment_;
+    newSegment = segment_;
 
     const Widget *widget = widgetCursor.widget;
 
@@ -85,9 +89,9 @@ void UpDownWidgetState::upDown(const WidgetCursor &widgetCursor, UpDownWidgetSeg
 
     int newValue = value;
 
-    if (segment == UP_DOWN_WIDGET_SEGMENT_DOWN_BUTTON) {
+    if (newSegment == UP_DOWN_WIDGET_SEGMENT_DOWN_BUTTON) {
         --newValue;
-    } else if (segment == UP_DOWN_WIDGET_SEGMENT_UP_BUTTON) {
+    } else if (newSegment == UP_DOWN_WIDGET_SEGMENT_UP_BUTTON) {
         ++newValue;
     }
 
@@ -98,8 +102,8 @@ void UpDownWidgetState::upDown(const WidgetCursor &widgetCursor, UpDownWidgetSeg
         min = this->min.getInt();
         max = this->max.getInt();
     } else {
-    min = getMin(widgetCursor, widget->data).getInt();
-    max = getMax(widgetCursor, widget->data).getInt();
+        min = getMin(widgetCursor, widget->data).getInt();
+        max = getMax(widgetCursor, widget->data).getInt();
     }
 
     if (newValue < min) {

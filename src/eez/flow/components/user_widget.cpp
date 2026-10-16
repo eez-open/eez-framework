@@ -38,11 +38,11 @@ struct UserWidgetWidgetExecutionState : public ComponenentExecutionState {
     }
 };
 
-static UserWidgetWidgetExecutionState *createUserWidgetFlowState(FlowState *flowState, uint16_t userWidgetWidgetComponentIndex, int16_t pageId) {
-    if (pageId == -1) {
+static UserWidgetWidgetExecutionState *createUserWidgetFlowState(Assets *assets, FlowState *flowState, uint16_t userWidgetWidgetComponentIndex, int16_t pageIndex) {
+    if (pageIndex == -1) {
         return 0;
     }
-    auto userWidgetFlowState = initPageFlowState(flowState->assets, pageId, flowState, userWidgetWidgetComponentIndex);
+    auto userWidgetFlowState = initPageFlowState(assets, pageIndex, flowState, userWidgetWidgetComponentIndex);
 
     // init user properties
     auto component = flowState->flow->components[userWidgetWidgetComponentIndex];
@@ -59,10 +59,14 @@ static UserWidgetWidgetExecutionState *createUserWidgetFlowState(FlowState *flow
     return userWidgetWidgetExecutionState;
 }
 
-FlowState *getUserWidgetFlowState(FlowState *flowState, uint16_t userWidgetWidgetComponentIndex, int16_t pageId) {
+FlowState *getUserWidgetFlowState(Assets *assets, FlowState *flowState, uint16_t userWidgetWidgetComponentIndex, int16_t pageIndex) {
     auto userWidgetWidgetExecutionState = (UserWidgetWidgetExecutionState *)flowState->componenentExecutionStates[userWidgetWidgetComponentIndex];
+    if (userWidgetWidgetExecutionState && (userWidgetWidgetExecutionState->flowState->assets != assets || userWidgetWidgetExecutionState->flowState->flowIndex != pageIndex)) {
+        deallocateComponentExecutionState(flowState, userWidgetWidgetComponentIndex);
+        userWidgetWidgetExecutionState = 0;
+    }
     if (!userWidgetWidgetExecutionState) {
-        userWidgetWidgetExecutionState = createUserWidgetFlowState(flowState, userWidgetWidgetComponentIndex, pageId);
+        userWidgetWidgetExecutionState = createUserWidgetFlowState(assets, flowState, userWidgetWidgetComponentIndex, pageIndex);
     }
 
     return userWidgetWidgetExecutionState->flowState;
@@ -73,7 +77,7 @@ void executeUserWidgetWidgetComponent(FlowState *flowState, unsigned componentIn
 
     auto userWidgetWidgetExecutionState = (UserWidgetWidgetExecutionState *)flowState->componenentExecutionStates[componentIndex];
     if (!userWidgetWidgetExecutionState) {
-        createUserWidgetFlowState(flowState, componentIndex, component->flowIndex);
+        createUserWidgetFlowState(flowState->assets, flowState, componentIndex, component->flowIndex);
     } else {
         auto userWidgetFlowState = userWidgetWidgetExecutionState->flowState;
         for (

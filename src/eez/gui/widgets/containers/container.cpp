@@ -176,7 +176,15 @@ void ContainerWidgetState::enumChildren() {
         int containerHeight = widgetCursor.h;
 
         if (widget->layout == CONTAINER_WIDGET_LAYOUT_STATIC) {
-            doStaticLayout(widgetCursor, widgets, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
+            if (widget->flags & OVERLAPPING_CHILDREN_FLAG) {
+                doStaticLayoutWithOverlapping(
+                    widgetCursor, widgets,
+                    containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight,
+                    getStyle(styleId), flags.active
+                );
+            } else {
+                doStaticLayout(widgetCursor, widgets, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
+            }
         } else if (widget->layout == CONTAINER_WIDGET_LAYOUT_HORIZONTAL) {
             auto savedX = widgetCursor.x;
             auto savedY = widgetCursor.y;

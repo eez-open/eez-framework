@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <eez/gui/scrolling.h>
+
 namespace eez {
 namespace gui {
 
@@ -26,10 +28,7 @@ struct GridWidget : public Widget {
     uint8_t gridFlow; // GRID_FLOW_ROW or GRID_FLOW_COLUMN
 };
 
-struct GridWidgetState : public WidgetState {
-    int startPosition;
-    int count;
-
+struct GridWidgetState : public ScrollableWidgetState {
     bool updateState() override;
     void enumChildren() override;
 };

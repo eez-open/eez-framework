@@ -77,6 +77,22 @@ static void evalExpression(FlowState *flowState, const uint8_t *instructions, in
                         g_stack.push(Value::makeError());
                         g_stack.setErrorMessage("Integer value expected for array element index\n");
                     }
+                } else if (arrayValue.isDynamicArray()) {
+                    auto dynamicArray = arrayValue.getDynamicArray();
+
+                    int err;
+                    auto elementIndex = elementIndexValue.toInt32(&err);
+                    if (!err) {
+                        if (elementIndex >= 0 && elementIndex < (int)dynamicArray->arraySize) {
+                            g_stack.push(Value::makeArrayElementRef(arrayValue, elementIndex, 0x132e0e2f));
+                        } else {
+                            g_stack.push(Value::makeError());
+                            g_stack.setErrorMessage("Array element index out of bounds\n");
+                        }
+                    } else {
+                        g_stack.push(Value::makeError());
+                        g_stack.setErrorMessage("Integer value expected for array element index\n");
+                    }
                 } else if (arrayValue.isBlob()) {
                     auto blobRef = arrayValue.getBlob();
 
@@ -193,6 +209,7 @@ bool evalAssignableExpression(FlowState *flowState, int componentIndex, const ui
         if (
             finalResult.getType() == VALUE_TYPE_VALUE_PTR ||
             finalResult.getType() == VALUE_TYPE_NATIVE_VARIABLE ||
+            finalResult.getType() == VALUE_TYPE_DIB_FIELD ||
             finalResult.getType() == VALUE_TYPE_FLOW_OUTPUT ||
             finalResult.getType() == VALUE_TYPE_ARRAY_ELEMENT_VALUE ||
             finalResult.getType() == VALUE_TYPE_JSON_MEMBER_VALUE

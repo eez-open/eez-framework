@@ -12,6 +12,7 @@
 
 #include <eez/conf-internal.h>
 
+#include <atomic>
 #include <stdint.h>
 
 #if defined(EEZ_FOR_LVGL)
@@ -92,7 +93,7 @@ enum TestResult {
 uint32_t millis();
 
 #if EEZ_OPTION_THREADS
-extern bool g_shutdown;
+extern std::atomic_bool g_shutdown;
 #endif
 
 void shutdown();

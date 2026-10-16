@@ -30,13 +30,16 @@ namespace eez {
 namespace gui {
 
 int getLayoutId(const WidgetCursor &widgetCursor) {
+    int layoutId;
     if (widgetCursor.widget->data) {
         auto layoutValue = get(widgetCursor, widgetCursor.widget->data);
-        return layoutValue.getInt();
+        layoutId = layoutValue.getInt();
+    } else {
+        auto userWidgetWidget = (const UserWidgetWidget *)widgetCursor.widget;
+        layoutId = userWidgetWidget->layout;
     }
 
-    auto userWidgetWidget = (const UserWidgetWidget *)widgetCursor.widget;
-    return userWidgetWidget->layout;
+    return layoutId;
 }
 
 bool UserWidgetWidgetState::updateState() {
@@ -109,6 +112,17 @@ void UserWidgetWidgetState::enumChildren() {
         setContext((WidgetCursor &)widgetCursor, widget->context, oldContext, newContext);
     }
 
+    if (g_findCallback && layout) {
+        // updateState is not called when finding a widget, so flowState is the
+        // one from the last render. It is freed and created again whenever the
+        // flow state of the same user widget component is requested with
+        // another layout (e.g. list items with different layouts), so it can
+        // be dangling here. Get it again.
+        widgetCursor.flowState = savedFlowState;
+        getPageAsset(getLayoutId(widgetCursor), widgetCursor);
+        flowState = widgetCursor.flowState;
+    }
+
 	if (g_findCallback == nullptr) {
         savedRefreshed = widgetCursor.refreshed;
         if (repainted) {
@@ -130,7 +144,15 @@ void UserWidgetWidgetState::enumChildren() {
         int containerWidth = widgetCursor.w;
         int containerHeight = widgetCursor.h;
 
-        doStaticLayout(widgetCursor, widgets, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
+        if (layout->flags & OVERLAPPING_CHILDREN_FLAG) {
+            doStaticLayoutWithOverlapping(
+                widgetCursor, widgets,
+                containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight,
+                getStyle(widget->style), flags.active
+            );
+        } else {
+            doStaticLayout(widgetCursor, widgets, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
+        }
 
 		widgetCursor.widget = savedWidget;
 	}
@@ -144,11 +166,12 @@ void UserWidgetWidgetState::enumChildren() {
     widgetCursor.flowState = savedFlowState;
 
     if (g_findCallback == nullptr) {
-        widgetCursor.refreshed = savedRefreshed;
-
+        // background is pushed only if refreshed is still false
         if (!widgetCursor.refreshed) {
             widgetCursor.popBackground();
         }
+
+        widgetCursor.refreshed = savedRefreshed;
     }
 }
 

@@ -42,6 +42,20 @@ int measureMultilineText(const char *text, int x, int y, int w, int h, const Sty
 void drawBitmap(Image *image, int x, int y, int w, int h, const Style *style, bool active);
 void drawRectangle(int x, int y, int w, int h, const Style *style, bool active = false, bool ignoreLuminocity = false, bool invertColors = true);
 
+// CSS box-shadow like parameters, used only by the software shadow renderer (SDL: simulator and CM5)
+struct ShadowParams {
+    int offsetX;
+    int offsetY;
+    int blur;         // blur radius in px (gaussian sigma = blur / 2)
+    int spread;       // grow (positive) or shrink (negative) shadow box in px
+    int cornerRadius; // shadow box corner radius in px
+    uint8_t r, g, b;
+    uint8_t opacity;
+};
+
+void setShadowParams(const ShadowParams &params);
+const ShadowParams &getShadowParams();
+
 void drawShadow(int x1, int y1, int x2, int y2);
 void expandRectWithShadow(int &x1, int &y1, int &x2, int &y2);
 

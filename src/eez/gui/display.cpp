@@ -12,6 +12,7 @@
 
 #if EEZ_OPTION_GUI
 
+#include <algorithm>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -31,6 +32,7 @@
 #include <eez/gui/gui.h>
 #include <eez/gui/thread.h>
 #include <eez/gui/touch.h>
+#include <eez/gui/scrolling.h>
 
 #if defined(EEZ_NEMA_GFX)
 #include <eez/gui/nema_hal_stm32.h>
@@ -40,6 +42,22 @@
 #endif
 
 #define CONF_BACKDROP_OPACITY 128
+
+#if EEZ_USE_SDL
+#define EEZ_SW_BACKDROP_BLUR 1
+#include <vector>
+
+// backdrop blur: downscale -> N x box blur (approximates gaussian) -> bilinear upscale + tint
+#define CONF_BACKDROP_BLUR_DOWNSCALE 2
+#define CONF_BACKDROP_BLUR_RADIUS 2 // in downscaled pixels
+#define CONF_BACKDROP_BLUR_PASSES 3
+#define CONF_BACKDROP_BLUR_TINT_OPACITY 80
+
+// compose and transfer to the screen only the changed part of the frame
+#define EEZ_DAMAGE_TRACKING 1
+// print composed damage rectangle (and its share of the screen) for every dirty frame
+#define EEZ_DAMAGE_TRACKING_DEBUG 1
+#endif
 
 #if defined(EEZ_PLATFORM_STM32)
 
@@ -56,10 +74,14 @@ extern "C" DMA2D_HandleTypeDef hdma2d_eval;
 
 #endif
 
-#if defined(EEZ_PLATFORM_SIMULATOR) && EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL
 #include <SDL.h>
 #include <SDL_image.h>
 #include <string>
+#endif
+
+#if defined(EEZ_PLATFORM_CM5_RASPI) && defined(EEZ_USE_WAYLAND)
+#include <layer_shell_display.h>
 #endif
 
 #if DISPLAY_BPP == 16
@@ -102,9 +124,58 @@ namespace eez {
 namespace gui {
 namespace display {
 
+// rectangle in display coordinates (inclusive), empty when x1 > x2
+struct DamageRect {
+    int x1 = 0;
+    int y1 = 0;
+    int x2 = -1;
+    int y2 = -1;
+
+    bool isEmpty() const { return x1 > x2 || y1 > y2; }
+
+    void clear() {
+        x1 = y1 = 0;
+        x2 = y2 = -1;
+    }
+
+    void setFull() {
+        x1 = y1 = 0;
+        x2 = DISPLAY_WIDTH - 1;
+        y2 = DISPLAY_HEIGHT - 1;
+    }
+
+    void add(int ax1, int ay1, int ax2, int ay2) {
+        if (ax1 > ax2 || ay1 > ay2) {
+            return;
+        }
+        if (isEmpty()) {
+            x1 = ax1;
+            y1 = ay1;
+            x2 = ax2;
+            y2 = ay2;
+        } else {
+            x1 = std::min(x1, ax1);
+            y1 = std::min(y1, ay1);
+            x2 = std::max(x2, ax2);
+            y2 = std::max(y2, ay2);
+        }
+    }
+
+    void add(const DamageRect &r) { add(r.x1, r.y1, r.x2, r.y2); }
+
+    void intersect(int ax1, int ay1, int ax2, int ay2) {
+        x1 = std::max(x1, ax1);
+        y1 = std::max(y1, ay1);
+        x2 = std::min(x2, ax2);
+        y2 = std::min(y2, ay2);
+    }
+};
+
 struct RenderBuffer {
     VideoBuffer bufferPointer;
     VideoBuffer previousBuffer;
+    DamageRect damage; // part of this buffer drawn in the current frame
+    DamageRect *previousDamage;
     int x;
     int y;
     int width;
@@ -114,6 +185,10 @@ struct RenderBuffer {
     int xOffset;
     int yOffset;
     gui::Rect *backdrop;
+    int previousBufferIndex;
+    bool rendering; // between beginBufferRendering and endBufferRendering
+    bool hasBackgroundBelow; // see setBufferBackgroundBelow
+    bool hadBackgroundBelow; // hasBackgroundBelow in the previous frame
 };
 
 DisplayState g_displayState;
@@ -149,7 +224,9 @@ static const uint16_t *g_colors;
 
 bool g_dirty;
 inline void clearDirty() { g_dirty = false; }
-inline void setDirty() { g_dirty = true; }
+inline void setDirty() { 
+    g_dirty = true; 
+}
 inline bool isDirty() { return g_dirty; }
 
 static const int NUM_BUFFERS = 6;
@@ -157,6 +234,106 @@ static const int NUM_BUFFERS = 6;
 RenderBuffer g_renderBuffers[NUM_BUFFERS];
 static VideoBuffer g_mainBufferPointer;
 static int g_numBuffersToDraw;
+// render buffer currently drawn into (-1 for the main buffer)
+static int g_currentBufferIndex = -1;
+
+// part of the buffer currently drawn into that was changed in this frame (nullptr when not tracked)
+static DamageRect *g_damage;
+// drawn directly into the main render buffer in this frame
+static DamageRect g_mainDamage;
+// where the render buffer to be drawn next is stale compared to the synced buffer
+static DamageRect g_staleDamage = { 0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1 };
+// part of the synced buffer that must be transferred to the screen
+static DamageRect g_presentDamage = { 0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1 };
+
+// innermost active damage probe
+static DamageProbe *g_damageProbe;
+
+static inline void addProbeDamage(DamageProbe *probe, int x1, int y1, int x2, int y2) {
+    if (x1 > x2 || y1 > y2) {
+        return;
+    }
+    if (probe->isEmpty()) {
+        probe->x1 = x1;
+        probe->y1 = y1;
+        probe->x2 = x2;
+        probe->y2 = y2;
+    } else {
+        probe->x1 = std::min(probe->x1, x1);
+        probe->y1 = std::min(probe->y1, y1);
+        probe->x2 = std::max(probe->x2, x2);
+        probe->y2 = std::max(probe->y2, y2);
+    }
+}
+
+static inline void addDamage(int x1, int y1, int x2, int y2) {
+    if (g_damage) {
+        g_damage->add(x1, y1, x2, y2);
+    }
+    // drawing into some other buffer (e.g. overlay) is not collected
+    if (g_damageProbe && g_damageProbe->target == g_damage) {
+        addProbeDamage(g_damageProbe, x1, y1, x2, y2);
+    }
+}
+
+void beginDamageProbe(DamageProbe &probe) {
+    probe.x1 = 0;
+    probe.y1 = 0;
+    probe.x2 = -1;
+    probe.y2 = -1;
+    probe.parent = g_damageProbe;
+    probe.target = g_damage;
+    g_damageProbe = &probe;
+}
+
+void endDamageProbe(DamageProbe &probe) {
+    g_damageProbe = probe.parent;
+    if (g_damageProbe && g_damageProbe->target == probe.target && !probe.isEmpty()) {
+        addProbeDamage(g_damageProbe, probe.x1, probe.y1, probe.x2, probe.y2);
+    }
+}
+
+// buffers composed in the previous frame, if they are not the same in this frame everything has to be composed
+struct LayerInfo {
+    int x;
+    int y;
+    int width;
+    int height;
+    int xOffset;
+    int yOffset;
+    bool withShadow;
+    uint8_t opacity;
+    bool hasBackdrop;
+
+    bool operator==(const LayerInfo &other) const {
+        return x == other.x && y == other.y && width == other.width && height == other.height &&
+            xOffset == other.xOffset && yOffset == other.yOffset && withShadow == other.withShadow &&
+            opacity == other.opacity && hasBackdrop == other.hasBackdrop;
+    }
+};
+static LayerInfo g_lastLayers[NUM_BUFFERS];
+static int g_lastNumLayers = -1;
+// layers changed in the previous frame
+static bool g_lastLayersChanged = true;
+
+static LayerInfo getLayerInfo(const RenderBuffer &renderBuffer) {
+    LayerInfo layer;
+    layer.x = renderBuffer.x;
+    layer.y = renderBuffer.y;
+    layer.width = renderBuffer.width;
+    layer.height = renderBuffer.height;
+    layer.xOffset = renderBuffer.xOffset;
+    layer.yOffset = renderBuffer.yOffset;
+    layer.withShadow = renderBuffer.withShadow;
+    layer.opacity = renderBuffer.opacity;
+    layer.hasBackdrop = renderBuffer.backdrop != nullptr;
+    return layer;
+}
+
+static void setFullDamage() {
+    g_staleDamage.setFull();
+    g_presentDamage.setFull();
+}
 
 bool g_screenshotAllocated;
 
@@ -166,11 +343,12 @@ static void initDriver();
 static void syncBuffer();
 static void copySyncedBufferToScreenshotBuffer();
 static void drawStrInit();
+static void resetClipRect();
 static void drawGlyph(const uint8_t *src, uint32_t srcLineOffset, int x, int y, int width, int height);
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__) || (defined(EEZ_PLATFORM_STM32) && DISPLAY_BPP == 16)
+#if EEZ_USE_SDL || (defined(EEZ_PLATFORM_STM32) && DISPLAY_BPP == 16)
 static uint32_t color16to32(uint16_t color, uint8_t opacity = 255) {
     uint32_t color32;
     ((uint8_t *)&color32)[0] = RGB565_COLOR_TO_R(color);
@@ -188,7 +366,32 @@ static uint16_t color32to16(uint32_t color) {
 }
 #endif
 
-static uint32_t blendColor(uint32_t fgColor, uint32_t bgColor) {
+// blends fgColor with opacity a (0..255) over the opaque bgColor, using integer arithmetic only
+static inline uint32_t blendColorOpaque(uint32_t fgColor, uint32_t bgColor, uint32_t a) {
+    uint32_t ia = 255 - a;
+
+    // R and B channels in parallel, G separately; (x + 128 + ((x + 128) >> 8)) >> 8 == round(x / 255)
+    uint32_t rb = (fgColor & 0x00FF00FF) * a + (bgColor & 0x00FF00FF) * ia + 0x00800080;
+    rb = ((rb + ((rb >> 8) & 0x00FF00FF)) >> 8) & 0x00FF00FF;
+
+    uint32_t g = ((fgColor >> 8) & 0xFF) * a + ((bgColor >> 8) & 0xFF) * ia + 0x80;
+    g = ((g + (g >> 8)) >> 8) & 0xFF;
+
+    return 0xFF000000 | rb | (g << 8);
+}
+
+static inline uint32_t blendColor(uint32_t fgColor, uint32_t bgColor) {
+    uint32_t fgAlpha = fgColor >> 24;
+    if (fgAlpha == 255) {
+        return fgColor;
+    }
+    if (fgAlpha == 0) {
+        return bgColor;
+    }
+    if ((bgColor >> 24) == 255) {
+        return blendColorOpaque(fgColor, bgColor, fgAlpha);
+    }
+
     uint8_t *fg = (uint8_t *)&fgColor;
     uint8_t *bg = (uint8_t *)&bgColor;
 
@@ -245,6 +448,7 @@ void init() {
 #endif
 
     g_syncedBuffer = g_renderBuffer1;
+    setFullDamage();
     syncBuffer();
 }
 
@@ -286,6 +490,11 @@ void calcFPS() {
 	auto diff = time - g_lastTimeFPS;
 
 	auto fps = diff ? 1000 / diff : 0;
+
+    static int dither;
+    dither = (dither + 1) % NUM_FPS_VALUES;
+    if (dither == 0 && fps > 5) fps = 0;
+
     g_fpsValues[NUM_FPS_VALUES - 1] = fps;
 
 	g_fpsTotal += g_fpsValues[NUM_FPS_VALUES - 1];
@@ -346,6 +555,7 @@ static void finishAnimation() {
     }
 
     g_syncedBuffer = g_renderBuffer1;
+    setFullDamage();
     syncBuffer();
 }
 #endif
@@ -388,6 +598,7 @@ static void animateStep() {
         }
 
         g_syncedBuffer = g_animationBuffer;
+        setFullDamage();
         syncBuffer();
     } else {
     	finishAnimation();
@@ -407,7 +618,7 @@ void update() {
 			}
 		#endif
 
-#if !defined(EEZ_PLATFORM_SIMULATOR) && !defined(__EMSCRIPTEN__)
+#if !EEZ_USE_SDL
 		#if EEZ_OPTION_THREADS
         	osDelay(16);
         	sendMessageToGuiThread(GUI_QUEUE_MESSAGE_TYPE_DISPLAY_VSYNC, 0, 0);
@@ -420,6 +631,8 @@ void update() {
 #ifdef GUI_CALC_FPS
 	g_lastTimeFPS = millis();
 #endif
+
+    touchScrollTick();
 
     display::beginRendering();
     updateScreen();
@@ -491,8 +704,14 @@ void beginRendering() {
 
     clearDirty();
 
+    resetClipRect();
+
     g_mainBufferPointer = getBufferPointer();
     g_numBuffersToDraw = 0;
+    g_currentBufferIndex = -1;
+
+    g_mainDamage.clear();
+    g_damage = &g_mainDamage;
 }
 
 static int g_maxNumBuffersToDraw = 0;
@@ -504,6 +723,18 @@ int beginBufferRendering() {
     }
 	g_renderBuffers[bufferIndex].previousBuffer = getBufferPointer();
     setBufferPointer(g_renderBuffers[bufferIndex].bufferPointer);
+
+    g_renderBuffers[bufferIndex].damage.clear();
+    g_renderBuffers[bufferIndex].previousDamage = g_damage;
+    g_damage = &g_renderBuffers[bufferIndex].damage;
+
+    g_renderBuffers[bufferIndex].previousBufferIndex = g_currentBufferIndex;
+    g_currentBufferIndex = bufferIndex;
+
+    g_renderBuffers[bufferIndex].rendering = true;
+    g_renderBuffers[bufferIndex].hadBackgroundBelow = g_renderBuffers[bufferIndex].hasBackgroundBelow;
+    g_renderBuffers[bufferIndex].hasBackgroundBelow = false;
+
     return bufferIndex;
 }
 
@@ -602,6 +833,148 @@ static void blurBackdrop(int x, int y, int w, int h) {
 }
 #endif
 
+#if defined(EEZ_SW_BACKDROP_BLUR)
+// box blur along "numLines" lines of "length" packed RGB pixels; "step" and "lineStep" are byte strides along/between lines
+static void boxBlurLines(const uint8_t *src, uint8_t *dst, int length, int numLines, int step, int lineStep, int r) {
+    const int div = 2 * r + 1;
+    const int last = length - 1;
+    for (int line = 0; line < numLines; line++) {
+        const uint8_t *in = src + line * lineStep;
+        uint8_t *out = dst + line * lineStep;
+        for (int c = 0; c < 3; c++) {
+            int sum = 0;
+            for (int i = -r; i <= r; i++) {
+                sum += in[std::min(std::max(i, 0), last) * step + c];
+            }
+            for (int i = 0; i < length; i++) {
+                out[i * step + c] = (uint8_t)((sum + div / 2) / div);
+                sum += in[std::min(i + r + 1, last) * step + c] - in[std::max(i - r, 0) * step + c];
+            }
+        }
+    }
+}
+
+static void blurBackdrop(int x, int y, int w, int h) {
+    const int F = CONF_BACKDROP_BLUR_DOWNSCALE;
+
+    int displayWidth = getDisplayWidth();
+    int displayHeight = getDisplayHeight();
+
+    // Clamp blur rect to the visible display area.
+    if (x < 0) {
+        w += x;
+        x = 0;
+    }
+    if (y < 0) {
+        h += y;
+        y = 0;
+    }
+    if (x + w > displayWidth) {
+        w = displayWidth - x;
+    }
+    if (y + h > displayHeight) {
+        h = displayHeight - y;
+    }
+    if (w <= 0 || h <= 0) {
+        return;
+    }
+
+    int dsW = (w + F - 1) / F;
+    int dsH = (h + F - 1) / F;
+
+    static std::vector<uint8_t> bufA;
+    static std::vector<uint8_t> bufB;
+    static std::vector<int> colX0;
+    static std::vector<int> colX1;
+    static std::vector<int> colFx;
+    bufA.resize(dsW * dsH * 3);
+    bufB.resize(dsW * dsH * 3);
+    colX0.resize(w);
+    colX1.resize(w);
+    colFx.resize(w);
+
+    uint32_t *buffer = (uint32_t *)g_renderBuffer;
+
+    // 1. downscale (block average)
+    for (int dy = 0; dy < dsH; dy++) {
+        int y0 = dy * F;
+        int y1 = std::min(y0 + F, h);
+        for (int dx = 0; dx < dsW; dx++) {
+            int x0 = dx * F;
+            int x1 = std::min(x0 + F, w);
+            uint32_t r = 0, g = 0, b = 0;
+            for (int sy = y0; sy < y1; sy++) {
+                const uint8_t *p = (const uint8_t *)(buffer + (y + sy) * displayWidth + x + x0);
+                for (int sx = x0; sx < x1; sx++, p += 4) {
+                    r += p[0];
+                    g += p[1];
+                    b += p[2];
+                }
+            }
+            uint32_t n = (y1 - y0) * (x1 - x0);
+            uint8_t *d = &bufA[(dy * dsW + dx) * 3];
+            d[0] = (uint8_t)((r + n / 2) / n);
+            d[1] = (uint8_t)((g + n / 2) / n);
+            d[2] = (uint8_t)((b + n / 2) / n);
+        }
+    }
+
+    // 2. separable box blur passes
+    for (int pass = 0; pass < CONF_BACKDROP_BLUR_PASSES; pass++) {
+        boxBlurLines(bufA.data(), bufB.data(), dsW, dsH, 3, dsW * 3, CONF_BACKDROP_BLUR_RADIUS);
+        boxBlurLines(bufB.data(), bufA.data(), dsH, dsW, dsW * 3, 3, CONF_BACKDROP_BLUR_RADIUS);
+    }
+
+    // 3. bilinear upscale back into the render buffer, mixed with the backdrop tint color
+    auto savedColor = g_fc;
+    setColor(EEZ_COLOR_ID_BACKDROP);
+    const int ta = CONF_BACKDROP_BLUR_TINT_OPACITY;
+    const int tr = COLOR_TO_R(g_fc) * ta;
+    const int tg = COLOR_TO_G(g_fc) * ta;
+    const int tb = COLOR_TO_B(g_fc) * ta;
+    g_fc = savedColor;
+
+    // source coordinate (8.8 fixed point) of the destination pixel center: (p + 0.5) / F - 0.5
+    auto srcCoord = [F](int p, int maxIndex, int &i0, int &i1, int &f) {
+        int u = ((2 * p + 1) * 256) / (2 * F) - 128;
+        u = std::min(std::max(u, 0), maxIndex * 256);
+        i0 = u >> 8;
+        i1 = std::min(i0 + 1, maxIndex);
+        f = u & 255;
+    };
+
+    for (int px = 0; px < w; px++) {
+        srcCoord(px, dsW - 1, colX0[px], colX1[px], colFx[px]);
+    }
+
+    for (int py = 0; py < h; py++) {
+        int y0, y1, fy;
+        srcCoord(py, dsH - 1, y0, y1, fy);
+        const uint8_t *row0 = &bufA[y0 * dsW * 3];
+        const uint8_t *row1 = &bufA[y1 * dsW * 3];
+        uint32_t *dst = buffer + (y + py) * displayWidth + x;
+        for (int px = 0; px < w; px++) {
+            const uint8_t *p00 = row0 + colX0[px] * 3;
+            const uint8_t *p01 = row0 + colX1[px] * 3;
+            const uint8_t *p10 = row1 + colX0[px] * 3;
+            const uint8_t *p11 = row1 + colX1[px] * 3;
+            int fx = colFx[px];
+
+            uint32_t out = 0xFF000000;
+            for (int c = 0; c < 3; c++) {
+                int top = p00[c] * (256 - fx) + p01[c] * fx;
+                int bottom = p10[c] * (256 - fx) + p11[c] * fx;
+                int v = (top * (256 - fy) + bottom * fy) >> 16;
+                int t = c == 0 ? tr : c == 1 ? tg : tb;
+                v = (v * (256 - ta) + t) >> 8;
+                out |= (uint32_t)v << (8 * c);
+            }
+            dst[px] = out;
+        }
+    }
+}
+#endif
+
 void endBufferRendering(int bufferIndex, int x, int y, int width, int height, bool withShadow, uint8_t opacity, int xOffset, int yOffset, Rect *backdrop) {
     RenderBuffer &renderBuffer = g_renderBuffers[bufferIndex];
 
@@ -616,79 +989,423 @@ void endBufferRendering(int bufferIndex, int x, int y, int width, int height, bo
 	renderBuffer.backdrop = backdrop;
 
     setBufferPointer(renderBuffer.previousBuffer);
+    g_damage = renderBuffer.previousDamage;
+
+    g_currentBufferIndex = renderBuffer.previousBufferIndex;
+    renderBuffer.rendering = false;
+}
+
+static ClipRect g_clipRect = { 0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1 };
+
+static void resetClipRect() {
+    g_clipRect.x1 = 0;
+    g_clipRect.y1 = 0;
+    g_clipRect.x2 = getDisplayWidth() - 1;
+    g_clipRect.y2 = getDisplayHeight() - 1;
+}
+
+ClipRect intersectClipRect(int x, int y, int width, int height) {
+    ClipRect previousClipRect = g_clipRect;
+    g_clipRect.x1 = MAX(g_clipRect.x1, x);
+    g_clipRect.y1 = MAX(g_clipRect.y1, y);
+    g_clipRect.x2 = MIN(g_clipRect.x2, x + width - 1);
+    g_clipRect.y2 = MIN(g_clipRect.y2, y + height - 1);
+    return previousClipRect;
+}
+
+void restoreClipRect(const ClipRect &previousClipRect) {
+    g_clipRect = previousClipRect;
+}
+
+const ClipRect &getClipRect() {
+    return g_clipRect;
+}
+
+static inline bool isInsideClipRect(int x, int y) {
+    return x >= g_clipRect.x1 && x <= g_clipRect.x2 && y >= g_clipRect.y1 && y <= g_clipRect.y2;
+}
+
+// returns false if nothing is left
+static inline bool clipToClipRect(int &x1, int &y1, int &x2, int &y2) {
+    if (x1 < g_clipRect.x1) x1 = g_clipRect.x1;
+    if (y1 < g_clipRect.y1) y1 = g_clipRect.y1;
+    if (x2 > g_clipRect.x2) x2 = g_clipRect.x2;
+    if (y2 > g_clipRect.y2) y2 = g_clipRect.y2;
+    return x1 <= x2 && y1 <= y2;
+}
+
+static void composeBackdrop(const Rect &backdrop) {
+#if (0 && defined(EEZ_NEMA_GFX)) || defined(EEZ_SW_BACKDROP_BLUR)
+    // only the part inside the clip rectangle
+    int x1 = backdrop.x, y1 = backdrop.y, x2 = backdrop.x + backdrop.w - 1, y2 = backdrop.y + backdrop.h - 1;
+    if (clipToClipRect(x1, y1, x2, y2)) {
+        blurBackdrop(x1, y1, x2 - x1 + 1, y2 - y1 + 1);
+    }
+#else
+    // opacity backdrop
+    auto savedOpacity = setOpacity(CONF_BACKDROP_OPACITY);
+    setColor(EEZ_COLOR_ID_BACKDROP);
+    fillRect(backdrop.x, backdrop.y, backdrop.x + backdrop.w - 1, backdrop.y + backdrop.h - 1);
+    setOpacity(savedOpacity);
+#endif
+}
+
+// composes the render buffer into the buffer currently drawn into, only the part inside the clip rectangle
+static void composeRenderBuffer(const RenderBuffer &renderBuffer) {
+    int sx = renderBuffer.x;
+    int sy = renderBuffer.y;
+
+    int x1 = renderBuffer.x + renderBuffer.xOffset;
+    int y1 = renderBuffer.y + renderBuffer.yOffset;
+    int x2 = x1 + renderBuffer.width - 1;
+    int y2 = y1 + renderBuffer.height - 1;
+
+    if (renderBuffer.backdrop) {
+        composeBackdrop(*renderBuffer.backdrop);
+    }
+
+    if (renderBuffer.withShadow) {
+        drawShadow(x1, y1, x2, y2);
+    }
+
+    // copy only the part inside the clip rectangle
+    int dx1 = x1, dy1 = y1, dx2 = x2, dy2 = y2;
+    if (clipToClipRect(dx1, dy1, dx2, dy2)) {
+        bitBlt(renderBuffer.bufferPointer, nullptr, sx + dx1 - x1, sy + dy1 - y1, dx2 - dx1 + 1, dy2 - dy1 + 1, dx1, dy1, renderBuffer.opacity);
+    }
+}
+
+#if defined(EEZ_SW_BACKDROP_BLUR)
+// Blurred background of the render buffer with backdrop. The blur of the part of
+// the backdrop is not the same as the part of the blurred backdrop (and it is
+// slow), so the background is blurred all at once and the parts redrawn later
+// are taken from here.
+static std::vector<uint32_t> g_blurredBackground[NUM_BUFFERS];
+static bool g_blurredBackgroundValid[NUM_BUFFERS];
+#endif
+
+static bool isBufferBackgroundChanged(int bufferIndex, int x, int y, int width, int height, Rect *backdrop) {
+    const RenderBuffer &renderBuffer = g_renderBuffers[bufferIndex];
+
+    if (g_lastLayersChanged || !renderBuffer.hadBackgroundBelow || bufferIndex >= g_lastNumLayers) {
+        return true;
+    }
+
+    const LayerInfo &lastLayer = g_lastLayers[bufferIndex];
+    if (lastLayer.x != x || lastLayer.y != y || lastLayer.width != width || lastLayer.height != height || lastLayer.hasBackdrop != (backdrop != nullptr)) {
+        return true;
+    }
+
+    for (int i = 0; i < bufferIndex; i++) {
+        const RenderBuffer &below = g_renderBuffers[i];
+
+        // (buffer still being rendered, i.e. the one this buffer is inside of, gets its layer info at the end)
+        if (!below.rendering && !(getLayerInfo(below) == g_lastLayers[i])) {
+            return true;
+        }
+
+        DamageRect damage = below.damage;
+        damage.intersect(below.x, below.y, below.x + below.width - 1, below.y + below.height - 1);
+        if (!damage.isEmpty()) {
+            DamageRect screenDamage;
+            screenDamage.add(damage.x1 + below.xOffset, damage.y1 + below.yOffset, damage.x2 + below.xOffset, damage.y2 + below.yOffset);
+            screenDamage.intersect(x, y, x + width - 1, y + height - 1);
+            if (!screenDamage.isEmpty()) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool setBufferBackgroundBelow(int x, int y, int width, int height, Rect *backdrop) {
+    if (g_currentBufferIndex == -1) {
+        return false;
+    }
+
+    int bufferIndex = g_currentBufferIndex;
+    RenderBuffer &renderBuffer = g_renderBuffers[bufferIndex];
+
+    bool changed = isBufferBackgroundChanged(bufferIndex, x, y, width, height, backdrop);
+
+    renderBuffer.hasBackgroundBelow = true;
+    // also set in endBufferRendering, but it is needed before (see drawBufferBackground)
+    renderBuffer.x = x;
+    renderBuffer.y = y;
+    renderBuffer.width = width;
+    renderBuffer.height = height;
+    renderBuffer.backdrop = backdrop;
+
+#if defined(EEZ_SW_BACKDROP_BLUR)
+    if (changed) {
+        g_blurredBackgroundValid[bufferIndex] = false;
+    }
+#endif
+
+    return changed;
+}
+
+// draws the buffers below and own backdrop, only the part inside the clip rectangle
+static void composeBufferBackground(const RenderBuffer &renderBuffer) {
+    auto savedColor = g_fc;
+    auto savedOpacity = setOpacity(255);
+
+    // compose the buffers below in the same way as in endRendering
+    for (int bufferIndex = 0; bufferIndex < g_currentBufferIndex; bufferIndex++) {
+        composeRenderBuffer(g_renderBuffers[bufferIndex]);
+    }
+
+    // own backdrop is composed (in endRendering) under this buffer, so it must be in the background
+    if (renderBuffer.backdrop) {
+        composeBackdrop(*renderBuffer.backdrop);
+    }
+
+    setOpacity(savedOpacity);
+    g_fc = savedColor;
+}
+
+#if defined(EEZ_SW_BACKDROP_BLUR)
+static void drawBlurredBufferBackground(const RenderBuffer &renderBuffer) {
+    auto &blurredBackground = g_blurredBackground[g_currentBufferIndex];
+    uint32_t *buffer = (uint32_t *)g_renderBuffer;
+
+    int x1 = g_clipRect.x1;
+    int y1 = g_clipRect.y1;
+    int x2 = g_clipRect.x2;
+    int y2 = g_clipRect.y2;
+
+    if (!g_blurredBackgroundValid[g_currentBufferIndex]) {
+        // the whole backdrop is blurred (as in endRendering), so there is no seam at the edge of the buffer,
+        // the part of the buffer outside of its rectangle is not composed so it can be drawn over
+        auto savedClipRect = g_clipRect;
+        resetClipRect();
+        const Rect &backdrop = *renderBuffer.backdrop;
+        intersectClipRect(
+            MIN(backdrop.x, renderBuffer.x),
+            MIN(backdrop.y, renderBuffer.y),
+            MAX(backdrop.x + backdrop.w, renderBuffer.x + renderBuffer.width) - MIN(backdrop.x, renderBuffer.x),
+            MAX(backdrop.y + backdrop.h, renderBuffer.y + renderBuffer.height) - MIN(backdrop.y, renderBuffer.y)
+        );
+        composeBufferBackground(renderBuffer);
+        g_clipRect = savedClipRect;
+
+        // remember the part inside the buffer rectangle
+        blurredBackground.resize(DISPLAY_WIDTH * DISPLAY_HEIGHT);
+        int bx1 = MAX(renderBuffer.x, 0);
+        int by1 = MAX(renderBuffer.y, 0);
+        int bx2 = MIN(renderBuffer.x + renderBuffer.width, (int)DISPLAY_WIDTH) - 1;
+        int by2 = MIN(renderBuffer.y + renderBuffer.height, (int)DISPLAY_HEIGHT) - 1;
+        for (int y = by1; y <= by2; y++) {
+            memcpy(&blurredBackground[y * DISPLAY_WIDTH + bx1], buffer + y * DISPLAY_WIDTH + bx1, (bx2 - bx1 + 1) * sizeof(uint32_t));
+        }
+
+        g_blurredBackgroundValid[g_currentBufferIndex] = true;
+    }
+
+    // only the part inside the buffer rectangle is remembered
+    x1 = MAX(x1, renderBuffer.x);
+    y1 = MAX(y1, renderBuffer.y);
+    x2 = MIN(x2, renderBuffer.x + renderBuffer.width - 1);
+    y2 = MIN(y2, renderBuffer.y + renderBuffer.height - 1);
+    if (x1 > x2 || y1 > y2) {
+        return;
+    }
+
+    addDamage(x1, y1, x2, y2);
+    setDirty();
+
+    for (int y = y1; y <= y2; y++) {
+        memcpy(buffer + y * DISPLAY_WIDTH + x1, &blurredBackground[y * DISPLAY_WIDTH + x1], (x2 - x1 + 1) * sizeof(uint32_t));
+    }
+}
+#endif
+
+void drawBufferBackground(int x1, int y1, int x2, int y2) {
+    if (g_currentBufferIndex == -1) {
+        return;
+    }
+
+    const RenderBuffer &renderBuffer = g_renderBuffers[g_currentBufferIndex];
+    if (!renderBuffer.hasBackgroundBelow) {
+        return;
+    }
+
+    auto savedClipRect = intersectClipRect(x1, y1, x2 - x1 + 1, y2 - y1 + 1);
+
+    if (g_clipRect.x1 <= g_clipRect.x2 && g_clipRect.y1 <= g_clipRect.y2) {
+#if defined(EEZ_SW_BACKDROP_BLUR)
+        if (renderBuffer.backdrop) {
+            drawBlurredBufferBackground(renderBuffer);
+        } else {
+            composeBufferBackground(renderBuffer);
+        }
+#else
+        composeBufferBackground(renderBuffer);
+#endif
+    }
+
+    restoreClipRect(savedClipRect);
+}
+
+// returns false if the buffers to compose are not the same as in the previous frame
+static bool updateLayers() {
+    bool same = g_numBuffersToDraw == g_lastNumLayers;
+
+    for (int bufferIndex = 0; bufferIndex < g_numBuffersToDraw; bufferIndex++) {
+        RenderBuffer &renderBuffer = g_renderBuffers[bufferIndex];
+
+        LayerInfo layer = getLayerInfo(renderBuffer);
+
+        if (same && !(layer == g_lastLayers[bufferIndex])) {
+            same = false;
+        }
+        g_lastLayers[bufferIndex] = layer;
+    }
+
+    g_lastNumLayers = g_numBuffersToDraw;
+
+    return same;
 }
 
 void endRendering() {
     setBufferPointer(g_mainBufferPointer);
 
+    resetClipRect();
+
+    // composing below is not a source of damage
+    g_damage = nullptr;
+
+    // when set, the whole frame is composed (and transferred to the screen)
+    bool fullDamage = false;
+
 #if OPTION_KEYBOARD
     if (keyboard::isDisplayDirty()) {
     	setDirty();
+        fullDamage = true;
     }
 #endif
 
 #if OPTION_MOUSE
     if (mouse::isDisplayDirty()) {
     	setDirty();
+        fullDamage = true;
     }
 #endif
 
 #if defined(GUI_CALC_FPS)
     if (g_drawFpsGraphEnabled) {
 	    setDirty();
+        fullDamage = true;
     }
 #endif
 
-    if (isDirty()) {
-        for (int bufferIndex = 0; bufferIndex < g_numBuffersToDraw; bufferIndex++) {
-            RenderBuffer &renderBuffer = g_renderBuffers[bufferIndex];
+    g_lastLayersChanged = !updateLayers();
+    if (g_lastLayersChanged) {
+        // page opened/closed, moved or changed opacity
+        setDirty();
+        fullDamage = true;
+    }
 
-            int sx = renderBuffer.x;
-            int sy = renderBuffer.y;
+    // render buffer misses only g_staleDamage compared to the synced buffer,
+    // otherwise (i.e. during animation) we don't know what is in the render buffer
+    bool isRenderBufferTracked = g_syncedBuffer != g_renderBuffer && (g_syncedBuffer == g_renderBuffer1 || g_syncedBuffer == g_renderBuffer2);
 
-            int x1 = renderBuffer.x + renderBuffer.xOffset;
-            int y1 = renderBuffer.y + renderBuffer.yOffset;
-            int x2 = x1 + renderBuffer.width - 1;
-            int y2 = y1 + renderBuffer.height - 1;
-
-            if (renderBuffer.backdrop) {
-#if 0 && defined(EEZ_NEMA_GFX)
-                blurBackdrop(renderBuffer.backdrop->x, renderBuffer.backdrop->y, renderBuffer.backdrop->w, renderBuffer.backdrop->h);
-#else
-                // opacity backdrop
-                auto savedOpacity = setOpacity(CONF_BACKDROP_OPACITY);
-                setColor(EEZ_COLOR_ID_BACKDROP);
-                fillRect(renderBuffer.backdrop->x, renderBuffer.backdrop->y, renderBuffer.backdrop->x + renderBuffer.backdrop->w - 1, renderBuffer.backdrop->y + renderBuffer.backdrop->h - 1);
-                setOpacity(savedOpacity);
+#if !EEZ_DAMAGE_TRACKING
+    fullDamage = true;
 #endif
+
+    if (isDirty()) {
+        // part of the frame changed by this frame's drawing
+        DamageRect frameDamage;
+
+        if (fullDamage || !isRenderBufferTracked) {
+            frameDamage.setFull();
+        } else {
+            frameDamage = g_mainDamage;
+
+            for (int bufferIndex = 0; bufferIndex < g_numBuffersToDraw; bufferIndex++) {
+                RenderBuffer &renderBuffer = g_renderBuffers[bufferIndex];
+
+                if (renderBuffer.backdrop) {
+                    // blurred backdrop depends on everything below it
+                    frameDamage.setFull();
+                    break;
+                }
+
+                // only the part of the buffer inside the composed rectangle is visible
+                DamageRect damage = renderBuffer.damage;
+                damage.intersect(renderBuffer.x, renderBuffer.y, renderBuffer.x + renderBuffer.width - 1, renderBuffer.y + renderBuffer.height - 1);
+                if (!damage.isEmpty()) {
+                    frameDamage.add(
+                        damage.x1 + renderBuffer.xOffset, damage.y1 + renderBuffer.yOffset,
+                        damage.x2 + renderBuffer.xOffset, damage.y2 + renderBuffer.yOffset
+                    );
+                }
             }
 
-            if (renderBuffer.withShadow) {
-                drawShadow(x1, y1, x2, y2);
-            }
-
-            bitBlt(g_renderBuffers[bufferIndex].bufferPointer, nullptr, sx, sy, x2 - x1 + 1, y2 - y1 + 1, x1, y1, renderBuffer.opacity);
+            frameDamage.intersect(0, 0, getDisplayWidth() - 1, getDisplayHeight() - 1);
         }
+
+        // compose also the part this render buffer misses from the previous frame(s)
+        DamageRect composeDamage = frameDamage;
+        composeDamage.add(g_staleDamage);
+        composeDamage.intersect(0, 0, getDisplayWidth() - 1, getDisplayHeight() - 1);
+
+        if (!composeDamage.isEmpty()) {
+            g_clipRect.x1 = composeDamage.x1;
+            g_clipRect.y1 = composeDamage.y1;
+            g_clipRect.x2 = composeDamage.x2;
+            g_clipRect.y2 = composeDamage.y2;
+
+            for (int bufferIndex = 0; bufferIndex < g_numBuffersToDraw; bufferIndex++) {
+                composeRenderBuffer(g_renderBuffers[bufferIndex]);
+            }
 
 #if defined(GUI_CALC_FPS)
-        if (g_drawFpsGraphEnabled) {
-            drawFpsGraph(getDisplayWidth() - NUM_FPS_VALUES - 4, 4, NUM_FPS_VALUES, 32, getStyle(STYLE_ID_FPS_GRAPH));
-        }
+            if (g_drawFpsGraphEnabled) {
+                drawFpsGraph(getDisplayWidth() - NUM_FPS_VALUES - 4, 4, NUM_FPS_VALUES, 32, getStyle(EEZ_STYLE_ID_FPS_GRAPH));
+            }
 #endif
 
 #if OPTION_KEYBOARD
-        keyboard::updateDisplay();
+            keyboard::updateDisplay();
 #endif
 
 #if OPTION_MOUSE
-        mouse::updateDisplay();
+            mouse::updateDisplay();
 #endif
-    } else {
-        if (g_syncedBuffer == g_renderBuffer1) {
-            bitBlt(g_renderBuffer1, 0, 0, getDisplayWidth() - 1, getDisplayHeight() - 1);
-        } else if (g_syncedBuffer == g_renderBuffer2) {
-            bitBlt(g_renderBuffer2, 0, 0, getDisplayWidth() - 1, getDisplayHeight() - 1);
+
+            resetClipRect();
         }
+
+#if EEZ_DAMAGE_TRACKING_DEBUG
+        {
+            auto area = [](const DamageRect &r) {
+                return r.isEmpty() ? 0 : (r.x2 - r.x1 + 1) * (r.y2 - r.y1 + 1);
+            };
+            float screenArea = (float)(getDisplayWidth() * getDisplayHeight());
+            printf("damage: frame %5.1f%% (%d,%d %dx%d), composed %5.1f%% (%d,%d %dx%d)%s\n",
+                100.0f * area(frameDamage) / screenArea,
+                frameDamage.x1, frameDamage.y1, frameDamage.x2 - frameDamage.x1 + 1, frameDamage.y2 - frameDamage.y1 + 1,
+                100.0f * area(composeDamage) / screenArea,
+                composeDamage.x1, composeDamage.y1, composeDamage.x2 - composeDamage.x1 + 1, composeDamage.y2 - composeDamage.y1 + 1,
+                fullDamage ? " [full]" : "");
+        }
+#endif
+
+        // the other render buffer (synced buffer) misses this frame's changes
+        g_staleDamage = frameDamage;
+        // (added, not replaced, in case the previous frame was not transferred)
+        g_presentDamage.add(composeDamage);
+    } else {
+        // nothing was drawn, make the render buffer same as the synced buffer
+        // (only the stale part, consecutive idle frames don't need to copy anything)
+        if (isRenderBufferTracked && !g_staleDamage.isEmpty()) {
+            bitBlt(g_syncedBuffer, g_staleDamage.x1, g_staleDamage.y1, g_staleDamage.x2, g_staleDamage.y2);
+            g_staleDamage.clear();
+        }
+        clearDirty();
     }
 }
 
@@ -974,6 +1691,16 @@ void drawFocusFrame(int x, int y, int w, int h) {
 void aggInit(AggDrawing& aggDrawing) {
 	aggDrawing.rbuf.attach((uint8_t *)getBufferPointer(), getDisplayWidth(), getDisplayHeight(), getDisplayWidth() * DISPLAY_BPP / 8);
 	aggDrawing.graphics.attach(aggDrawing.rbuf.buf(), aggDrawing.rbuf.width(), aggDrawing.rbuf.height(), aggDrawing.rbuf.stride());
+
+    // AGG draws directly into the render buffer, somewhere inside the current widget
+    setDirty();
+    int x1 = g_widgetCursor.x - 1;
+    int y1 = g_widgetCursor.y - 1;
+    int x2 = g_widgetCursor.x + g_widgetCursor.w;
+    int y2 = g_widgetCursor.y + g_widgetCursor.h;
+    if (clipToClipRect(x1, y1, x2, y2)) {
+        addDamage(x1, y1, x2, y2);
+    }
 }
 
 void drawRoundedRect(
@@ -1062,15 +1789,18 @@ void fillRoundedRect(
 		uint8_t dest_r, dest_g, dest_b;
 
 		#define DRAW_PIXEL(x, y, c1, a1, c2, a2) \
-			getPixel(x, y, &dest_r, &dest_g, &dest_b); \
-			a1_op = a1 * op; \
-			a2_op = a2 * op; \
-			a3_op = 1 - (a1 + a2); \
-			r1 = (c1)[0] * a1_op + (c2)[0] * a2_op + dest_r * a3_op; \
-			g1 = (c1)[1] * a1_op + (c2)[1] * a2_op + dest_g * a3_op; \
-			b1 = (c1)[2] * a1_op + (c2)[2] * a2_op + dest_b * a3_op; \
-			g_fc = RGB_TO_COLOR((int)r1, (int)g1, (int)b1); \
-			if (clip_x1 == -1 || (x >= clip_x1 && x <= clip_x2 && y >= clip_y1 && y <= clip_y2)) drawPixel(x, y) \
+			if (isInsideClipRect(x, y) && (clip_x1 == -1 || ((x) >= clip_x1 && (x) <= clip_x2 && (y) >= clip_y1 && (y) <= clip_y2))) { \
+				getPixel(x, y, &dest_r, &dest_g, &dest_b); \
+				a1_op = a1 * op; \
+				a2_op = a2 * op; \
+				a3_op = 1 - (a1 + a2); \
+				r1 = (c1)[0] * a1_op + (c2)[0] * a2_op + dest_r * a3_op; \
+				g1 = (c1)[1] * a1_op + (c2)[1] * a2_op + dest_g * a3_op; \
+				b1 = (c1)[2] * a1_op + (c2)[2] * a2_op + dest_b * a3_op; \
+				g_fc = RGB_TO_COLOR((int)r1, (int)g1, (int)b1); \
+				drawPixel(x, y); \
+			} \
+			(void)0 \
 
 		#define DRAW_4(x, y, a1, a2) \
 			DRAW_PIXEL(xc1  + (x)     , yc1 -  (y)     , drawLine ? fc : bc, (a1), bc, (a2)); \
@@ -1145,11 +1875,18 @@ void fillRoundedRect(
 
         auto &graphics = aggDrawing.graphics;
 
+        int cx1 = x1, cy1 = y1, cx2 = x2, cy2 = y2;
         if (clip_x1 != -1) {
-            graphics.clipBox(clip_x1, clip_y1, clip_x2 + 1, clip_y2 + 1);
-        } else {
-            graphics.clipBox(x1, y1, x2 + 1, y2 + 1);
+            cx1 = clip_x1;
+            cy1 = clip_y1;
+            cx2 = clip_x2;
+            cy2 = clip_y2;
         }
+        if (!clipToClipRect(cx1, cy1, cx2, cy2)) {
+            return;
+        }
+        addDamage(cx1, cy1, cx2, cy2);
+        setDirty();
         graphics.masterAlpha(g_opacity / 255.0);
         graphics.translate(x1, y1);
         graphics.lineWidth(lineWidth);
@@ -1165,10 +1902,46 @@ void fillRoundedRect(
         }
         auto w = x2 - x1 + 1;
         auto h = y2 - y1 + 1;
-        graphics.roundedRect(
-            lineWidth / 2.0, lineWidth / 2.0, w - lineWidth, h - lineWidth,
-            rtlx, rtly, rtrx, rtry, rbrx, rbry, rblx, rbly
-        );
+
+        // rasterize the rounded rect only inside (bx1, by1, bx2, by2)
+        auto renderPart = [&](int bx1, int by1, int bx2, int by2) {
+            bx1 = MAX(bx1, cx1);
+            by1 = MAX(by1, cy1);
+            bx2 = MIN(bx2, cx2);
+            by2 = MIN(by2, cy2);
+            if (bx1 <= bx2 && by1 <= by2) {
+                graphics.clipBox(bx1, by1, bx2 + 1, by2 + 1);
+                graphics.roundedRect(
+                    lineWidth / 2.0, lineWidth / 2.0, w - lineWidth, h - lineWidth,
+                    rtlx, rtly, rtrx, rtry, rbrx, rbry, rblx, rbly
+                );
+            }
+        };
+
+        // Rows between the top and bottom corners have straight vertical edges, so there
+        // only the edge strips need AGG and the interior is a plain fill
+        // (bands and strips are generous to include the stroke and antialiasing).
+        int topBand = MAX(rtly, rtry) + 2 * lineWidth + 2;
+        int bottomBand = MAX(rbly, rbry) + 2 * lineWidth + 2;
+        int strip = 2 * lineWidth + 2;
+        if (topBand + bottomBand < h && 2 * strip < w) {
+            int my1 = y1 + topBand;
+            int my2 = y2 - bottomBand;
+
+            renderPart(x1, y1, x2, my1 - 1); // top corners
+            renderPart(x1, my2 + 1, x2, y2); // bottom corners
+            renderPart(x1, my1, x1 + strip - 1, my2); // left edge
+            renderPart(x2 - strip + 1, my1, x2, my2); // right edge
+
+            if (fill) {
+                auto savedColor = g_fc;
+                g_fc = g_bc;
+                fillRect(x1 + strip, my1, x2 - strip, my2, cx1, cy1, cx2, cy2);
+                g_fc = savedColor;
+            }
+        } else {
+            renderPart(x1, y1, x2, y2);
+        }
 
         graphics.translate(-x1, -y1);
         graphics.clipBox(0, 0, aggDrawing.rbuf.width(), aggDrawing.rbuf.height());
@@ -1315,15 +2088,21 @@ void drawStr(const char *text, int textLength, int x, int y, int clip_x1, int cl
 
     drawStrInit();
 
-    if (textLength == -1) {
-        textLength = utf8len(text);
-    }
-
     int xCursor = x;
 
     int i;
 
-    for (i = 0; i < textLength; ++i) {
+    // glyphs are clipped to the given clip rectangle and to the current clip rectangle
+    int glyph_clip_x1 = clip_x1;
+    int glyph_clip_y1 = clip_y1;
+    int glyph_clip_x2 = clip_x2;
+    int glyph_clip_y2 = clip_y2;
+    if (!clipToClipRect(glyph_clip_x1, glyph_clip_y1, glyph_clip_x2, glyph_clip_y2)) {
+        return;
+    }
+
+    // textLength == -1 means zero terminated text
+    for (i = 0; textLength == -1 || i < textLength; ++i) {
         utf8_int32_t encoding;
         text = utf8codepoint(text, &encoding);
         if (!encoding) {
@@ -1348,32 +2127,32 @@ void drawStr(const char *text, int textLength, int x, int y, int clip_x1, int cl
 
             // draw glyph pixels
             int iStartByte = 0;
-            if (x_glyph < clip_x1) {
-                int dx_off = clip_x1 - x_glyph;
+            if (x_glyph < glyph_clip_x1) {
+                int dx_off = glyph_clip_x1 - x_glyph;
                 iStartByte = dx_off;
-                x_glyph = clip_x1;
+                x_glyph = glyph_clip_x1;
             }
 
 			if (iStartByte < glyph->width) {
 				int offset = 0;
 				int glyphHeight = glyph->height;
-				if (y_glyph < clip_y1) {
-					int dy_off = clip_y1 - y_glyph;
+				if (y_glyph < glyph_clip_y1) {
+					int dy_off = glyph_clip_y1 - y_glyph;
 					offset += dy_off * glyph->width;
 					glyphHeight -= dy_off;
-					y_glyph = clip_y1;
+					y_glyph = glyph_clip_y1;
 				}
 
 				int width;
-				if (x_glyph + (glyph->width - iStartByte) - 1 > clip_x2) {
-					width = clip_x2 - x_glyph + 1;
+				if (x_glyph + (glyph->width - iStartByte) - 1 > glyph_clip_x2) {
+					width = glyph_clip_x2 - x_glyph + 1;
 				} else {
 					width = (glyph->width - iStartByte);
 				}
 
 				int height;
-				if (y_glyph + glyphHeight - 1 > clip_y2) {
-					height = clip_y2 - y_glyph + 1;
+				if (y_glyph + glyphHeight - 1 > glyph_clip_y2) {
+					height = glyph_clip_y2 - y_glyph + 1;
 				} else {
 					height = glyphHeight;
 				}
@@ -1464,9 +2243,11 @@ int getCursorXPosition(int cursorPosition, const char *text, int textLength, int
     return x;
 }
 
-#if defined(EEZ_PLATFORM_SIMULATOR) && EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL
 static SDL_Window *g_mainWindow;
 static SDL_Renderer *g_renderer;
+static SDL_Texture *g_texture;
+static bool g_textureInitialized;
 
 // heuristics to find resource file
 std::string getFullPath(std::string category, std::string path) {
@@ -1490,21 +2271,36 @@ static bool g_waitDMA;
 #endif
 
 static void initDriver() {
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL
 
-#if EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
+#if defined(EEZ_PLATFORM_CM5_RASPI) && defined(EEZ_USE_WAYLAND)
+    eez::cm5::initLayerShellDisplay(DISPLAY_WIDTH, DISPLAY_HEIGHT);
+#elif EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        printf("SDL video could not initialize! SDL Error: %s\n", SDL_GetError());
+        return;
+    }
+
     // Set texture filtering to linear
     if (!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1")) {
         printf("Warning: Linear texture filtering not enabled!");
     }
 
     // Create window
+#if defined(EEZ_PLATFORM_CM5_RASPI)
+    g_mainWindow = SDL_CreateWindow(TITLE, 0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, SDL_WINDOW_HIDDEN | SDL_WINDOW_BORDERLESS);
+#else
     g_mainWindow = SDL_CreateWindow(TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, DISPLAY_WIDTH, DISPLAY_HEIGHT, SDL_WINDOW_HIDDEN);
+#endif
 
     if (g_mainWindow == NULL) {
         printf("Window could not be created! SDL Error: %s\n", SDL_GetError());
         return;
     }
+
+// #if defined(EEZ_PLATFORM_CM5_RASPI)
+//     SDL_SetWindowPosition(g_mainWindow, 0, 0);
+// #endif
 
     // Create renderer
     g_renderer = SDL_CreateRenderer(g_mainWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
@@ -1513,6 +2309,18 @@ static void initDriver() {
         printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
         return;
     }
+
+    SDL_RendererInfo rendererInfo;
+    if (SDL_GetRendererInfo(g_renderer, &rendererInfo) == 0) {
+        printf("SDL renderer: %s (%s)\n", rendererInfo.name, (rendererInfo.flags & SDL_RENDERER_PRESENTVSYNC) ? "VSYNC enabled" : "VSYNC unavailable");
+    }
+
+    g_texture = SDL_CreateTexture(g_renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+    if (g_texture == NULL) {
+        printf("Streaming texture could not be created! SDL Error: %s\n", SDL_GetError());
+        return;
+    }
+    SDL_SetTextureBlendMode(g_texture, SDL_BLENDMODE_NONE);
 
     SDL_SetRenderDrawBlendMode(g_renderer, SDL_BLENDMODE_BLEND);
 
@@ -1525,7 +2333,7 @@ static void initDriver() {
         // Set icon
         SDL_Surface *iconSurface = IMG_Load(getFullPath("images", ICON).c_str());
         if (!iconSurface) {
-            printf("Failed to load icon! SDL Error: %s\n", SDL_GetError());
+            printf("Warning: Failed to load icon! SDL Error: %s\n", SDL_GetError());
         } else {
             SDL_SetWindowIcon(g_mainWindow, iconSurface);
             SDL_FreeSurface(iconSurface);
@@ -1555,30 +2363,59 @@ static void initDriver() {
 }
 
 static void syncBuffer() {
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL
 
-#if EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
-    if (!g_mainWindow) {
+#if defined(EEZ_PLATFORM_CM5_RASPI) && defined(EEZ_USE_WAYLAND)
+    static bool g_presented;
+    static uint32_t g_lastPresentTime;
+    if (!g_presented) {
+        g_presentDamage.setFull();
+    }
+    if (!g_presentDamage.isEmpty()) {
+        // blocks until the compositor releases the previous frame, which paces the GUI thread
+        eez::cm5::presentLayerShellDisplay(
+            (const uint32_t *)g_syncedBuffer, DISPLAY_WIDTH, DISPLAY_HEIGHT,
+            g_presentDamage.x1, g_presentDamage.y1,
+            g_presentDamage.x2 - g_presentDamage.x1 + 1, g_presentDamage.y2 - g_presentDamage.y1 + 1
+        );
+        g_presentDamage.clear();
+        g_presented = true;
+        g_lastPresentTime = millis();
+    } else {
+        // nothing changed: compositor keeps showing the last frame,
+        // skip the full frame copy and commit, but keep the ~60 Hz pacing
+        const uint32_t FRAME_TIME_MS = 16;
+        uint32_t elapsed = millis() - g_lastPresentTime;
+        if (elapsed < FRAME_TIME_MS) {
+            osDelay(FRAME_TIME_MS - elapsed);
+        }
+        g_lastPresentTime = millis();
+    }
+#elif EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
+    if (!g_mainWindow || !g_texture) {
 		return;
     }
 
-    SDL_Surface *rgbSurface = SDL_CreateRGBSurfaceFrom(
-        (uint32_t *)g_syncedBuffer, DISPLAY_WIDTH, DISPLAY_HEIGHT, 32, 4 * DISPLAY_WIDTH, 0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000);
-    if (rgbSurface != NULL) {
-        SDL_Texture *texture = SDL_CreateTextureFromSurface(g_renderer, rgbSurface);
-        if (texture != NULL) {
-            SDL_Rect srcRect = { 0, 0, (int)DISPLAY_WIDTH, (int)DISPLAY_HEIGHT };
-            SDL_Rect dstRect = { 0, 0, (int)DISPLAY_WIDTH, (int)DISPLAY_HEIGHT };
-
-            SDL_RenderCopyEx(g_renderer, texture, &srcRect, &dstRect, 0.0, NULL, SDL_FLIP_NONE);
-
-            SDL_DestroyTexture(texture);
+    if (!g_textureInitialized) {
+        g_presentDamage.setFull();
+    }
+    if (!g_presentDamage.isEmpty()) {
+        // upload only the changed part of the frame
+        SDL_Rect rect = {
+            g_presentDamage.x1, g_presentDamage.y1,
+            g_presentDamage.x2 - g_presentDamage.x1 + 1, g_presentDamage.y2 - g_presentDamage.y1 + 1
+        };
+        const uint32_t *pixels = g_syncedBuffer + g_presentDamage.y1 * DISPLAY_WIDTH + g_presentDamage.x1;
+        if (SDL_UpdateTexture(g_texture, &rect, pixels, DISPLAY_WIDTH * sizeof(uint32_t)) == 0) {
+            g_textureInitialized = true;
+            g_presentDamage.clear();
         } else {
-            printf("Unable to create texture from image buffer! SDL Error: %s\n", SDL_GetError());
+            printf("Unable to update streaming texture! SDL Error: %s\n", SDL_GetError());
         }
-        SDL_FreeSurface(rgbSurface);
-    } else {
-        printf("Unable to render text surface! SDL Error: %s\n", SDL_GetError());
+    }
+
+    if (g_textureInitialized && SDL_RenderCopy(g_renderer, g_texture, nullptr, nullptr) != 0) {
+        printf("Unable to render streaming texture! SDL Error: %s\n", SDL_GetError());
     }
     SDL_RenderPresent(g_renderer);
 #endif
@@ -1599,7 +2436,6 @@ static void syncBuffer() {
 #endif
     static const uint32_t LINE_INTERRUPT_POSITION = (LTDC->AWCR & 0x7FF) - 1;
     HAL_LTDC_ProgramLineEvent(&hltdc, LINE_INTERRUPT_POSITION);
-
 #endif
 }    
 
@@ -1608,7 +2444,7 @@ static void bitBltRGB888(uint16_t *src, uint8_t *dst, int x, int y, int width, i
 #endif
 
 static void copySyncedBufferToScreenshotBuffer() {
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL
 
     auto appContext = getAppContextFromId(APP_CONTEXT_ID_DEVICE);
     uint8_t *src = (uint8_t *)(g_renderBuffer + appContext->rect.y * DISPLAY_WIDTH + appContext->rect.x);
@@ -1852,8 +2688,8 @@ void bitBlt(uint16_t *src, uint16_t *dst, int x, int y, int width, int height, i
 #endif
 
 void getPixel(int x, int y, uint8_t *r, uint8_t *g, uint8_t *b) {
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
-    uint8_t *dest = (uint8_t *)(g_renderBuffer + y * DISPLAY_WIDTH + x);
+#if EEZ_USE_SDL
+    uint8_t *dest = (uint8_t *)(g_renderBuffer + y * (int)DISPLAY_WIDTH + x);
     *r = dest[0];
     *g = dest[1];
     *b = dest[2];
@@ -1876,7 +2712,7 @@ void getPixel(int x, int y, uint8_t *r, uint8_t *g, uint8_t *b) {
 
 
 void startPixelsDraw() {
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL
 #endif
 
 #if defined(EEZ_PLATFORM_STM32)
@@ -1885,8 +2721,14 @@ void startPixelsDraw() {
 }
 
 void drawPixel(int x, int y) {
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
-    *(g_renderBuffer + y * DISPLAY_WIDTH + x) = g_fc;
+    if (!isInsideClipRect(x, y)) {
+        return;
+    }
+
+#if EEZ_USE_SDL
+    *(g_renderBuffer + y * (int)DISPLAY_WIDTH + x) = g_fc;
+    addDamage(x, y, x, y);
+    setDirty();
 #endif
 
 #if defined(EEZ_PLATFORM_STM32)
@@ -1905,12 +2747,17 @@ void drawPixel(int x, int y) {
 }
 
 void drawPixel(int x, int y, uint8_t opacity) {
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
-    auto dest = g_renderBuffer + y * DISPLAY_WIDTH + x;
+    if (!isInsideClipRect(x, y)) {
+        return;
+    }
 
-    uint32_t srcColor = (g_fc & 0x00FFFFFF) | (opacity << 24);
-    uint32_t dstColor = (*dest & 0x00FFFFFF) | ((255 - opacity) << 24);
-    *dest = blendColor(srcColor, dstColor);
+#if EEZ_USE_SDL
+    auto dest = g_renderBuffer + y * (int)DISPLAY_WIDTH + x;
+
+    // draw g_fc with the given opacity over the (opaque) pixel
+    *dest = blendColor((g_fc & 0x00FFFFFF) | ((uint32_t)opacity << 24), *dest);
+    addDamage(x, y, x, y);
+    setDirty();
 #endif
 
 #if defined(EEZ_PLATFORM_STM32)
@@ -1946,28 +2793,25 @@ void endPixelsDraw() {
 }
 
 void fillRect(int x1, int y1, int x2, int y2) {
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
-	uint32_t *dst = g_renderBuffer + y1 * DISPLAY_WIDTH + x1;
+    if (!clipToClipRect(x1, y1, x2, y2)) {
+        return;
+    }
+
+    addDamage(x1, y1, x2, y2);
+
+#if EEZ_USE_SDL
+	uint32_t *dst = g_renderBuffer + y1 * (int)DISPLAY_WIDTH + x1;
     int width = x2 - x1 + 1;
-    if (width <= 0) {
-        return;
-    }
     int height = y2 - y1 + 1;
-    if (height <= 0) {
-        return;
-    }
-    int nl = DISPLAY_WIDTH - width;
     if (g_opacity == 255) {
-        for (uint32_t *dstEnd = dst + height * DISPLAY_WIDTH; dst != dstEnd; dst += nl) {
-            for (uint32_t *lineEnd = dst + width; dst != lineEnd; dst++) {
-                *dst = g_fc;
-            }
+        for (int y = 0; y < height; y++, dst += DISPLAY_WIDTH) {
+            std::fill_n(dst, width, g_fc);
         }
-    } else {
+    } else if (g_opacity != 0) {
         uint32_t fc = (g_fc & 0x00FFFFFF) | (g_opacity << 24);
-        for (uint32_t *dstEnd = dst + height * DISPLAY_WIDTH; dst != dstEnd; dst += nl) {
-            for (uint32_t *lineEnd = dst + width; dst != lineEnd; dst++) {
-                *dst = blendColor(fc, *dst);
+        for (int y = 0; y < height; y++, dst += DISPLAY_WIDTH) {
+            for (int x = 0; x < width; x++) {
+                dst[x] = blendColor(fc, dst[x]);
             }
         }
     }
@@ -1991,14 +2835,18 @@ void fillRect(int x1, int y1, int x2, int y2) {
 }
 
 void fillRect(void *dstBuffer, int x1, int y1, int x2, int y2) {
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
-    uint32_t *dst = (uint32_t *)dstBuffer + y1 * DISPLAY_WIDTH + x1;
-    int nl = DISPLAY_WIDTH - (x2 - x1 + 1);
-    for (int y = y1; y <= y2; y++) {
-        for (int x = x1; x <= x2; x++) {
-            *dst++ = g_fc;
+    if (dstBuffer == g_renderBuffer) {
+        addDamage(x1, y1, x2, y2);
+    }
+
+#if EEZ_USE_SDL
+    uint32_t *dst = (uint32_t *)dstBuffer + y1 * (int)DISPLAY_WIDTH + x1;
+    int width = x2 - x1 + 1;
+    if (width > 0) {
+        for (int y = y1; y <= y2; y++) {
+            std::fill_n(dst, width, g_fc);
+            dst += DISPLAY_WIDTH;
         }
-        dst += nl;
     }
 #endif
 
@@ -2010,17 +2858,38 @@ void fillRect(void *dstBuffer, int x1, int y1, int x2, int y2) {
 }
 
 void bitBlt(int x1, int y1, int x2, int y2, int dstx, int dsty) {
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
+    // clip destination rectangle and move source rectangle along
+    int dx1 = dstx;
+    int dy1 = dsty;
+    int dx2 = dstx + x2 - x1;
+    int dy2 = dsty + y2 - y1;
+    if (!clipToClipRect(dx1, dy1, dx2, dy2)) {
+        return;
+    }
+    x1 += dx1 - dstx;
+    y1 += dy1 - dsty;
+    x2 = x1 + dx2 - dx1;
+    y2 = y1 + dy2 - dy1;
+    dstx = dx1;
+    dsty = dy1;
+
+    addDamage(dx1, dy1, dx2, dy2);
+
+#if EEZ_USE_SDL
     int width = x2 - x1 + 1;
+    int height = y2 - y1 + 1;
 
-    uint32_t *src = g_renderBuffer + y1 * DISPLAY_WIDTH + x1;
-    uint32_t *dst = g_renderBuffer + dsty * DISPLAY_WIDTH + dstx;
-    int nl = DISPLAY_WIDTH - width;
+    // source and destination are in the same buffer and can overlap,
+    // so copy rows bottom-up when moving down and use memmove within a row
+    int rowStep = dsty > y1 ? -(int)DISPLAY_WIDTH : (int)DISPLAY_WIDTH;
+    int firstRow = dsty > y1 ? height - 1 : 0;
+    uint32_t *src = g_renderBuffer + (y1 + firstRow) * (int)DISPLAY_WIDTH + x1;
+    uint32_t *dst = g_renderBuffer + (dsty + firstRow) * (int)DISPLAY_WIDTH + dstx;
 
-    for (int y = y1; y <= y2; y++, src += nl, dst += nl) {
-        for (uint32_t *lineEnd = dst + width; dst != lineEnd; dst++, src++) {
-            uint8_t *src8 = (uint8_t *)src;
-            *dst = RGB_TO_COLOR(src8[0], src8[1], src8[2]);
+    for (int y = 0; y < height; y++, src += rowStep, dst += rowStep) {
+        memmove(dst, src, width * sizeof(uint32_t));
+        for (int x = 0; x < width; x++) {
+            dst[x] |= 0xFF000000;
         }
     }
 #endif
@@ -2038,11 +2907,21 @@ void bitBlt(void *src, int x1, int y1, int x2, int y2) {
 }
 
 void bitBlt(void *src, void *dst, int x1, int y1, int x2, int y2) {
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
-    for (int y = y1; y <= y2; ++y) {
-        for (int x = x1; x <= x2; ++x) {
-            int i = y * DISPLAY_WIDTH + x;
-            ((uint32_t *)dst)[i] = ((uint32_t *)src)[i];
+    if (dst == g_renderBuffer) {
+        addDamage(x1, y1, x2, y2);
+    }
+
+#if EEZ_USE_SDL
+    if (src != dst) {
+        int width = x2 - x1 + 1;
+        if (width > 0) {
+            uint32_t *srcRow = (uint32_t *)src + y1 * (int)DISPLAY_WIDTH + x1;
+            uint32_t *dstRow = (uint32_t *)dst + y1 * (int)DISPLAY_WIDTH + x1;
+            for (int y = y1; y <= y2; y++) {
+                memcpy(dstRow, srcRow, width * sizeof(uint32_t));
+                srcRow += DISPLAY_WIDTH;
+                dstRow += DISPLAY_WIDTH;
+            }
         }
     }
 #endif
@@ -2059,22 +2938,29 @@ void bitBlt(void *src, void *dst, int sx, int sy, int sw, int sh, int dx, int dy
         dst = g_renderBuffer;
     }
 
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
-    if (opacity == 255) {
-        for (int y = 0; y < sh; ++y) {
-            for (int x = 0; x < sw; ++x) {
-                ((uint32_t *)dst)[(dy + y) * DISPLAY_WIDTH + dx + x] = ((uint32_t *)src)[(sy + y) * DISPLAY_WIDTH + sx + x];
+    if (dst == g_renderBuffer) {
+        addDamage(dx, dy, dx + sw - 1, dy + sh - 1);
+    }
+
+#if EEZ_USE_SDL
+    if (sw > 0 && sh > 0 && opacity != 0 && !(src == dst && sx == dx && sy == dy)) {
+        // when copying within the same buffer, go bottom-up if moving down so the rows don't overlap
+        bool bottomUp = src == dst && dy > sy;
+        int rowStep = bottomUp ? -(int)DISPLAY_WIDTH : (int)DISPLAY_WIDTH;
+        int firstRow = bottomUp ? sh - 1 : 0;
+        const uint32_t *srcRow = (const uint32_t *)src + (sy + firstRow) * (int)DISPLAY_WIDTH + sx;
+        uint32_t *dstRow = (uint32_t *)dst + (dy + firstRow) * (int)DISPLAY_WIDTH + dx;
+
+        if (opacity == 255) {
+            for (int y = 0; y < sh; y++, srcRow += rowStep, dstRow += rowStep) {
+                memmove(dstRow, srcRow, sw * sizeof(uint32_t));
             }
-        }
-    } else {
-        for (int y = 0; y < sh; ++y) {
-            for (int x = 0; x < sw; ++x) {
-                uint8_t *p = (uint8_t *)&((uint32_t *)src)[(sy + y) * DISPLAY_WIDTH + sx + x];
-                p[3] = opacity;
-                ((uint32_t *)dst)[(dy + y) * DISPLAY_WIDTH + dx + x] = blendColor(
-                    ((uint32_t *)src)[(sy + y) * DISPLAY_WIDTH + sx + x],
-                    ((uint32_t *)dst)[(dy + y) * DISPLAY_WIDTH + dx + x]
-                );
+        } else {
+            uint32_t alpha = (uint32_t)opacity << 24;
+            for (int y = 0; y < sh; y++, srcRow += rowStep, dstRow += rowStep) {
+                for (int x = 0; x < sw; x++) {
+                    dstRow[x] = blendColor((srcRow[x] & 0x00FFFFFF) | alpha, dstRow[x]);
+                }
             }
         }
     }
@@ -2127,22 +3013,51 @@ void bitBlt(void *src, void *dst, int sx, int sy, int sw, int sh, int dx, int dy
 }
 
 void drawBitmap(Image *image, int x, int y) {
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
-    uint32_t *dst = g_renderBuffer + y * DISPLAY_WIDTH + x;
+    int x1 = x;
+    int y1 = y;
+    int x2 = x + (int)image->width - 1;
+    int y2 = y + (int)image->height - 1;
+    if (!clipToClipRect(x1, y1, x2, y2)) {
+        return;
+    }
+
+    Image clippedImage;
+    if (x1 != x || y1 != y || x2 != x + (int)image->width - 1 || y2 != y + (int)image->height - 1) {
+        // draw only the visible part of the image
+        int bytesPerPixel = image->bpp / 8;
+        clippedImage.width = x2 - x1 + 1;
+        clippedImage.height = y2 - y1 + 1;
+        clippedImage.bpp = image->bpp;
+        clippedImage.lineOffset = image->lineOffset + (image->width - clippedImage.width);
+        clippedImage.pixels = image->pixels + ((y1 - y) * (image->width + image->lineOffset) + (x1 - x)) * bytesPerPixel;
+        image = &clippedImage;
+        x = x1;
+        y = y1;
+    }
+
+    addDamage(x1, y1, x2, y2);
+
+#if EEZ_USE_SDL
+    uint32_t *dst = g_renderBuffer + y * (int)DISPLAY_WIDTH + x;
     int nlDst = DISPLAY_WIDTH - image->width;
 
     if (image->bpp == 32) {
         uint32_t *src = (uint32_t *)image->pixels;
         int nlSrc = image->lineOffset;
 
-        uint32_t pixel;
-        uint8_t *pixelAlpha = ((uint8_t *)&pixel) + 3;
+        uint32_t opacity = g_opacity;
 
         for (uint32_t *srcEnd = src + (image->width + nlSrc) * image->height; src != srcEnd; src += nlSrc, dst += nlDst) {
-            for (uint32_t *lineEnd = dst + image->width; dst != lineEnd; src++, dst++) {
-                pixel = *src;
-                *pixelAlpha = *pixelAlpha * g_opacity / 255;
-                *dst = blendColor(pixel, *dst);
+            if (opacity == 255) {
+                for (uint32_t *lineEnd = dst + image->width; dst != lineEnd; src++, dst++) {
+                    *dst = blendColor(*src, *dst);
+                }
+            } else {
+                for (uint32_t *lineEnd = dst + image->width; dst != lineEnd; src++, dst++) {
+                    uint32_t pixel = *src;
+                    uint32_t alpha = (pixel >> 24) * opacity / 255;
+                    *dst = blendColor((pixel & 0x00FFFFFF) | (alpha << 24), *dst);
+                }
             }
         }
     } else if (image->bpp == 24) {
@@ -2151,10 +3066,7 @@ void drawBitmap(Image *image, int x, int y) {
 
         for (uint8_t *srcEnd = src + 3 * (image->width + nlSrc) * image->height; src != srcEnd; src += nlSrc, dst += nlDst) {
             for (uint32_t *lineEnd = dst + image->width; dst != lineEnd; src += 3, dst++) {
-                ((uint8_t *)dst)[0] = ((uint8_t *)src)[0];
-                ((uint8_t *)dst)[1] = ((uint8_t *)src)[1];
-                ((uint8_t *)dst)[2] = ((uint8_t *)src)[2];
-                ((uint8_t *)dst)[3] = 255;
+                *dst = 0xFF000000 | src[0] | (src[1] << 8) | (src[2] << 16);
             }
         }
     } else {
@@ -2177,7 +3089,7 @@ void drawBitmap(Image *image, int x, int y) {
 }
 
 static void drawStrInit() {
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL
 #endif
 
 #if defined(EEZ_PLATFORM_STM32)
@@ -2217,28 +3129,27 @@ static void drawStrInit() {
 }
 
 static void drawGlyph(const uint8_t *src, uint32_t srcLineOffset, int x_glyph, int y_glyph, int width, int height) {
-#if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
+    addDamage(x_glyph, y_glyph, x_glyph + width - 1, y_glyph + height - 1);
+
+#if EEZ_USE_SDL
     // glyph->pixels + offset + iStartByte, glyph->width - width, x_glyph, y_glyph, width,height
     // const gui::GlyphData &glyph, int x_glyph, int y_glyph, int width, int height, int offset, int iStartByte
 
-    uint32_t pixel;
-    ((uint8_t *)&pixel)[0] = COLOR_TO_R(g_fc);
-    ((uint8_t *)&pixel)[1] = COLOR_TO_G(g_fc);
-    ((uint8_t *)&pixel)[2] = COLOR_TO_B(g_fc);
-    uint8_t *pixelAlpha = ((uint8_t *)&pixel) + 3;
+    uint32_t color = g_fc & 0x00FFFFFF;
+    uint32_t opacity = g_opacity;
 
-    uint32_t *dst = g_renderBuffer + y_glyph * DISPLAY_WIDTH + x_glyph;
-    int nlDst = DISPLAY_WIDTH - width;
+    uint32_t *dst = g_renderBuffer + y_glyph * (int)DISPLAY_WIDTH + x_glyph;
 
-    for (int y = 0; y < height; y++) {
+    for (int y = 0; y < height; y++, src += width + srcLineOffset, dst += DISPLAY_WIDTH) {
         for (int x = 0; x < width; x++) {
-            *pixelAlpha = *src * g_opacity / 255;
-            *dst = blendColor(pixel, *dst);
-            src++;
-            dst++;
+            uint32_t alpha = src[x];
+            if (alpha) {
+                if (opacity != 255) {
+                    alpha = alpha * opacity / 255;
+                }
+                dst[x] = blendColor(color | (alpha << 24), dst[x]);
+            }
         }
-        src += srcLineOffset;
-        dst += nlDst;
     }
 #endif
 
@@ -2258,6 +3169,14 @@ static void drawGlyph(const uint8_t *src, uint32_t srcLineOffset, int x_glyph, i
 
 void markRenderBufferDirty(void) {
     g_dirty = true;
+}
+
+bool isRenderBufferDirty(void) {
+    return g_dirty;
+}
+
+void clearRenderBufferDirty(void) {
+    g_dirty = false;
 }
 
 } // namespace display
