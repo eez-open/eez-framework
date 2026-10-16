@@ -56,7 +56,9 @@
 // compose and transfer to the screen only the changed part of the frame
 #define EEZ_DAMAGE_TRACKING 1
 // print composed damage rectangle (and its share of the screen) for every dirty frame
+#if !defined(__EMSCRIPTEN__)
 #define EEZ_DAMAGE_TRACKING_DEBUG 1
+#endif
 #endif
 
 #if defined(EEZ_PLATFORM_STM32)
@@ -75,9 +77,11 @@ extern "C" DMA2D_HandleTypeDef hdma2d_eval;
 #endif
 
 #if EEZ_USE_SDL
+#include <string>
+#if !defined(__EMSCRIPTEN__)
 #include <SDL.h>
 #include <SDL_image.h>
-#include <string>
+#endif
 #endif
 
 #if defined(EEZ_PLATFORM_CM5_RASPI) && defined(EEZ_USE_WAYLAND)
@@ -242,9 +246,9 @@ static DamageRect *g_damage;
 // drawn directly into the main render buffer in this frame
 static DamageRect g_mainDamage;
 // where the render buffer to be drawn next is stale compared to the synced buffer
-static DamageRect g_staleDamage = { 0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1 };
+static DamageRect g_staleDamage = { 0, 0, (int)DISPLAY_WIDTH - 1, (int)DISPLAY_HEIGHT - 1 };
 // part of the synced buffer that must be transferred to the screen
-static DamageRect g_presentDamage = { 0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1 };
+static DamageRect g_presentDamage = { 0, 0, (int)DISPLAY_WIDTH - 1, (int)DISPLAY_HEIGHT - 1 };
 
 // innermost active damage probe
 static DamageProbe *g_damageProbe;
@@ -995,7 +999,7 @@ void endBufferRendering(int bufferIndex, int x, int y, int width, int height, bo
     renderBuffer.rendering = false;
 }
 
-static ClipRect g_clipRect = { 0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1 };
+static ClipRect g_clipRect = { 0, 0, (int)DISPLAY_WIDTH - 1, (int)DISPLAY_HEIGHT - 1 };
 
 static void resetClipRect() {
     g_clipRect.x1 = 0;
@@ -2244,10 +2248,12 @@ int getCursorXPosition(int cursorPosition, const char *text, int textLength, int
 }
 
 #if EEZ_USE_SDL
+#if !defined(__EMSCRIPTEN__)
 static SDL_Window *g_mainWindow;
 static SDL_Renderer *g_renderer;
 static SDL_Texture *g_texture;
 static bool g_textureInitialized;
+#endif
 
 // heuristics to find resource file
 std::string getFullPath(std::string category, std::string path) {
