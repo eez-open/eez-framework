@@ -28,7 +28,7 @@ void free(void *ptr);
 template<class T> struct ObjectAllocator {
 	static T *allocate(uint32_t id) {
 		auto ptr = alloc(sizeof(T), id);
-		return new (ptr) T;
+		return ptr ? new (ptr) T : nullptr;
 	}
 	static void deallocate(T* ptr) {
 		if (ptr) {

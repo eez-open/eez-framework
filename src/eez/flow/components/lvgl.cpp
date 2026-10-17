@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <eez/core/os.h>
+#include <eez/core/alloc.h>
 
 #include <eez/flow/components.h>
 #include <eez/flow/flow_defs_v3.h>
@@ -510,7 +511,12 @@ const char *getFullObjectName(FlowState *flowState, const char *objectName) {
         return; \
     }\
     propIndex++; \
-    const char *NAME = NAME##Value.toString(0xe42b3ca2).getString();
+    Value NAME##StringValue = NAME##Value.toString(0xe42b3ca2); \
+    const char *NAME = NAME##StringValue.getString(); \
+    if (!NAME) { \
+        throwError(flowState, componentIndex, FlowError::PropertyInAction(#NAME, actionName, actionIndex)); \
+        return; \
+    }
 
 #define SCREEN_PROP(NAME) \
     Value NAME##Value; \
@@ -1217,6 +1223,207 @@ ACTION_END
 
 ////////////////////////////////////////////////////////////////////////////////
 
+ACTION_START(textareaGetText)
+    WIDGET_PROP(obj);
+    if (!lv_obj_check_type(obj, &lv_textarea_class)) {
+        throwError(flowState, componentIndex, FlowError::Plain("Expected a Textarea widget"));
+        return;
+    }
+    const char *text = lv_textarea_get_text(obj);
+    Value textCopy = Value::makeStringRef(text ? text : "", -1, 0x6f2c01a1);
+    if (!textCopy.isString()) {
+        throwError(flowState, componentIndex, FlowError::Plain("Failed to copy textarea text"));
+        return;
+    }
+    RESULT(result, textCopy);
+ACTION_END
+
+ACTION_START(textareaSetText)
+    WIDGET_PROP(obj);
+    if (!lv_obj_check_type(obj, &lv_textarea_class)) {
+        throwError(flowState, componentIndex, FlowError::Plain("Expected a Textarea widget"));
+        return;
+    }
+    STR_PROP(text);
+    lv_textarea_set_text(obj, text);
+ACTION_END
+
+ACTION_START(textareaSetOneLine)
+    WIDGET_PROP(obj);
+    if (!lv_obj_check_type(obj, &lv_textarea_class)) {
+        throwError(flowState, componentIndex, FlowError::Plain("Expected a Textarea widget"));
+        return;
+    }
+    BOOL_PROP(enabled);
+    lv_textarea_set_one_line(obj, enabled ? true : false);
+ACTION_END
+
+ACTION_START(textareaSetPasswordMode)
+    WIDGET_PROP(obj);
+    if (!lv_obj_check_type(obj, &lv_textarea_class)) {
+        throwError(flowState, componentIndex, FlowError::Plain("Expected a Textarea widget"));
+        return;
+    }
+    BOOL_PROP(enabled);
+    lv_textarea_set_password_mode(obj, enabled ? true : false);
+ACTION_END
+
+ACTION_START(textareaSetPasswordBullet)
+    WIDGET_PROP(obj);
+    if (!lv_obj_check_type(obj, &lv_textarea_class)) {
+        throwError(flowState, componentIndex, FlowError::Plain("Expected a Textarea widget"));
+        return;
+    }
+    STR_PROP(bullet);
+    lv_textarea_set_password_bullet(obj, bullet);
+ACTION_END
+
+ACTION_START(textareaSetPlaceholderText)
+    WIDGET_PROP(obj);
+    if (!lv_obj_check_type(obj, &lv_textarea_class)) {
+        throwError(flowState, componentIndex, FlowError::Plain("Expected a Textarea widget"));
+        return;
+    }
+    STR_PROP(text);
+    lv_textarea_set_placeholder_text(obj, text);
+ACTION_END
+
+ACTION_START(buttonMatrixGetSelectedButton)
+    WIDGET_PROP(obj);
+#if LVGL_VERSION_MAJOR >= 9
+    if (!lv_obj_check_type(obj, &lv_buttonmatrix_class)) {
+#else
+    if (!lv_obj_check_type(obj, &lv_btnmatrix_class)) {
+#endif
+        throwError(flowState, componentIndex, FlowError::Plain("Expected a ButtonMatrix widget"));
+        return;
+    }
+#if LVGL_VERSION_MAJOR >= 9
+    uint32_t selectedButton = lv_buttonmatrix_get_selected_button(obj);
+#else
+    uint32_t selectedButton = (uint32_t)lv_btnmatrix_get_selected_btn(obj);
+#endif
+    RESULT(result, Value((int)selectedButton, VALUE_TYPE_INT32));
+ACTION_END
+
+////////////////////////////////////////////////////////////////////////////////
+
+ACTION_START(buttonMatrixGetButtonText)
+    WIDGET_PROP(obj);
+#if LVGL_VERSION_MAJOR >= 9
+    if (!lv_obj_check_type(obj, &lv_buttonmatrix_class)) {
+#else
+    if (!lv_obj_check_type(obj, &lv_btnmatrix_class)) {
+#endif
+        throwError(flowState, componentIndex, FlowError::Plain("Expected a ButtonMatrix widget"));
+        return;
+    }
+    INT32_PROP(buttonID);
+    const char *text = nullptr;
+    // Validate before narrowing to v8's uint16_t or calling its getter at count.
+    // Use public APIs; row markers do not contribute to button IDs.
+    if (buttonID >= 0 && buttonID < UINT16_MAX) {
+#if LVGL_VERSION_MAJOR >= 9
+        const char *const *map = lv_buttonmatrix_get_map(obj);
+#else
+        const char *const *map = lv_btnmatrix_get_map(obj);
+#endif
+        int32_t count = 0;
+        for (uint32_t i = 0; map && map[i] && map[i][0]; i++) {
+            if (strcmp(map[i], "\n") != 0) count++;
+        }
+        if (buttonID < count) {
+#if LVGL_VERSION_MAJOR >= 9
+            text = lv_buttonmatrix_get_button_text(obj, (uint32_t)buttonID);
+#else
+            text = lv_btnmatrix_get_btn_text(obj, (uint16_t)buttonID);
+#endif
+        }
+    }
+    Value textCopy = Value::makeStringRef(text ? text : "", -1, 0x6f2c01a2);
+    if (!textCopy.isString()) {
+        throwError(flowState, componentIndex, FlowError::Plain("Failed to copy button text"));
+        return;
+    }
+    RESULT(result, textCopy);
+ACTION_END
+
+ACTION_START(buttonMatrixSetMap)
+    WIDGET_PROP(obj);
+#if LVGL_VERSION_MAJOR >= 9
+    if (!lv_obj_check_type(obj, &lv_buttonmatrix_class)) {
+#else
+    if (!lv_obj_check_type(obj, &lv_btnmatrix_class)) {
+#endif
+        throwError(flowState, componentIndex, FlowError::Plain("Expected a ButtonMatrix widget"));
+        return;
+    }
+    if (properties.count % 2 != 1 || properties.count / 2 >= UINT16_MAX) {
+        throwError(flowState, componentIndex, FlowError::Plain("Invalid ButtonMatrix map properties"));
+        return;
+    }
+    uint32_t count = properties.count / 2;
+    // Retain all evaluated strings until the map helper has copied them.
+    Value texts = Value::makeArrayRef(count, 0, 0x6f2c01b0);
+    if (!texts.isArray()) {
+        throwError(flowState, componentIndex, FlowError::Plain("Failed to allocate ButtonMatrix map"));
+        return;
+    }
+#if LVGL_VERSION_MAJOR >= 9
+    typedef lv_buttonmatrix_ctrl_t Ctrl;
+#else
+    typedef lv_btnmatrix_ctrl_t Ctrl;
+#endif
+    void *buffer = eez::alloc((count + 1) * sizeof(char *) + count * sizeof(Ctrl), 0x6f2c01b1);
+    if (!buffer) {
+        throwError(flowState, componentIndex, FlowError::Plain("Failed to allocate ButtonMatrix map"));
+        return;
+    }
+    const char **map = (const char **)buffer;
+    Ctrl *controls = (Ctrl *)(map + count + 1);
+    uint32_t buttonCount = 0;
+    bool valid = true;
+    for (uint32_t i = 0; i < count; i++) {
+        Value &text = texts.getArray()->values[i];
+        Value control;
+        if (!evalExpression(flowState, componentIndex, properties[propIndex++]->evalInstructions, text,
+                FlowError::PropertyInAction("buttons.text", actionName, actionIndex)) ||
+            !evalExpression(flowState, componentIndex, properties[propIndex++]->evalInstructions, control,
+                FlowError::PropertyInAction("buttons.width", actionName, actionIndex))) {
+            valid = false;
+            break;
+        }
+        // Match STR_PROP: expressions for string properties use Value::toString.
+        // Store the converted Value as well, not just a pointer to a temporary.
+        text = text.toString(0x6f2c01b2);
+        if (!text.isString() || !text.getString()) {
+            valid = false;
+            break;
+        }
+        int error;
+        int32_t ctrl = control.toInt32(&error);
+        if (error || ctrl < 0) {
+            valid = false;
+            break;
+        }
+        map[i] = text.getString()[0] ? text.getString() : " ";
+        if (ctrl == 0) {
+            if (strcmp(map[i], "\n")) { valid = false; break; }
+        } else {
+            if (!strcmp(map[i], "\n")) { valid = false; break; }
+            controls[buttonCount++] = (Ctrl)ctrl;
+        }
+    }
+    map[count] = NULL;
+    if (valid) valid = eez_flow_set_buttonmatrix_map(obj, map, count, buttonCount ? controls : NULL);
+    eez::free(buffer);
+    if (!valid) {
+        throwError(flowState, componentIndex, FlowError::Plain("Failed to set ButtonMatrix map"));
+    }
+ACTION_END
+
+////////////////////////////////////////////////////////////////////////////////
+
 typedef void (*ActionType)(FlowState *flowState, unsigned componentIndex, const ListOfAssetsPtr<Property> &properties, uint32_t actionIndex);
 
 static ActionType actions[] = {
@@ -1283,8 +1490,17 @@ static ActionType actions[] = {
     /* 60 */ &tabviewSetActiveTab,
     /* 61 */ &tabviewGetActiveTab,
     /* 62 */ &arcRotateObjToAngle,
-    /* 61 */ &objGetDisplayX,
-    /* 62 */ &objGetDisplayY
+    /* 63 */ &objGetDisplayX,
+    /* 64 */ &objGetDisplayY,
+    /* 65 */ &textareaGetText,
+    /* 66 */ &textareaSetText,
+    /* 67 */ &textareaSetOneLine,
+    /* 68 */ &textareaSetPasswordMode,
+    /* 69 */ &textareaSetPasswordBullet,
+    /* 70 */ &textareaSetPlaceholderText,
+    /* 71 */ &buttonMatrixGetSelectedButton,
+    /* 72 */ &buttonMatrixSetMap,
+    /* 73 */ &buttonMatrixGetButtonText
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1304,6 +1520,22 @@ void executeLVGLApiComponent(FlowState *flowState, unsigned componentIndex) {
     for (uint32_t actionIndex = executionState ? executionState->actionIndex : 0; actionIndex < component->actions.count; actionIndex++) {
         // printf("actionIndex: %d\n", actionIndex + 1);
         auto actionType = (LVGLApiComponent_ActionType *)component->actions[actionIndex];
+        if (actionType->action >= sizeof(actions) / sizeof(actions[0])) {
+            throwError(flowState, componentIndex, FlowError::Plain("Unknown LVGL action"));
+            return;
+        }
+        if (actionType->action >= 65 && actionType->action <= 71 && actionType->properties.count != 2) {
+            throwError(flowState, componentIndex, FlowError::Plain("Invalid LVGL action properties"));
+            return;
+        }
+        if (actionType->action == 72 && (actionType->properties.count % 2 != 1 || actionType->properties.count / 2 >= UINT16_MAX)) {
+            throwError(flowState, componentIndex, FlowError::Plain("Invalid ButtonMatrix map properties"));
+            return;
+        }
+        if (actionType->action == 73 && actionType->properties.count != 3) {
+            throwError(flowState, componentIndex, FlowError::Plain("Invalid LVGL action properties"));
+            return;
+        }
         (*actions[actionType->action])(flowState, componentIndex, actionType->properties, actionIndex);
     }
 
