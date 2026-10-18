@@ -66,5 +66,13 @@ extern void (*onFlowErrorHook)(FlowState *flowState, int componentIndex, const c
 extern Value (*getDibFieldHook)(uint32_t dibFieldId);
 extern void (*setDibFieldHook)(uint32_t dibFieldId, const Value &sourceValue);
 
+// YT history of a DIB field (YTChart widget traces): copies the count values
+// that end before endPosition (YT_HISTORY_NEWEST - up to the newest value) to
+// values, NAN where there is no value. position is the number of values since
+// the history start (the newest value is at position - 1) and period the
+// seconds per value. Returns false if the field has no YT history.
+static const uint32_t YT_HISTORY_NEWEST = 0xFFFFFFFF;
+extern bool (*getDibFieldYtHistoryHook)(uint32_t dibFieldId, uint32_t endPosition, float *values, uint32_t count, uint32_t &position, float &period);
+
 } // flow
 } // eez

@@ -198,6 +198,7 @@ void (*onFlowErrorHook)(FlowState *flowState, int componentIndex, const char *er
 
 Value (*getDibFieldHook)(uint32_t dibFieldId) = nullptr;
 void (*setDibFieldHook)(uint32_t dibFieldId, const Value &sourceValue) = nullptr;
+bool (*getDibFieldYtHistoryHook)(uint32_t dibFieldId, uint32_t endPosition, float *values, uint32_t count, uint32_t &position, float &period) = nullptr;
 
 
 } // namespace flow
