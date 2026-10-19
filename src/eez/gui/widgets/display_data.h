@@ -18,6 +18,8 @@ namespace gui {
 struct DisplayDataWidget : public Widget {
     int16_t refreshRate;
     uint8_t displayOption;
+    uint8_t reserved1;
+    int16_t unitAndFractionFont; // only for DISPLAY_OPTION_INTEGER_UNIT_AND_FRACTION
 };
 
 struct DisplayDataWidgetState : public WidgetState {

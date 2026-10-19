@@ -33,6 +33,19 @@ void drawText(
     bool useSmallerFontIfDoesNotFit = false, int cursorPosition = -1, int xScroll = 0,
 	bool boolSkipBackground = false
 );
+// Integer part with the style font, unit (top, above the first fraction digit) and fraction
+// (integer baseline) with unitAndFractionFont (style font if not set) in a column right of the
+// integer part.
+void drawIntegerUnitAndFraction(
+    const char *integer, int integerLength,
+    const char *unit, int unitLength,
+    const char *fraction, int fractionLength,
+    int x, int y, int w, int h,
+    const Style *style, font::Font unitAndFractionFont,
+    bool active, bool blink,
+    uint16_t *overrideColor, uint16_t *overrideBackgroundColor,
+    uint16_t *overrideActiveColor, uint16_t *overrideActiveBackgroundColor
+);
 int getCharIndexAtPosition(int xPos, const char *text, int textLength, int x, int y, int w, int h, const Style *style);
 int getCursorXPosition(int cursorPosition, const char *text, int textLength, int x, int y, int w, int h, const Style *style);
 

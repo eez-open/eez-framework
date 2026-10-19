@@ -395,6 +395,98 @@ void drawText(
     display::drawStr(text, textLength, x_offset - xScroll, y_offset, x1, y1, x2, y2, font, cursorPosition);
 }
 
+// The integer part is aligned as text (for the right alignment the right padding is the room
+// for the unit/fraction column, so the decimal point doesn't move), the column is moved left
+// if it doesn't fit. For the center alignment the whole value is centered. The unit is at the
+// top, aligned with the first digit of the fraction, the fraction on the baseline of the integer
+// part.
+// Keep in sync with drawIntegerUnitAndFraction in Studio flow/editor/eez-gui-draw.ts.
+void drawIntegerUnitAndFraction(
+    const char *integer, int integerLength,
+    const char *unit, int unitLength,
+    const char *fraction, int fractionLength,
+    int x, int y, int w, int h,
+    const Style *style, font::Font unitAndFractionFont,
+    bool active, bool blink,
+    uint16_t *overrideColor, uint16_t *overrideBackgroundColor,
+    uint16_t *overrideActiveColor, uint16_t *overrideActiveBackgroundColor
+) {
+    int x1 = x;
+    int y1 = y;
+    int x2 = x + w - 1;
+    int y2 = y + h - 1;
+
+    uint16_t backgroundColor;
+    if (active || blink) {
+        backgroundColor = overrideActiveBackgroundColor ? *overrideActiveBackgroundColor : style->activeBackgroundColor;
+    } else {
+        backgroundColor = overrideBackgroundColor ? *overrideBackgroundColor : style->backgroundColor;
+    }
+    drawBorderAndBackground(x1, y1, x2, y2, style, backgroundColor);
+
+    uint16_t color;
+    if (active || blink) {
+        color = overrideActiveColor ? *overrideActiveColor : style->activeColor;
+    } else {
+        color = overrideColor ? *overrideColor : style->color;
+    }
+
+    if (color == TRANSPARENT_COLOR_INDEX) {
+        return;
+    }
+
+    font::Font integerFont = styleGetFont(style);
+    if (!integerFont) {
+        return;
+    }
+
+    font::Font smallFont = unitAndFractionFont ? unitAndFractionFont : integerFont;
+
+    int integerWidth = display::measureStr(integer, integerLength, integerFont, 0);
+    int unitWidth = display::measureStr(unit, unitLength, smallFont, 0);
+    int fractionWidth = display::measureStr(fraction, fractionLength, smallFont, 0);
+    // unit is aligned with the first digit of the fraction, not with the decimal point
+    int unitOffset = fractionLength > 0 && fraction[0] == '.' ? display::measureStr(fraction, 1, smallFont, 0) : 0;
+    int columnWidth = MAX(unitOffset + unitWidth, fractionWidth);
+
+    int x_integer;
+    if (styleIsHorzAlignLeft(style)) {
+        x_integer = x1 + style->paddingLeft;
+    } else if (styleIsHorzAlignRight(style)) {
+        x_integer = x2 - style->paddingRight - integerWidth;
+        if (x_integer + integerWidth + columnWidth > x2) {
+            x_integer = x2 - integerWidth - columnWidth;
+        }
+    } else {
+        x_integer = x1 + ((x2 - x1 + 1) - (integerWidth + columnWidth)) / 2;
+        if (x_integer < x1) {
+            x_integer = x1;
+        }
+    }
+    int x_column = x_integer + integerWidth;
+
+    int y_integer;
+    if (styleIsVertAlignTop(style)) {
+        y_integer = y1 + style->paddingTop;
+    } else if (styleIsVertAlignBottom(style)) {
+        y_integer = y2 - style->paddingBottom - integerFont.getHeight();
+    } else {
+        y_integer = y1 + ((y2 - y1 + 1) - integerFont.getHeight()) / 2;
+    }
+    // box above the display (e.g. list item while touch scrolling) is not snapped
+    if (y_integer < 0 && y1 >= 0) {
+        y_integer = y1;
+    }
+    int y_unit = y1 + style->paddingTop;
+    // fraction on the baseline of the integer part
+    int y_fraction = y_integer + integerFont.getAscent() - smallFont.getAscent();
+
+    display::setColor(color);
+    display::drawStr(integer, integerLength, x_integer, y_integer, x1, y1, x2, y2, integerFont, -1);
+    display::drawStr(unit, unitLength, x_column + unitOffset, y_unit, x1, y1, x2, y2, smallFont, -1);
+    display::drawStr(fraction, fractionLength, x_column, y_fraction, x1, y1, x2, y2, smallFont, -1);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 int getCharIndexAtPosition(int xPos, const char *text, int textLength, int x, int y, int w, int h, const Style *style) {

@@ -29,7 +29,8 @@ enum {
     DISPLAY_OPTION_FRACTION = 2,
     DISPLAY_OPTION_FRACTION_AND_UNIT = 3,
     DISPLAY_OPTION_UNIT = 4,
-    DISPLAY_OPTION_INTEGER_AND_FRACTION = 5
+    DISPLAY_OPTION_INTEGER_AND_FRACTION = 5,
+    DISPLAY_OPTION_INTEGER_UNIT_AND_FRACTION = 6
 };
 
 int findStartOfFraction(char *text) {
@@ -41,6 +42,63 @@ int findStartOfFraction(char *text) {
 int findStartOfUnit(char *text, int i) {
     for (i = 0; text[i] && (text[i] == '<' || text[i] == ' ' || text[i] == '-' || (text[i] >= '0' && text[i] <= '9') || text[i] == '.'); i++);
     return i;
+}
+
+static void trimText(const char *&text, int &length) {
+    while (length > 0 && *text == ' ') {
+        text++;
+        length--;
+    }
+    while (length > 0 && text[length - 1] == ' ') {
+        length--;
+    }
+}
+
+static void renderIntegerUnitAndFraction(DisplayDataWidgetState *widgetState, const DisplayDataWidget *widget, const Style *style) {
+    const WidgetCursor &widgetCursor = g_widgetCursor;
+
+    char text[64];
+    widgetState->data.toText(text, sizeof(text));
+
+    const char *integer = text;
+    int integerLength = strlen(text);
+    const char *unit = "";
+    int unitLength = 0;
+    const char *fraction = "";
+    int fractionLength = 0;
+
+    // value that is not a float is displayed whole as the integer part
+    if (widgetState->data.getType() == VALUE_TYPE_FLOAT) {
+        int i = findStartOfFraction(text);
+        int k = findStartOfUnit(text, i);
+
+        integerLength = i;
+
+        if (i < k) {
+            fraction = text + i;
+            fractionLength = k - i;
+        } else {
+            fraction = ".0";
+            fractionLength = 2;
+        }
+
+        unit = text + k;
+        unitLength = strlen(unit);
+    }
+
+    trimText(integer, integerLength);
+    trimText(unit, unitLength);
+    trimText(fraction, fractionLength);
+
+    drawIntegerUnitAndFraction(
+        integer, integerLength,
+        unit, unitLength,
+        fraction, fractionLength,
+        widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
+        style, font::Font(getFontData(widget->unitAndFractionFont)),
+        widgetState->flags.active, widgetState->flags.blinking,
+        &widgetState->color, &widgetState->backgroundColor, &widgetState->activeColor, &widgetState->activeBackgroundColor
+    );
 }
 
 bool DisplayDataWidgetState::updateState() {
@@ -90,6 +148,11 @@ void DisplayDataWidgetState::render() {
 
     auto widget = (const DisplayDataWidget *)widgetCursor.widget;
     const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
+
+    if (widget->displayOption == DISPLAY_OPTION_INTEGER_UNIT_AND_FRACTION) {
+        renderIntegerUnitAndFraction(this, widget, style);
+        return;
+    }
 
     char text[64];
     data.toText(text, sizeof(text));
