@@ -15,6 +15,7 @@
 #include <eez/core/util.h>
 
 #include <eez/core/os.h>
+#include <eez/core/alloc.h>
 
 #include <eez/flow/flow.h>
 #include <eez/flow/components.h>
@@ -385,7 +386,9 @@ void executeFlowAction(const WidgetCursor &widgetCursor, int16_t actionId, void 
 
 	if (actionId >= 0 && actionId < (int16_t)flow->widgetActions.count) {
 		auto componentOutput = flow->widgetActions[actionId];
-		if (componentOutput->componentIndex != -1 && componentOutput->componentOutputIndex != -1) {
+		// componentIndex is -1 if the widget event handler is an action: the
+		// action flow gets the event as the input value (Input component)
+		if (componentOutput->componentOutputIndex != -1) {
             if (widgetCursor.widget->type == WIDGET_TYPE_DROP_DOWN_LIST) {
                 auto params = Value::makeArrayRef(defs_v3::SYSTEM_STRUCTURE_DROP_DOWN_LIST_CHANGE_EVENT_NUM_FIELDS, defs_v3::SYSTEM_STRUCTURE_DROP_DOWN_LIST_CHANGE_EVENT, 0x53e3b30b);
 
@@ -418,14 +421,64 @@ void executeFlowAction(const WidgetCursor &widgetCursor, int16_t actionId, void 
 
                 propagateValue(flowState, componentOutput->componentIndex, componentOutput->componentOutputIndex, params);
             }
-		} else if (componentOutput->componentOutputIndex != -1) {
-            propagateValue(flowState, componentOutput->componentIndex, componentOutput->componentOutputIndex);
-        }
+		}
 	}
 
 	for (int i = 0; i < 3; i++) {
 		tick();
 	}
+}
+
+// Array of numbers as the float list (e.g. for the ListGraph widget). The
+// buffers are used round robin, so up to NUM_FLOAT_LIST_BUFFERS lists can be
+// used at the same time.
+#ifndef EEZ_FLOW_FLOAT_LIST_MAX_LENGTH
+#define EEZ_FLOW_FLOAT_LIST_MAX_LENGTH 256
+#endif
+static const int NUM_FLOAT_LIST_BUFFERS = 4;
+
+static float *getArrayAsFloatList(const Value &arrayValue) {
+    static float *g_floatListBuffers[NUM_FLOAT_LIST_BUFFERS];
+    static int g_nextFloatListBuffer;
+
+    auto &buffer = g_floatListBuffers[g_nextFloatListBuffer];
+    g_nextFloatListBuffer = (g_nextFloatListBuffer + 1) % NUM_FLOAT_LIST_BUFFERS;
+    if (!buffer) {
+        buffer = (float *)alloc(EEZ_FLOW_FLOAT_LIST_MAX_LENGTH * sizeof(float), 0x7c1d2e5a);
+        if (!buffer) {
+            return nullptr;
+        }
+    }
+
+    if (arrayValue.isArray()) {
+        auto array = arrayValue.getArray();
+        for (uint32_t i = 0; i < array->arraySize && i < EEZ_FLOW_FLOAT_LIST_MAX_LENGTH; i++) {
+            buffer[i] = array->values[i].toFloat();
+        }
+    }
+
+    return buffer;
+}
+
+// Scale of an array of numbers: from 0 (or the min. value if negative) to the
+// max. value
+static float getArrayMinMax(const Value &arrayValue, bool max) {
+    auto array = arrayValue.getArray();
+    float minValue = 0;
+    float maxValue = 0;
+    for (uint32_t i = 0; i < array->arraySize; i++) {
+        float value = array->values[i].toFloat();
+        if (value < minValue) {
+            minValue = value;
+        }
+        if (value > maxValue) {
+            maxValue = value;
+        }
+    }
+    if (maxValue <= minValue) {
+        maxValue = minValue + 1.0f;
+    }
+    return max ? maxValue : minValue;
 }
 
 static bool isScrollbarState(const Value &arrayValue) {
@@ -480,15 +533,38 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCurs
 			} else {
                 value = arrayValue;
             }
-		}
-		else if (operation == DATA_OPERATION_GET_MIN) {
+		} else if (operation == DATA_OPERATION_GET_NAME) {
+			if (component->type == WIDGET_TYPE_INPUT) {
+				value = getInputWidgetInfo(widgetCursor);
+			}
+		} else if (operation == DATA_OPERATION_GET_MIN) {
 			if (component->type == WIDGET_TYPE_INPUT) {
 				value = getInputWidgetMin(widgetCursor);
+			} else {
+				Value arrayValue;
+				getValue(flowDataId, operation, widgetCursor, arrayValue);
+				if (arrayValue.isArray()) {
+					value = Value(getArrayMinMax(arrayValue, false), VALUE_TYPE_FLOAT);
+				}
 			}
 		} else if (operation == DATA_OPERATION_GET_MAX) {
 			if (component->type == WIDGET_TYPE_INPUT) {
 				value = getInputWidgetMax(widgetCursor);
+			} else {
+				Value arrayValue;
+				getValue(flowDataId, operation, widgetCursor, arrayValue);
+				if (arrayValue.isArray()) {
+					value = Value(getArrayMinMax(arrayValue, true), VALUE_TYPE_FLOAT);
+				}
 			}
+		} else if (operation == DATA_OPERATION_GET_FLOAT_LIST_LENGTH) {
+			Value arrayValue;
+			getValue(flowDataId, operation, widgetCursor, arrayValue);
+			value = arrayValue.isArray() ? (int)arrayValue.getArray()->arraySize : 0;
+		} else if (operation == DATA_OPERATION_GET_FLOAT_LIST) {
+			Value arrayValue;
+			getValue(flowDataId, operation, widgetCursor, arrayValue);
+			value = Value(getArrayAsFloatList(arrayValue), VALUE_TYPE_POINTER);
 		} else if (operation == DATA_OPERATION_GET_PRECISION) {
 			if (component->type == WIDGET_TYPE_INPUT) {
 				value = getInputWidgetPrecision(widgetCursor);
@@ -586,7 +662,12 @@ void dataOperation(int16_t dataId, DataOperationEnum operation, const WidgetCurs
         }
 #if OPTION_KEYPAD
 		else if (operation == DATA_OPERATION_GET_TEXT_CURSOR_POSITION) {
-            getValue(flowDataId, operation, widgetCursor, value);
+            // only the Input widget has the text cursor, the value of the
+            // other widgets (e.g. a number in DisplayData) is not the cursor
+            // position
+            if (component->type == WIDGET_TYPE_INPUT) {
+                getValue(flowDataId, operation, widgetCursor, value);
+            }
 		}
 #endif
 #if EEZ_OPTION_GUI

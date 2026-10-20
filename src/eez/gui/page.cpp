@@ -605,7 +605,7 @@ bool SelectFromEnumPage::calcSize() {
         width = rect.w;
     }
 
-    height = containerStyle->paddingTop + (numColumns == 2 ? (numItems + 1) / 2 : (numItems + 1)) * itemHeight + containerStyle->paddingBottom;
+    height = containerStyle->paddingTop + (numColumns == 2 ? (numItems + 1) / 2 : numItems) * itemHeight + containerStyle->paddingBottom;
     if (height > rect.h) {
         if (numColumns == 1) {
             return false;

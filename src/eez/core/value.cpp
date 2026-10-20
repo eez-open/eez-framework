@@ -211,7 +211,7 @@ static void FLOAT_value_to_text(const Value &value, char *text, int count) {
 
     if (floatValue != 0) {
         if (!fixedDecimals) {
-            unit = findDerivedUnit(floatValue, unit);
+            unit = findDerivedUnit(fabsf(floatValue), unit);
             floatValue /= getUnitFactor(unit);
         }
     } else {

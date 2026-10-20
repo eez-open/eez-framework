@@ -456,18 +456,6 @@ int getXScroll(const WidgetCursor &widgetCursor) {
     return value.getType() == VALUE_TYPE_INT32 ? value.getInt() : 0;
 }
 
-bool isMicroAmperAllowed(const WidgetCursor &widgetCursor, int16_t id) {
-	Value value;
-	DATA_OPERATION_FUNCTION(id, DATA_OPERATION_IS_MICRO_AMPER_ALLOWED, widgetCursor, value);
-	return value.getInt() == 1;
-}
-
-bool isAmperAllowed(const WidgetCursor &widgetCursor, int16_t id) {
-	Value value;
-	DATA_OPERATION_FUNCTION(id, DATA_OPERATION_IS_AMPER_ALLOWED, widgetCursor, value);
-	return value.getInt() == 1;
-}
-
 CanvasDrawFunction getCanvasDrawFunction(const WidgetCursor &widgetCursor, int16_t id) {
     Value value;
     DATA_OPERATION_FUNCTION(id, DATA_OPERATION_GET, widgetCursor, value);

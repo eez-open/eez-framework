@@ -35,7 +35,7 @@
 // While a scrollable list under the finger can still take over the touch,
 // touch down is sent to the pressed widget with this delay. If the list
 // takes over the touch before that, the widget doesn't get the touch at all.
-#define CONF_GUI_TOUCH_SCROLL_TOUCH_DOWN_DELAY_MS 100
+#define CONF_GUI_TOUCH_SCROLL_TOUCH_DOWN_DELAY_MS 50
 
 // Touch that starts this soon after the page has changed, near the position
 // where the previous touch ended, is ignored. It is an accidental double tap

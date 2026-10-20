@@ -57,7 +57,7 @@
 #define EEZ_DAMAGE_TRACKING 1
 // print composed damage rectangle (and its share of the screen) for every dirty frame
 #if !defined(__EMSCRIPTEN__)
-#define EEZ_DAMAGE_TRACKING_DEBUG 1
+#define EEZ_DAMAGE_TRACKING_DEBUG 0
 #endif
 #endif
 
@@ -2184,7 +2184,7 @@ void drawStr(const char *text, int textLength, int x, int y, int clip_x1, int cl
 
 int getCharIndexAtPosition(int xPos, const char *text, int textLength, int x, int y, int clip_x1, int clip_y1, int clip_x2,int clip_y2, gui::font::Font &font) {
     if (textLength == -1) {
-        textLength = utf8len(text);
+        textLength = (int)utf8len(text);
     }
 
     g_font = font;
@@ -2218,7 +2218,7 @@ int getCharIndexAtPosition(int xPos, const char *text, int textLength, int x, in
 
 int getCursorXPosition(int cursorPosition, const char *text, int textLength, int x, int y, int clip_x1, int clip_y1, int clip_x2,int clip_y2, gui::font::Font &font) {
     if (textLength == -1) {
-        textLength = utf8len(text);
+        textLength = (int)utf8len(text);
     }
 
     g_font = font;

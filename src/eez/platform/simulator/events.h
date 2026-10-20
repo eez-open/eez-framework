@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 namespace eez {
 namespace platform {
 namespace simulator {
@@ -21,6 +23,12 @@ extern bool g_mouseButton1IsPressed;
 void readEvents();
 
 bool isMiddleButtonPressed();
+
+// touch at x, y pressed for durationMs (e.g. from a SCPI command for the GUI
+// tests)
+void simulateTouch(int x, int y, uint32_t durationMs);
+// touch moving from (x1, y1) to (x2, y2) during durationMs, e.g. a swipe
+void simulateDrag(int x1, int y1, int x2, int y2, uint32_t durationMs);
 
 } // namespace simulator
 } // namespace platform

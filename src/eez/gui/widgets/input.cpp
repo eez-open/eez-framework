@@ -29,94 +29,12 @@ namespace gui {
 
 static const size_t MAX_TEXT_LEN = 128;
 
-void getInputWidgetParams(const gui::WidgetCursor &widgetCursor, Value &min, Value &max, Value &precision, Unit &unit) {
-	auto widget = (const InputWidget*)widgetCursor.widget;
-
-	auto unitValue = get(widgetCursor, widget->unit);
-	unit = getUnitFromName(unitValue.toString(0x5049bd52).getString());
-
-	auto minValue = get(widgetCursor, widget->min);
-	auto maxValue = get(widgetCursor, widget->max);
-	auto precisionValue = get(widgetCursor, widget->precision);
-
-	float factor = getUnitFactor(unit);
-	auto baseUnit = getBaseUnit(unit);
-
-	min = Value(minValue.toFloat() * factor, baseUnit);
-	max = Value(maxValue.toFloat() * factor, baseUnit);
-	precision = Value(precisionValue.toFloat() * factor, baseUnit);
-}
-
-Value getInputWidgetMin(const gui::WidgetCursor &widgetCursor) {
-	auto widget = (const InputWidget*)widgetCursor.widget;
-
-	auto flowState = widgetCursor.flowState;
-	if (flowState) {
-		auto inputWidgetExecutionState = (InputWidgetExecutionState *)flowState->componenentExecutionStates[widget->componentIndex];
-		if (inputWidgetExecutionState) {
-			return inputWidgetExecutionState->min;
-		}
-	}
-
-	auto unitValue = get(widgetCursor, widget->unit);
-	auto unit = getUnitFromName(unitValue.toString(0x5049bd52).getString());
-	auto baseUnit = getBaseUnit(unit);
-
-	auto value = get(widgetCursor, widget->min);
-	float factor = getUnitFactor(unit);
-	return Value(value.toFloat() * factor, baseUnit);
-}
-
-Value getInputWidgetMax(const gui::WidgetCursor &widgetCursor) {
-	auto widget = (const InputWidget*)widgetCursor.widget;
-
-	auto flowState = widgetCursor.flowState;
-	if (flowState) {
-		auto inputWidgetExecutionState = (InputWidgetExecutionState *)flowState->componenentExecutionStates[widget->componentIndex];
-		if (inputWidgetExecutionState) {
-			return inputWidgetExecutionState->max;
-		}
-	}
-
-	auto unitValue = get(widgetCursor, widget->unit);
-	auto unit = getUnitFromName(unitValue.toString(0x5049bd52).getString());
-	auto baseUnit = getBaseUnit(unit);
-
-	auto value = get(widgetCursor, widget->max);
-	float factor = getUnitFactor(unit);
-	return Value(value.toFloat() * factor, baseUnit);
-}
-
-Value getInputWidgetPrecision(const gui::WidgetCursor &widgetCursor) {
-	auto widget = (const InputWidget*)widgetCursor.widget;
-
-	auto flowState = widgetCursor.flowState;
-	if (flowState) {
-		auto inputWidgetExecutionState = (InputWidgetExecutionState *)flowState->componenentExecutionStates[widget->componentIndex];
-		if (inputWidgetExecutionState) {
-			return inputWidgetExecutionState->precision;
-		}
-	}
-
-	auto unitValue = get(widgetCursor, widget->unit);
-	auto unit = getUnitFromName(unitValue.toString(0x5049bd52).getString());
-	auto baseUnit = getBaseUnit(unit);
-
-	auto value = get(widgetCursor, widget->precision);
-	float factor = getUnitFactor(unit);
-	return Value(value.toFloat() * factor, baseUnit);
-}
+// The parameters are evaluated with the widget cursor every time (not cached
+// per component), because the same Input widget can be rendered several times
+// inside a List or Grid with different parameters for each item.
 
 Unit getInputWidgetUnit(const gui::WidgetCursor &widgetCursor) {
 	auto widget = (const InputWidget*)widgetCursor.widget;
-
-	auto flowState = widgetCursor.flowState;
-	if (flowState) {
-		auto inputWidgetExecutionState = (InputWidgetExecutionState *)flowState->componenentExecutionStates[widget->componentIndex];
-		if (inputWidgetExecutionState) {
-			return inputWidgetExecutionState->unit;
-		}
-	}
 
 	auto unitValue = get(widgetCursor, widget->unit);
 	if (unitValue.isString()) {
@@ -124,6 +42,37 @@ Unit getInputWidgetUnit(const gui::WidgetCursor &widgetCursor) {
 	} else {
 		return UNIT_NONE;
 	}
+}
+
+static Value getInputWidgetNumberParam(const gui::WidgetCursor &widgetCursor, int16_t param) {
+	auto unit = getInputWidgetUnit(widgetCursor);
+	auto value = get(widgetCursor, param);
+	return Value(value.toFloat() * getUnitFactor(unit), getBaseUnit(unit));
+}
+
+bool getInputWidgetIsPassword(const gui::WidgetCursor &widgetCursor) {
+	auto widget = (const InputWidget*)widgetCursor.widget;
+	return widget->flags & INPUT_WIDGET_PASSWORD_FLAG != 0;
+}
+
+Value getInputWidgetMin(const gui::WidgetCursor &widgetCursor) {
+	return getInputWidgetNumberParam(widgetCursor, ((const InputWidget*)widgetCursor.widget)->min);
+}
+
+Value getInputWidgetMax(const gui::WidgetCursor &widgetCursor) {
+	return getInputWidgetNumberParam(widgetCursor, ((const InputWidget*)widgetCursor.widget)->max);
+}
+
+Value getInputWidgetDefaultValue(const gui::WidgetCursor &widgetCursor) {
+	return getInputWidgetNumberParam(widgetCursor, ((const InputWidget*)widgetCursor.widget)->defaultValue);
+}
+
+Value getInputWidgetPrecision(const gui::WidgetCursor &widgetCursor) {
+	return getInputWidgetNumberParam(widgetCursor, ((const InputWidget*)widgetCursor.widget)->precision);
+}
+
+Value getInputWidgetInfo(const gui::WidgetCursor &widgetCursor) {
+	return get(widgetCursor, ((const InputWidget*)widgetCursor.widget)->info);
 }
 
 Value getInputWidgetData(const gui::WidgetCursor &widgetCursor, const Value &dataValue) {
@@ -156,21 +105,6 @@ void InputWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
 
 	auto widget = (const InputWidget*)widgetCursor.widget;
-
-	if (widgetCursor.flowState) {
-		auto inputWidgetExecutionState = (InputWidgetExecutionState *)widgetCursor.flowState->componenentExecutionStates[widget->componentIndex];
-		if (!inputWidgetExecutionState) {
-			inputWidgetExecutionState = eez::flow::allocateComponentExecutionState<InputWidgetExecutionState>(widgetCursor.flowState, widget->componentIndex);
-		}
-
-		getInputWidgetParams(
-			widgetCursor,
-			inputWidgetExecutionState->min,
-			inputWidgetExecutionState->max,
-			inputWidgetExecutionState->precision,
-			inputWidgetExecutionState->unit
-		);
-	}
 
 	const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
 

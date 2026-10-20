@@ -54,21 +54,12 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 
 	auto header = (Header *)assetsData;
 
-	if (header->tag == HEADER_TAG_COMPRESSED) {
-		decompressedAssets->projectMajorVersion = header->projectMajorVersion;
-		decompressedAssets->projectMinorVersion = header->projectMinorVersion;
-        decompressedAssets->assetsType = header->assetsType;
+	decompressedAssets->projectMajorVersion = header->projectMajorVersion;
+	decompressedAssets->projectMinorVersion = header->projectMinorVersion;
+	decompressedAssets->assetsType = header->assetsType;
 
-		compressedDataOffset = sizeof(Header);
-		decompressedSize = header->decompressedSize;
-	} else {
-		decompressedAssets->projectMajorVersion = PROJECT_VERSION_V2;
-		decompressedAssets->projectMinorVersion = 0;
-        decompressedAssets->assetsType = ASSETS_TYPE_RESOURCE;
-
-		compressedDataOffset = 4;
-		decompressedSize = header->tag;
-	}
+	compressedDataOffset = sizeof(Header);
+	decompressedSize = header->decompressedSize;
 
 // disable warning: offsetof within non-standard-layout type ... is conditionally-supported [-Winvalid-offsetof]
 #ifdef __GNUC__

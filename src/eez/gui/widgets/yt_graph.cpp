@@ -585,6 +585,13 @@ void YTGraphWidgetState::render() {
 
     uint16_t graphWidth = (uint16_t)widgetCursor.w;
 
+    // no YT data (e.g. the data of the widget in a flow is not a YT data
+    // provider): only the background
+    if (!ytDataGetGetValueFunc(widgetCursor, widget->data)) {
+        drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, getStyle(widget->style), false, false, true);
+        return;
+    }
+
     if (ytGraphUpdateMethod == YT_GRAPH_UPDATE_METHOD_STATIC) {
         YTGraphStaticDrawHelper drawHelper(this, widgetCursor);
         drawHelper.drawStatic(previousHistoryValuePosition, historyValuePosition, numHistoryValues, graphWidth, showLabels, selectedValueIndex);

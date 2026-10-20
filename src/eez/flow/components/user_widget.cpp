@@ -30,18 +30,28 @@ namespace flow {
 
 typedef CallActionActionComponent UserWidgetWidgetComponent;
 
+// The same user widget component can display different layouts (pages), e.g.
+// list items with layouts from the data (BB3+ slot views of the modules).
+// Besides the flow state of the last displayed layout, the flow states of
+// MAX_OTHER_FLOW_STATES other layouts are kept, so the flow state of a layout
+// is not freed and created again on each render (a widget found on touch down
+// keeps a valid flow state until the action is executed on touch up).
 struct UserWidgetWidgetExecutionState : public ComponenentExecutionState {
+    static const int MAX_OTHER_FLOW_STATES = 8;
+
     FlowState *flowState;
+    FlowState *otherFlowStates[MAX_OTHER_FLOW_STATES];
+    int numOtherFlowStates;
 
     ~UserWidgetWidgetExecutionState() {
         freeFlowState(flowState);
+        for (int i = 0; i < numOtherFlowStates; i++) {
+            freeFlowState(otherFlowStates[i]);
+        }
     }
 };
 
-static UserWidgetWidgetExecutionState *createUserWidgetFlowState(Assets *assets, FlowState *flowState, uint16_t userWidgetWidgetComponentIndex, int16_t pageIndex) {
-    if (pageIndex == -1) {
-        return 0;
-    }
+static FlowState *initUserWidgetFlowState(Assets *assets, FlowState *flowState, uint16_t userWidgetWidgetComponentIndex, int16_t pageIndex) {
     auto userWidgetFlowState = initPageFlowState(assets, pageIndex, flowState, userWidgetWidgetComponentIndex);
 
     // init user properties
@@ -54,22 +64,70 @@ static UserWidgetWidgetExecutionState *createUserWidgetFlowState(Assets *assets,
         onValueChanged(propValuePtr);
     }
 
+    return userWidgetFlowState;
+}
+
+static UserWidgetWidgetExecutionState *createUserWidgetFlowState(Assets *assets, FlowState *flowState, uint16_t userWidgetWidgetComponentIndex, int16_t pageIndex) {
+    if (pageIndex == -1) {
+        return 0;
+    }
+    auto userWidgetFlowState = initUserWidgetFlowState(assets, flowState, userWidgetWidgetComponentIndex, pageIndex);
+
     auto userWidgetWidgetExecutionState = allocateComponentExecutionState<UserWidgetWidgetExecutionState>(flowState, userWidgetWidgetComponentIndex);
     userWidgetWidgetExecutionState->flowState = userWidgetFlowState;
+    userWidgetWidgetExecutionState->numOtherFlowStates = 0;
     return userWidgetWidgetExecutionState;
 }
 
 FlowState *getUserWidgetFlowState(Assets *assets, FlowState *flowState, uint16_t userWidgetWidgetComponentIndex, int16_t pageIndex) {
     auto userWidgetWidgetExecutionState = (UserWidgetWidgetExecutionState *)flowState->componenentExecutionStates[userWidgetWidgetComponentIndex];
-    if (userWidgetWidgetExecutionState && (userWidgetWidgetExecutionState->flowState->assets != assets || userWidgetWidgetExecutionState->flowState->flowIndex != pageIndex)) {
-        deallocateComponentExecutionState(flowState, userWidgetWidgetComponentIndex);
-        userWidgetWidgetExecutionState = 0;
-    }
     if (!userWidgetWidgetExecutionState) {
         userWidgetWidgetExecutionState = createUserWidgetFlowState(assets, flowState, userWidgetWidgetComponentIndex, pageIndex);
+        return userWidgetWidgetExecutionState ? userWidgetWidgetExecutionState->flowState : nullptr;
     }
 
-    return userWidgetWidgetExecutionState->flowState;
+    auto currentFlowState = userWidgetWidgetExecutionState->flowState;
+    if (currentFlowState->assets == assets && currentFlowState->flowIndex == pageIndex) {
+        return currentFlowState;
+    }
+
+    if (pageIndex == -1) {
+        return nullptr;
+    }
+
+    // flow state of another layout: already created or a new one
+    FlowState *userWidgetFlowState = nullptr;
+    auto &numOtherFlowStates = userWidgetWidgetExecutionState->numOtherFlowStates;
+    auto otherFlowStates = userWidgetWidgetExecutionState->otherFlowStates;
+    for (int i = 0; i < numOtherFlowStates; i++) {
+        if (otherFlowStates[i]->assets == assets && otherFlowStates[i]->flowIndex == pageIndex) {
+            userWidgetFlowState = otherFlowStates[i];
+            for (int j = i + 1; j < numOtherFlowStates; j++) {
+                otherFlowStates[j - 1] = otherFlowStates[j];
+            }
+            numOtherFlowStates--;
+            break;
+        }
+    }
+
+    if (!userWidgetFlowState) {
+        userWidgetFlowState = initUserWidgetFlowState(assets, flowState, userWidgetWidgetComponentIndex, pageIndex);
+    }
+
+    // the current one becomes the most recent of the others, the least
+    // recently used is freed if there is no room
+    if (numOtherFlowStates == UserWidgetWidgetExecutionState::MAX_OTHER_FLOW_STATES) {
+        freeFlowState(otherFlowStates[0]);
+        for (int j = 1; j < numOtherFlowStates; j++) {
+            otherFlowStates[j - 1] = otherFlowStates[j];
+        }
+        numOtherFlowStates--;
+    }
+    otherFlowStates[numOtherFlowStates++] = currentFlowState;
+
+    userWidgetWidgetExecutionState->flowState = userWidgetFlowState;
+
+    return userWidgetFlowState;
 }
 
 void executeUserWidgetWidgetComponent(FlowState *flowState, unsigned componentIndex) {

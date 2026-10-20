@@ -22,6 +22,8 @@ struct InputWidget : public Widget {
     int16_t precision;
 	int16_t unit;
 	uint16_t componentIndex;
+	int16_t info;
+	int16_t defaultValue;
 };
 
 struct InputWidgetState : public WidgetState {
@@ -32,21 +34,22 @@ struct InputWidgetState : public WidgetState {
 	void render() override;
 };
 
-struct InputWidgetExecutionState : public flow::ComponenentExecutionState {
-	Value min;
-	Value max;
-    Value precision;
-	Unit unit;
-};
-
 static const uint16_t INPUT_WIDGET_TYPE_TEXT = 0x0001;
 static const uint16_t INPUT_WIDGET_TYPE_NUMBER = 0x0002;
 static const uint16_t INPUT_WIDGET_PASSWORD_FLAG = 0x0100;
 
+bool getInputWidgetIsPassword(const gui::WidgetCursor &widgetCursor);
+
 Value getInputWidgetMin(const gui::WidgetCursor &widgetCursor);
 Value getInputWidgetMax(const gui::WidgetCursor &widgetCursor);
+
+Value getInputWidgetDefaultValue(const gui::WidgetCursor &widgetCursor);
+
 Value getInputWidgetPrecision(const gui::WidgetCursor &widgetCursor);
+
 Unit getInputWidgetUnit(const gui::WidgetCursor &widgetCursor);
+
+Value getInputWidgetInfo(const gui::WidgetCursor &widgetCursor);
 
 Value getInputWidgetData(const gui::WidgetCursor &widgetCursor, const Value &dataValue);
 

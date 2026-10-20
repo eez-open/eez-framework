@@ -71,7 +71,7 @@ void Keypad::init(AppContext *appContext, const char *label_) {
 Value Keypad::getKeypadTextValue() {
     char text[MAX_KEYPAD_TEXT_LENGTH + 2];
     getKeypadText(text, sizeof(text));
-    return Value::makeStringRef(text, strlen(text), 0x893cbf99);
+    return Value::makeStringRef(text, (int)strlen(text), 0x893cbf99);
 }
 
 const char *Keypad::getKeypadLabel() {
@@ -90,7 +90,7 @@ void Keypad::getKeypadText(char *text, size_t count) {
     }
 
     if (m_isPassword) {
-        int n = strlen(m_keypadText);
+        int n = (int)strlen(m_keypadText);
         if (n > 0) {
             int i;
 
@@ -130,7 +130,7 @@ void Keypad::start(AppContext *appContext, const char *label, const char *text, 
 
     if (text) {
         stringCopy(m_keypadText, sizeof(m_keypadText), text);
-        m_cursorPosition = strlen(m_keypadText);
+        m_cursorPosition = (int)strlen(m_keypadText);
     } else {
         m_keypadText[0] = 0;
         m_cursorPosition = 0;
@@ -139,7 +139,7 @@ void Keypad::start(AppContext *appContext, const char *label, const char *text, 
 }
 
 void Keypad::insertChar(char c) {
-    int n = strlen(m_keypadText);
+    int n = (int)strlen(m_keypadText);
     if (n < m_maxChars && (n + (*m_label ? strlen(m_label) : 0)) < MAX_KEYPAD_TEXT_LENGTH) {
         for (int i = n; i >= m_cursorPosition; i--) {
             m_keypadText[i + 1] = m_keypadText[i];
@@ -187,7 +187,7 @@ void Keypad::space() {
 
 void Keypad::back() {
     if (m_cursorPosition > 0) {
-        int n = strlen(m_keypadText);
+        int n = (int)strlen(m_keypadText);
         for (int i = m_cursorPosition; i < n; i++) {
             m_keypadText[i - 1] = m_keypadText[i];
         }
@@ -210,7 +210,7 @@ void Keypad::unit() {
 }
 
 bool Keypad::isOkEnabled() {
-    int n = strlen(m_keypadText);
+    int n = (int)strlen(m_keypadText);
     return n >= m_minChars && n <= m_maxChars;
 }
 
@@ -237,16 +237,16 @@ void Keypad::setDefault() {
 }
 
 int Keypad::getCursorPosition() {
-    return m_cursorPosition + strlen(m_label);
+    return m_cursorPosition + (int)strlen(m_label);
 }
 
 void Keypad::setCursorPosition(int cursorPosition) {
-    m_cursorPosition = cursorPosition - strlen(m_label);
+    m_cursorPosition = cursorPosition - (int)strlen(m_label);
 
     if (m_cursorPosition < 0) {
         m_cursorPosition = 0;
     } else {
-        int n = strlen(m_keypadText);
+        int n = (int)strlen(m_keypadText);
         if (m_cursorPosition > n) {
             m_cursorPosition = n;
         }
@@ -352,7 +352,7 @@ void NumericKeypad::init(
 
     if (value.getType() == VALUE_TYPE_IP_ADDRESS) {
         ipAddressToString(value.getUInt32(), m_keypadText, sizeof(m_keypadText));
-        m_cursorPosition = strlen(m_keypadText);
+        m_cursorPosition = (int)strlen(m_keypadText);
         m_state = BEFORE_DOT;
     }
 }
@@ -379,7 +379,7 @@ void NumericKeypad::getKeypadText(char *text, size_t count) {
 
 bool NumericKeypad::getText(char *text, size_t count) {
     if (m_state == START) {
-        m_startValue.toText(text, count);
+        m_startValue.toText(text, (int)count);
         if ((!m_startValue.isFloat() && !m_startValue.isDouble()) || m_startValue.unit == UNIT_UNKNOWN) {
             appendEditUnit(text, count);
         }
@@ -397,12 +397,44 @@ Unit NumericKeypad::getEditUnit() {
 }
 
 
+// uA makes sense only if the value can be set with sub-mA resolution
+// or if the range itself goes below 1 mA
 bool NumericKeypad::isMicroAmperAllowed() {
-    return true;
+    float precision = getPrecision();
+    if (!isnan(precision) && precision > 0 && precision < 1E-3f) {
+        return true;
+    }
+
+    float min = fabsf(m_options.min);
+    if (!isnan(min) && min > 0 && min < 1E-3f) {
+        return true;
+    }
+
+    float max = fabsf(m_options.max);
+    if (!isnan(max) && max > 0 && max < 1E-3f) {
+        return true;
+    }
+
+    return false;
 }
 
+// A makes sense only if the range reaches 1 A (unknown range is treated as unlimited)
+// or if the value can't be set with sub-A resolution
 bool NumericKeypad::isAmperAllowed() {
-	return true;
+    if (isnan(m_options.min) || isnan(m_options.max)) {
+        return true;
+    }
+
+    if (fabsf(m_options.min) >= 1.0f || fabsf(m_options.max) >= 1.0f) {
+        return true;
+    }
+
+    float precision = getPrecision();
+    if (!isnan(precision) && precision >= 1.0f) {
+        return true;
+    }
+
+    return false;
 }
 
 float NumericKeypad::getPrecision() {
@@ -472,7 +504,7 @@ void NumericKeypad::setCursorPosition(int cursorPosition) {
     if (m_cursorPosition < 0) {
         m_cursorPosition = 0;
     } else {
-        int n = strlen(m_keypadText);
+        int n = (int)strlen(m_keypadText);
         if (m_cursorPosition > n) {
             m_cursorPosition = n;
         }
@@ -608,7 +640,7 @@ void NumericKeypad::back() {
 
         Keypad::back();
 
-        int n = strlen(m_keypadText);
+        int n = (int)strlen(m_keypadText);
 
         if (n == 1) {
             if (m_keypadText[0] == '+' || m_keypadText[0] == '-') {

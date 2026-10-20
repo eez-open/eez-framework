@@ -21,7 +21,13 @@ struct YTChartTrace {
     // index of the DIB field in the module metadata (as DibModule.field)
     uint16_t fieldIndex;
     uint16_t color;
-    // expressions, y range of the trace and if it is drawn
+    // bit 0..7 of a bit field (its YT history value is the AND of the samples
+    // in bits 0..7 and the OR in bits 8..15), drawn as a digital trace in a
+    // lane of its own, -1 for a value trace
+    int16_t bit;
+    uint16_t reserved;
+    // expressions, y range of the trace (not used by a bit trace) and if it
+    // is drawn
     AssetsPtr<uint8_t> min;
     AssetsPtr<uint8_t> max;
     AssetsPtr<uint8_t> visible;

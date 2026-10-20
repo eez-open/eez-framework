@@ -41,6 +41,28 @@ int g_mouseX;
 int g_mouseY;
 bool g_mouseButton1IsPressed;
 
+static int g_simulatedTouchX;
+static int g_simulatedTouchY;
+static int g_simulatedTouchEndX;
+static int g_simulatedTouchEndY;
+static uint32_t g_simulatedTouchStart;
+static uint32_t g_simulatedTouchDuration;
+static volatile bool g_simulatedTouch;
+
+void simulateTouch(int x, int y, uint32_t durationMs) {
+    simulateDrag(x, y, x, y, durationMs);
+}
+
+void simulateDrag(int x1, int y1, int x2, int y2, uint32_t durationMs) {
+    g_simulatedTouchX = x1;
+    g_simulatedTouchY = y1;
+    g_simulatedTouchEndX = x2;
+    g_simulatedTouchEndY = y2;
+    g_simulatedTouchStart = millis();
+    g_simulatedTouchDuration = durationMs;
+    g_simulatedTouch = true;
+}
+
 void readEvents() {
 #if defined(EEZ_PLATFORM_CM5_RASPI) && defined(EEZ_USE_WAYLAND)
     eez::cm5::pollLayerShellDisplay();
@@ -79,6 +101,19 @@ void readEvents() {
     }
 
     SDL_GetMouseState(&g_mouseX, &g_mouseY);
+
+    // simulated touch: pressed for the given duration (moving from the start
+    // to the end point), then released
+    if (g_simulatedTouch) {
+        uint32_t elapsed = millis() - g_simulatedTouchStart;
+        float t = g_simulatedTouchDuration > 0 && elapsed < g_simulatedTouchDuration ? (float)elapsed / g_simulatedTouchDuration : 1.0f;
+        g_mouseX = g_simulatedTouchX + (int)((g_simulatedTouchEndX - g_simulatedTouchX) * t);
+        g_mouseY = g_simulatedTouchY + (int)((g_simulatedTouchEndY - g_simulatedTouchY) * t);
+        g_mouseButton1IsPressed = elapsed < g_simulatedTouchDuration;
+        if (!g_mouseButton1IsPressed) {
+            g_simulatedTouch = false;
+        }
+    }
 
     // for web simulator
     if (yMouseWheel >= 100 || yMouseWheel <= -100) {

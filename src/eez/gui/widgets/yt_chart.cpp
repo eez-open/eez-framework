@@ -120,6 +120,47 @@ static void drawTraceColumn(YTChartCanvas &canvas, int x, int yPrev, int y, disp
     canvas.drawVLine(x, y1, y2, color);
 }
 
+#define BIT_LEVEL_NONE -1
+#define BIT_LEVEL_LOW 0
+#define BIT_LEVEL_HIGH 1
+// the bit changed in the period of the value
+#define BIT_LEVEL_CHANGED 2
+
+// Level of the bit in a YT value of a bit field (AND of the samples in bits
+// 0..7, OR in bits 8..15).
+static int getBitLevel(float value, int bit) {
+    if (isNaN(value) || bit < 0 || bit > 7) {
+        return BIT_LEVEL_NONE;
+    }
+    uint32_t v = (uint32_t)value;
+    uint32_t andBit = (v >> bit) & 1;
+    uint32_t orBit = (v >> (bit + 8)) & 1;
+    if (andBit != orBit) {
+        return BIT_LEVEL_CHANGED;
+    }
+    return andBit ? BIT_LEVEL_HIGH : BIT_LEVEL_LOW;
+}
+
+// Column of a bit trace in its lane: the level, the edge from the level in
+// the previous column, the whole swing if the bit changed in the period.
+static void drawBitColumn(YTChartCanvas &canvas, int x, int levelPrev, int level, int laneTop, int laneHeight, display::Color color) {
+    if (level == BIT_LEVEL_NONE) {
+        return;
+    }
+
+    int margin = laneHeight >= 5 ? laneHeight / 5 : 0;
+    int yHigh = laneTop + margin;
+    int yLow = laneTop + laneHeight - 1 - margin;
+
+    bool edge = (levelPrev == BIT_LEVEL_LOW || levelPrev == BIT_LEVEL_HIGH) && levelPrev != level;
+    if (level == BIT_LEVEL_CHANGED || edge) {
+        canvas.drawVLine(x, yHigh, yLow, color);
+    } else {
+        int y = level == BIT_LEVEL_HIGH ? yHigh : yLow;
+        canvas.drawVLine(x, y, y, color);
+    }
+}
+
 YTChartWidgetState::~YTChartWidgetState() {
     eez::free(buffer);
 }
@@ -173,10 +214,13 @@ bool YTChartWidgetState::updateState() {
             max = value.toFloat(nullptr);
         }
 
-        if (!hasPreviousState || visible != traceVisible[i] || min != traceMin[i] || max != traceMax[i]) {
+        int8_t bit = trace->bit >= 0 && trace->bit <= 7 ? (int8_t)trace->bit : -1;
+
+        if (!hasPreviousState || visible != traceVisible[i] || min != traceMin[i] || max != traceMax[i] || bit != traceBit[i]) {
             traceVisible[i] = visible;
             traceMin[i] = min;
             traceMax[i] = max;
+            traceBit[i] = bit;
             redrawAll = true;
             hasPreviousState = false;
         }
@@ -288,19 +332,40 @@ void YTChartWidgetState::render() {
             canvas.scrollLeft(numColumns);
         }
 
+        // lanes of the visible bit traces
+        int numLanes = 0;
+        int traceLane[YT_CHART_MAX_TRACES];
+        for (uint8_t i = 0; i < numTraces; i++) {
+            traceLane[i] = traceVisible[i] && traceBit[i] != -1 ? numLanes++ : -1;
+        }
+
         for (uint32_t j = 0; j < numColumns; j++) {
             int x = mode == YT_CHART_MODE_SCROLL ? w - numColumns + j : (startPosition + j) % w;
 
             canvas.drawVLine(x, 0, h - 1, backgroundColor);
 
             for (uint8_t i = 0; i < numTraces; i++) {
-                if (traceVisible[i]) {
-                    float *traceValues = values + i * (w + 1);
+                if (!traceVisible[i]) {
+                    continue;
+                }
+                float *traceValues = values + i * (w + 1);
+                display::Color color = display::getColorFromIndex(component->traces[i]->color);
+                if (traceLane[i] != -1) {
+                    int laneTop = h * traceLane[i] / numLanes;
+                    int laneHeight = h * (traceLane[i] + 1) / numLanes - laneTop;
+                    drawBitColumn(
+                        canvas, x,
+                        getBitLevel(traceValues[j], traceBit[i]),
+                        getBitLevel(traceValues[j + 1], traceBit[i]),
+                        laneTop, laneHeight,
+                        color
+                    );
+                } else {
                     drawTraceColumn(
                         canvas, x,
                         getY(traceValues[j], traceMin[i], traceMax[i], h),
                         getY(traceValues[j + 1], traceMin[i], traceMax[i], h),
-                        display::getColorFromIndex(component->traces[i]->color)
+                        color
                     );
                 }
             }

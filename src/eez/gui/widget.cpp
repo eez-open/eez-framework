@@ -367,7 +367,7 @@ void enumWidget() {
         }
 
         // previous states of the children follow
-        g_previousStateOffset += g_widgetStateSizes[widget->type];
+        g_previousStateOffset += (uint32_t)g_widgetStateSizes[widget->type];
 
         bool refresh = widgetState->updateState();
         if (refresh || widgetCursor.refreshed) {

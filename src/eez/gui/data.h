@@ -121,10 +121,7 @@ enum DataOperationEnum {
     DATA_OPERATION_YT_DATA_TOUCH_DRAG,
     DATA_OPERATION_GET_CANVAS_REFRESH_STATE,
     DATA_OPERATION_GET_TEXT_CURSOR_POSITION,
-    DATA_OPERATION_GET_X_SCROLL,
-	DATA_OPERATION_GET_SLOT_AND_SUBCHANNEL_INDEX,
-	DATA_OPERATION_IS_MICRO_AMPER_ALLOWED,
-	DATA_OPERATION_IS_AMPER_ALLOWED
+    DATA_OPERATION_GET_X_SCROLL
 };
 
 int count(const WidgetCursor &widgetCursor, int16_t id);
@@ -213,9 +210,6 @@ void ytDataTouchDrag(const WidgetCursor &widgetCursor, int16_t id, TouchDrag *to
 
 int getTextCursorPosition(const WidgetCursor &widgetCursor, int16_t id);
 int getXScroll(const WidgetCursor &widgetCursor);
-
-bool isMicroAmperAllowed(const WidgetCursor &widgetCursor, int16_t id);
-bool isAmperAllowed(const WidgetCursor &widgetCursor, int16_t id);
 
 typedef void (*CanvasDrawFunction)(const WidgetCursor &widgetCursor);
 CanvasDrawFunction getCanvasDrawFunction(const WidgetCursor &widgetCursor, int16_t id);

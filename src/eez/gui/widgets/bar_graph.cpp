@@ -47,7 +47,7 @@ int calcValuePosInBarGraphWidgetWithClamp(Value &value, float min, float max, in
     return p;
 }
 
-void drawLineInBarGraphWidget(const BarGraphWidget *barGraphWidget, int p, uint16_t lineStyleID, int x, int y, int w, int h) {
+void drawLineInBarGraphWidget(const BarGraphWidget *barGraphWidget, int p, int16_t lineStyleID, int x, int y, int w, int h) {
     const Style *style = getStyle(lineStyleID);
 
     display::setColor(style->color);

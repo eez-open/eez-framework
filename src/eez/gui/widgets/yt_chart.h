@@ -15,7 +15,9 @@ namespace gui {
 
 // YTChart widget (flow projects): the YT histories of DIB fields of the module
 // (see flow::getDibFieldYtHistoryHook), one value per pixel column, the
-// traces are in the flow component (flow::YTChartWidgetComponent).
+// traces are in the flow component (flow::YTChartWidgetComponent). The value
+// traces use the whole height (their min .. max), the visible bit traces
+// split it into lanes, the first one on the top.
 
 #define YT_CHART_MODE_SCROLL 0
 #define YT_CHART_MODE_SCAN 1
@@ -37,6 +39,8 @@ struct YTChartWidgetState : public WidgetState {
     bool traceVisible[YT_CHART_MAX_TRACES];
     float traceMin[YT_CHART_MAX_TRACES];
     float traceMax[YT_CHART_MAX_TRACES];
+    // bit of a bit trace, -1 for a value trace
+    int8_t traceBit[YT_CHART_MAX_TRACES];
 
     // position of the newest value all the visible traces have and the
     // seconds per value

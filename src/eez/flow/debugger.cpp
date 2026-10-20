@@ -122,7 +122,7 @@ static void setDebuggerState(DebuggerState newState) {
 				MESSAGE_TO_DEBUGGER_STATE_CHANGED,
 				g_debuggerState
 			);
-			writeDebuggerBufferHook(buffer, strlen(buffer));
+			writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
 		}
 	}
 }
@@ -469,7 +469,7 @@ static void writeValue(const Value &value) {
 
 	stringAppendString(tempStr, sizeof(tempStr), "\n");
 
-	writeDebuggerBufferHook(tempStr, strlen(tempStr));
+	writeDebuggerBufferHook(tempStr, (uint32_t)strlen(tempStr));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -488,7 +488,7 @@ void onStarted(Assets *assets) {
                     (int)i,
                     (const void *)pValue
                 );
-                writeDebuggerBufferHook(buffer, strlen(buffer));
+                writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
 
                 writeValue(*pValue);
             }
@@ -502,7 +502,7 @@ void onStarted(Assets *assets) {
                     (int)i,
                     (const void *)pValue
                 );
-                writeDebuggerBufferHook(buffer, strlen(buffer));
+                writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
 
                 writeValue(*pValue);
             }
@@ -531,7 +531,7 @@ void onAddToQueue(FlowState *flowState, int sourceComponentIndex, int sourceOutp
             (unsigned int)free,
             (unsigned int)alloc
 		);
-        writeDebuggerBufferHook(buffer, strlen(buffer));
+        writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
     }
 }
 
@@ -541,7 +541,7 @@ void onRemoveFromQueue() {
 		snprintf(buffer, sizeof(buffer), "%d\n",
 			MESSAGE_TO_DEBUGGER_REMOVE_FROM_QUEUE
 		);
-        writeDebuggerBufferHook(buffer, strlen(buffer));
+        writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
     }
 }
 
@@ -552,7 +552,7 @@ void onValueChanged(const Value *pValue) {
 			MESSAGE_TO_DEBUGGER_VALUE_CHANGED,
             (const void *)pValue
 		);
-        writeDebuggerBufferHook(buffer, strlen(buffer));
+        writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
 
 		writeValue(pValue->getValue());
     }
@@ -568,7 +568,7 @@ void onFlowStateCreated(FlowState *flowState) {
 			(int)(flowState->parentFlowState ? flowState->parentFlowState->flowStateIndex : -1),
 			(int)flowState->parentComponentIndex
 		);
-        writeDebuggerBufferHook(buffer, strlen(buffer));
+        writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
     }
 
     if (isSubscribedTo(MESSAGE_TO_DEBUGGER_LOCAL_VARIABLE_INIT)) {
@@ -584,7 +584,7 @@ void onFlowStateCreated(FlowState *flowState) {
 				(int)i,
                 (const void *)pValue
             );
-            writeDebuggerBufferHook(buffer, strlen(buffer));
+            writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
 
 			writeValue(*pValue);
         }
@@ -605,7 +605,7 @@ void onFlowStateCreated(FlowState *flowState) {
 					(int)i,
 					(const void *)pValue
 				);
-				writeDebuggerBufferHook(buffer, strlen(buffer));
+				writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
 
 				writeValue(*pValue);
 			//}
@@ -620,7 +620,7 @@ void onFlowStateDestroyed(FlowState *flowState) {
 			MESSAGE_TO_DEBUGGER_FLOW_STATE_DESTROYED,
 			(int)flowState->flowStateIndex
 		);
-		writeDebuggerBufferHook(buffer, strlen(buffer));
+		writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
 	}
 }
 
@@ -632,7 +632,7 @@ void onFlowStateTimelineChanged(FlowState *flowState) {
 			(int)flowState->flowStateIndex,
             flowState->timelinePosition
 		);
-		writeDebuggerBufferHook(buffer, strlen(buffer));
+		writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
 	}
 }
 
@@ -644,7 +644,7 @@ void onFlowError(FlowState *flowState, int componentIndex, const char *errorMess
 			(int)flowState->flowStateIndex,
 			componentIndex
 		);
-		writeDebuggerBufferHook(buffer, strlen(buffer));
+		writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
 		writeString(errorMessage);
 	}
 
@@ -663,7 +663,7 @@ void onComponentExecutionStateChanged(FlowState *flowState, int componentIndex) 
             (void *)flowState->componenentExecutionStates[componentIndex]
 		);
 
-        writeDebuggerBufferHook(buffer, strlen(buffer));
+        writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
 	}
 }
 
@@ -677,7 +677,7 @@ void onComponentAsyncStateChanged(FlowState *flowState, int componentIndex) {
             flowState->componenentAsyncStates[componentIndex] ? 1 : 0
 		);
 
-        writeDebuggerBufferHook(buffer, strlen(buffer));
+        writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
 	}
 }
 
@@ -728,7 +728,7 @@ void logInfo(FlowState *flowState, unsigned componentIndex, const char *message)
             (int)flowState->flowStateIndex,
 			componentIndex
 		);
-		writeDebuggerBufferHook(buffer, strlen(buffer));
+		writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
 		writeLogMessage(message);
     }
 }
@@ -742,7 +742,7 @@ void logScpiCommand(FlowState *flowState, unsigned componentIndex, const char *c
             (int)flowState->flowStateIndex,
 			componentIndex
 		);
-		writeDebuggerBufferHook(buffer, strlen(buffer));
+		writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
 		writeLogMessage(cmd);
     }
 }
@@ -756,7 +756,7 @@ void logScpiQuery(FlowState *flowState, unsigned componentIndex, const char *que
             (int)flowState->flowStateIndex,
 			componentIndex
 		);
-		writeDebuggerBufferHook(buffer, strlen(buffer));
+		writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
 		writeLogMessage(query);
     }
 }
@@ -770,7 +770,7 @@ void logScpiQueryResult(FlowState *flowState, unsigned componentIndex, const cha
             (int)flowState->flowStateIndex,
 			componentIndex
 		);
-		writeDebuggerBufferHook(buffer, strlen(buffer));
+		writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
 		writeLogMessage(resultText, resultTextLen);
     }
 }
@@ -807,7 +807,7 @@ void onPageChanged(int previousPageId, int activePageId, bool activePageIsFromSt
             MESSAGE_TO_DEBUGGER_PAGE_CHANGED,
             activePageId
         );
-        writeDebuggerBufferHook(buffer, strlen(buffer));
+        writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
     }
 }
 #else
