@@ -102,6 +102,9 @@ void flowOnPageLoaded(unsigned pageIndex);
 void *getFlowState(void *flowState, unsigned userWidgetComponentIndexOrPageIndex);
 void deletePageFlowState(unsigned pageIndex);
 
+// componentType is the type of an action component from an extension, as generated in the project build
+void eez_flow_register_ext_component(unsigned componentType, void (*executeComponentFunction)(void *flowState, unsigned componentIndex));
+
 // register the function used to translate T"..." texts in flow expressions
 // (e.g. lv_i18n_get_text); if not set, the raw text id is used
 void eez_flow_set_translate_hook(const char *(*hook)(const char *textId));
