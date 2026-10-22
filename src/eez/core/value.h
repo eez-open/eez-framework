@@ -49,6 +49,7 @@ struct EnumValue {
 ////////////////////////////////////////////////////////////////////////////////
 
 #define VALUE_OPTIONS_REF (1 << 0)
+#define VALUE_OPTIONS_PERSISTENT (1 << 1)
 
 #define STRING_OPTIONS_FILE_ELLIPSIS (1 << 1)
 

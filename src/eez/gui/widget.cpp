@@ -332,14 +332,19 @@ void enumWidget() {
             return;
         }
 
-        if (!widget->visible || widgetState->isVisible.toBool()) {
+        bool isVisible = !widget->visible || widgetState->isVisible.toBool();
+
+        if (isVisible) {
             applyContentSize(widgetState);
     		g_findCallback();
         }
 
         widgetCursor.currentState = (WidgetState *)((uint8_t *)widgetCursor.currentState + g_widgetStateSizes[widget->type]);
 
-        widgetState->enumChildren();
+        // hidden widget has no children states
+        if (isVisible) {
+            widgetState->enumChildren();
+        }
 
         g_isActiveWidget = savedIsActiveWidget;
         return;
@@ -416,7 +421,10 @@ void enumWidget() {
         g_maxGuiStateSize = stateSize;
     }
 
-	widgetState->enumChildren();
+    // children of a hidden widget are not enumerated (and their states are destroyed)
+    if (!widget->visible || widgetState->isVisible.toBool()) {
+	    widgetState->enumChildren();
+    }
 
     widgetState->subtreeSize = (uint8_t *)widgetCursor.currentState - (uint8_t *)widgetState;
 

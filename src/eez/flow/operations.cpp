@@ -457,7 +457,7 @@ static bool is_equal(const Value& a1, const Value& b1) {
         return a == b;
     }
 
-    if (a.isInt32OrLess() == b.isInt32OrLess()) {
+    if (a.isInt32OrLess() && b.isInt32OrLess()) {
         return a.toInt32() == b.toInt32();
     }
 
