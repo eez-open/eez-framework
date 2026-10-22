@@ -1,0 +1,15 @@
+name: LVGL allocator checks
+on:
+  push:
+    branches: [lvgl-textarea-buttonmatrix]
+  pull_request:
+    paths: [src/eez/core/alloc.h, tests/allocator-null.cpp]
+permissions:
+  contents: read
+jobs:
+  allocator:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: g++ -std=c++11 -fsanitize=address,undefined -Isrc tests/allocator-null.cpp -o /tmp/allocator-test
+      - run: /tmp/allocator-test
