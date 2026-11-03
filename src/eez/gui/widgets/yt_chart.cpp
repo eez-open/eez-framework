@@ -81,7 +81,7 @@ static flow::YTChartWidgetComponent *getComponent(const WidgetCursor &widgetCurs
 }
 
 // as DibModule.field: slot of the module (assets reserved) and field index
-static uint32_t getDibFieldId(const WidgetCursor &widgetCursor, uint16_t fieldIndex) {
+static uint32_t getModuleFieldId(const WidgetCursor &widgetCursor, uint16_t fieldIndex) {
     uint16_t slotIndex = (uint16_t)widgetCursor.flowState->assets->reserved;
     return ((uint32_t)slotIndex << 16) | fieldIndex;
 }
@@ -229,7 +229,7 @@ bool YTChartWidgetState::updateState() {
     // the newest value all the visible traces have
     uint32_t newPosition = 0;
     float newPeriod = 0;
-    if (component && flow::getDibFieldYtHistoryHook) {
+    if (component && flow::getModuleFieldYtHistoryHook) {
         bool first = true;
         for (uint8_t i = 0; i < numTraces; i++) {
             if (!traceVisible[i]) {
@@ -237,7 +237,7 @@ bool YTChartWidgetState::updateState() {
             }
             uint32_t tracePosition;
             float tracePeriod;
-            if (flow::getDibFieldYtHistoryHook(getDibFieldId(widgetCursor, component->traces[i]->fieldIndex), flow::YT_HISTORY_NEWEST, nullptr, 0, tracePosition, tracePeriod)) {
+            if (flow::getModuleFieldYtHistoryHook(getModuleFieldId(widgetCursor, component->traces[i]->fieldIndex), flow::YT_HISTORY_NEWEST, nullptr, 0, tracePosition, tracePeriod)) {
                 if (first || tracePosition < newPosition) {
                     newPosition = tracePosition;
                 }
@@ -319,8 +319,8 @@ void YTChartWidgetState::render() {
             if (
                 !traceVisible[i] ||
                 !component ||
-                !flow::getDibFieldYtHistoryHook ||
-                !flow::getDibFieldYtHistoryHook(getDibFieldId(widgetCursor, component->traces[i]->fieldIndex), position, traceValues, numColumns + 1, tracePosition, tracePeriod)
+                !flow::getModuleFieldYtHistoryHook ||
+                !flow::getModuleFieldYtHistoryHook(getModuleFieldId(widgetCursor, component->traces[i]->fieldIndex), position, traceValues, numColumns + 1, tracePosition, tracePeriod)
             ) {
                 for (uint32_t j = 0; j <= numColumns; j++) {
                     traceValues[j] = NAN;

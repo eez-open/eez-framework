@@ -497,12 +497,15 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
 		propagateValue(flowState, componentIndex, dstValue.getUInt16(), srcValue);
 	} else if (dstValue.getType() == VALUE_TYPE_NATIVE_VARIABLE) {
 #if EEZ_OPTION_GUI
+        Assets *temp = g_widgetCursor.assets;
+        g_widgetCursor.assets = g_mainAssets;
 		set(g_widgetCursor, dstValue.getInt(), srcValue);
+        g_widgetCursor.assets = temp;
 #else
 		setVar(dstValue.getInt(), srcValue);
 #endif
-	}  else if (dstValue.getType() == VALUE_TYPE_DIB_FIELD) {
-		flow::setDibFieldHook(dstValue.getUInt32(), srcValue);
+	}  else if (dstValue.getType() == VALUE_TYPE_MODULE_FIELD) {
+		flow::setModuleFieldHook(dstValue.getUInt32(), srcValue);
 	} else {
 		Value *pDstValue;
         uint32_t dstValueType = VALUE_TYPE_UNDEFINED;
@@ -721,7 +724,7 @@ void throwError(FlowState *flowState, int componentIndex, const char *errorMessa
 			flowState,
 			componentIndex,
 			component->errorCatchOutput,
-			Value::makeStringRef(errorMessage, strlen(errorMessage), 0xef6f8414)
+			Value::makeStringRef(errorMessage, (int)strlen(errorMessage), 0xef6f8414)
 		);
 	} else {
 		FlowState *catchErrorFlowState;
@@ -743,7 +746,7 @@ void throwError(FlowState *flowState, int componentIndex, const char *errorMessa
 
             if (component->type == defs_v3::COMPONENT_TYPE_CATCH_ERROR_ACTION) {
                 auto catchErrorComponentExecutionState = allocateComponentExecutionState<CatchErrorComponenentExecutionState>(catchErrorFlowState, catchErrorComponentIndex);
-                catchErrorComponentExecutionState->message = Value::makeStringRef(errorMessage, strlen(errorMessage), 0x9473eef2);
+                catchErrorComponentExecutionState->message = Value::makeStringRef(errorMessage, (int)strlen(errorMessage), 0x9473eef2);
 
                 if (!addToQueue(catchErrorFlowState, catchErrorComponentIndex, -1, -1, -1, false)) {
                     onFlowError(flowState, componentIndex, errorMessage);
@@ -754,7 +757,7 @@ void throwError(FlowState *flowState, int componentIndex, const char *errorMessa
                     catchErrorFlowState,
                     catchErrorComponentIndex,
                     component->errorCatchOutput,
-                    Value::makeStringRef(errorMessage, strlen(errorMessage), 0x9473eef3)
+                    Value::makeStringRef(errorMessage, (int)strlen(errorMessage), 0x9473eef3)
                 );
             }
 		} else {

@@ -16,7 +16,7 @@ namespace eez {
 namespace flow {
 
 // Trace of the YTChart widget: the YT history of a DIB field of the module
-// (see getDibFieldYtHistoryHook).
+// (see getModuleFieldYtHistoryHook).
 struct YTChartTrace {
     // index of the DIB field in the module metadata (as DibModule.field)
     uint16_t fieldIndex;

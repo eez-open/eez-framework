@@ -86,7 +86,11 @@ void readEvents() {
                 }
             }
         } else if (event.type == SDL_MOUSEWHEEL) {
-            yMouseWheel += event.wheel.y;
+            // A wheel notch is an encoder detent, the wheel turned away from
+            // the user is the encoder turned clockwise. The notches are
+            // written once per call, i.e. once per display frame as the
+            // SYSMCU frames on the hardware, the encoder measures the speed.
+            yMouseWheel += event.wheel.direction == SDL_MOUSEWHEEL_FLIPPED ? -event.wheel.y : event.wheel.y;
         } else if (event.type == SDL_KEYDOWN) {
             keyboard::onKeyboardEvent(&event.key);
         } else if (event.type == SDL_WINDOWEVENT)  {

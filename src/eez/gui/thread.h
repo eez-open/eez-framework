@@ -21,6 +21,14 @@ namespace gui {
 void startThread();
 #endif
 
+#if EEZ_OPTION_THREADS && defined(EEZ_PLATFORM_SIMULATOR) && defined(__APPLE__)
+// On macOS, Cocoa (SDL video) must run on the process main thread, so the GUI
+// loop isn't started in its own thread. Instead, main() calls this function,
+// which waits for startThread() and then runs the GUI loop until shutdown.
+#define EEZ_GUI_RUNS_ON_MAIN_THREAD 1
+void runOnMainThread();
+#endif
+
 enum {
     GUI_QUEUE_MESSAGE_TYPE_DISPLAY_VSYNC = 1,
 

@@ -61,7 +61,7 @@ static void renderIntegerUnitAndFraction(DisplayDataWidgetState *widgetState, co
     widgetState->data.toText(text, sizeof(text));
 
     const char *integer = text;
-    int integerLength = strlen(text);
+    int integerLength = (int)strlen(text);
     const char *unit = "";
     int unitLength = 0;
     const char *fraction = "";
@@ -83,7 +83,7 @@ static void renderIntegerUnitAndFraction(DisplayDataWidgetState *widgetState, co
         }
 
         unit = text + k;
-        unitLength = strlen(unit);
+        unitLength = (int)strlen(unit);
     }
 
     trimText(integer, integerLength);
@@ -193,7 +193,7 @@ void DisplayDataWidgetState::render() {
             }
 
             // trim right
-            length = strlen(start);
+            length = (int)strlen(start);
             if (length > 0 && start[length - 1] == ' ') {
                 length--;
             }
@@ -263,7 +263,7 @@ int DISPLAY_DATA_getCharIndexAtPosition(int xPos, const WidgetCursor &widgetCurs
     }
 
     // trim right
-    int length = strlen(start);
+    int length = (int)strlen(start);
     while (length > 0 && start[length - 1] == ' ') {
         length--;
     }
@@ -313,7 +313,7 @@ int DISPLAY_DATA_getCursorXPosition(int cursorPosition, const WidgetCursor &widg
     }
 
     // trim right
-    int length = strlen(start);
+    int length = (int)strlen(start);
     while (length > 0 && start[length - 1] == ' ') {
         length--;
     }

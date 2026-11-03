@@ -233,7 +233,7 @@ static void FLOAT_value_to_text(const Value &value, char *text, int count) {
                 stringAppendFloat(text, count, floatValue);
             }
 
-            int n = strlen(text);
+            int n = (int)strlen(text);
 
             int decimalPointIndex;
             for (decimalPointIndex = 0; decimalPointIndex < n; ++decimalPointIndex) {
@@ -330,7 +330,7 @@ static void DOUBLE_value_to_text(const Value &value, char *text, int count) {
                 stringAppendDouble(text, count, doubleValue);
             }
 
-            int n = strlen(text);
+            int n = (int)strlen(text);
 
             int decimalPointIndex;
             for (decimalPointIndex = 0; decimalPointIndex < n; ++decimalPointIndex) {
@@ -677,35 +677,32 @@ static const char *FLOW_OUTPUT_value_type_name(const Value &value) {
 #if EEZ_OPTION_GUI
 using namespace gui;
 
+// getValue() reads the native variable (from the BB3+ assets) or the DIB field
+// (with getModuleFieldHook and the slot index in the upper 16 bits of the id)
+
 static bool compare_NATIVE_VARIABLE_value(const Value &a, const Value &b) {
-    auto aValue = get(g_widgetCursor, a.getInt());
-    auto bValue = get(g_widgetCursor, b.getInt());
-	return aValue == bValue;
+    return a.getValue() == b.getValue();
 }
 
 static void NATIVE_VARIABLE_value_to_text(const Value &value, char *text, int count) {
-    auto aValue = get(g_widgetCursor, value.getInt());
-    aValue.toText(text, count);
+    value.getValue().toText(text, count);
 }
 
 static const char *NATIVE_VARIABLE_value_type_name(const Value &value) {
-    auto aValue = get(g_widgetCursor, value.getInt());
+    auto aValue = value.getValue();
     return g_valueTypeNames[aValue.type](aValue);
 }
 
-static bool compare_DIB_FIELD_value(const Value &a, const Value &b) {
-    auto aValue = get(g_widgetCursor, a.getInt());
-    auto bValue = get(g_widgetCursor, b.getInt());
-	return aValue == bValue;
+static bool compare_MODULE_FIELD_value(const Value &a, const Value &b) {
+    return a.getValue() == b.getValue();
 }
 
-static void DIB_FIELD_value_to_text(const Value &value, char *text, int count) {
-    auto aValue = get(g_widgetCursor, value.getInt());
-    aValue.toText(text, count);
+static void MODULE_FIELD_value_to_text(const Value &value, char *text, int count) {
+    value.getValue().toText(text, count);
 }
 
-static const char *DIB_FIELD_value_type_name(const Value &value) {
-    auto aValue = get(g_widgetCursor, value.getInt());
+static const char *MODULE_FIELD_value_type_name(const Value &value) {
+    auto aValue = value.getValue();
     return g_valueTypeNames[aValue.type](aValue);
 }
 #else
@@ -727,19 +724,19 @@ static const char *NATIVE_VARIABLE_value_type_name(const Value &value) {
     return "";
 }
 
-static bool compare_DIB_FIELD_value(const Value &a, const Value &b) {
+static bool compare_MODULE_FIELD_value(const Value &a, const Value &b) {
     EEZ_UNUSED(a);
     EEZ_UNUSED(b);
     return false;
 }
 
-static void DIB_FIELD_value_to_text(const Value &value, char *text, int count) {
+static void MODULE_FIELD_value_to_text(const Value &value, char *text, int count) {
     EEZ_UNUSED(value);
     EEZ_UNUSED(count);
     *text = 0;
 }
 
-static const char *DIB_FIELD_value_type_name(const Value &value) {
+static const char *MODULE_FIELD_value_type_name(const Value &value) {
     EEZ_UNUSED(value);
     return "";
 }
@@ -994,6 +991,71 @@ Value MakeEnumDefinitionValue(uint8_t enumValue, uint8_t enumDefinition) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+Value Value::getValue() const {
+    if (type == VALUE_TYPE_VALUE_PTR) {
+        return pValueValue->getValue();
+    }
+    if (type == VALUE_TYPE_NATIVE_VARIABLE) {
+#if EEZ_OPTION_GUI
+        using namespace gui;
+        Assets *temp = g_widgetCursor.assets;
+        g_widgetCursor.assets = g_mainAssets;
+        auto result = get(g_widgetCursor, int32Value);
+        g_widgetCursor.assets = temp;
+        return result;
+#else
+        return getVar(int32Value);
+#endif
+    }
+    if (type == VALUE_TYPE_MODULE_FIELD) {
+        using namespace flow;
+        return getModuleFieldHook(uint32Value);
+    }
+    if (type == VALUE_TYPE_ARRAY_ELEMENT_VALUE) {
+        auto arrayElementValue = (ArrayElementValue *)refValue;
+        if (arrayElementValue->arrayValue.isBlob()) {
+            auto blobRef = arrayElementValue->arrayValue.getBlob();
+            if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= (int)blobRef->len) {
+                return Value();
+            }
+            return Value((uint32_t)blobRef->blob[arrayElementValue->elementIndex], VALUE_TYPE_UINT32);
+        } else if (arrayElementValue->arrayValue.isDynamicArray()) {
+            auto dynamicArray = arrayElementValue->arrayValue.getDynamicArray();
+            if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= (int)dynamicArray->arraySize) {
+                return Value();
+            }
+            return dynamicArray->getElement(arrayElementValue->elementIndex);
+        } else {
+            auto array = arrayElementValue->arrayValue.getArray();
+
+            if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= (int)array->arraySize) {
+                return Value();
+            }
+
+#if defined(EEZ_DASHBOARD_API)
+            if (array->arrayType >= flow::defs_v3::FIRST_OBJECT_TYPE && array->arrayType <= flow::defs_v3::LAST_OBJECT_TYPE) {
+                return flow::getObjectVariableMemberValue(&arrayElementValue->arrayValue, arrayElementValue->elementIndex);
+            }
+#endif
+
+            return array->values[arrayElementValue->elementIndex];
+        }
+    }
+
+#if defined(EEZ_DASHBOARD_API)
+    else if (type == VALUE_TYPE_JSON_MEMBER_VALUE) {
+        auto jsonMemberValue = (JsonMemberValue *)refValue;
+        return flow::operationJsonGet(jsonMemberValue->jsonValue.getInt(), jsonMemberValue->propertyName.getString());
+    }
+#endif
+
+    else if (type == VALUE_TYPE_PROPERTY_REF) {
+        return evalProperty();
+    }
+
+    return *this;
+}
 
 const char *Value::getString() const {
     auto value = getValue(); // will convert VALUE_TYPE_STRING_ASSET to VALUE_TYPE_STRING by using copy constructor
@@ -1426,7 +1488,7 @@ Value Value::toString(uint32_t id) const {
 #pragma warning(pop)
 #endif
 
-	return makeStringRef(tempStr, strlen(tempStr), id);
+	return makeStringRef(tempStr, (int)strlen(tempStr), id);
 }
 
 Value Value::makeStringRef(const char *str, int len, uint32_t id) {
@@ -1436,7 +1498,7 @@ Value Value::makeStringRef(const char *str, int len, uint32_t id) {
 	}
 
 	if (len == -1) {
-		len = strlen(str);
+		len = (int)strlen(str);
 	}
 
     stringRef->str = (char *)alloc(len + 1, id + 1);

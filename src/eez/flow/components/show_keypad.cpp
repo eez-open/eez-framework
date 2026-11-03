@@ -96,7 +96,13 @@ void executeShowKeypadComponent(FlowState *flowState, unsigned componentIndex) {
 
     initialValue.unit = unit;
 
-	showKeypadHook(labelValue, initialValue, minValue, maxValue, unit, onOk, onCancel);
+    // the precision for the keypad units (e.g. uA for a value below 1 mA)
+    Value precisionValue;
+    if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_PRECISION, precisionValue, FlowError::Property("ShowKeypad", "Precision"))) {
+        return;
+    }
+
+	showKeypadHook(labelValue, initialValue, minValue, maxValue, unit, precisionValue.toFloat(), onOk, onCancel);
 }
 
 } // namespace flow

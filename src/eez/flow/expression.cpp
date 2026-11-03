@@ -209,7 +209,7 @@ bool evalAssignableExpression(FlowState *flowState, int componentIndex, const ui
         if (
             finalResult.getType() == VALUE_TYPE_VALUE_PTR ||
             finalResult.getType() == VALUE_TYPE_NATIVE_VARIABLE ||
-            finalResult.getType() == VALUE_TYPE_DIB_FIELD ||
+            finalResult.getType() == VALUE_TYPE_MODULE_FIELD ||
             finalResult.getType() == VALUE_TYPE_FLOW_OUTPUT ||
             finalResult.getType() == VALUE_TYPE_ARRAY_ELEMENT_VALUE ||
             finalResult.getType() == VALUE_TYPE_JSON_MEMBER_VALUE

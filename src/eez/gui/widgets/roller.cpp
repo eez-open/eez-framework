@@ -162,10 +162,10 @@ void RollerWidgetState::render() {
 
 		auto textLength = strlen(text);
 
-		int textWidth = display::measureStr(text, textLength, fontUnselectedValue, 0);
+		int textWidth = display::measureStr(text, (int)textLength, fontUnselectedValue, 0);
 		if (y < clip1_y2) {
 			display::drawStr(
-				text, textLength,
+				text, (int)textLength,
 				x + (widgetCursor.w - textWidth) / 2, y,
 				clip1_x1, clip1_y1, clip1_x2, clip1_y2,
 				fontUnselectedValue,
@@ -173,7 +173,7 @@ void RollerWidgetState::render() {
 			);
 		} else {
 			display::drawStr(
-				text, textLength,
+				text, (int)textLength,
 				x + (widgetCursor.w - textWidth) / 2, y,
 				clip3_x1, clip3_y1, clip3_x2, clip3_y2,
 				fontUnselectedValue,
@@ -182,11 +182,11 @@ void RollerWidgetState::render() {
 		}
 
 		if (y + textHeight >= clip2_y1 || y < clip2_y2) {
-			int textWidth = display::measureStr(text, textLength, fontSelectedValue, 0);
+			int textWidth = display::measureStr(text, (int)textLength, fontSelectedValue, 0);
 
 			display::setColor(selectedValueStyle->color);
 			display::drawStr(
-				text, textLength,
+				text, (int)textLength,
 				x + (widgetCursor.w - textWidth) / 2, y,
 				clip2_x1, clip2_y1, clip2_x2, clip2_y2,
 				fontSelectedValue,

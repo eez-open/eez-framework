@@ -227,6 +227,10 @@ static const float FACTORS[] = { 1E-12F, 1E-9F, 1E-6F, 1E-3F, 1E0F, 1E3F, 1E6F, 
 Unit findDerivedUnit(float value, Unit unit) {
 	Unit result;
 
+	if (value == 0) {
+		return unit;
+	}
+
 	for (int factorIndex = 1; ; factorIndex++) {
 		float factor = FACTORS[factorIndex];
 		if (factor > 1.0F) {

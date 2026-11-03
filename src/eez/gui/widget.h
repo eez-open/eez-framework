@@ -282,6 +282,10 @@ void forEachWidget(EnumWidgetsCallback callback);
 
 WidgetCursor findWidget(int16_t x, int16_t y, bool clicked = true);
 
+// point is outside if it is not on some visible widget of the active page
+// (widgets not on the screen and transparent containers are not taken into account)
+bool isOutsideActivePageWidgets(AppContext *appContext, int16_t x, int16_t y);
+
 static const int MAX_NESTED_SCROLL_LISTS = 4;
 
 // scrollable lists, from the outermost to the innermost

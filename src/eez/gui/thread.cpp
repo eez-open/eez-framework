@@ -12,6 +12,8 @@
 
 #if EEZ_OPTION_GUI
 
+#include <atomic>
+
 #include <eez/core/os.h>
 
 #include <eez/gui/gui.h>
@@ -46,9 +48,20 @@ EEZ_MESSAGE_QUEUE_DECLARE(gui, {
     };
 });
 
+#if EEZ_GUI_RUNS_ON_MAIN_THREAD
+// static initialization runs on the process main thread
+static const osThreadId_t g_mainThreadId = osThreadGetId();
+static std::atomic<bool> g_startRequested;
+#endif
+
 void startThread() {
 	EEZ_MESSAGE_QUEUE_CREATE(gui, 20);
+#if EEZ_GUI_RUNS_ON_MAIN_THREAD
+    g_guiTaskHandle = g_mainThreadId;
+    g_startRequested = true;
+#else
 	EEZ_THREAD_CREATE(gui, mainLoop);
+#endif
 
 #ifdef __EMSCRIPTEN__
     eez::gui::guiInit();
@@ -56,6 +69,18 @@ void startThread() {
 }
 
 void oneIter();
+
+#if EEZ_GUI_RUNS_ON_MAIN_THREAD
+void runOnMainThread() {
+    while (!g_startRequested) {
+        if (g_shutdown) {
+            return;
+        }
+        osDelay(10);
+    }
+    mainLoop(nullptr);
+}
+#endif
 
 void mainLoop(void *) {
 #ifdef __EMSCRIPTEN__

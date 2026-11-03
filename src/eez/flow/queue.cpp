@@ -76,7 +76,7 @@ bool addToQueue(FlowState *flowState, unsigned componentIndex, int sourceCompone
 	}
 
 	size_t queueSize = getQueueSize();
-	g_queueMax = g_queueMax < queueSize ? queueSize : g_queueMax;
+	g_queueMax = g_queueMax < queueSize ? (unsigned int)queueSize : g_queueMax;
 
     if (!continuousTask) {
         ++g_numNonContinuousTaskInQueue;

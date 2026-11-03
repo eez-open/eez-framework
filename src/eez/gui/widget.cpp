@@ -502,6 +502,51 @@ int g_yOverlayOffset = 0;
 
 static AppContext *g_popPageAppContext;
 
+// x, y, w and h are set to the touch detection rectangle of the current widget
+static bool isFindPointInsideWidget(Overlay *overlay, int &x, int &y, int &w, int &h) {
+    WidgetCursor &widgetCursor = g_widgetCursor;
+
+	if (overlay) {
+		getOverlayOffset(widgetCursor, g_xOverlayOffset, g_yOverlayOffset);
+	}
+
+	x = widgetCursor.x + g_xOverlayOffset;
+	y = widgetCursor.y + g_yOverlayOffset;
+
+	if (overlay) {
+		g_xOverlayOffset = 0;
+		g_yOverlayOffset = 0;
+	}
+
+#ifndef MIN_TOUCH_DETECTION_SIZE
+#define MIN_TOUCH_DETECTION_SIZE 50
+#endif
+
+    w = overlay ? overlay->width : widgetCursor.w;
+    if (w < MIN_TOUCH_DETECTION_SIZE) {
+        x = x - (MIN_TOUCH_DETECTION_SIZE - w) / 2;
+        w = MIN_TOUCH_DETECTION_SIZE;
+    }
+
+    h = overlay ? overlay->height : widgetCursor.h;
+    if (h < MIN_TOUCH_DETECTION_SIZE) {
+        y = y - (MIN_TOUCH_DETECTION_SIZE - h) / 2;
+        h = MIN_TOUCH_DETECTION_SIZE;
+    }
+
+    bool inside =
+        g_findWidgetAtX >= x && g_findWidgetAtX < x + w &&
+        g_findWidgetAtY >= y && g_findWidgetAtY < y + h;
+
+    if (inside && g_findClipRect.w > 0) {
+        inside =
+            g_findWidgetAtX >= g_findClipRect.x && g_findWidgetAtX < g_findClipRect.x + g_findClipRect.w &&
+            g_findWidgetAtY >= g_findClipRect.y && g_findWidgetAtY < g_findClipRect.y + g_findClipRect.h;
+    }
+
+    return inside;
+}
+
 static void findWidgetStep() {
 	if (g_found) {
 		return;
@@ -547,43 +592,9 @@ static void findWidgetStep() {
     const Widget *widget = widgetCursor.widget;
 
     Overlay *overlay = getOverlay(widgetCursor);
-	if (overlay) {
-		getOverlayOffset(widgetCursor, g_xOverlayOffset, g_yOverlayOffset);
-	}
 
-	int x = widgetCursor.x + g_xOverlayOffset;
-	int y = widgetCursor.y + g_yOverlayOffset;
-
-	if (overlay) {
-		g_xOverlayOffset = 0;
-		g_yOverlayOffset = 0;
-	}
-
-#ifndef MIN_TOUCH_DETECTION_SIZE
-#define MIN_TOUCH_DETECTION_SIZE 50
-#endif
-
-    int w = overlay ? overlay->width : widgetCursor.w;
-    if (w < MIN_TOUCH_DETECTION_SIZE) {
-        x = x - (MIN_TOUCH_DETECTION_SIZE - w) / 2;
-        w = MIN_TOUCH_DETECTION_SIZE;
-    }
-
-    int h = overlay ? overlay->height : widgetCursor.h;
-    if (h < MIN_TOUCH_DETECTION_SIZE) {
-        y = y - (MIN_TOUCH_DETECTION_SIZE - h) / 2;
-        h = MIN_TOUCH_DETECTION_SIZE;
-    }
-
-    bool inside =
-        g_findWidgetAtX >= x && g_findWidgetAtX < x + w &&
-        g_findWidgetAtY >= y && g_findWidgetAtY < y + h;
-
-    if (inside && g_findClipRect.w > 0) {
-        inside =
-            g_findWidgetAtX >= g_findClipRect.x && g_findWidgetAtX < g_findClipRect.x + g_findClipRect.w &&
-            g_findWidgetAtY >= g_findClipRect.y && g_findWidgetAtY < g_findClipRect.y + g_findClipRect.h;
-    }
+    int x, y, w, h;
+    bool inside = isFindPointInsideWidget(overlay, x, y, w, h);
 
     // scrollable list is found only if touch is not on some other widget inside the list
     bool isScrollList = g_clicked && isTouchScrollableList(widgetCursor);
@@ -652,6 +663,66 @@ WidgetCursor findWidget(int16_t x, int16_t y, bool clicked) {
     }
 
     return g_foundWidget;
+}
+
+static AppContext *g_findPageAppContext;
+static bool g_findPageEnumerated;
+
+// background of the transparent container is not seen, only its children are
+static bool isTransparentContainer(const Widget *widget) {
+    switch (widget->type) {
+    case WIDGET_TYPE_CONTAINER:
+    case WIDGET_TYPE_LIST:
+    case WIDGET_TYPE_GRID:
+    case WIDGET_TYPE_SELECT:
+    case WIDGET_TYPE_USER_WIDGET:
+        return getStyle(widget->style)->backgroundColor == TRANSPARENT_COLOR_INDEX;
+    default:
+        return false;
+    }
+}
+
+static void findActivePageWidgetStep() {
+    WidgetCursor &widgetCursor = g_widgetCursor;
+
+    if (g_found || widgetCursor.appContext != g_findPageAppContext || !widgetCursor.appContext->isTopPageEnumerated()) {
+        return;
+    }
+
+    g_findPageEnumerated = true;
+
+    // page is also a container, so everything inside an opaque page is inside of the widget
+    if (isTransparentContainer(widgetCursor.widget)) {
+        return;
+    }
+
+    Overlay *overlay = getOverlay(widgetCursor);
+    if (overlay && !overlay->state) {
+        return;
+    }
+
+    int x, y, w, h;
+    g_found = isFindPointInsideWidget(overlay, x, y, w, h);
+}
+
+bool isOutsideActivePageWidgets(AppContext *appContext, int16_t x, int16_t y) {
+    g_found = false;
+    g_findEnclosingScrollLists.count = 0;
+    g_findClipRect = Rect();
+
+    g_findWidgetAtX = x;
+    g_findWidgetAtY = y;
+
+    g_xOverlayOffset = 0;
+    g_yOverlayOffset = 0;
+
+    g_findPageAppContext = appContext;
+    g_findPageEnumerated = false;
+
+    forEachWidget(findActivePageWidgetStep);
+
+    // widgets are not known before the page is rendered
+    return g_findPageEnumerated && !g_found;
 }
 
 const ScrollLists &getFoundWidgetScrollLists() {

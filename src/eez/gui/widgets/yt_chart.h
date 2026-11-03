@@ -14,7 +14,7 @@ namespace eez {
 namespace gui {
 
 // YTChart widget (flow projects): the YT histories of DIB fields of the module
-// (see flow::getDibFieldYtHistoryHook), one value per pixel column, the
+// (see flow::getModuleFieldYtHistoryHook), one value per pixel column, the
 // traces are in the flow component (flow::YTChartWidgetComponent). The value
 // traces use the whole height (their min .. max), the visible bit traces
 // split it into lanes, the first one on the top.

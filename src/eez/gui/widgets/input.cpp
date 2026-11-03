@@ -52,7 +52,7 @@ static Value getInputWidgetNumberParam(const gui::WidgetCursor &widgetCursor, in
 
 bool getInputWidgetIsPassword(const gui::WidgetCursor &widgetCursor) {
 	auto widget = (const InputWidget*)widgetCursor.widget;
-	return widget->flags & INPUT_WIDGET_PASSWORD_FLAG != 0;
+	return (widget->flags & INPUT_WIDGET_PASSWORD_FLAG) != 0;
 }
 
 Value getInputWidgetMin(const gui::WidgetCursor &widgetCursor) {

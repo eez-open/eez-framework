@@ -50,12 +50,13 @@ static void showKeyboard(Value label, Value initialText, Value minChars, Value m
     EEZ_UNUSED(onCancel);
 }
 
-static void showKeypad(Value label, Value initialValue, Value min, Value max, Unit unit, void(*onOk)(float), void(*onCancel)()) {
+static void showKeypad(Value label, Value initialValue, Value min, Value max, Unit unit, float precision, void(*onOk)(float), void(*onCancel)()) {
     EEZ_UNUSED(label);
     EEZ_UNUSED(initialValue);
     EEZ_UNUSED(min);
     EEZ_UNUSED(max);
     EEZ_UNUSED(unit);
+    EEZ_UNUSED(precision);
     EEZ_UNUSED(onOk);
     EEZ_UNUSED(onCancel);
 }
@@ -83,7 +84,7 @@ static void onDebuggerInputAvailable() {
 
 void (*replacePageHook)(int16_t pageId, uint32_t animType, uint32_t speed, uint32_t delay) = replacePage;
 void (*showKeyboardHook)(Value label, Value initialText, Value minChars, Value maxChars, bool isPassword, void(*onOk)(char *), void(*onCancel)()) = showKeyboard;
-void (*showKeypadHook)(Value label, Value initialValue, Value min, Value max, Unit unit, void(*onOk)(float), void(*onCancel)()) = showKeypad;
+void (*showKeypadHook)(Value label, Value initialValue, Value min, Value max, Unit unit, float precision, void(*onOk)(float), void(*onCancel)()) = showKeypad;
 void (*stopScriptHook)() = stopScript;
 
 void (*scpiComponentInitHook)() = scpiComponentInit;
@@ -196,9 +197,11 @@ double (*getDateNowHook)() = nullptr;
 
 void (*onFlowErrorHook)(FlowState *flowState, int componentIndex, const char *errorMessage) = nullptr;
 
-Value (*getDibFieldHook)(uint32_t dibFieldId) = nullptr;
-void (*setDibFieldHook)(uint32_t dibFieldId, const Value &sourceValue) = nullptr;
-bool (*getDibFieldYtHistoryHook)(uint32_t dibFieldId, uint32_t endPosition, float *values, uint32_t count, uint32_t &position, float &period) = nullptr;
+void (*logInfoHook)(FlowState *flowState, unsigned componentIndex, const char *message) = nullptr;
+
+Value (*getModuleFieldHook)(uint32_t moduleFieldId) = nullptr;
+void (*setModuleFieldHook)(uint32_t moduleFieldId, const Value &sourceValue) = nullptr;
+bool (*getModuleFieldYtHistoryHook)(uint32_t moduleFieldId, uint32_t endPosition, float *values, uint32_t count, uint32_t &position, float &period) = nullptr;
 
 
 } // namespace flow

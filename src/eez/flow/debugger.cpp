@@ -731,6 +731,10 @@ void logInfo(FlowState *flowState, unsigned componentIndex, const char *message)
 		writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
 		writeLogMessage(message);
     }
+
+    if (logInfoHook) {
+        logInfoHook(flowState, componentIndex, message);
+    }
 }
 
 void logScpiCommand(FlowState *flowState, unsigned componentIndex, const char *cmd) {

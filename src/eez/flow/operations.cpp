@@ -1832,7 +1832,7 @@ static void do_OPERATION_TYPE_STRING_LENGTH(EvalStack &stack) {
         return;
     }
 
-    int aStrLen = strlen(aStr);
+    int aStrLen = (int)strlen(aStr);
 
     stack.push(Value(aStrLen, VALUE_TYPE_INT32));
 }
@@ -2094,7 +2094,7 @@ static void do_OPERATION_TYPE_STRING_FORMAT(EvalStack &stack) {
         return;
     }
 
-    int resultStrLen = do_string_format(type, b, NULL, 0, format);
+    int resultStrLen = (int)do_string_format(type, b, NULL, 0, format);
     char *resultStr = (char *)eez::alloc(resultStrLen + 1, 0x987ee4eb);
     do_string_format(type, b, resultStr, resultStrLen + 1, format);
 
@@ -2161,7 +2161,7 @@ static void do_OPERATION_TYPE_STRING_PAD_START(EvalStack &stack) {
         stack.push(Value::makeError());
         return;
     }
-    int strLen = strlen(str.getString());
+    int strLen = (int)strlen(str.getString());
 
     int err;
     int targetLength = b.toInt32(&err);
@@ -2178,7 +2178,7 @@ static void do_OPERATION_TYPE_STRING_PAD_START(EvalStack &stack) {
         stack.push(Value::makeError());
         return;
     }
-    int padStrLen = strlen(padStr.getString());
+    int padStrLen = (int)strlen(padStr.getString());
 
     Value resultValue = Value::makeStringRef("", targetLength, 0xf43b14dd);
     if (resultValue.type == VALUE_TYPE_NULL) {
@@ -2239,7 +2239,7 @@ static void do_OPERATION_TYPE_STRING_SPLIT(EvalStack &stack) {
     stringCopy(strCopy, strLen + 1, str);
 
     // make array
-    auto arrayValue = Value::makeArrayRef(arraySize, VALUE_TYPE_STRING, 0xe82675d4);
+    auto arrayValue = Value::makeArrayRef((int)arraySize, VALUE_TYPE_STRING, 0xe82675d4);
     auto array = arrayValue.getArray();
     int i = 0;
     token = strtok(strCopy, delim);
@@ -2271,7 +2271,7 @@ static void do_OPERATION_TYPE_STRING_FROM_CODE_POINT(EvalStack &stack) {
 
     utf8catcodepoint(str, charCode, sizeof(str));
 
-    Value resultValue = Value::makeStringRef(str, strlen(str), 0x02c2e778);
+    Value resultValue = Value::makeStringRef(str, (int)strlen(str), 0x02c2e778);
     stack.push(resultValue);
     return;
 }
@@ -2482,16 +2482,17 @@ static void do_OPERATION_TYPE_ARRAY_APPEND(EvalStack &stack) {
 
 static void do_OPERATION_TYPE_ARRAY_INSERT(EvalStack &stack) {
     auto arrayValue = stack.pop().getValue();
+    auto positionValue = stack.pop().getValue();
+    auto value = stack.pop().getValue();
+
     if (arrayValue.isError()) {
         stack.push(arrayValue);
         return;
     }
-    auto positionValue = stack.pop().getValue();
     if (positionValue.isError()) {
         stack.push(positionValue);
         return;
     }
-    auto value = stack.pop().getValue();
     if (value.isError()) {
         stack.push(value);
         return;
@@ -2713,7 +2714,7 @@ static void do_OPERATION_TYPE_CRYPTO_SHA256(EvalStack &stack) {
     if (value.isString()) {
         const char *str = value.getString();
         data = (uint8_t *)str;
-        dataLen = strlen(str);
+        dataLen = (uint32_t)strlen(str);
     } else if (value.isBlob()) {
         auto blobRef = value.getBlob();
         data = blobRef->blob;
@@ -2931,7 +2932,7 @@ static void do_OPERATION_TYPE_EVENT_GET_ROTARY_DIFF(EvalStack &stack) {
 static void do_OPERATION_TYPE_DIB_MODULE_FIELD(EvalStack &stack) {
     uint16_t globalVariableIndex = stack.pop().getValue().getUInt16();
     uint16_t slotIndex = (uint16_t)stack.flowState->assets->reserved;
-    stack.push(Value((slotIndex << 16) | globalVariableIndex, VALUE_TYPE_DIB_FIELD));
+    stack.push(Value((slotIndex << 16) | globalVariableIndex, VALUE_TYPE_MODULE_FIELD));
 }
 
 EvalOperation g_evalOperations[] = {

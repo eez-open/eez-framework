@@ -797,7 +797,7 @@ void MenuWithButtonsPage::init(AppContext *appContext, const char *message, cons
         maxMenuItemWidth = MAX(maxMenuItemWidth, m_buttonTextWidgets[i].width);
     }
 
-    int menuItemsWidth = maxMenuItemWidth * m_numButtonTextWidgets + (m_numButtonTextWidgets - 1) * styleButton->paddingLeft;
+    int menuItemsWidth = (int)(maxMenuItemWidth * m_numButtonTextWidgets + (m_numButtonTextWidgets - 1) * styleButton->paddingLeft);
 
     int contentWidth = MAX(m_messageTextWidget.width, menuItemsWidth);
     int contentHeight = m_messageTextWidget.height + m_buttonTextWidgets[0].height;
@@ -865,7 +865,7 @@ void MenuWithButtonsPage::updateInternalPage() {
         widgetCursor.y = y + m_buttonTextWidgets[i].y;
         widgetCursor.w = m_buttonTextWidgets[i].width;
         widgetCursor.h = m_buttonTextWidgets[i].height;
-        widgetCursor.cursor = i;
+        widgetCursor.cursor = (Cursor)i;
 		TextWidgetState textWidgetState;
 		textWidgetState.flags.active = widgetCursor == g_activeWidget;
 		textWidgetState.flags.blinking = 0;
@@ -890,7 +890,7 @@ WidgetCursor MenuWithButtonsPage::findWidgetInternalPage(int x, int y, bool clic
         widgetCursor.y = this->y + m_buttonTextWidgets[i].y;
         widgetCursor.w = m_buttonTextWidgets[i].width;
         widgetCursor.h = m_buttonTextWidgets[i].height;
-        widgetCursor.cursor = i;
+        widgetCursor.cursor = (Cursor)i;
         if (
             x >= widgetCursor.x && x < widgetCursor.x + widgetCursor.w &&
             y >= widgetCursor.y && y < widgetCursor.y + widgetCursor.h
@@ -964,7 +964,7 @@ void QuestionPage::init(AppContext *appContext, const Value &message, const Valu
         maxMenuItemWidth = MAX(maxMenuItemWidth, m_buttonTextWidgets[i].width);
     }
 
-    int menuItemsWidth = maxMenuItemWidth * m_numButtonTextWidgets + (m_numButtonTextWidgets - 1) * styleButton->paddingLeft;
+    int menuItemsWidth = (int)(maxMenuItemWidth * m_numButtonTextWidgets + (m_numButtonTextWidgets - 1) * styleButton->paddingLeft);
 
     int contentWidth = MAX(m_messageTextWidget.width, menuItemsWidth);
     int contentHeight = m_messageTextWidget.height + m_buttonTextWidgets[0].height;
@@ -1031,7 +1031,7 @@ void QuestionPage::updateInternalPage() {
         widgetCursor.y = y + m_buttonTextWidgets[i].y;
         widgetCursor.w = m_buttonTextWidgets[i].width;
         widgetCursor.h = m_buttonTextWidgets[i].height;
-        widgetCursor.cursor = i;
+        widgetCursor.cursor = (Cursor)i;
 		TextWidgetState textWidgetState;
 		textWidgetState.flags.active = widgetCursor == g_activeWidget;
 		textWidgetState.flags.blinking = 0;
@@ -1056,7 +1056,7 @@ WidgetCursor QuestionPage::findWidgetInternalPage(int x, int y, bool clicked) {
         widgetCursor.y = this->y + m_buttonTextWidgets[i].y;
         widgetCursor.w = m_buttonTextWidgets[i].width;
         widgetCursor.h = m_buttonTextWidgets[i].height;
-        widgetCursor.cursor = i;
+        widgetCursor.cursor = (Cursor)i;
         if (
             x >= widgetCursor.x && x < widgetCursor.x + widgetCursor.w &&
             y >= widgetCursor.y && y < widgetCursor.y + widgetCursor.h

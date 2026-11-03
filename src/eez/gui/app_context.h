@@ -51,6 +51,11 @@ public:
         return m_updatePageIndex != -1 ? m_updatePageIndex : m_pageNavigationStackPointer;
     }
 
+    // true while the widgets of the page on the top of the stack are enumerated
+    bool isTopPageEnumerated() {
+        return m_updatePageIndex == m_pageNavigationStackPointer;
+    }
+
     int getActivePageId() {
         return m_pageNavigationStack[getActivePageStackPointer()].pageId;
     }

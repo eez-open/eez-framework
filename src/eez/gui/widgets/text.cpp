@@ -151,7 +151,7 @@ void TextWidgetState::render() {
         if (data.isString()) {
             if (data.getOptions() & STRING_OPTIONS_FILE_ELLIPSIS) {
                 const char *fullText = data.getString();
-                int fullTextLength = strlen(fullText);
+                int fullTextLength = (int)strlen(fullText);
                 font::Font font = styleGetFont(style);
                 int fullTextWidth = display::measureStr(fullText, fullTextLength, font);
                 if (fullTextWidth <= widgetCursor.w) {
@@ -168,7 +168,7 @@ void TextWidgetState::render() {
                     int width = ellipsisWidth;
                     int textLength = 3;
                     int iLeft = 0;
-                    int iRight = strlen(fullText) - 1;
+                    int iRight = (int)strlen(fullText) - 1;
                     while (iLeft < iRight && textLength < (int)MAX_TEXT_LEN) {
                         int widthLeft = display::measureGlyph(fullText[iLeft], font);
                         if (width + widthLeft > widgetCursor.w) {

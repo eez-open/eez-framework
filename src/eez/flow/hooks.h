@@ -28,7 +28,7 @@ namespace flow {
 
 extern void (*replacePageHook)(int16_t pageId, uint32_t animType, uint32_t speed, uint32_t delay);
 extern void (*showKeyboardHook)(Value label, Value initialText, Value minChars, Value maxChars, bool isPassword, void(*onOk)(char *), void(*onCancel)());
-extern void (*showKeypadHook)(Value label, Value initialValue, Value min, Value max, Unit unit, void(*onOk)(float), void(*onCancel)());
+extern void (*showKeypadHook)(Value label, Value initialValue, Value min, Value max, Unit unit, float precision, void(*onOk)(float), void(*onCancel)());
 extern void (*stopScriptHook)();
 
 extern void (*scpiComponentInitHook)();
@@ -63,8 +63,11 @@ extern double (*getDateNowHook)();
 
 extern void (*onFlowErrorHook)(FlowState *flowState, int componentIndex, const char *errorMessage);
 
-extern Value (*getDibFieldHook)(uint32_t dibFieldId);
-extern void (*setDibFieldHook)(uint32_t dibFieldId, const Value &sourceValue);
+// the message of the Log component
+extern void (*logInfoHook)(FlowState *flowState, unsigned componentIndex, const char *message);
+
+extern Value (*getModuleFieldHook)(uint32_t moduleFieldId);
+extern void (*setModuleFieldHook)(uint32_t moduleFieldId, const Value &sourceValue);
 
 // YT history of a DIB field (YTChart widget traces): copies the count values
 // that end before endPosition (YT_HISTORY_NEWEST - up to the newest value) to
@@ -72,7 +75,7 @@ extern void (*setDibFieldHook)(uint32_t dibFieldId, const Value &sourceValue);
 // the history start (the newest value is at position - 1) and period the
 // seconds per value. Returns false if the field has no YT history.
 static const uint32_t YT_HISTORY_NEWEST = 0xFFFFFFFF;
-extern bool (*getDibFieldYtHistoryHook)(uint32_t dibFieldId, uint32_t endPosition, float *values, uint32_t count, uint32_t &position, float &period);
+extern bool (*getModuleFieldYtHistoryHook)(uint32_t moduleFieldId, uint32_t endPosition, float *values, uint32_t count, uint32_t &position, float &period);
 
 } // flow
 } // eez

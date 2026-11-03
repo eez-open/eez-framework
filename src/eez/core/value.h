@@ -325,7 +325,7 @@ struct Value {
     }
 
     bool isIndirectValueType() const {
-        return type == VALUE_TYPE_VALUE_PTR || type == VALUE_TYPE_NATIVE_VARIABLE || type == VALUE_TYPE_DIB_FIELD || type == VALUE_TYPE_ARRAY_ELEMENT_VALUE || type == VALUE_TYPE_JSON_MEMBER_VALUE || type == VALUE_TYPE_PROPERTY_REF;
+        return type == VALUE_TYPE_VALUE_PTR || type == VALUE_TYPE_NATIVE_VARIABLE || type == VALUE_TYPE_MODULE_FIELD || type == VALUE_TYPE_ARRAY_ELEMENT_VALUE || type == VALUE_TYPE_JSON_MEMBER_VALUE || type == VALUE_TYPE_PROPERTY_REF;
     }
 
     Value getValue() const;
@@ -702,68 +702,7 @@ namespace flow {
 #endif
 
 namespace flow {
-    extern Value (*getDibFieldHook)(uint32_t dibFieldId);
-}
-
-inline Value Value::getValue() const {
-    if (type == VALUE_TYPE_VALUE_PTR) {
-        return pValueValue->getValue();
-    }
-    if (type == VALUE_TYPE_NATIVE_VARIABLE) {
-#if EEZ_OPTION_GUI
-        using namespace gui;
-        return get(g_widgetCursor, int32Value);
-#else
-        return getVar(int32Value);
-#endif
-    }
-    if (type == VALUE_TYPE_DIB_FIELD) {
-        using namespace flow;
-        return getDibFieldHook(uint32Value);
-    }
-    if (type == VALUE_TYPE_ARRAY_ELEMENT_VALUE) {
-        auto arrayElementValue = (ArrayElementValue *)refValue;
-        if (arrayElementValue->arrayValue.isBlob()) {
-            auto blobRef = arrayElementValue->arrayValue.getBlob();
-            if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= (int)blobRef->len) {
-                return Value();
-            }
-            return Value((uint32_t)blobRef->blob[arrayElementValue->elementIndex], VALUE_TYPE_UINT32);
-        } else if (arrayElementValue->arrayValue.isDynamicArray()) {
-            auto dynamicArray = arrayElementValue->arrayValue.getDynamicArray();
-            if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= (int)dynamicArray->arraySize) {
-                return Value();
-            }
-            return dynamicArray->getElement(arrayElementValue->elementIndex);
-        } else {
-            auto array = arrayElementValue->arrayValue.getArray();
-
-            if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= (int)array->arraySize) {
-                return Value();
-            }
-
-#if defined(EEZ_DASHBOARD_API)
-            if (array->arrayType >= flow::defs_v3::FIRST_OBJECT_TYPE && array->arrayType <= flow::defs_v3::LAST_OBJECT_TYPE) {
-                return flow::getObjectVariableMemberValue(&arrayElementValue->arrayValue, arrayElementValue->elementIndex);
-            }
-#endif
-
-            return array->values[arrayElementValue->elementIndex];
-        }
-    }
-
-#if defined(EEZ_DASHBOARD_API)
-    else if (type == VALUE_TYPE_JSON_MEMBER_VALUE) {
-        auto jsonMemberValue = (JsonMemberValue *)refValue;
-        return flow::operationJsonGet(jsonMemberValue->jsonValue.getInt(), jsonMemberValue->propertyName.getString());
-    }
-#endif
-
-    else if (type == VALUE_TYPE_PROPERTY_REF) {
-        return evalProperty();
-    }
-
-    return *this;
+    extern Value (*getModuleFieldHook)(uint32_t moduleFieldId);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

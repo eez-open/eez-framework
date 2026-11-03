@@ -286,7 +286,12 @@ void AppContext::onPageTouch(const WidgetCursor &foundWidget, Event &touchEvent)
             int hPage;
             getPageRect(activePageId, getActivePage(), xPage, yPage, wPage, hPage);
 
-            if (!pointInsideRect(touchEvent.x, touchEvent.y, xPage, yPage, wPage, hPage)) {
+            // widgets are checked only at touch down: the rest of the touch that closed
+            // the page above must not close this page also
+            if (
+                !pointInsideRect(touchEvent.x, touchEvent.y, xPage, yPage, wPage, hPage) ||
+                (touchEvent.type == EVENT_TYPE_TOUCH_DOWN && isOutsideActivePageWidgets(this, touchEvent.x, touchEvent.y))
+            ) {
                 int activePageId = getActivePageId();
 
                 // clicked outside page, close page
