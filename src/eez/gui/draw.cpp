@@ -1326,6 +1326,125 @@ void drawAntialiasedLine(int x0, int y0, int x1, int y1) {
     display::endPixelsDraw();
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+// the box is as big as an icon glyph of the font
+static int getCheckBoxSize(font::Font &font) {
+    return font.getHeight() * 3 / 4;
+}
+
+int measureCheckboxOrRadio(const Style *style, const char *label) {
+    font::Font font = styleGetFont(style);
+    if (!font) {
+        return 0;
+    }
+
+    int width = getCheckBoxSize(font);
+    if (label && label[0]) {
+        width += display::measureGlyph(' ', font) + display::measureStr(label, -1, font, 0);
+    }
+    return width;
+}
+
+void drawCheckboxOrRadio(int x, int y, int w, int h, const Style *style, bool radio, bool checked, const char *label, bool active) {
+    int x1 = x;
+    int y1 = y;
+    int x2 = x + w - 1;
+    int y2 = y + h - 1;
+
+    drawBorderAndBackground(x1, y1, x2, y2, style, active ? style->activeBackgroundColor : style->backgroundColor);
+
+    font::Font font = styleGetFont(style);
+    if (!font) {
+        return;
+    }
+
+    uint16_t color = active ? style->activeColor : style->color;
+    if (color == TRANSPARENT_COLOR_INDEX) {
+        return;
+    }
+
+    // the box and the label are aligned as a text in drawText
+    int width = measureCheckboxOrRadio(style, label);
+    int height = font.getHeight();
+
+    int xOffset;
+    if (styleIsHorzAlignLeft(style)) {
+        xOffset = x1 + style->paddingLeft;
+    } else if (styleIsHorzAlignRight(style)) {
+        xOffset = x2 - style->paddingRight - width;
+    } else {
+        xOffset = x1 + ((x2 - x1 + 1) - width) / 2;
+        if (xOffset < x1) {
+            xOffset = x1;
+        }
+    }
+
+    int yOffset;
+    if (styleIsVertAlignTop(style)) {
+        yOffset = y1 + style->paddingTop;
+    } else if (styleIsVertAlignBottom(style)) {
+        yOffset = y2 - style->paddingBottom - height;
+    } else {
+        yOffset = y1 + ((y2 - y1 + 1) - height) / 2;
+    }
+
+    int boxSize = getCheckBoxSize(font);
+    int bx1 = xOffset;
+    int by1 = yOffset + (height - boxSize) / 2;
+    int bx2 = bx1 + boxSize - 1;
+    int by2 = by1 + boxSize - 1;
+
+    auto savedClipRect = display::intersectClipRect(x1, y1, x2 - x1 + 1, y2 - y1 + 1);
+
+    display::setColor(color);
+    display::setBackColor(color);
+
+    {
+        display::AggDrawing aggDrawing;
+        display::aggInit(aggDrawing);
+
+        if (radio) {
+            // circle, a filled circle inside if checked
+            int lineWidth = MAX(1, (int)roundf(boxSize / 14.0f));
+            display::fillRoundedRect(aggDrawing, bx1, by1, bx2, by2, lineWidth, boxSize / 2, true, false);
+
+            if (checked) {
+                // the free space around the dot is even, so the dot is centered
+                // on whole pixels
+                int dotSize = boxSize / 2;
+                if ((boxSize - dotSize) % 2) {
+                    dotSize++;
+                }
+                int dx1 = bx1 + (boxSize - dotSize) / 2;
+                int dy1 = by1 + (boxSize - dotSize) / 2;
+                display::fillRoundedRect(aggDrawing, dx1, dy1, dx1 + dotSize - 1, dy1 + dotSize - 1, 0, dotSize / 2, false, true);
+            }
+        } else {
+            // rounded square, a check mark inside if checked
+            int lineWidth = MAX(1, (int)roundf(boxSize / 9.0f));
+            display::fillRoundedRect(aggDrawing, bx1, by1, bx2, by2, lineWidth, boxSize / 6, true, false);
+
+            if (checked) {
+                float points[] = {
+                    bx1 + 0.24f * boxSize, by1 + 0.52f * boxSize,
+                    bx1 + 0.43f * boxSize, by1 + 0.71f * boxSize,
+                    bx1 + 0.77f * boxSize, by1 + 0.32f * boxSize
+                };
+                display::drawPolyline(aggDrawing, points, 3, boxSize / 8.0f);
+            }
+        }
+    }
+
+    if (label && label[0]) {
+        int xText = xOffset + boxSize + display::measureGlyph(' ', font);
+        display::setColor(color);
+        display::drawStr(label, -1, xText, yOffset, x1, y1, x2, y2, font, -1);
+    }
+
+    display::restoreClipRect(savedClipRect);
+}
+
 } // namespace gui
 } // namespace eez
 

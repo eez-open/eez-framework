@@ -86,6 +86,51 @@ static uint32_t getModuleFieldId(const WidgetCursor &widgetCursor, uint16_t fiel
     return ((uint32_t)slotIndex << 16) | fieldIndex;
 }
 
+// The position of the newest YT value of the trace and the seconds per value,
+// false if it has no YT history. A product has the values both fields have.
+static bool getTraceNewest(const WidgetCursor &widgetCursor, const flow::YTChartTrace *trace, uint32_t &position, float &period) {
+    if (trace->type != YT_CHART_TRACE_TYPE_FIELD && trace->type != YT_CHART_TRACE_TYPE_PRODUCT) {
+        return false;
+    }
+    if (!flow::getModuleFieldYtHistoryHook(getModuleFieldId(widgetCursor, trace->fieldIndex), flow::YT_HISTORY_NEWEST, nullptr, 0, position, period)) {
+        return false;
+    }
+    if (trace->type == YT_CHART_TRACE_TYPE_PRODUCT) {
+        uint32_t position2;
+        float period2;
+        if (!flow::getModuleFieldYtHistoryHook(getModuleFieldId(widgetCursor, trace->field2Index), flow::YT_HISTORY_NEWEST, nullptr, 0, position2, period2)) {
+            return false;
+        }
+        if (position2 < position) {
+            position = position2;
+        }
+    }
+    return true;
+}
+
+// The count YT values of the trace that end before endPosition, NAN where
+// there is no value. values2 has room for count values (the second field of a
+// product). Returns false if the trace has no YT history.
+static bool getTraceValues(const WidgetCursor &widgetCursor, const flow::YTChartTrace *trace, uint32_t endPosition, float *values, float *values2, uint32_t count) {
+    if (trace->type != YT_CHART_TRACE_TYPE_FIELD && trace->type != YT_CHART_TRACE_TYPE_PRODUCT) {
+        return false;
+    }
+    uint32_t position;
+    float period;
+    if (!flow::getModuleFieldYtHistoryHook(getModuleFieldId(widgetCursor, trace->fieldIndex), endPosition, values, count, position, period)) {
+        return false;
+    }
+    if (trace->type == YT_CHART_TRACE_TYPE_PRODUCT) {
+        if (!flow::getModuleFieldYtHistoryHook(getModuleFieldId(widgetCursor, trace->field2Index), endPosition, values2, count, position, period)) {
+            return false;
+        }
+        for (uint32_t i = 0; i < count; i++) {
+            values[i] *= values2[i];
+        }
+    }
+    return true;
+}
+
 // y of the value, INT_MIN if there is no value, can be outside the canvas
 static int getY(float value, float min, float max, int h) {
     if (isNaN(value) || !(max > min)) {
@@ -214,7 +259,7 @@ bool YTChartWidgetState::updateState() {
             max = value.toFloat(nullptr);
         }
 
-        int8_t bit = trace->bit >= 0 && trace->bit <= 7 ? (int8_t)trace->bit : -1;
+        int8_t bit = trace->type == YT_CHART_TRACE_TYPE_FIELD && trace->bit >= 0 && trace->bit <= 7 ? trace->bit : -1;
 
         if (!hasPreviousState || visible != traceVisible[i] || min != traceMin[i] || max != traceMax[i] || bit != traceBit[i]) {
             traceVisible[i] = visible;
@@ -237,7 +282,7 @@ bool YTChartWidgetState::updateState() {
             }
             uint32_t tracePosition;
             float tracePeriod;
-            if (flow::getModuleFieldYtHistoryHook(getModuleFieldId(widgetCursor, component->traces[i]->fieldIndex), flow::YT_HISTORY_NEWEST, nullptr, 0, tracePosition, tracePeriod)) {
+            if (getTraceNewest(widgetCursor, component->traces[i], tracePosition, tracePeriod)) {
                 if (first || tracePosition < newPosition) {
                     newPosition = tracePosition;
                 }
@@ -272,10 +317,10 @@ void YTChartWidgetState::render() {
     }
 
     // pixels, then the values of the drawn columns (and the column before) of
-    // each trace
+    // each trace and of the second field of a product trace
     if (!buffer || bufferWidth != w || bufferHeight != h) {
         eez::free(buffer);
-        buffer = eez::alloc(w * h * sizeof(display::Color) + YT_CHART_MAX_TRACES * (w + 1) * sizeof(float), 0x7e1b5a63);
+        buffer = eez::alloc(w * h * sizeof(display::Color) + (YT_CHART_MAX_TRACES + 1) * (w + 1) * sizeof(float), 0x7e1b5a63);
         if (!buffer) {
             bufferWidth = 0;
             bufferHeight = 0;
@@ -288,6 +333,7 @@ void YTChartWidgetState::render() {
 
     YTChartCanvas canvas = { (display::Color *)buffer, w, h };
     float *values = (float *)(canvas.pixels + w * h);
+    float *values2 = values + YT_CHART_MAX_TRACES * (w + 1);
 
     // the values before bufferPosition are in the buffer already (render can
     // be called again for the same state, e.g. when overlapped)
@@ -314,13 +360,11 @@ void YTChartWidgetState::render() {
         auto component = getComponent(widgetCursor, widget);
         for (uint8_t i = 0; i < numTraces; i++) {
             float *traceValues = values + i * (w + 1);
-            uint32_t tracePosition;
-            float tracePeriod;
             if (
                 !traceVisible[i] ||
                 !component ||
                 !flow::getModuleFieldYtHistoryHook ||
-                !flow::getModuleFieldYtHistoryHook(getModuleFieldId(widgetCursor, component->traces[i]->fieldIndex), position, traceValues, numColumns + 1, tracePosition, tracePeriod)
+                !getTraceValues(widgetCursor, component->traces[i], position, traceValues, values2, numColumns + 1)
             ) {
                 for (uint32_t j = 0; j <= numColumns; j++) {
                     traceValues[j] = NAN;

@@ -75,5 +75,14 @@ void expandRectWithShadow(int &x1, int &y1, int &x2, int &y2);
 void drawLine(int x1, int y1, int x2, int y2);
 void drawAntialiasedLine(int x1, int y1, int x2, int y2);
 
+// Checkbox (rounded square, check mark if checked) or radio button (circle,
+// filled circle if checked) with the label right of it after a space. The box
+// is 3/4 of the style font height, as big as an icon glyph of the font. The box
+// and the label are aligned in the rectangle as a text in drawText and drawn
+// with the style color (active color if active) on the style background.
+void drawCheckboxOrRadio(int x, int y, int w, int h, const Style *style, bool radio, bool checked, const char *label, bool active = false);
+// width of the box and the label, without the padding
+int measureCheckboxOrRadio(const Style *style, const char *label);
+
 } // namespace gui
 } // namespace eez

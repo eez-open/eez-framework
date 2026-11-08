@@ -50,14 +50,14 @@ EEZ_MESSAGE_QUEUE_DECLARE(gui, {
 
 #if EEZ_GUI_RUNS_ON_MAIN_THREAD
 // static initialization runs on the process main thread
-static const osThreadId_t g_mainThreadId = osThreadGetId();
+static const std::thread::id g_mainThreadId = std::this_thread::get_id();
 static std::atomic<bool> g_startRequested;
 #endif
 
 void startThread() {
 	EEZ_MESSAGE_QUEUE_CREATE(gui, 20);
 #if EEZ_GUI_RUNS_ON_MAIN_THREAD
-    g_guiTaskHandle = g_mainThreadId;
+    g_guiThread.attach(g_mainThreadId);
     g_startRequested = true;
 #else
 	EEZ_THREAD_CREATE(gui, mainLoop);
@@ -76,7 +76,7 @@ void runOnMainThread() {
         if (g_shutdown) {
             return;
         }
-        osDelay(10);
+        sleepMs(10);
     }
     mainLoop(nullptr);
 }
@@ -180,7 +180,7 @@ bool pushPageInGuiThread(AppContext *appContext, int pageId, Page *page) {
         obj.changePage.appContext = appContext;
         obj.changePage.pageId = pageId;
         obj.changePage.page = page;
-        EEZ_MESSAGE_QUEUE_PUT(gui, obj, osWaitForever);
+        EEZ_MESSAGE_QUEUE_PUT(gui, obj, WAIT_FOREVER);
         return true;
     }
 #endif
@@ -194,7 +194,7 @@ bool showPageInGuiThread(AppContext *appContext, int pageId) {
         obj.type = GUI_QUEUE_MESSAGE_TYPE_SHOW_PAGE;
         obj.changePage.appContext = appContext;
         obj.changePage.pageId = pageId;
-        EEZ_MESSAGE_QUEUE_PUT(gui, obj, osWaitForever);
+        EEZ_MESSAGE_QUEUE_PUT(gui, obj, WAIT_FOREVER);
         return true;
     }
 #endif
@@ -203,7 +203,7 @@ bool showPageInGuiThread(AppContext *appContext, int pageId) {
 
 bool isGuiThread() {
 #if EEZ_OPTION_THREADS
-    return osThreadGetId() == g_guiTaskHandle;
+    return EEZ_THREAD_IS_CURRENT(gui);
 #else
     return true;
 #endif

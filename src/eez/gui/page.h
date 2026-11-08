@@ -222,7 +222,6 @@ private:
     bool isDisabled(int i);
 
     void getItemPosition(int itemIndex, int &x, int &y);
-    void getItemLabel(int itemIndex, char *text, int count);
 
 	void doSelectEnumItem();
 };

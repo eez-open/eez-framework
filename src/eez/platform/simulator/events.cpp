@@ -20,9 +20,6 @@
 #include <SDL.h>
 #endif
 
-#if defined(EEZ_PLATFORM_CM5_RASPI) && defined(EEZ_USE_WAYLAND)
-#include <layer_shell_display.h>
-#endif
 
 #include <eez/core/encoder.h>
 #include <eez/core/keyboard.h>
@@ -64,9 +61,7 @@ void simulateDrag(int x1, int y1, int x2, int y2, uint32_t durationMs) {
 }
 
 void readEvents() {
-#if defined(EEZ_PLATFORM_CM5_RASPI) && defined(EEZ_USE_WAYLAND)
-    eez::cm5::pollLayerShellDisplay();
-#elif EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
     int yMouseWheel = 0;
     bool mouseButton2IsUp = false;
 
@@ -125,7 +120,7 @@ void readEvents() {
     }
 
 #if OPTION_ENCODER
-    mcu::encoder::write(yMouseWheel, mouseButton2IsUp);
+    platform::encoder::write(yMouseWheel, mouseButton2IsUp);
 #endif
 #endif
 }
@@ -160,7 +155,7 @@ EM_PORT_API(void) onMouseWheelEvent(double yMouseWheel, int clicked) {
     if (yMouseWheel >= 100 || yMouseWheel <= -100) {
         yMouseWheel /= 100;
     }
-    eez::mcu::encoder::write(round(yMouseWheel), clicked);
+    eez::platform::encoder::write(round(yMouseWheel), clicked);
 #endif
 }
 

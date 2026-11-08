@@ -48,7 +48,7 @@
 #endif
 
 namespace eez {
-namespace mcu {
+namespace platform {
 namespace touch {
 
 static const int CONF_TOUCH_PRESSED_DEBOUNCE_TIMEOUT_MS = 10;
@@ -257,11 +257,11 @@ void read(bool &isPressed, int &x, int &y) {
 }
 
 } // namespace touch
-} // namespace mcu
+} // namespace platform
 
 namespace gui {
 
-using namespace mcu::touch;
+using namespace platform::touch;
 
 void data_touch_raw_x(DataOperationEnum operation, const WidgetCursor &widgetCursor, Value &value) {
     if (operation == DATA_OPERATION_GET) {

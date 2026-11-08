@@ -36,6 +36,12 @@
 
 #if defined(__EMSCRIPTEN__)
 #include <sys/time.h>
+#include <vector>
+#endif
+
+#if defined(__linux__)
+#include <pthread.h>
+#include <stdio.h>
 #endif
 
 #include <eez/core/os.h>
@@ -48,7 +54,8 @@ uint32_t millis() {
 #elif defined(__EMSCRIPTEN__)
 	return (uint32_t)emscripten_get_now();
 #elif defined(EEZ_PLATFORM_SIMULATOR) || defined(EEZ_PLATFORM_CM5_RASPI)
-	return osKernelGetTickCount();
+    using namespace std::chrono;
+    return (uint32_t)duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
 #elif defined(EEZ_PLATFORM_ESP32)
 	return (unsigned long) (esp_timer_get_time() / 1000ULL);
 #elif defined(EEZ_PLATFORM_PICO)
@@ -64,4 +71,78 @@ uint32_t millis() {
 #endif
 }
 
+void sleepMs(uint32_t ms) {
+#if defined(__EMSCRIPTEN__)
+    (void)ms;
+#elif EEZ_OPTION_THREADS && defined(EEZ_PLATFORM_STM32)
+    osDelay(ms);
+#elif EEZ_OPTION_THREADS
+    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+#elif defined(EEZ_PLATFORM_STM32)
+    HAL_Delay(ms);
+#else
+    (void)ms;
+#endif
+}
+
+#if EEZ_OPTION_THREADS && !defined(EEZ_PLATFORM_STM32) && !defined(EEZ_FOR_LVGL)
+
+#if defined(__EMSCRIPTEN__)
+
+struct EmscriptenThread {
+    Thread *thread;
+    std::function<void()> func;
+};
+
+static std::vector<EmscriptenThread> g_threads;
+static const Thread *g_currentThread;
+
+void Thread::start(const char *, std::function<void()> func) {
+    g_threads.push_back({ this, func });
+}
+
+bool Thread::isCurrent() const {
+    return g_currentThread == this;
+}
+
+#else
+
+void Thread::start(const char *name, std::function<void()> func) {
+    std::thread thread([this, name, func] {
+        m_id = std::this_thread::get_id();
+#if defined(__linux__)
+        // at most 15 characters
+        char threadName[16];
+        snprintf(threadName, sizeof(threadName), "%s", name);
+        pthread_setname_np(pthread_self(), threadName);
+#else
+        (void)name;
+#endif
+        func();
+    });
+    // also here, so isCurrent() is right before the thread runs
+    m_id = thread.get_id();
+    thread.detach();
+}
+
+bool Thread::isCurrent() const {
+    return std::this_thread::get_id() == m_id.load();
+}
+
+#endif
+
+#endif
+
 } // namespace eez
+
+#if defined(__EMSCRIPTEN__) && EEZ_OPTION_THREADS && !defined(EEZ_FOR_LVGL)
+// called from the Emscripten main loop: one iteration of every thread, twice
+void eez_system_tick() {
+    for (int i = 0; i < 2; i++) {
+        for (auto &thread : eez::g_threads) {
+            eez::g_currentThread = thread.thread;
+            thread.func();
+        }
+    }
+}
+#endif

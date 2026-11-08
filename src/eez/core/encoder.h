@@ -11,7 +11,7 @@
 #pragma once
 
 namespace eez {
-namespace mcu {
+namespace platform {
 namespace encoder {
 
 #if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__) || defined(EEZ_PLATFORM_CM5_RASPI)
@@ -20,5 +20,5 @@ void setButtonState(bool pressed);
 #endif
 
 } // namespace encoder
-} // namespace mcu
+} // namespace platform
 } // namespace eez

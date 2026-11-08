@@ -204,7 +204,7 @@ void *alloc(size_t size, uint32_t id) {
 	}
 
 #if EEZ_OPTION_THREADS
-	if (EEZ_MUTEX_WAIT(alloc, osWaitForever)) {
+	if (EEZ_MUTEX_WAIT(alloc, WAIT_FOREVER)) {
 #endif
 
 		AllocBlock *firstBlock = (AllocBlock *)g_heap;
@@ -262,7 +262,7 @@ void free(void *ptr) {
 	}
 
 #if EEZ_OPTION_THREADS
-	if (EEZ_MUTEX_WAIT(alloc, osWaitForever)) {
+	if (EEZ_MUTEX_WAIT(alloc, WAIT_FOREVER)) {
 #endif
 
 		AllocBlock *firstBlock = (AllocBlock *)g_heap;
@@ -340,7 +340,7 @@ void getAllocInfo(uint32_t &free, uint32_t &alloc) {
 	alloc = 0;
 
 #if EEZ_OPTION_THREADS
-	if (EEZ_MUTEX_WAIT(alloc, osWaitForever)) {
+	if (EEZ_MUTEX_WAIT(alloc, WAIT_FOREVER)) {
 #endif
 
 		AllocBlock *first = (AllocBlock *)g_heap;

@@ -58,6 +58,8 @@
 #include <eez/gui/widgets/line_chart.h>
 #include <eez/gui/widgets/qr_code.h>
 #include <eez/gui/widgets/yt_chart.h>
+#include <eez/gui/widgets/checkbox.h>
+#include <eez/gui/widgets/radio.h>
 
 namespace eez {
 namespace gui {

@@ -220,6 +220,10 @@ void fillRoundedRect(
 	int clip_x1 = -1, int clip_y1 = -1, int clip_x2 = -1, int clip_y2 = -1
 );
 
+// Antialiased line through the points (x and y of each point), with round caps
+// and joins, in the foreground color.
+void drawPolyline(AggDrawing &aggDrawing, const float *points, int numPoints, float lineWidth);
+
 void drawStr(const char *text, int textLength, int x, int y, int clip_x1, int clip_y1, int clip_x2, int clip_y2, gui::font::Font &font, int cursorPosition, int startFontIndex = 0);
 int getCharIndexAtPosition(int xPos, const char *text, int textLength, int x, int y, int clip_x1, int clip_y1, int clip_x2,int clip_y2, gui::font::Font &font);
 int getCursorXPosition(int cursorPosition, const char *text, int textLength, int x, int y, int clip_x1, int clip_y1, int clip_x2,int clip_y2, gui::font::Font &font);

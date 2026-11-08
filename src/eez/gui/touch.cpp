@@ -44,7 +44,7 @@ void tick() {
 	bool pressed;
 	int x;
 	int y;
-	mcu::touch::read(pressed, x, y);
+	platform::touch::read(pressed, x, y);
 
 #if defined(EEZ_PLATFORM_STM32) && !defined(EEZ_PLATFORM_STM32F469I_DISCO) && !defined(EEZ_CUSTOM_TOUCH_MEASURE_CALLBACK)
 	g_calibratedPressed = pressed;

@@ -33,7 +33,7 @@ extern int g_last_touch_pressed;
 using namespace eez::platform::simulator;
 
 namespace eez {
-namespace mcu {
+namespace platform {
 namespace touch {
 
 void read(bool &isPressed, int &x, int &y) {
@@ -71,7 +71,7 @@ void read(bool &isPressed, int &x, int &y) {
 }
 
 } // namespace touch
-} // namespace mcu
+} // namespace platform
 
 namespace gui {
 

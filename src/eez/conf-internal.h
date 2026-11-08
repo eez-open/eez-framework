@@ -32,10 +32,6 @@
     #define EEZ_OPTION_THREADS 1
 #endif
 
-#ifndef EEZ_OPTION_FS
-    #define EEZ_OPTION_FS 1
-#endif
-
 #ifndef EEZ_OPTION_GUI
     #define EEZ_OPTION_GUI 1
 #endif

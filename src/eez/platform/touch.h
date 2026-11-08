@@ -11,7 +11,7 @@
 #pragma once
 
 namespace eez {
-namespace mcu {
+namespace platform {
 namespace touch {
 
 void read(bool &isPressed, int &x, int &y);
@@ -21,5 +21,5 @@ extern "C" void eez_custom_touch_measure_callback(int *x, int *y, int *pressed);
 #endif
 
 } // namespace touch
-} // namespace mcu
+} // namespace platform
 } // namespace eez

@@ -33,6 +33,10 @@ enum {
     DISPLAY_OPTION_INTEGER_UNIT_AND_FRACTION = 6
 };
 
+// for the text of the value, font tags make the text longer than what is drawn
+// (9 bytes for one icon from an icon font)
+static const size_t TEXT_BUFFER_SIZE = 128;
+
 int findStartOfFraction(char *text) {
     int i;
     for (i = 0; text[i] && (text[i] == '<' || text[i] == ' ' || text[i] == '-' || (text[i] >= '0' && text[i] <= '9')); i++);
@@ -57,7 +61,7 @@ static void trimText(const char *&text, int &length) {
 static void renderIntegerUnitAndFraction(DisplayDataWidgetState *widgetState, const DisplayDataWidget *widget, const Style *style) {
     const WidgetCursor &widgetCursor = g_widgetCursor;
 
-    char text[64];
+    char text[TEXT_BUFFER_SIZE];
     widgetState->data.toText(text, sizeof(text));
 
     const char *integer = text;
@@ -154,7 +158,7 @@ void DisplayDataWidgetState::render() {
         return;
     }
 
-    char text[64];
+    char text[TEXT_BUFFER_SIZE];
     data.toText(text, sizeof(text));
 
     char *start = text;
@@ -228,7 +232,7 @@ int DISPLAY_DATA_getCharIndexAtPosition(int xPos, const WidgetCursor &widgetCurs
 
 	const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
 
-    char text[64];
+    char text[TEXT_BUFFER_SIZE];
     Value data = get(widgetCursor, widget->data);
     data.toText(text, sizeof(text));
 
@@ -278,7 +282,7 @@ int DISPLAY_DATA_getCursorXPosition(int cursorPosition, const WidgetCursor &widg
 
 	const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
 
-    char text[64];
+    char text[TEXT_BUFFER_SIZE];
     Value data = get(widgetCursor, widget->data);
     data.toText(text, sizeof(text));
 

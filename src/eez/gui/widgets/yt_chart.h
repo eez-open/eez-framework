@@ -15,7 +15,8 @@ namespace gui {
 
 // YTChart widget (flow projects): the YT histories of DIB fields of the module
 // (see flow::getModuleFieldYtHistoryHook), one value per pixel column, the
-// traces are in the flow component (flow::YTChartWidgetComponent). The value
+// traces are in the flow component (flow::YTChartWidgetComponent), each one a
+// field or the product of two fields. The value
 // traces use the whole height (their min .. max), the visible bit traces
 // split it into lanes, the first one on the top.
 

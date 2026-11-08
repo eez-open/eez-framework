@@ -84,10 +84,6 @@ extern "C" DMA2D_HandleTypeDef hdma2d_eval;
 #endif
 #endif
 
-#if defined(EEZ_PLATFORM_CM5_RASPI) && defined(EEZ_USE_WAYLAND)
-#include <layer_shell_display.h>
-#endif
-
 #if DISPLAY_BPP == 16
 #define COLOR_BLACK 0x0000
 #define COLOR_WHITE 0xFFFF
@@ -624,7 +620,7 @@ void update() {
 
 #if !EEZ_USE_SDL
 		#if EEZ_OPTION_THREADS
-        	osDelay(16);
+        	sleepMs(16);
         	sendMessageToGuiThread(GUI_QUEUE_MESSAGE_TYPE_DISPLAY_VSYNC, 0, 0);
 		#endif
 
@@ -677,7 +673,7 @@ const uint8_t *takeScreenshot() {
 	g_takeScreenshot = true;
 
 	do {
-		osDelay(0);
+		sleepMs(0);
 	} while (g_takeScreenshot);
 
 #endif
@@ -1915,8 +1911,10 @@ void fillRoundedRect(
             by2 = MIN(by2, cy2);
             if (bx1 <= bx2 && by1 <= by2) {
                 graphics.clipBox(bx1, by1, bx2 + 1, by2 + 1);
+                // the path is in the middle of the line (Agg2D::roundedRect takes
+                // the corners), so the line covers 0..w and 0..h
                 graphics.roundedRect(
-                    lineWidth / 2.0, lineWidth / 2.0, w - lineWidth, h - lineWidth,
+                    lineWidth / 2.0, lineWidth / 2.0, w - lineWidth / 2.0, h - lineWidth / 2.0,
                     rtlx, rtly, rtrx, rtry, rbrx, rbry, rblx, rbly
                 );
             }
@@ -1963,6 +1961,47 @@ void fillRoundedRect(
 	int clip_x1, int clip_y1, int clip_x2, int clip_y2
 ) {
 	fillRoundedRect(aggDrawing, x1, y1, x2, y2, lineWidth, r, r, r, r, r, r, r, r, drawLine, fill, clip_x1, clip_y1, clip_x2, clip_y2);
+}
+
+void drawPolyline(AggDrawing &aggDrawing, const float *points, int numPoints, float lineWidth) {
+    if (numPoints < 2) {
+        return;
+    }
+
+    // bounding box with the stroke
+    float bx1 = points[0];
+    float by1 = points[1];
+    float bx2 = bx1;
+    float by2 = by1;
+    for (int i = 1; i < numPoints; i++) {
+        bx1 = MIN(bx1, points[2 * i]);
+        by1 = MIN(by1, points[2 * i + 1]);
+        bx2 = MAX(bx2, points[2 * i]);
+        by2 = MAX(by2, points[2 * i + 1]);
+    }
+    int x1 = (int)floorf(bx1 - lineWidth);
+    int y1 = (int)floorf(by1 - lineWidth);
+    int x2 = (int)ceilf(bx2 + lineWidth);
+    int y2 = (int)ceilf(by2 + lineWidth);
+    if (!clipToClipRect(x1, y1, x2, y2)) {
+        return;
+    }
+    addDamage(x1, y1, x2, y2);
+    setDirty();
+
+    auto &graphics = aggDrawing.graphics;
+    graphics.masterAlpha(g_opacity / 255.0);
+    graphics.clipBox(x1, y1, x2 + 1, y2 + 1);
+    graphics.lineWidth(lineWidth);
+    graphics.lineColor(COLOR_TO_R(g_fc), COLOR_TO_G(g_fc), COLOR_TO_B(g_fc));
+    graphics.noFill();
+    graphics.resetPath();
+    graphics.moveTo(points[0], points[1]);
+    for (int i = 1; i < numPoints; i++) {
+        graphics.lineTo(points[2 * i], points[2 * i + 1]);
+    }
+    graphics.drawPath(Agg2D::StrokeOnly);
+    graphics.clipBox(0, 0, aggDrawing.rbuf.width(), aggDrawing.rbuf.height());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2279,9 +2318,7 @@ static bool g_waitDMA;
 static void initDriver() {
 #if EEZ_USE_SDL
 
-#if defined(EEZ_PLATFORM_CM5_RASPI) && defined(EEZ_USE_WAYLAND)
-    eez::cm5::initLayerShellDisplay(DISPLAY_WIDTH, DISPLAY_HEIGHT);
-#elif EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         printf("SDL video could not initialize! SDL Error: %s\n", SDL_GetError());
         return;
@@ -2371,33 +2408,7 @@ static void initDriver() {
 static void syncBuffer() {
 #if EEZ_USE_SDL
 
-#if defined(EEZ_PLATFORM_CM5_RASPI) && defined(EEZ_USE_WAYLAND)
-    static bool g_presented;
-    static uint32_t g_lastPresentTime;
-    if (!g_presented) {
-        g_presentDamage.setFull();
-    }
-    if (!g_presentDamage.isEmpty()) {
-        // blocks until the compositor releases the previous frame, which paces the GUI thread
-        eez::cm5::presentLayerShellDisplay(
-            (const uint32_t *)g_syncedBuffer, DISPLAY_WIDTH, DISPLAY_HEIGHT,
-            g_presentDamage.x1, g_presentDamage.y1,
-            g_presentDamage.x2 - g_presentDamage.x1 + 1, g_presentDamage.y2 - g_presentDamage.y1 + 1
-        );
-        g_presentDamage.clear();
-        g_presented = true;
-        g_lastPresentTime = millis();
-    } else {
-        // nothing changed: compositor keeps showing the last frame,
-        // skip the full frame copy and commit, but keep the ~60 Hz pacing
-        const uint32_t FRAME_TIME_MS = 16;
-        uint32_t elapsed = millis() - g_lastPresentTime;
-        if (elapsed < FRAME_TIME_MS) {
-            osDelay(FRAME_TIME_MS - elapsed);
-        }
-        g_lastPresentTime = millis();
-    }
-#elif EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
     if (!g_mainWindow || !g_texture) {
 		return;
     }

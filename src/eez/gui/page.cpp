@@ -14,14 +14,6 @@
 
 #include <eez/gui/gui.h>
 
-#ifndef RADIO_BUTTON_ON_ICON
-#define RADIO_BUTTON_ON_ICON (char)142
-#endif
-
-#ifndef RADIO_BUTTON_OFF_ICON
-#define RADIO_BUTTON_OFF_ICON (char)141
-#endif
-
 namespace eez {
 namespace gui {
 
@@ -588,8 +580,8 @@ bool SelectFromEnumPage::calcSize() {
     }
 
     for (int i = 0; i < numItems; ++i) {
-        getItemLabel(i, text, sizeof(text));
-        int width = display::measureStr(text, -1, font);
+        getLabel(i, text, sizeof(text));
+        int width = showRadioButtonIcon ? measureCheckboxOrRadio(itemStyle, text) : display::measureStr(text, -1, font);
         if (width > itemWidth) {
             itemWidth = width;
         }
@@ -662,13 +654,24 @@ void SelectFromEnumPage::updateInternalPage() {
         int xItem, yItem;
         getItemPosition(i, xItem, yItem);
 
-        getItemLabel(i, text, sizeof(text));
-        drawText(
-            text, -1,
-            xItem, yItem, itemWidth, itemHeight,
-            isDisabled(i) ? disabledItemStyle : itemStyle,
-            i == activeItemIndex || (!showRadioButtonIcon && currentValue == getValue(i))
-        );
+        getLabel(i, text, sizeof(text));
+        const Style *style = isDisabled(i) ? disabledItemStyle : itemStyle;
+        if (showRadioButtonIcon) {
+            drawCheckboxOrRadio(
+                xItem, yItem, itemWidth, itemHeight,
+                style,
+                true, currentValue == getValue(i),
+                text,
+                i == activeItemIndex
+            );
+        } else {
+            drawText(
+                text, -1,
+                xItem, yItem, itemWidth, itemHeight,
+                style,
+                i == activeItemIndex || currentValue == getValue(i)
+            );
+        }
     }
 
     dirty = false;
@@ -717,22 +720,6 @@ void SelectFromEnumPage::getItemPosition(int itemIndex, int &xItem, int &yItem) 
     } else {
         xItem = x + containerStyle->paddingLeft + itemWidth + containerStyle->paddingLeft / 2;
         yItem = y + containerStyle->paddingTop + (itemIndex - (numItems + 1) / 2) * itemHeight;
-    }
-}
-
-void SelectFromEnumPage::getItemLabel(int itemIndex, char *text, int count) {
-    if (showRadioButtonIcon) {
-        if (getValue(itemIndex) == currentValue) {
-            text[0] = (char)RADIO_BUTTON_ON_ICON;
-        } else {
-            text[0] = (char)RADIO_BUTTON_OFF_ICON;
-        }
-
-        text[1] = ' ';
-
-        getLabel(itemIndex, text + 2, count - 2);
-    } else {
-        getLabel(itemIndex, text, count);
     }
 }
 

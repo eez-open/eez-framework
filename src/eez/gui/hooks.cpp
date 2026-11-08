@@ -80,7 +80,7 @@ static bool activePageHasBackdrop() {
 static void executeActionThread() {
 #if EEZ_OPTION_THREADS
     // why is this required?
-    osDelay(1);
+    sleepMs(1);
 #endif
 }
 

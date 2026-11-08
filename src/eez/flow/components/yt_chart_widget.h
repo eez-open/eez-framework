@@ -15,8 +15,12 @@
 namespace eez {
 namespace flow {
 
-// Trace of the YTChart widget: the YT history of a DIB field of the module
-// (see getModuleFieldYtHistoryHook).
+// YTChartTrace.type
+#define YT_CHART_TRACE_TYPE_FIELD 0   // the YT history of the field
+#define YT_CHART_TRACE_TYPE_PRODUCT 1 // the product of the YT histories of field and field2 (e.g. P = U * I)
+
+// Trace of the YTChart widget: from the YT histories of the DIB fields of the
+// module (see getModuleFieldYtHistoryHook).
 struct YTChartTrace {
     // index of the DIB field in the module metadata (as DibModule.field)
     uint16_t fieldIndex;
@@ -24,8 +28,11 @@ struct YTChartTrace {
     // bit 0..7 of a bit field (its YT history value is the AND of the samples
     // in bits 0..7 and the OR in bits 8..15), drawn as a digital trace in a
     // lane of its own, -1 for a value trace
-    int16_t bit;
-    uint16_t reserved;
+    int8_t bit;
+    // YT_CHART_TRACE_TYPE_...
+    uint8_t type;
+    // YT_CHART_TRACE_TYPE_PRODUCT: index of the second DIB field
+    uint16_t field2Index;
     // expressions, y range of the trace (not used by a bit trace) and if it
     // is drawn
     AssetsPtr<uint8_t> min;
