@@ -26,6 +26,7 @@ static const size_t MAX_TEXT_LEN = 128;
 bool CheckboxWidgetState::updateState() {
     WIDGET_STATE_START(CheckboxWidget);
 
+    WIDGET_STATE(flags.active, g_isActiveWidget);
     WIDGET_STATE(data, widget->data ? get(widgetCursor, widget->data) : 0);
     WIDGET_STATE(text, widget->text ? get(widgetCursor, widget->text) : Value());
 
@@ -48,12 +49,13 @@ void CheckboxWidgetState::render() {
         style,
         false,
         data.toBool(),
-        label
+        label,
+        flags.active
     );
 }
 
 bool CheckboxWidgetState::hasOnTouch() {
-    return true;
+    return widget->data || widget->action != EEZ_ACTION_ID_NONE;
 }
 
 void CheckboxWidgetState::onTouch(const WidgetCursor &widgetCursor, Event &touchEvent) {

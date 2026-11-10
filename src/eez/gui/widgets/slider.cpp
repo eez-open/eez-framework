@@ -68,17 +68,14 @@ void SliderWidgetState::render() {
 
 	display::setColor(style->borderColor);
 
-    display::AggDrawing aggDrawing;
-    display::aggInit(aggDrawing);
-
     // render bar
     display::setBackColor(style->backgroundColor);
-	display::fillRoundedRect(aggDrawing, barX - barBorderRadius, barY, barX + barW + barBorderRadius - 1, barY + barH - 1, style->borderSizeLeft, barBorderRadius, false, true,
+	display::fillRoundedRect(barX - barBorderRadius, barY, barX + barW + barBorderRadius - 1, barY + barH - 1, style->borderSizeLeft, barBorderRadius, false, true,
 		x, y, x + w - 1, y + h - 1);
 
     // render knob
 	display::setBackColor(style->color);
-	display::fillRoundedRect(aggDrawing, knobX - knobRadius, knobY, knobX - knobRadius + knobW - 1, knobY + knobH - 1, style->borderSizeLeft, knobRadius, false, true,
+	display::fillRoundedRect(knobX - knobRadius, knobY, knobX - knobRadius + knobW - 1, knobY + knobH - 1, style->borderSizeLeft, knobRadius, false, true,
 		x, y, x + w - 1, y + h - 1);
 }
 

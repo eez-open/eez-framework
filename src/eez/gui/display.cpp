@@ -1557,23 +1557,42 @@ void adjustColor(Color &c) {
 Color getColorFromIndex(uint16_t colorIndex) {
     uint16_t color;
     if ((int16_t)colorIndex < -1) {
-        // color is from external (i.e. not main) assets data
+        // color is from external (i.e. not main) assets data: first the
+        // colors defined in the external assets, their values are in the
+        // themes (one theme for each main assets theme, in the same order),
+        // then the custom colors
         Assets *assets = g_widgetCursor.assets;
 
-        auto& colors = assets->colorsDefinition->colors;
-
         uint32_t externalColorIndex = -((int16_t)colorIndex) - 2;
-        if (externalColorIndex >= colors.count) {
-            return 0;
-        }
-        
-        {
-            uint16_t *colors = static_cast<uint16_t *>(assets->colorsDefinition->colors.items);
-            if (assets->projectMinorVersion == 1) {
-                return ((uint32_t *)colors)[externalColorIndex];
+
+        const uint16_t *colors = nullptr;
+
+        auto &themes = assets->colorsDefinition->themes;
+        if (themes.count > 0) {
+            uint32_t themeIndex = g_hooks.getSelectedThemeIndex();
+            if (themeIndex >= themes.count) {
+                themeIndex = 0;
             }
-            color = colors[externalColorIndex];
-        }        
+            auto &themeColors = themes[themeIndex]->colors;
+            if (externalColorIndex < themeColors.count) {
+                colors = static_cast<uint16_t *>(themeColors.items);
+            } else {
+                externalColorIndex -= themeColors.count;
+            }
+        }
+
+        if (!colors) {
+            auto &customColors = assets->colorsDefinition->colors;
+            if (externalColorIndex >= customColors.count) {
+                return 0;
+            }
+            colors = static_cast<uint16_t *>(customColors.items);
+        }
+
+        if (assets->projectMinorVersion == 1) {
+            return ((const uint32_t *)colors)[externalColorIndex];
+        }
+        color = colors[externalColorIndex];
     } else {
         colorIndex = g_hooks.transformColor(colorIndex);
 
@@ -1688,53 +1707,71 @@ void drawFocusFrame(int x, int y, int w, int h) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-void aggInit(AggDrawing& aggDrawing) {
-	aggDrawing.rbuf.attach((uint8_t *)getBufferPointer(), getDisplayWidth(), getDisplayHeight(), getDisplayWidth() * DISPLAY_BPP / 8);
-	aggDrawing.graphics.attach(aggDrawing.rbuf.buf(), aggDrawing.rbuf.width(), aggDrawing.rbuf.height(), aggDrawing.rbuf.stride());
-
-    // AGG draws directly into the render buffer, somewhere inside the current widget
-    setDirty();
-    int x1 = g_widgetCursor.x - 1;
-    int y1 = g_widgetCursor.y - 1;
-    int x2 = g_widgetCursor.x + g_widgetCursor.w;
-    int y2 = g_widgetCursor.y + g_widgetCursor.h;
-    if (clipToClipRect(x1, y1, x2, y2)) {
-        addDamage(x1, y1, x2, y2);
+// The target of the antialiased drawing (raster.h): the render buffer inside
+// the clip rectangle and the optional clip rectangle (clip_x1 != -1).
+struct RenderBufferTarget : raster::Target {
+    RenderBufferTarget(int clip_x1 = -1, int clip_y1 = -1, int clip_x2 = -1, int clip_y2 = -1) {
+        clipX1 = g_clipRect.x1;
+        clipY1 = g_clipRect.y1;
+        clipX2 = g_clipRect.x2;
+        clipY2 = g_clipRect.y2;
+        if (clip_x1 != -1) {
+            clipX1 = MAX(clipX1, clip_x1);
+            clipY1 = MAX(clipY1, clip_y1);
+            clipX2 = MIN(clipX2, clip_x2);
+            clipY2 = MIN(clipY2, clip_y2);
+        }
+        startPixelsDraw();
     }
-}
 
-void drawRoundedRect(
-    AggDrawing& aggDrawing,
-    int x1, int y1, int x2, int y2,
-    int lineWidth,
-	int rtlx, int rtly, int rtrx, int rtry,
-	int rbrx, int rbry, int rblx, int rbly
-) {
-    fillRoundedRect(
-        aggDrawing,
-        x1, y1, x2, y2,
-        lineWidth,
-        rtlx, rtly, rtrx, rtry,
-	    rbrx, rbry, rblx, rbly,
-        true, false
-    );
-}
-
-void fillRect(
-    int x1, int y1, int x2, int y2,
-    int clip_x1, int clip_y1, int clip_x2, int clip_y2
-) {
-    if (clip_x1 != -1) {
-        x1 = MAX(x1, clip_x1);
-        x2 = MIN(x2, clip_x2);
-        y1 = MAX(y1, clip_y1);
-        y2 = MIN(y2, clip_y2);
+    ~RenderBufferTarget() {
+        endPixelsDraw();
     }
-    fillRect(x1, y1, x2, y2);
+
+    bool isEmpty() const {
+        return clipX1 > clipX2 || clipY1 > clipY2;
+    }
+
+    void blendSpan(int x, int y, int n, const uint32_t *pixels) override {
+#if EEZ_USE_SDL
+        uint32_t *dst = g_renderBuffer + y * (int)DISPLAY_WIDTH + x;
+        for (int i = 0; i < n; i++) {
+            if (pixels[i] >> 24) {
+                dst[i] = blendColor(pixels[i], dst[i]);
+            }
+        }
+        addDamage(x, y, x + n - 1, y);
+        setDirty();
+#else
+        auto savedColor = g_fc;
+        for (int i = 0; i < n; i++) {
+            uint32_t pixel = pixels[i];
+            if (pixel >> 24) {
+                g_fc = RGB_TO_COLOR(pixel & 0xFF, (pixel >> 8) & 0xFF, (pixel >> 16) & 0xFF);
+                drawPixel(x + i, y, pixel >> 24);
+            }
+        }
+        g_fc = savedColor;
+#endif
+    }
+
+    void fillRect(int x1, int y1, int x2, int y2, uint32_t color) override {
+        auto savedColor = g_fc;
+        auto savedOpacity = g_opacity;
+        g_fc = RGB_TO_COLOR(color & 0xFF, (color >> 8) & 0xFF, (color >> 16) & 0xFF);
+        g_opacity = color >> 24;
+        display::fillRect(x1, y1, x2, y2);
+        g_fc = savedColor;
+        g_opacity = savedOpacity;
+    }
+};
+
+// the color with the current opacity, as a color of raster.h
+static uint32_t getRasterColor(Color color) {
+    return (uint32_t)COLOR_TO_R(color) | ((uint32_t)COLOR_TO_G(color) << 8) | ((uint32_t)COLOR_TO_B(color) << 16) | ((uint32_t)g_opacity << 24);
 }
 
 void fillRoundedRect(
-    AggDrawing& aggDrawing,
     int x1, int y1, int x2, int y2,
     int lineWidth,
     int rtlx, int rtly, int rtrx, int rtry,
@@ -1742,266 +1779,71 @@ void fillRoundedRect(
     bool drawLine, bool fill,
     int clip_x1, int clip_y1, int clip_x2, int clip_y2
 ) {
-#ifdef CONF_FAST_ROUND_RECT
-	if (
-		rtlx == rtly && rtly == rtrx && rtrx == rtry && rtry == rbrx && rbrx == rbry && rbry == rblx && rblx == rbly // all radiuses are the same
-		// && clip_x1 == -1 // no clipping
-	) {
-		int r = rtlx;
-		int border = lineWidth;
-
-		if (border == 0) {
-			drawLine = 0;
-		}
-
-		int w = x2 - x1 + 1;
-		int h = y2 - y1 + 1;
-
-		int x = MIN(w, h);
-		if (r > x / 2.0f) {
-			r = floorf(x / 2.0f);
-		}
-
-		int r_inner = r - border;
-
-		int xc1 = x2 - r + 1;
-		int yc1 = y1 + r;
-
-		int xc2 = x1 + r;
-		int yc2 = y1 + r;
-
-		int xc3 = x1 + r;
-		int yc3 = y2 - r + 1;
-
-		int xc4 = x2 - r + 1;
-		int yc4 = y2 - r + 1;
-
-		auto fc_save = g_fc;
-
-		uint8_t fc[3] = { COLOR_TO_R(g_fc), COLOR_TO_G(g_fc), COLOR_TO_B(g_fc) };
-		uint8_t bc[3] = { COLOR_TO_R(g_bc), COLOR_TO_G(g_bc), COLOR_TO_B(g_bc) };
-
-		float op = g_opacity / 255.0f;
-		float a1_op;
-		float a2_op;
-		float a3_op;
-		float r1, g1, b1;
-		uint8_t dest_r, dest_g, dest_b;
-
-		#define DRAW_PIXEL(x, y, c1, a1, c2, a2) \
-			if (isInsideClipRect(x, y) && (clip_x1 == -1 || ((x) >= clip_x1 && (x) <= clip_x2 && (y) >= clip_y1 && (y) <= clip_y2))) { \
-				getPixel(x, y, &dest_r, &dest_g, &dest_b); \
-				a1_op = a1 * op; \
-				a2_op = a2 * op; \
-				a3_op = 1 - (a1 + a2); \
-				r1 = (c1)[0] * a1_op + (c2)[0] * a2_op + dest_r * a3_op; \
-				g1 = (c1)[1] * a1_op + (c2)[1] * a2_op + dest_g * a3_op; \
-				b1 = (c1)[2] * a1_op + (c2)[2] * a2_op + dest_b * a3_op; \
-				g_fc = RGB_TO_COLOR((int)r1, (int)g1, (int)b1); \
-				drawPixel(x, y); \
-			} \
-			(void)0 \
-
-		#define DRAW_4(x, y, a1, a2) \
-			DRAW_PIXEL(xc1  + (x)     , yc1 -  (y)     , drawLine ? fc : bc, (a1), bc, (a2)); \
-			DRAW_PIXEL(xc2 - ((x) + 1), yc2 -  (y)     , drawLine ? fc : bc, (a1), bc, (a2)); \
-			DRAW_PIXEL(xc3 - ((x) + 1), yc3 + ((y) - 1), drawLine ? fc : bc, (a1), bc, (a2)); \
-			DRAW_PIXEL(xc4  + (x)     , yc4 + ((y) - 1), drawLine ? fc : bc, (a1), bc, (a2)); \
-
-		display::startPixelsDraw();
-
-		int ffd = roundf(r / sqrtf(2.0f));
-		for (int x = 0; x < ffd; x++) {
-			float yr = sqrtf(r * r - (x + 0.5f) * (x + 0.5f));
-			int y = ceilf(yr);
-			float a1 = 1 - (y - yr);
-
-			float yr_inner = drawLine && x < r_inner ? sqrtf(r_inner * r_inner - (x + 0.5f) * (x + 0.5f)) : 0;
-			int y_inner = ceilf(yr_inner);
-			float a2 = 1 - (y_inner - yr_inner);
-
-			if (y > 0) {
-                DRAW_4(x, y, a1, 0);
-            }
-			DRAW_4(y - 1, x + 1, a1, 0);
-
-			for (y = y - 1; y > y_inner; y--) {
-				DRAW_4(x, y, 1.0, 0);
-				DRAW_4(y - 1, x + 1, 1.0, 0);
-			}
-
-			if (y > 0) {
-				DRAW_4(x, y, 1 - a2, fill ? a2 : 0);
-				DRAW_4(y - 1, x + 1, 1 - a2, fill ? a2 : 0);
-
-                if (fill) {
-                    for (y = y - 1; y > 0; y--) {
-                        DRAW_4(x, y, 0.0, 1.0);
-                        DRAW_4(y - 1, x + 1, 0.0, 1.0);
-                    }
-                }
-			}
-		}
-
-		display::endPixelsDraw();
-
-		g_fc = g_bc;
-
-		// background
-		if (fill) {
-			if (drawLine) {
-				fillRect(x1 + r, y1 + border, x2 - r, y2 - border, clip_x1, clip_y1, clip_x2, clip_y2); // from top to bottom
-				fillRect(x1 + border, y1 + r, x1 + r - 1, y2 - r, clip_x1, clip_y1, clip_x2, clip_y2); // left
-				fillRect(x2 - r + 1, y1 + r, x2 - border, y2 - r, clip_x1, clip_y1, clip_x2, clip_y2); // right
-			} else {
-				fillRect(x1 + r, y1, x2 - r, y2); // from top to bottom
-				fillRect(x1, y1 + r, x1 + r - 1, y2 - r, clip_x1, clip_y1, clip_x2, clip_y2); // left
-				fillRect(x2 - r + 1, y1 + r, x2, y2 - r, clip_x1, clip_y1, clip_x2, clip_y2); // right
-			}
-		}
-
-		g_fc = fc_save;
-
-		// border
-		if (drawLine) {
-			fillRect(x1 + r, y1, x2 - r, y1 + border - 1, clip_x1, clip_y1, clip_x2, clip_y2); // top
-			fillRect(x1 + r, y2 - border + 1, x2 - r, y2, clip_x1, clip_y1, clip_x2, clip_y2); // bottom
-			fillRect(x1, y1 + r, x1 + border - 1, y2 - r, clip_x1, clip_y1, clip_x2, clip_y2); // left
-			fillRect(x2 - border + 1, y1 + r, x2, y2 - r, clip_x1, clip_y1, clip_x2, clip_y2); // right
-		}
-	} else {
-#endif
-        // use AGG, slower
-
-        auto &graphics = aggDrawing.graphics;
-
-        int cx1 = x1, cy1 = y1, cx2 = x2, cy2 = y2;
-        if (clip_x1 != -1) {
-            cx1 = clip_x1;
-            cy1 = clip_y1;
-            cx2 = clip_x2;
-            cy2 = clip_y2;
-        }
-        if (!clipToClipRect(cx1, cy1, cx2, cy2)) {
-            return;
-        }
-        addDamage(cx1, cy1, cx2, cy2);
-        setDirty();
-        graphics.masterAlpha(g_opacity / 255.0);
-        graphics.translate(x1, y1);
-        graphics.lineWidth(lineWidth);
-        if (lineWidth > 0 && drawLine) {
-            graphics.lineColor(COLOR_TO_R(g_fc), COLOR_TO_G(g_fc), COLOR_TO_B(g_fc));
-        } else {
-            graphics.noLine();
-        }
-        if (fill) {
-            graphics.fillColor(COLOR_TO_R(g_bc), COLOR_TO_G(g_bc), COLOR_TO_B(g_bc));
-        } else {
-            graphics.noFill();
-        }
-        auto w = x2 - x1 + 1;
-        auto h = y2 - y1 + 1;
-
-        // rasterize the rounded rect only inside (bx1, by1, bx2, by2)
-        auto renderPart = [&](int bx1, int by1, int bx2, int by2) {
-            bx1 = MAX(bx1, cx1);
-            by1 = MAX(by1, cy1);
-            bx2 = MIN(bx2, cx2);
-            by2 = MIN(by2, cy2);
-            if (bx1 <= bx2 && by1 <= by2) {
-                graphics.clipBox(bx1, by1, bx2 + 1, by2 + 1);
-                // the path is in the middle of the line (Agg2D::roundedRect takes
-                // the corners), so the line covers 0..w and 0..h
-                graphics.roundedRect(
-                    lineWidth / 2.0, lineWidth / 2.0, w - lineWidth / 2.0, h - lineWidth / 2.0,
-                    rtlx, rtly, rtrx, rtry, rbrx, rbry, rblx, rbly
-                );
-            }
-        };
-
-        // Rows between the top and bottom corners have straight vertical edges, so there
-        // only the edge strips need AGG and the interior is a plain fill
-        // (bands and strips are generous to include the stroke and antialiasing).
-        int topBand = MAX(rtly, rtry) + 2 * lineWidth + 2;
-        int bottomBand = MAX(rbly, rbry) + 2 * lineWidth + 2;
-        int strip = 2 * lineWidth + 2;
-        if (topBand + bottomBand < h && 2 * strip < w) {
-            int my1 = y1 + topBand;
-            int my2 = y2 - bottomBand;
-
-            renderPart(x1, y1, x2, my1 - 1); // top corners
-            renderPart(x1, my2 + 1, x2, y2); // bottom corners
-            renderPart(x1, my1, x1 + strip - 1, my2); // left edge
-            renderPart(x2 - strip + 1, my1, x2, my2); // right edge
-
-            if (fill) {
-                auto savedColor = g_fc;
-                g_fc = g_bc;
-                fillRect(x1 + strip, my1, x2 - strip, my2, cx1, cy1, cx2, cy2);
-                g_fc = savedColor;
-            }
-        } else {
-            renderPart(x1, y1, x2, y2);
-        }
-
-        graphics.translate(-x1, -y1);
-        graphics.clipBox(0, 0, aggDrawing.rbuf.width(), aggDrawing.rbuf.height());
-#ifdef CONF_FAST_ROUND_RECT
+    RenderBufferTarget target(clip_x1, clip_y1, clip_x2, clip_y2);
+    if (target.isEmpty()) {
+        return;
     }
-#endif
+
+    float radii[8] = {
+        (float)rtlx, (float)rtly, (float)rtrx, (float)rtry,
+        (float)rbrx, (float)rbry, (float)rblx, (float)rbly
+    };
+
+    raster::roundedRect(
+        target,
+        x1, y1, x2, y2,
+        (float)lineWidth,
+        radii,
+        drawLine ? getRasterColor(g_fc) : 0,
+        fill ? getRasterColor(g_bc) : 0
+    );
 }
 
 void fillRoundedRect(
-    AggDrawing& aggDrawing,
-	int x1, int y1, int x2, int y2,
-	int lineWidth,
-	int r,
-	bool drawLine, bool fill,
-	int clip_x1, int clip_y1, int clip_x2, int clip_y2
+    int x1, int y1, int x2, int y2,
+    int lineWidth,
+    int r,
+    bool drawLine, bool fill,
+    int clip_x1, int clip_y1, int clip_x2, int clip_y2
 ) {
-	fillRoundedRect(aggDrawing, x1, y1, x2, y2, lineWidth, r, r, r, r, r, r, r, r, drawLine, fill, clip_x1, clip_y1, clip_x2, clip_y2);
+    fillRoundedRect(x1, y1, x2, y2, lineWidth, r, r, r, r, r, r, r, r, drawLine, fill, clip_x1, clip_y1, clip_x2, clip_y2);
 }
 
-void drawPolyline(AggDrawing &aggDrawing, const float *points, int numPoints, float lineWidth) {
-    if (numPoints < 2) {
-        return;
-    }
+void drawRoundedRect(
+    int x1, int y1, int x2, int y2,
+    int lineWidth,
+    int rtlx, int rtly, int rtrx, int rtry,
+    int rbrx, int rbry, int rblx, int rbly
+) {
+    fillRoundedRect(
+        x1, y1, x2, y2,
+        lineWidth,
+        rtlx, rtly, rtrx, rtry,
+        rbrx, rbry, rblx, rbly,
+        true, false
+    );
+}
 
-    // bounding box with the stroke
-    float bx1 = points[0];
-    float by1 = points[1];
-    float bx2 = bx1;
-    float by2 = by1;
-    for (int i = 1; i < numPoints; i++) {
-        bx1 = MIN(bx1, points[2 * i]);
-        by1 = MIN(by1, points[2 * i + 1]);
-        bx2 = MAX(bx2, points[2 * i]);
-        by2 = MAX(by2, points[2 * i + 1]);
+void fillPath(const Path &path) {
+    RenderBufferTarget target;
+    if (!target.isEmpty()) {
+        raster::fillPath(target, path, getRasterColor(g_fc));
     }
-    int x1 = (int)floorf(bx1 - lineWidth);
-    int y1 = (int)floorf(by1 - lineWidth);
-    int x2 = (int)ceilf(bx2 + lineWidth);
-    int y2 = (int)ceilf(by2 + lineWidth);
-    if (!clipToClipRect(x1, y1, x2, y2)) {
-        return;
-    }
-    addDamage(x1, y1, x2, y2);
-    setDirty();
+}
 
-    auto &graphics = aggDrawing.graphics;
-    graphics.masterAlpha(g_opacity / 255.0);
-    graphics.clipBox(x1, y1, x2 + 1, y2 + 1);
-    graphics.lineWidth(lineWidth);
-    graphics.lineColor(COLOR_TO_R(g_fc), COLOR_TO_G(g_fc), COLOR_TO_B(g_fc));
-    graphics.noFill();
-    graphics.resetPath();
-    graphics.moveTo(points[0], points[1]);
-    for (int i = 1; i < numPoints; i++) {
-        graphics.lineTo(points[2 * i], points[2 * i + 1]);
+void strokePath(const Path &path, float lineWidth) {
+    RenderBufferTarget target;
+    if (!target.isEmpty()) {
+        raster::strokePath(target, path, lineWidth, getRasterColor(g_fc));
     }
-    graphics.drawPath(Agg2D::StrokeOnly);
-    graphics.clipBox(0, 0, aggDrawing.rbuf.width(), aggDrawing.rbuf.height());
+}
+
+void drawPolyline(const float *points, int numPoints, float lineWidth) {
+    Path path;
+    for (int i = 0; i < numPoints; i++) {
+        path.lineTo(points[2 * i], points[2 * i + 1]);
+    }
+    strokePath(path, lineWidth);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2025,28 +1867,32 @@ int8_t measureGlyph(int32_t encoding, gui::font::Font &font) {
 // Text can contain font tags, see convertFontTags in Studio:
 // FONT_START_CHAR followed by a character whose code point is the font index
 // switches to that font, FONT_END_CHAR switches back to the default font.
+// FONT_START_EXTERNAL_CHAR is FONT_START_CHAR for a font of the external
+// assets: the code point is minus the font index.
 static const utf8_int32_t FONT_START_CHAR = 0xE000;
 static const utf8_int32_t FONT_END_CHAR = 0xE001;
+static const utf8_int32_t FONT_START_EXTERNAL_CHAR = 0xE002;
 
+// fontIndex as in getFontData: > 0 main assets font, < 0 external assets font
 static void setFontByIndex(int fontIndex, gui::font::Font &defaultFont) {
-    // in a project with master project font index is negative
-    auto fontData = getFontData(-fontIndex);
-    if (!fontData && g_mainAssets && fontIndex > 0 && fontIndex <= (int)g_mainAssets->fonts.count) {
+    const gui::FontData *fontData = nullptr;
+    if (fontIndex < 0 || (g_mainAssets && fontIndex <= (int)g_mainAssets->fonts.count)) {
         fontData = getFontData(fontIndex);
     }
     g_font = fontData ? gui::font::Font(fontData) : defaultFont;
 }
 
 // Returns true if encoding is a font tag marker (and applies it). In case of
-// FONT_START_CHAR the font index character is consumed from the text.
+// FONT_START_CHAR and FONT_START_EXTERNAL_CHAR the font index character is
+// consumed from the text.
 static bool handleFontTag(utf8_int32_t encoding, const char *&text, int &i, int textLength, gui::font::Font &defaultFont) {
-    if (encoding == FONT_START_CHAR) {
-        utf8_int32_t fontIndex = 0;
+    if (encoding == FONT_START_CHAR || encoding == FONT_START_EXTERNAL_CHAR) {
+        utf8_int32_t index = 0;
         if (textLength == -1 || i + 1 < textLength) {
-            text = utf8codepoint(text, &fontIndex);
+            text = utf8codepoint(text, &index);
             ++i;
         }
-        setFontByIndex((int)fontIndex, defaultFont);
+        setFontByIndex(encoding == FONT_START_CHAR ? (int)index : -(int)index, defaultFont);
         return true;
     }
     if (encoding == FONT_END_CHAR) {
@@ -2056,7 +1902,8 @@ static bool handleFontTag(utf8_int32_t encoding, const char *&text, int &i, int 
     return false;
 }
 
-// Returns font index that is active at the end of the text, 0 for default font.
+// Returns font index (as in getFontData) that is active at the end of the
+// text, 0 for default font.
 int getFontIndexAtEnd(const char *text, int textLength, int fontIndex) {
     for (int i = 0; textLength == -1 || i < textLength; ++i) {
         utf8_int32_t encoding;
@@ -2064,13 +1911,13 @@ int getFontIndexAtEnd(const char *text, int textLength, int fontIndex) {
         if (!encoding) {
             break;
         }
-        if (encoding == FONT_START_CHAR) {
+        if (encoding == FONT_START_CHAR || encoding == FONT_START_EXTERNAL_CHAR) {
             utf8_int32_t index = 0;
             if (textLength == -1 || i + 1 < textLength) {
                 text = utf8codepoint(text, &index);
                 ++i;
             }
-            fontIndex = (int)index;
+            fontIndex = encoding == FONT_START_CHAR ? (int)index : -(int)index;
         } else if (encoding == FONT_END_CHAR) {
             fontIndex = 0;
         }

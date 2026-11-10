@@ -3,7 +3,7 @@ if(ESP_PLATFORM)
 
     file(GLOB_RECURSE app_sources src/eez/*.c*)
     idf_component_register(SRCS ${app_sources}
-        INCLUDE_DIRS "src" "src/eez/libs/agg" "src/eez/platform/simulator/"
+        INCLUDE_DIRS "src" "src/eez/platform/simulator/"
         PRIV_REQUIRES lvgl
     )
 else()
@@ -11,7 +11,6 @@ else()
 
     include_directories(
         ./src
-        ./src/eez/libs/agg
     )
 
     file(GLOB_RECURSE SOURCES
@@ -21,6 +20,6 @@ else()
 
     ADD_LIBRARY(eez-framework STATIC ${SOURCES})
 
-    target_include_directories(eez-framework SYSTEM PUBLIC ./src ./src/eez/libs/agg)
+    target_include_directories(eez-framework SYSTEM PUBLIC ./src)
 endif()
 

@@ -278,7 +278,7 @@ struct Style {
     uint8_t borderRadiusBRX;
 	uint8_t borderRadiusBRY;
 
-    uint8_t font;
+    int8_t font; // > 0 main assets font, < 0 external assets font (see getFontData)
     uint8_t opacity; // 0 - 255
 
     uint8_t paddingTop;

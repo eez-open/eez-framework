@@ -46,18 +46,6 @@ bool styleIsVertAlignBottom(const Style *style) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// AGG renderer is expensive to construct (and allocates its buffers on first use), so reuse it
-static display::AggDrawing &beginAggDrawing() {
-    static display::AggDrawing aggDrawing;
-    display::startPixelsDraw();
-    display::aggInit(aggDrawing);
-    return aggDrawing;
-}
-
-static void endAggDrawing() {
-    display::endPixelsDraw();
-}
-
 void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *style, uint16_t color, bool ignoreLuminocity) {
     const WidgetCursor& widgetCursor = g_widgetCursor;
 
@@ -205,16 +193,13 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
             }
 
             auto savedOpacity = display::setOpacity(style->opacity);
-            auto &aggDrawing = beginAggDrawing();
             display::fillRoundedRect(
-                aggDrawing,
 				x1, y1, x2, y2,
 				lineWidth,
 				style->borderRadiusTLX, style->borderRadiusTLY, style->borderRadiusTRX, style->borderRadiusTRY,
 				style->borderRadiusBRX, style->borderRadiusBRY, style->borderRadiusBLX, style->borderRadiusBLY,
 				style->borderColor != TRANSPARENT_COLOR_INDEX, color != TRANSPARENT_COLOR_INDEX
 			);
-            endAggDrawing();
             display::setOpacity(savedOpacity);
 
             lineWidth++;
@@ -251,16 +236,13 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 			if (color != TRANSPARENT_COLOR_INDEX) {
 				display::setBackColor(color, ignoreLuminocity);
 		        auto savedOpacity = display::setOpacity(style->opacity);
-                auto &aggDrawing = beginAggDrawing();
                 display::fillRoundedRect(
-                    aggDrawing,
 					x1, y1, x2, y2,
 					0,
 					style->borderRadiusTLX, style->borderRadiusTLY, style->borderRadiusTRX, style->borderRadiusTRY,
 					style->borderRadiusBRX, style->borderRadiusBRY, style->borderRadiusBLX, style->borderRadiusBLY,
 					style->borderColor != TRANSPARENT_COLOR_INDEX, color != TRANSPARENT_COLOR_INDEX
 				);
-                endAggDrawing();
 		        display::setOpacity(savedOpacity);
 			}
 			return;
@@ -1400,39 +1382,34 @@ void drawCheckboxOrRadio(int x, int y, int w, int h, const Style *style, bool ra
     display::setColor(color);
     display::setBackColor(color);
 
-    {
-        display::AggDrawing aggDrawing;
-        display::aggInit(aggDrawing);
+    if (radio) {
+        // circle, a filled circle inside if checked
+        int lineWidth = MAX(1, (int)roundf(boxSize / 14.0f));
+        display::fillRoundedRect(bx1, by1, bx2, by2, lineWidth, boxSize / 2, true, false);
 
-        if (radio) {
-            // circle, a filled circle inside if checked
-            int lineWidth = MAX(1, (int)roundf(boxSize / 14.0f));
-            display::fillRoundedRect(aggDrawing, bx1, by1, bx2, by2, lineWidth, boxSize / 2, true, false);
-
-            if (checked) {
-                // the free space around the dot is even, so the dot is centered
-                // on whole pixels
-                int dotSize = boxSize / 2;
-                if ((boxSize - dotSize) % 2) {
-                    dotSize++;
-                }
-                int dx1 = bx1 + (boxSize - dotSize) / 2;
-                int dy1 = by1 + (boxSize - dotSize) / 2;
-                display::fillRoundedRect(aggDrawing, dx1, dy1, dx1 + dotSize - 1, dy1 + dotSize - 1, 0, dotSize / 2, false, true);
+        if (checked) {
+            // the free space around the dot is even, so the dot is centered
+            // on whole pixels
+            int dotSize = boxSize / 2;
+            if ((boxSize - dotSize) % 2) {
+                dotSize++;
             }
-        } else {
-            // rounded square, a check mark inside if checked
-            int lineWidth = MAX(1, (int)roundf(boxSize / 9.0f));
-            display::fillRoundedRect(aggDrawing, bx1, by1, bx2, by2, lineWidth, boxSize / 6, true, false);
+            int dx1 = bx1 + (boxSize - dotSize) / 2;
+            int dy1 = by1 + (boxSize - dotSize) / 2;
+            display::fillRoundedRect(dx1, dy1, dx1 + dotSize - 1, dy1 + dotSize - 1, 0, dotSize / 2, false, true);
+        }
+    } else {
+        // rounded square, a check mark inside if checked
+        int lineWidth = MAX(1, (int)roundf(boxSize / 9.0f));
+        display::fillRoundedRect(bx1, by1, bx2, by2, lineWidth, boxSize / 6, true, false);
 
-            if (checked) {
-                float points[] = {
-                    bx1 + 0.24f * boxSize, by1 + 0.52f * boxSize,
-                    bx1 + 0.43f * boxSize, by1 + 0.71f * boxSize,
-                    bx1 + 0.77f * boxSize, by1 + 0.32f * boxSize
-                };
-                display::drawPolyline(aggDrawing, points, 3, boxSize / 8.0f);
-            }
+        if (checked) {
+            float points[] = {
+                bx1 + 0.24f * boxSize, by1 + 0.52f * boxSize,
+                bx1 + 0.43f * boxSize, by1 + 0.71f * boxSize,
+                bx1 + 0.77f * boxSize, by1 + 0.32f * boxSize
+            };
+            display::drawPolyline(points, 3, boxSize / 8.0f);
         }
     }
 

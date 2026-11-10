@@ -59,33 +59,28 @@ void QRCodeWidgetState::render() {
     double xPadding = (widgetCursor.w - sizePx * size) / 2;
     double yPadding = (widgetCursor.h - sizePx * size) / 2;
 
-	display::AggDrawing aggDrawing;
-	display::aggInit(aggDrawing);
-	auto &graphics = aggDrawing.graphics;
-
-    display::ColorRGBA colorRGBA;
-    display::getColorRGBAFromIndex(style->color, &colorRGBA);
-
-    graphics.resetPath();
+    display::Path path;
 
     for (int y = 0; y < size; y++) {
 		for (int x = 0; x < size; x++) {
             if (qrcodegen_getModule(qrcode, x, y)) {
-                graphics.moveTo(
-                    widgetCursor.x + xPadding + x * sizePx,
-                    widgetCursor.y + yPadding + y * sizePx
-                );
-                graphics.horLineRel(sizePx);
-                graphics.verLineRel(sizePx);
-                graphics.horLineRel(-sizePx);
-                graphics.closePolygon();
+                float x1 = (float)(widgetCursor.x + xPadding + x * sizePx);
+                float y1 = (float)(widgetCursor.y + yPadding + y * sizePx);
+                float x2 = (float)(widgetCursor.x + xPadding + (x + 1) * sizePx);
+                float y2 = (float)(widgetCursor.y + yPadding + (y + 1) * sizePx);
+                path.moveTo(x1, y1);
+                path.lineTo(x2, y1);
+                path.lineTo(x2, y2);
+                path.lineTo(x1, y2);
+                path.close();
             }
 		}
 	}
 
-    graphics.fillColor(colorRGBA.r, colorRGBA.g, colorRGBA.b, colorRGBA.a);
-    graphics.noLine();
-    graphics.drawPath();
+    auto savedClipRect = display::intersectClipRect(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h);
+    display::setColorByValue(display::getColorFromIndex(style->color));
+    display::fillPath(path);
+    display::restoreClipRect(savedClipRect);
 }
 
 } // namespace gui

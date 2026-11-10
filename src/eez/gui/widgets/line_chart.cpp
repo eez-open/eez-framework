@@ -287,13 +287,7 @@ void LineChartWidgetState::render() {
     calcAutoTicks(chart.xAxis);
     calcAutoTicks(chart.yAxis);
 
-	// init AGG
-	display::AggDrawing aggDrawing;
-	display::aggInit(aggDrawing);
-	auto &graphics = aggDrawing.graphics;
-
-	graphics.clipBox(widgetCursor.x, widgetCursor.y, widgetCursor.x + widgetCursor.w, widgetCursor.y + widgetCursor.h);
-	graphics.translate(widgetCursor.x, widgetCursor.y);
+    auto savedClipRect = intersectClipRect(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h);
 
 	// clear background
     drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style, isActive, false, true);
@@ -339,18 +333,12 @@ void LineChartWidgetState::render() {
                 y + (legendLineHeight - 2) / 2 + 2
             );
 
-            startPixelsDraw();
-
-            ColorRGBA colorRGBA;
-            getColorRGBAFromIndex(color, &colorRGBA);
-            graphics.fillColor(colorRGBA.r, colorRGBA.g, colorRGBA.b, colorRGBA.a);
-            
-            graphics.noLine();
-            graphics.ellipse(
-                -widgetCursor.x + x + (LEGEND_ICON_WIDTH - 4) / 2,
-                -widgetCursor.y + y + legendLineHeight / 2,
-                3, 3
-            );
+            {
+                Path path;
+                path.arc(x + (LEGEND_ICON_WIDTH - 4) / 2.0f, y + legendLineHeight / 2.0f, 3, 3, 0, 6.2831853f);
+                setColorByValue(getColorFromIndex(color));
+                fillPath(path);
+            }
 
             static const size_t MAX_LINE_LABEL_LEN = 128;
             char text[MAX_LINE_LABEL_LEN + 1];
@@ -553,14 +541,10 @@ void LineChartWidgetState::render() {
 
     // draw lines
     {
-	    // graphics.translate(-widgetCursor.x, -widgetCursor.y);
-        // graphics.clipBox(widgetCursor.x + gridRect.x, widgetCursor.x + gridRect.y, widgetCursor.x + gridRect.x + gridRect.w, widgetCursor.x + gridRect.y + gridRect.h);
-	    // graphics.translate(widgetCursor.x, widgetCursor.y);
-
-    	startPixelsDraw();
+        Path path;
 
         for (uint32_t lineIndex = 0; lineIndex < executionState->numLines; lineIndex++) {
-            graphics.resetPath();
+            path.clear();
 
             for (uint32_t i = 0; i < executionState->numPoints; i++) {
                 uint32_t pointIndex = (executionState->startPointIndex + i) % executionState->maxPoints;
@@ -570,19 +554,11 @@ void LineChartWidgetState::render() {
 
                 auto y = chart.yAxis.offset + executionState->getY(pointIndex, lineIndex) * chart.yAxis.scale;
 
-                if (i == 0) {
-                    graphics.moveTo(x, y);
-                } else {
-                    graphics.lineTo(x, y);
-                }
+                path.lineTo((float)(widgetCursor.x + x), (float)(widgetCursor.y + y));
             }
 
-            ColorRGBA colorRGBA;
-            getColorRGBAFromIndex(component->lines[lineIndex]->color, &colorRGBA);
-            graphics.lineColor(colorRGBA.r, colorRGBA.g, colorRGBA.b, colorRGBA.a);
-            graphics.lineWidth(component->lines[lineIndex]->width);
-            graphics.noFill();
-            graphics.drawPath();
+            setColorByValue(getColorFromIndex(component->lines[lineIndex]->color));
+            strokePath(path, component->lines[lineIndex]->width);
         }
     }
 
@@ -597,6 +573,8 @@ void LineChartWidgetState::render() {
             drawVLine(x, widgetCursor.y + gridRect.y, gridRect.h - 1);
         }
     }
+
+    restoreClipRect(savedClipRect);
 }
 
 } // namespace gui

@@ -12,9 +12,6 @@
 
 #include <stdint.h>
 
-#include <agg2d.h>
-#include <agg_rendering_buffer.h>
-
 #if defined(EEZ_PLATFORM_STM32)
 	typedef uint16_t *VideoBuffer;
 #endif
@@ -29,6 +26,7 @@
 #include <eez/gui/font.h>
 #include <eez/gui/geometry.h>
 #include <eez/gui/image.h>
+#include <eez/gui/raster.h>
 
 static const int CURSOR_WIDTH = 2;
 
@@ -179,30 +177,13 @@ void drawVLine(int x, int y, int l);
 void drawRect(int x1, int y1, int x2, int y2);
 void drawFocusFrame(int x, int y, int w, int h);
 
-// AGG based drawing
-struct AggDrawing {
-    AggDrawing() {
-        startPixelsDraw();
-    }
-    ~AggDrawing() {
-        endPixelsDraw();
-    }
-    agg::rendering_buffer rbuf;
-	Agg2D graphics;
-};
+// Antialiased drawing (see raster.h), with the current opacity, clipped to the
+// clip rectangle.
 
-void aggInit(AggDrawing& aggDrawing);
-
-void drawRoundedRect(
-	AggDrawing &aggDrawing,
-	int x1, int y1, int x2, int y2,
-	int lineWidth,
-	int rtlx, int rtly, int rtrx, int rtry,
-	int rbrx, int rbry, int rblx, int rbly
-);
-
+// Rectangle with rounded corners (see raster::roundedRect): the line in the
+// foreground color if drawLine, the fill in the background color if fill. The
+// optional clip rectangle (inclusive) limits the drawing further.
 void fillRoundedRect(
-	AggDrawing &aggDrawing,
 	int x1, int y1, int x2, int y2,
 	int lineWidth,
 	int rtlx, int rtly, int rtrx, int rtry,
@@ -212,7 +193,6 @@ void fillRoundedRect(
 );
 
 void fillRoundedRect(
-	AggDrawing &aggDrawing,
 	int x1, int y1, int x2, int y2,
 	int lineWidth,
 	int r,
@@ -220,9 +200,25 @@ void fillRoundedRect(
 	int clip_x1 = -1, int clip_y1 = -1, int clip_x2 = -1, int clip_y2 = -1
 );
 
-// Antialiased line through the points (x and y of each point), with round caps
-// and joins, in the foreground color.
-void drawPolyline(AggDrawing &aggDrawing, const float *points, int numPoints, float lineWidth);
+// only the line of the rectangle with rounded corners, in the foreground color
+void drawRoundedRect(
+	int x1, int y1, int x2, int y2,
+	int lineWidth,
+	int rtlx, int rtly, int rtrx, int rtry,
+	int rbrx, int rbry, int rblx, int rbly
+);
+
+using Path = raster::Path;
+
+// fills the path in the foreground color
+void fillPath(const Path &path);
+
+// line through the points of the path, with round joins and caps, in the
+// foreground color
+void strokePath(const Path &path, float lineWidth);
+
+// line through the points (x and y of each point), as strokePath
+void drawPolyline(const float *points, int numPoints, float lineWidth);
 
 void drawStr(const char *text, int textLength, int x, int y, int clip_x1, int clip_y1, int clip_x2, int clip_y2, gui::font::Font &font, int cursorPosition, int startFontIndex = 0);
 int getCharIndexAtPosition(int xPos, const char *text, int textLength, int x, int y, int clip_x1, int clip_y1, int clip_x2,int clip_y2, gui::font::Font &font);

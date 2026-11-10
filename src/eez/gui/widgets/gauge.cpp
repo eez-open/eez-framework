@@ -27,39 +27,20 @@ namespace gui {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void arcBar(Agg2D &graphics, int xCenter, int yCenter, int radOuter, int radInner, float angleDeg) {
-	auto angle = Agg2D::deg2Rad(angleDeg);
-	auto cosa = cos(angle);
-	auto sina = sin(angle);
+static const float PI_F = 3.14159265358979f;
 
-	graphics.moveTo(xCenter - radOuter, yCenter);
+static float deg2Rad(float angleDeg) {
+	return angleDeg * PI_F / 180.0f;
+}
 
-	graphics.arcTo(
-		radOuter, // rx
-		radOuter, // ry
-		Agg2D::deg2Rad(0), // angle
-		0, // largeArcFlag
-		1, // sweepFlag
-		xCenter + radOuter * cosa, // dx
-		yCenter - radOuter * sina // dy
-	);
-
-	graphics.lineTo(
-		xCenter + radInner * cosa,
-		yCenter - radInner * sina
-	);
-
-	graphics.arcTo(
-		radInner,
-		radInner,
-		Agg2D::deg2Rad(-180),
-		0,
-		0,
-		xCenter - radInner,
-		yCenter
-	);
-
-	graphics.lineTo(xCenter - radOuter, yCenter);
+// The band between the radii from the left (180 degrees) over the top to the
+// angle (degrees, counterclockwise from the right).
+static void arcBar(display::Path &path, float xCenter, float yCenter, float radOuter, float radInner, float angleDeg) {
+	// on the screen y goes down, so the angle goes clockwise
+	float angle = -deg2Rad(angleDeg);
+	path.arc(xCenter, yCenter, radOuter, radOuter, -PI_F, angle);
+	path.arc(xCenter, yCenter, radInner, radInner, angle, -PI_F);
+	path.close();
 }
 
 float firstTick(float n) {
@@ -125,11 +106,8 @@ void GaugeWidgetState::render() {
 
 	auto isActive = flags.active;
 
-	ColorRGBA colorBorder;
-	getColorRGBAFromIndex(isActive ? style->activeColor : style->color, &colorBorder);
-
-	ColorRGBA colorBar;
-	getColorRGBAFromIndex(isActive ? barStyle->activeColor : barStyle->color, &colorBar);
+	Color colorBorder = getColorFromIndex(isActive ? style->activeColor : style->color);
+	Color colorBar = getColorFromIndex(isActive ? barStyle->activeColor : barStyle->color);
 
 	auto xCenter = widgetCursor.w / 2;
 	auto yCenter = widgetCursor.h - 8;
@@ -138,24 +116,18 @@ void GaugeWidgetState::render() {
 	setColor(isActive ? style->activeBackgroundColor : style->backgroundColor);
 	fillRect(widgetCursor.x, widgetCursor.y, widgetCursor.x + widgetCursor.w - 1, widgetCursor.y + widgetCursor.h - 1);
 
-	// init AGG
-	display::AggDrawing aggDrawing;
-	display::aggInit(aggDrawing);
-	auto &graphics = aggDrawing.graphics;
+	auto savedClipRect = intersectClipRect(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h);
 
-	graphics.clipBox(widgetCursor.x, widgetCursor.y, widgetCursor.x + widgetCursor.w, widgetCursor.y + widgetCursor.h);
-	graphics.translate(widgetCursor.x, widgetCursor.y);
+	// the drawing below is relative to the widget
+	float x0 = widgetCursor.x;
+	float y0 = widgetCursor.y;
 
 	// draw frame
 	if (style->borderSizeLeft > 0) {
-		graphics.lineWidth(style->borderSizeLeft);
-		graphics.lineColor(colorBorder.r, colorBorder.g, colorBorder.b, colorBorder.a);
-		graphics.noFill();
-		graphics.roundedRect(
-			style->borderSizeLeft / 2.0,
-			style->borderSizeLeft / 2.0,
-            widgetCursor.w - style->borderSizeLeft,
-            widgetCursor.h - style->borderSizeLeft,
+		setColorByValue(colorBorder);
+		drawRoundedRect(
+			widgetCursor.x, widgetCursor.y, widgetCursor.x + widgetCursor.w - 1, widgetCursor.y + widgetCursor.h - 1,
+			style->borderSizeLeft,
 			style->borderRadiusTLX, style->borderRadiusTLY, style->borderRadiusTRX, style->borderRadiusTRY,
 			style->borderRadiusBRX, style->borderRadiusBRY, style->borderRadiusBLX, style->borderRadiusBLY
 		);
@@ -174,28 +146,28 @@ void GaugeWidgetState::render() {
 	auto BAR_WIDTH = BORDER_WIDTH / 2;
 
 	auto radBorderInner = radBorderOuter - BORDER_WIDTH;
-	graphics.resetPath();
-	graphics.noFill();
-	graphics.lineColor(colorBorder.r, colorBorder.g, colorBorder.b, colorBorder.a);
-	graphics.lineWidth(1.5);
-	arcBar(graphics, xCenter, yCenter, radBorderOuter, radBorderInner, 0);
-	graphics.drawPath();
+	{
+		Path path;
+		arcBar(path, x0 + xCenter, y0 + yCenter, radBorderOuter, radBorderInner, 0);
+		setColorByValue(colorBorder);
+		strokePath(path, 1.5f);
+	}
 
 	// draw bar
 	auto radBarOuter = (widgetCursor.w - PADDING_HORZ) / 2 - (BORDER_WIDTH - BAR_WIDTH) / 2;
 	auto radBarInner = radBarOuter - BAR_WIDTH;
 	auto angle = remap(value, min, 180.0f, max, 0.0f);
-	graphics.resetPath();
-	graphics.noLine();
-	graphics.fillColor(colorBar.r, colorBar.g, colorBar.b, colorBar.a);
-	graphics.lineWidth(1.5);
-	arcBar(graphics, xCenter, yCenter, radBarOuter, radBarInner, angle);
-	graphics.drawPath();
+	{
+		Path path;
+		arcBar(path, x0 + xCenter, y0 + yCenter, radBarOuter, radBarInner, angle);
+		setColorByValue(colorBar);
+		fillPath(path);
+	}
 
 	// draw threshold
 	auto thresholdAngleDeg = remap(threshold, min, 180.0f, max, 0);
 	if (thresholdAngleDeg >= 0 && thresholdAngleDeg <= 180.0f) {
-		auto thresholdAngle = Agg2D::deg2Rad(thresholdAngleDeg);
+		auto thresholdAngle = deg2Rad(thresholdAngleDeg);
 		float acos = cosf(thresholdAngle);
 		float asin = sinf(thresholdAngle);
 		int x1 = floorf(xCenter + radBarInner * acos);
@@ -203,15 +175,9 @@ void GaugeWidgetState::render() {
 		int x2 = floorf(xCenter + radBarOuter * acos);
 		int y2 = floorf(yCenter - radBarOuter * asin);
 
-		graphics.resetPath();
-		graphics.noFill();
-		ColorRGBA thresholdColor;
-		getColorRGBAFromIndex(isActive ? thresholdStyle->activeColor : thresholdStyle->color, &thresholdColor);
-		graphics.lineColor(thresholdColor.r, thresholdColor.g, thresholdColor.b, thresholdColor.a);
-		graphics.lineWidth(THRESHOLD_LINE_WIDTH);
-		graphics.moveTo(x1, y1);
-		graphics.lineTo(x2, y2);
-		graphics.drawPath();
+		float points[] = { x0 + x1, y0 + y1, x0 + x2, y0 + y2 };
+		setColorByValue(getColorFromIndex(isActive ? thresholdStyle->activeColor : thresholdStyle->color));
+		drawPolyline(points, 2, THRESHOLD_LINE_WIDTH);
 	}
 
 	// draw ticks
@@ -221,7 +187,7 @@ void GaugeWidgetState::render() {
 	for (auto tickValue = min; tickValue <= max; tickValue += ft) {
 		auto tickAngleDeg = remap(tickValue, min, 180.0f, max, 0);
 		if (tickAngleDeg <= 180.0) {
-			auto tickAngle = Agg2D::deg2Rad(tickAngleDeg);
+			auto tickAngle = deg2Rad(tickAngleDeg);
 			float acos = cosf(tickAngle);
 			float asin = sinf(tickAngle);
 			int x1 = floorf(xCenter + ticksRad * acos);
@@ -229,15 +195,9 @@ void GaugeWidgetState::render() {
 			int x2 = floorf(xCenter + (ticksRad + TICK_LINE_LENGTH) * acos);
 			int y2 = floorf(yCenter - (ticksRad + TICK_LINE_LENGTH) * asin);
 
-			graphics.resetPath();
-			graphics.noFill();
-			ColorRGBA tickColor;
-			getColorRGBAFromIndex(isActive ? ticksStyle->activeColor : ticksStyle->color, &tickColor);
-			graphics.lineColor(tickColor.r, tickColor.g, tickColor.b, tickColor.a);
-			graphics.lineWidth(TICK_LINE_WIDTH);
-			graphics.moveTo(x1, y1);
-			graphics.lineTo(x2, y2);
-			graphics.drawPath();
+			float points[] = { x0 + x1, y0 + y1, x0 + x2, y0 + y2 };
+			setColorByValue(getColorFromIndex(isActive ? ticksStyle->activeColor : ticksStyle->color));
+			drawPolyline(points, 2, TICK_LINE_WIDTH);
 
 			char tickText[50];
 			snprintf(tickText, sizeof(tickText), "%g", tickValue);
@@ -328,6 +288,8 @@ void GaugeWidgetState::render() {
 		valueStyle,
 		isActive
 	);
+
+	restoreClipRect(savedClipRect);
 }
 
 } // namespace gui

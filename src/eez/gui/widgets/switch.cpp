@@ -76,16 +76,12 @@ void SwitchWidgetState::render() {
         style->paddingTop -
         style->paddingBottom;
 
-    display::AggDrawing aggDrawing;
-    display::aggInit(aggDrawing);
-
     display::setColor(style->borderColor);
 
     int pos = (int)floorf(x + t * (w - 1));
 
 	display::setBackColor(style->backgroundColor);
     display::fillRoundedRect(
-		aggDrawing,
 		x, y, x + w - 1, y + h - 1,
 		style->borderSizeLeft, h, true, true,
         pos, y, x + w - 1, y + h - 1
@@ -93,7 +89,6 @@ void SwitchWidgetState::render() {
 
 	display::setBackColor(style->activeBackgroundColor);
 	display::fillRoundedRect(
-		aggDrawing,
 		x, y, x + w - 1, y + h - 1,
 		style->borderSizeLeft, h, true, true,
 		x, y, pos - 1, y + h - 1
@@ -110,7 +105,7 @@ void SwitchWidgetState::render() {
     w = h;
 
     display::setBackColor(style->color);
-    display::fillRoundedRect(aggDrawing, x, y, x + w - 1, y + h - 1, 1, h, false, true);
+    display::fillRoundedRect(x, y, x + w - 1, y + h - 1, 1, h, false, true);
 }
 
 bool SwitchWidgetState::hasOnTouch() {

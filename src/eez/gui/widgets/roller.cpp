@@ -110,9 +110,6 @@ void RollerWidgetState::render() {
         style
     );
 
-	display::AggDrawing aggDrawing;
-	display::aggInit(aggDrawing);
-
 	auto x = widgetCursor.x;
 
 	int rectHeight = selectedValueStyle->borderSizeTop + textHeight + selectedValueStyle->borderSizeBottom;
@@ -120,7 +117,6 @@ void RollerWidgetState::render() {
 	display::setColor(selectedValueStyle->borderColor);
 	auto yCenter = widgetCursor.y + (widgetCursor.h - rectHeight) / 2;
 	display::drawRoundedRect(
-		aggDrawing,
 		x, yCenter, x + widgetCursor.w - 1, yCenter + rectHeight - 1, selectedValueStyle->borderSizeLeft,
 		selectedValueStyle->borderRadiusTLX, selectedValueStyle->borderRadiusTLY, selectedValueStyle->borderRadiusTRX, selectedValueStyle->borderRadiusTRY,
 		selectedValueStyle->borderRadiusBRX, selectedValueStyle->borderRadiusBRY, selectedValueStyle->borderRadiusBLX, selectedValueStyle->borderRadiusBLY

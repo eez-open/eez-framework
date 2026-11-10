@@ -50,6 +50,7 @@ static bool isRadioChecked(const Value &dataValue, const Value &radioValue) {
 bool RadioWidgetState::updateState() {
     WIDGET_STATE_START(RadioWidget);
 
+    WIDGET_STATE(flags.active, g_isActiveWidget);
     WIDGET_STATE(data, widget->data ? get(widgetCursor, widget->data) : Value());
     WIDGET_STATE(value, widget->value ? get(widgetCursor, widget->value) : Value());
     WIDGET_STATE(text, widget->text ? get(widgetCursor, widget->text) : Value());
@@ -73,12 +74,13 @@ void RadioWidgetState::render() {
         style,
         true,
         isRadioChecked(data, value),
-        label
+        label,
+        flags.active
     );
 }
 
 bool RadioWidgetState::hasOnTouch() {
-    return true;
+    return widget->data || widget->action != EEZ_ACTION_ID_NONE;
 }
 
 void RadioWidgetState::onTouch(const WidgetCursor &widgetCursor, Event &touchEvent) {

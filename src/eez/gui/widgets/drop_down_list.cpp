@@ -82,21 +82,13 @@ void DropDownListWidgetState::render() {
     w -= (2 * h) / 3.0;
     h -= (4 * h) / 5.0;
 
-	display::AggDrawing aggDrawing;
-	display::aggInit(aggDrawing);
-
-    aggDrawing.graphics.resetPath();
-    aggDrawing.graphics.moveTo(x, y);
-    aggDrawing.graphics.lineTo(x + w / 2, y + h);
-    aggDrawing.graphics.lineTo(x + w, y);
-
-	display::ColorRGBA lineColor;
-	display::getColorRGBAFromIndex(style->color, &lineColor);
-	aggDrawing.graphics.lineColor(lineColor.r, lineColor.g, lineColor.b, lineColor.a);
-
-	aggDrawing.graphics.lineWidth(h / 3.0);
-    aggDrawing.graphics.noFill();
-    aggDrawing.graphics.drawPath();
+    float points[] = {
+        (float)x, (float)y,
+        (float)(x + w / 2), (float)(y + h),
+        (float)(x + w), (float)y
+    };
+    display::setColorByValue(display::getColorFromIndex(style->color));
+    display::drawPolyline(points, 3, (float)(h / 3.0));
 }
 
 bool DropDownListWidgetState::hasOnTouch() {
