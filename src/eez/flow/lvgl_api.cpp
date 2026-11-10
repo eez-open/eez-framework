@@ -441,6 +441,16 @@ EM_PORT_API(void) flowPropagateValueLVGLEvent(void *flowState, unsigned componen
 
 static char textValue[EEZ_LVGL_TEMP_STRING_BUFFER_SIZE];
 
+#include <eez/flow/lvgl_button_matrix.h>
+
+extern "C" bool eez_flow_set_buttonmatrix_text(lv_obj_t *obj, uint32_t mapIndex, const char *text) {
+    return eez_bm_update_bound_text(obj, mapIndex, text);
+}
+
+extern "C" bool eez_flow_set_buttonmatrix_map(lv_obj_t *obj, const char *const *map, uint32_t count, const void *ctrl) {
+    return eez_bm_set_map(obj, map, count, (const eez_bm_ctrl_t *)ctrl);
+}
+
 extern "C" const char *_evalTextProperty(void *flowState, unsigned componentIndex, unsigned propertyIndex, const char *errorMessage, const char *file, int line) {
     eez::Value value;
     if (!eez::flow::evalProperty((eez::flow::FlowState *)flowState, componentIndex, propertyIndex, value, eez::flow::FlowError::Plain(errorMessage, file, line))) {
