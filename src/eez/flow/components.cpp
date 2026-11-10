@@ -151,8 +151,43 @@ static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
     executeSetColorThemeComponent,  // COMPONENT_TYPE_SET_COLOR_THEME_ACTION
 };
 
+// components implemented outside of the framework (type >= FIRST_DASHBOARD_ACTION_COMPONENT_TYPE)
+
+#if !defined(EEZ_FLOW_MAX_EXT_COMPONENTS)
+#define EEZ_FLOW_MAX_EXT_COMPONENTS 64
+#endif
+
+struct ExtComponent {
+    uint16_t type;
+    ExecuteComponentFunctionType executeComponentFunction;
+};
+
+static ExtComponent g_extComponents[EEZ_FLOW_MAX_EXT_COMPONENTS];
+static unsigned g_numExtComponents;
+
+static ExecuteComponentFunctionType findExtComponent(uint16_t type) {
+    for (unsigned i = 0; i < g_numExtComponents; i++) {
+        if (g_extComponents[i].type == type) {
+            return g_extComponents[i].executeComponentFunction;
+        }
+    }
+    return nullptr;
+}
+
 void registerComponent(ComponentTypes componentType, ExecuteComponentFunctionType executeComponentFunction) {
-	if (componentType >= defs_v3::COMPONENT_TYPE_START_ACTION) {
+	if (componentType >= defs_v3::FIRST_DASHBOARD_ACTION_COMPONENT_TYPE) {
+        for (unsigned i = 0; i < g_numExtComponents; i++) {
+            if (g_extComponents[i].type == componentType) {
+                g_extComponents[i].executeComponentFunction = executeComponentFunction;
+                return;
+            }
+        }
+        if (g_numExtComponents < EEZ_FLOW_MAX_EXT_COMPONENTS) {
+            g_extComponents[g_numExtComponents].type = componentType;
+            g_extComponents[g_numExtComponents].executeComponentFunction = executeComponentFunction;
+            g_numExtComponents++;
+        }
+	} else if (componentType >= defs_v3::COMPONENT_TYPE_START_ACTION) {
 		g_executeComponentFunctions[componentType - defs_v3::COMPONENT_TYPE_START_ACTION] = executeComponentFunction;
 	}
 }
@@ -161,6 +196,9 @@ bool hasExecFunc(FlowState *flowState, unsigned componentIndex) {
 	auto component = flowState->flow->components[componentIndex];
 
 	if (component->type >= defs_v3::FIRST_DASHBOARD_ACTION_COMPONENT_TYPE) {
+        if (findExtComponent(component->type)) {
+            return true;
+        }
 #if defined(EEZ_DASHBOARD_API)
         return true;
 #else
@@ -189,10 +227,15 @@ void executeComponent(FlowState *flowState, unsigned componentIndex) {
 	auto component = flowState->flow->components[componentIndex];
 
 	if (component->type >= defs_v3::FIRST_DASHBOARD_ACTION_COMPONENT_TYPE) {
+        auto executeComponentFunction = findExtComponent(component->type);
+        if (executeComponentFunction) {
+            executeComponentFunction(flowState, componentIndex);
+            return;
+        }
 #if defined(EEZ_DASHBOARD_API)
         executeDashboardComponent(component->type, getFlowStateIndex(flowState), componentIndex);
-#endif // EEZ_DASHBOARD_API
         return;
+#endif // EEZ_DASHBOARD_API
     } else if (component->type >= defs_v3::COMPONENT_TYPE_START_ACTION) {
 		auto executeComponentFunction = g_executeComponentFunctions[component->type - defs_v3::COMPONENT_TYPE_START_ACTION];
 		if (executeComponentFunction != nullptr) {
