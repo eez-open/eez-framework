@@ -41,6 +41,7 @@ void Keypad::pageAlloc() {
 
 void Keypad::pageFree() {
     m_appContext = nullptr;
+    m_keypadTextValue = Value();
 }
 
 void Keypad::init(AppContext *appContext, const char *label_) {
@@ -61,17 +62,19 @@ void Keypad::init(AppContext *appContext, const char *label_) {
     m_keypadMode = KEYPAD_MODE_LOWERCASE;
     m_isPassword = false;
 
-    if (label_) {
-        stringCopy(m_label, sizeof(m_label), label_);
-    } else {
-        m_label[0] = 0;
-    }
+    copyTextToBuffer(m_label, sizeof(m_label), label_);
 }
 
 Value Keypad::getKeypadTextValue() {
     char text[MAX_KEYPAD_TEXT_LENGTH + 2];
     getKeypadText(text, sizeof(text));
-    return Value::makeStringRef(text, (int)strlen(text), 0x893cbf99);
+
+    const char *lastText = m_keypadTextValue.getString();
+    if (!lastText || strcmp(lastText, text) != 0) {
+        m_keypadTextValue = Value::makeStringRef(text, (int)strlen(text), 0x893cbf99);
+    }
+
+    return m_keypadTextValue;
 }
 
 const char *Keypad::getKeypadLabel() {
@@ -79,39 +82,41 @@ const char *Keypad::getKeypadLabel() {
 }
 
 void Keypad::getKeypadText(char *text, size_t count) {
-    // text
+    if (count == 0) {
+        return;
+    }
+
+    // label
     char *textPtr = text;
 
     if (*m_label) {
         stringCopy(textPtr, count, m_label);
-        auto len = strlen(m_label);
+        auto len = strlen(textPtr);
         textPtr += len;
         count -= len;
     }
 
+    // text, count is at least 1 here
     if (m_isPassword) {
-        int n = (int)strlen(m_keypadText);
-        if (n > 0) {
-            int i;
+        size_t n = strlen(m_keypadText);
 
-            for (i = 0; i < n - 1; ++i) {
-                *textPtr++ = '*';
-            }
+        // the last typed character is visible for a while
+        bool lastCharVisible = n > 0 && millis() - m_lastKeyAppendTimeMs <= CONF_GUI_KEYPAD_PASSWORD_LAST_CHAR_VISIBLE_DURATION_MS;
 
-            uint32_t currentTimeMs = millis();
-            if (
-                currentTimeMs - m_lastKeyAppendTimeMs <=
-                CONF_GUI_KEYPAD_PASSWORD_LAST_CHAR_VISIBLE_DURATION_MS
-            ) {
-                *textPtr++ = m_keypadText[i];
-            } else {
-                *textPtr++ = '*';
-            }
-
-            *textPtr++ = 0;
-        } else {
-            *textPtr = 0;
+        if (n > count - 1) {
+            n = count - 1;
+            lastCharVisible = false;
         }
+
+        for (size_t i = 0; i < n; i++) {
+            textPtr[i] = '*';
+        }
+
+        if (lastCharVisible) {
+            textPtr[n - 1] = m_keypadText[n - 1];
+        }
+
+        textPtr[n] = 0;
     } else {
         stringCopy(textPtr, count, m_keypadText);
     }
@@ -128,13 +133,12 @@ void Keypad::start(AppContext *appContext, const char *label, const char *text, 
     m_maxChars = maxChars_;
     m_isPassword = isPassword_;
 
-    if (text) {
-        stringCopy(m_keypadText, sizeof(m_keypadText), text);
-        m_cursorPosition = (int)strlen(m_keypadText);
-    } else {
-        m_keypadText[0] = 0;
-        m_cursorPosition = 0;
-    }
+    // the label and the text together have at most MAX_KEYPAD_TEXT_LENGTH
+    // characters (see insertChar)
+    size_t labelLength = strlen(m_label);
+    size_t maxTextLength = labelLength < MAX_KEYPAD_TEXT_LENGTH ? MAX_KEYPAD_TEXT_LENGTH - labelLength : 0;
+    copyTextToBuffer(m_keypadText, maxTextLength + 1, text);
+    m_cursorPosition = (int)strlen(m_keypadText);
     m_keypadMode = KEYPAD_MODE_LOWERCASE;
 }
 
@@ -518,7 +522,8 @@ double NumericKeypad::getValue() {
 
     bool empty = true;
 
-    int a = 0;
+    // double: a long integer part doesn't overflow, the min/max check rejects it
+    double a = 0;
     double b = 0;
     int sign = 1;
 

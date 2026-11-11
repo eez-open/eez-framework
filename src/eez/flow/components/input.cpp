@@ -38,6 +38,13 @@ bool getCallActionValue(FlowState *flowState, unsigned componentIndex, Value &va
 
     auto callActionComponent = (CallActionActionComponent *)flowState->parentComponent;
 
+    if (callActionComponent->inputs.count == 0) {
+        // a user widget that shows a layout from the data has no inputs: the
+        // Input and Start components of the layout get no value
+        value = Value();
+        return true;
+    }
+
     uint8_t callActionComponentInputIndex = callActionComponent->inputsStartIndex;
     if (component->type == defs_v3::COMPONENT_TYPE_INPUT_ACTION) {
         auto inputActionComponent = (InputActionComponent *)component;

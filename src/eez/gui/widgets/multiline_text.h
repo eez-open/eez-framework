@@ -22,6 +22,8 @@ struct MultilineTextWidget : public Widget {
 struct MultilineTextWidgetState : public WidgetState {
 	WidgetStateFlags flags;
 	Value data;
+    // style after overrideStyle
+    int styleId;
 
     bool updateState() override;
     void render() override;

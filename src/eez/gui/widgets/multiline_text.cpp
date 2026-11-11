@@ -23,7 +23,8 @@ namespace gui {
 bool MultilineTextWidgetState::updateState() {
     WIDGET_STATE_START(MultilineTextWidget);
 
-    const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
+    WIDGET_STATE(styleId, overrideStyle(widgetCursor, widget->style));
+    const Style *style = getStyle(styleId);
 
     WIDGET_STATE(flags.blinking, g_isBlinkTime && styleIsBlink(style));
     WIDGET_STATE(flags.active, g_isActiveWidget);
@@ -36,7 +37,7 @@ void MultilineTextWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
 
     auto widget = (const MultilineTextWidget *)widgetCursor.widget;
-    const Style* style = getStyle(widget->style);
+    const Style* style = getStyle(styleId);
 
     if (widget->data) {
         if (data.isString()) {

@@ -83,6 +83,30 @@ void calcAutoTicks(Axis &axis) {
     axis.ticksDelta = delta;
 }
 
+// The ticks of the axis are at from + i * ticksDelta, i < the returned count (at
+// most maxTicks). No ticks when the delta is not finite or not positive.
+static unsigned getTicks(const Axis &axis, double &from) {
+    auto delta = axis.ticksDelta;
+    if (!(delta > 0) || isinf(delta)) {
+        return 0;
+    }
+
+    from = ceil(axis.min / delta) * delta;
+    auto to = floor(axis.max / delta) * delta;
+
+    unsigned count = 0;
+    while (count < axis.maxTicks && from + count * delta <= to) {
+        count++;
+    }
+    return count;
+}
+
+// at least one tick (the plot can be smaller than one label, or have a negative
+// size when the legend is wider than the widget)
+static unsigned clampMaxTicks(int maxTicks) {
+    return maxTicks > 0 ? (unsigned)maxTicks : 1;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 bool LineChartWidgetState::updateState() {
@@ -198,14 +222,29 @@ void LineChartWidgetState::render() {
         }
     }
 
-    if (chart.xAxis.min >= chart.xAxis.max) {
+    // also when the range is NaN or infinite
+    if (!(chart.xAxis.min < chart.xAxis.max) || isinf(chart.xAxis.max - chart.xAxis.min)) {
         chart.xAxis.min = 0;
         chart.xAxis.max = 1;
     }
 
-    if (chart.yAxis.min >= chart.yAxis.max) {
+    if (!(chart.yAxis.min < chart.yAxis.max) || isinf(chart.yAxis.max - chart.yAxis.min)) {
         chart.yAxis.min = 0;
         chart.yAxis.max = 1;
+    }
+
+    // the labels of a style without a font are not drawn
+    auto legendFont = styleGetFont(legendStyle);
+    if (!legendFont) {
+        showLegend = false;
+    }
+    auto xAxisFont = styleGetFont(xAxisStyle);
+    if (!xAxisFont) {
+        showXAxis = false;
+    }
+    auto yAxisFont = styleGetFont(yAxisStyle);
+    if (!yAxisFont) {
+        showYAxis = false;
     }
 
     Rect widgetRect = {
@@ -225,8 +264,6 @@ void LineChartWidgetState::render() {
     int legendWidth;
     int legendLineHeight = 0;
     if (showLegend) {
-        auto legendFont = styleGetFont(legendStyle);
-
         int maxWidth = 0;
 
         for (uint32_t lineIndex = 0; lineIndex < executionState->numLines; lineIndex++) {
@@ -263,21 +300,21 @@ void LineChartWidgetState::render() {
     gridRect.w = widgetRect.w - (marginLeft + marginRight);
     gridRect.h = widgetRect.h - (marginTop + marginBottom);
 
-    auto xAxisFont = styleGetFont(xAxisStyle);
-    auto xAxisLabelWidth = measureStr("12345", -1, xAxisFont, gridRect.w);
-    chart.xAxis.maxTicks = (int)round(gridRect.w / xAxisLabelWidth);
+    // the label width is 0 when the axis style has no font (or no glyphs)
+    int xAxisLabelWidth = xAxisFont ? measureStr("12345", -1, xAxisFont, gridRect.w) : 0;
+    int xAxisMaxTicks = xAxisLabelWidth > 0 ? gridRect.w / xAxisLabelWidth : 0;
     if (chart.xAxis.valueType == AXIS_VALUE_TYPE_DATE) {
-        chart.xAxis.maxTicks /= 2;
+        xAxisMaxTicks /= 2;
     }
+    chart.xAxis.maxTicks = clampMaxTicks(xAxisMaxTicks);
 
     chart.xAxis.rect.x = gridRect.x;
     chart.xAxis.rect.y = gridRect.y + gridRect.h;
     chart.xAxis.rect.w = gridRect.w;
     chart.xAxis.rect.h = widget->marginBottom;
 
-    auto yAxisFont = styleGetFont(yAxisStyle);
-    auto yAxisLabelHeight = yAxisFont.getHeight() * 1.25;
-    chart.yAxis.maxTicks = (int)round(gridRect.h / yAxisLabelHeight);
+    auto yAxisLabelHeight = yAxisFont ? yAxisFont.getHeight() * 1.25 : 0;
+    chart.yAxis.maxTicks = clampMaxTicks(yAxisLabelHeight > 0 ? (int)round(gridRect.h / yAxisLabelHeight) : 0);
 
     chart.yAxis.rect.x = widgetRect.x + marginLeft - widget->marginLeft;
     chart.yAxis.rect.y = gridRect.y;
@@ -334,7 +371,9 @@ void LineChartWidgetState::render() {
             );
 
             {
-                Path path;
+                // reused, the path keeps its memory between the draws
+                static Path path;
+                path.clear();
                 path.arc(x + (LEGEND_ICON_WIDTH - 4) / 2.0f, y + legendLineHeight / 2.0f, 3, 3, 0, 6.2831853f);
                 setColorByValue(getColorFromIndex(color));
                 fillPath(path);
@@ -363,17 +402,16 @@ void LineChartWidgetState::render() {
 
     // draw X axis
     if (showXAxis) {
-        auto from = ceil(chart.xAxis.min / chart.xAxis.ticksDelta) * chart.xAxis.ticksDelta;
-        auto to = floor(chart.xAxis.max / chart.xAxis.ticksDelta) * chart.xAxis.ticksDelta;
+        double from = 0;
+        unsigned numTicks = getTicks(chart.xAxis, from);
 
         auto maxTextWidth = chart.xAxis.ticksDelta * chart.xAxis.scale;
 
         auto &axis = chart.xAxis;
         auto &rect = axis.rect;
 
-        for (unsigned i = 0; i < axis.maxTicks; i++) {
+        for (unsigned i = 0; i < numTicks; i++) {
             auto tick = from + i * axis.ticksDelta;
-            if (tick > to) break;
 
             auto x = axis.offset + tick * axis.scale;
 
@@ -470,22 +508,19 @@ void LineChartWidgetState::render() {
 
     // draw Y axis
     if (showYAxis) {
-        auto from = ceil(chart.yAxis.min / chart.yAxis.ticksDelta) * chart.yAxis.ticksDelta;
-        auto to = floor(chart.yAxis.max / chart.yAxis.ticksDelta) * chart.yAxis.ticksDelta;
+        double from = 0;
+        unsigned numTicks = getTicks(chart.yAxis, from);
 
         auto &axis = chart.yAxis;
         auto &rect = axis.rect;
 
-        for (unsigned i = 0; i < axis.maxTicks; i++) {
+        for (unsigned i = 0; i < numTicks; i++) {
             auto tick = from + i * axis.ticksDelta;
-            if (tick > to) break;
 
             auto y = axis.offset + tick * axis.scale;
 
             char text[128];
             snprintf(text, sizeof(text), "%g", tick);
-
-            auto yAxisFont = styleGetFont(yAxisStyle);
 
             auto yText = widgetCursor.y + (int)roundf(y - yAxisFont.getHeight() / 2);
             auto hText = yAxisFont.getHeight();
@@ -514,11 +549,10 @@ void LineChartWidgetState::render() {
 
         {
             // vertical lines
-            auto from = ceil(chart.xAxis.min / chart.xAxis.ticksDelta) * chart.xAxis.ticksDelta;
-            auto to = floor(chart.xAxis.max / chart.xAxis.ticksDelta) * chart.xAxis.ticksDelta;
-            for (unsigned i = 0; ; i++) {
+            double from = 0;
+            unsigned numTicks = getTicks(chart.xAxis, from);
+            for (unsigned i = 0; i < numTicks; i++) {
                 auto tick = from + i * chart.xAxis.ticksDelta;
-                if (tick > to) break;
                 auto x = chart.xAxis.offset + tick * chart.xAxis.scale;
 
                 drawVLine(widgetCursor.x + (int)round(x), widgetCursor.y + gridRect.y, gridRect.h - 1);
@@ -527,11 +561,10 @@ void LineChartWidgetState::render() {
 
         {
             // horizontal lines
-            auto from = ceil(chart.yAxis.min / chart.yAxis.ticksDelta) * chart.yAxis.ticksDelta;
-            auto to = floor(chart.yAxis.max / chart.yAxis.ticksDelta) * chart.yAxis.ticksDelta;
-            for (unsigned i = 0; ; i++) {
+            double from = 0;
+            unsigned numTicks = getTicks(chart.yAxis, from);
+            for (unsigned i = 0; i < numTicks; i++) {
                 auto tick = from + i * chart.yAxis.ticksDelta;
-                if (tick > to) break;
                 auto y = chart.yAxis.offset + tick * chart.yAxis.scale;
 
                 drawHLine(widgetCursor.x + gridRect.x, widgetCursor.y +(int)round(y), gridRect.w - 1);
@@ -541,7 +574,8 @@ void LineChartWidgetState::render() {
 
     // draw lines
     {
-        Path path;
+        // reused, the path keeps its memory between the draws
+        static Path path;
 
         for (uint32_t lineIndex = 0; lineIndex < executionState->numLines; lineIndex++) {
             path.clear();

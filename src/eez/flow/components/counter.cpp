@@ -31,8 +31,16 @@ void executeCounterComponent(FlowState *flowState, unsigned componentIndex) {
             return;
         }
 
+        // a count from an expression can be a float or a double (e.g. n / 2)
+        int err;
+        int counter = counterValue.toInt32(&err);
+        if (err) {
+            throwError(flowState, componentIndex, FlowError::PropertyConvert("Counter", "Count value", "integer"));
+            return;
+        }
+
         counterComponenentExecutionState = allocateComponentExecutionState<CounterComponenentExecutionState>(flowState, componentIndex);
-        counterComponenentExecutionState->counter = counterValue.getInt();
+        counterComponenentExecutionState->counter = counter;
     }
 
     if (counterComponenentExecutionState->counter > 0) {

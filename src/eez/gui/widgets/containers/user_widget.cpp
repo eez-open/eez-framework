@@ -43,7 +43,9 @@ int getLayoutId(const WidgetCursor &widgetCursor) {
 }
 
 bool UserWidgetWidgetState::updateState() {
-    WIDGET_STATE_START(UserWidgetWidget);
+    // also while hidden: getPageAsset creates (or changes) the flow state of
+    // the user widget
+    WIDGET_STATE_START_EVEN_IF_HIDDEN(UserWidgetWidget);
 
     auto savedCursor = widgetCursor.cursor;
 

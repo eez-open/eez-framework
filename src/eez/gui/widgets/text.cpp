@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include <eez/core/util.h>
+#include <eez/core/utf8.h>
 
 #include <eez/gui/gui.h>
 #include <eez/gui/widgets/text.h>
@@ -29,6 +30,57 @@ static const size_t MAX_TEXT_LEN = 128;
 namespace eez {
 namespace gui {
 
+// The character (code point) of the UTF-8 text at the byte offset i, the
+// character ends before the byte offset end. Returns its length in bytes, an
+// invalid or cut sequence is taken as a one byte character.
+static int getCharAt(const char *text, int i, int end, utf8_int32_t &encoding) {
+#if UTF8_SUPPORT
+    uint8_t c = (uint8_t)text[i];
+    int length = (c & 0xF8) == 0xF0 ? 4 : (c & 0xF0) == 0xE0 ? 3 : (c & 0xE0) == 0xC0 ? 2 : 1;
+    if (length > 1 && i + length <= end) {
+        int k;
+        for (k = 1; k < length && ((uint8_t)text[i + k] & 0xC0) == 0x80; k++) {
+        }
+        if (k == length) {
+            utf8codepoint(text + i, &encoding);
+            return length;
+        }
+    }
+#else
+    EEZ_UNUSED(end);
+#endif
+    encoding = (uint8_t)text[i];
+    return 1;
+}
+
+// The character of the UTF-8 text that ends before the byte offset end and
+// starts at or after the byte offset begin. Returns the byte offset of its start.
+static int getCharBefore(const char *text, int begin, int end, utf8_int32_t &encoding) {
+    int start = end - 1;
+#if UTF8_SUPPORT
+    while (start > begin && end - start < 4 && ((uint8_t)text[start] & 0xC0) == 0x80) {
+        start--;
+    }
+    if (getCharAt(text, start, end, encoding) == end - start) {
+        return start;
+    }
+    start = end - 1;
+#else
+    EEZ_UNUSED(begin);
+#endif
+    encoding = (uint8_t)text[start];
+    return start;
+}
+
+// text colors after the overrideStyleColor hooks, the focus colors when focused
+static uint16_t getTextColor(const WidgetCursor &widgetCursor, const Style *style, bool focused) {
+    return focused ? style->focusColor : g_hooks.overrideStyleColor(widgetCursor, style);
+}
+
+static uint16_t getTextActiveColor(const WidgetCursor &widgetCursor, const Style *style, bool focused) {
+    return focused ? style->focusBackgroundColor : g_hooks.overrideActiveStyleColor(widgetCursor, style);
+}
+
 void TextWidget_autoSize(TextWidget& widget) {
     const Style *style = getStyle(widget.style);
     font::Font font = styleGetFont(style);
@@ -37,14 +89,24 @@ void TextWidget_autoSize(TextWidget& widget) {
 }
 
 bool TextWidgetState::updateState() {
-    WIDGET_STATE_START(TextWidget);
+    WIDGET_STATE_START_EVEN_IF_HIDDEN(TextWidget);
 
-    const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
+    // "Fit to content" sets the size also while hidden: the area of a hidden
+    // widget is cleared (see RENDER_WIDGET)
+    if (!(widget->flags & (FIT_TO_CONTENT_WIDTH_FLAG | FIT_TO_CONTENT_HEIGHT_FLAG))) {
+        WIDGET_STATE_RETURN_IF_HIDDEN();
+    }
+
+    WIDGET_STATE(styleId, overrideStyle(widgetCursor, widget->style));
+    const Style *style = getStyle(styleId);
 
     WIDGET_STATE(flags.active, g_isActiveWidget);
     WIDGET_STATE(flags.focused, isFocusWidget(widgetCursor));
 
     WIDGET_STATE(flags.blinking, g_isBlinkTime && styleIsBlink(style));
+
+    WIDGET_STATE(color, getTextColor(widgetCursor, style, flags.focused));
+    WIDGET_STATE(activeColor, getTextActiveColor(widgetCursor, style, flags.focused));
 
     const char *text = widget->text ? static_cast<const char *>(widget->text) : nullptr;
 	WIDGET_STATE(data, !(text && text[0]) && widget->data ? get(widgetCursor, widget->data) : 0);
@@ -54,22 +116,26 @@ bool TextWidgetState::updateState() {
 
         // must be kept in sync with TextWidget_autoSize
         if (widget->flags & FIT_TO_CONTENT_WIDTH_FLAG) {
-            int textWidth = 0;
-            if (font) {
-                if (text && text[0]) {
-                    textWidth = display::measureStr(text, -1, font, 0);
-                } else if (widget->data) {
-                    if (data.isString()) {
-                        const char *str = data.getString();
-                        textWidth = str ? display::measureStr(str, -1, font, 0) : 0;
-                    } else {
-                        char textBuffer[MAX_TEXT_LEN + 1];
-                        data.toText(textBuffer, sizeof(textBuffer));
-                        textWidth = display::measureStr(textBuffer, -1, font, 0);
+            // the width depends only on the text, the data and the style, so
+            // it is measured only for a new state or after a change above
+            if (!hasPreviousState) {
+                int textWidth = 0;
+                if (font) {
+                    if (text && text[0]) {
+                        textWidth = display::measureStr(text, -1, font, 0);
+                    } else if (widget->data) {
+                        if (data.isString()) {
+                            const char *str = data.getString();
+                            textWidth = str ? display::measureStr(str, -1, font, 0) : 0;
+                        } else {
+                            char textBuffer[MAX_TEXT_LEN + 1];
+                            data.toText(textBuffer, sizeof(textBuffer));
+                            textWidth = display::measureStr(textBuffer, -1, font, 0);
+                        }
                     }
                 }
+                fitW = (int16_t)(style->borderSizeLeft + style->paddingLeft + textWidth + style->paddingRight + style->borderSizeRight);
             }
-            WIDGET_STATE(fitW, (int16_t)(style->borderSizeLeft + style->paddingLeft + textWidth + style->paddingRight + style->borderSizeRight));
         } else {
             fitW = widgetCursor.w;
         }
@@ -105,6 +171,8 @@ void TextWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
 
     auto widget = (const TextWidget *)widgetCursor.widget;
+    // resolved again, the same as in updateState: the internal pages
+    // (page.cpp) render a TextWidgetState without calling updateState
     const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
     const char *text = widget->text ? static_cast<const char *>(widget->text) : nullptr;
 
@@ -133,9 +201,9 @@ void TextWidgetState::render() {
         renderedH = widgetCursor.h;
     }
 
-    uint16_t overrideColor                 = flags.focused ? style->focusColor           : g_hooks.overrideStyleColor(widgetCursor, style);
+    uint16_t overrideColor                 = getTextColor(widgetCursor, style, flags.focused);
     uint16_t overrideBackgroundColor       = flags.focused ? style->focusBackgroundColor : style->backgroundColor;
-    uint16_t overrideActiveColor           = flags.focused ? style->focusBackgroundColor : g_hooks.overrideActiveStyleColor(widgetCursor, style);
+    uint16_t overrideActiveColor           = getTextActiveColor(widgetCursor, style, flags.focused);
     uint16_t overrideActiveBackgroundColor = flags.focused ? style->focusColor           : style->activeBackgroundColor;
 
     bool ignoreLuminosity = (widget->flags & IGNORE_LUMINOSITY_FLAG) != 0;
@@ -151,49 +219,62 @@ void TextWidgetState::render() {
         if (data.isString()) {
             if (data.getOptions() & STRING_OPTIONS_FILE_ELLIPSIS) {
                 const char *fullText = data.getString();
+                if (!fullText) {
+                    fullText = "";
+                }
                 int fullTextLength = (int)strlen(fullText);
                 font::Font font = styleGetFont(style);
-                int fullTextWidth = display::measureStr(fullText, fullTextLength, font);
-                if (fullTextWidth <= widgetCursor.w) {
+                if (!font || display::measureStr(fullText, -1, font) <= widgetCursor.w) {
                     drawText(
-                        fullText, fullTextLength,
+                        fullText, -1,
                         widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
                         style,
                         flags.active, flags.blinking, ignoreLuminosity,
                         &overrideColor, &overrideBackgroundColor, &overrideActiveColor, &overrideActiveBackgroundColor
                     );
                 } else {
+                    // the start and the end of the text with "..." between:
+                    // characters are taken alternately from the left and from the
+                    // right while they fit, fullText[0 .. iLeft) + "..." +
+                    // fullText[iRight .. fullTextLength) (byte offsets)
                     char text[MAX_TEXT_LEN + 1];
-                    int ellipsisWidth = display::measureStr("...", 3, font);
-                    int width = ellipsisWidth;
+                    int width = display::measureStr("...", 3, font);
                     int textLength = 3;
                     int iLeft = 0;
-                    int iRight = (int)strlen(fullText) - 1;
-                    while (iLeft < iRight && textLength < (int)MAX_TEXT_LEN) {
-                        int widthLeft = display::measureGlyph(fullText[iLeft], font);
-                        if (width + widthLeft > widgetCursor.w) {
+                    int iRight = fullTextLength;
+                    while (iLeft < iRight) {
+                        utf8_int32_t encoding;
+                        int length = getCharAt(fullText, iLeft, iRight, encoding);
+                        int widthLeft = display::measureGlyph(encoding, font);
+                        if (width + widthLeft > widgetCursor.w || textLength + length > (int)MAX_TEXT_LEN) {
                             break;
                         }
                         width += widthLeft;
-                        iLeft++;
-                        textLength++;
+                        iLeft += length;
+                        textLength += length;
 
-                        int widthRight = display::measureGlyph(fullText[iRight], font);
-                        if (width + widthRight > widgetCursor.w) {
+                        if (iLeft >= iRight) {
+                            break;
+                        }
+
+                        int start = getCharBefore(fullText, iLeft, iRight, encoding);
+                        length = iRight - start;
+                        int widthRight = display::measureGlyph(encoding, font);
+                        if (width + widthRight > widgetCursor.w || textLength + length > (int)MAX_TEXT_LEN) {
                             break;
                         }
                         width += widthRight;
-                        iRight--;
-                        textLength++;
+                        iRight = start;
+                        textLength += length;
                     }
 
                     memcpy(text, fullText, iLeft);
-                    text[iLeft] = 0;
-                    stringAppendString(text, sizeof(text), "...");
-                    stringAppendString(text, sizeof(text), fullText + iRight + 1);
+                    memcpy(text + iLeft, "...", 3);
+                    memcpy(text + iLeft + 3, fullText + iRight, fullTextLength - iRight);
+                    text[textLength] = 0;
 
                     drawText(
-                        text, textLength,
+                        text, -1,
                         widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
                         style,
                         flags.active, flags.blinking, ignoreLuminosity,

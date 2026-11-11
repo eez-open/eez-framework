@@ -19,7 +19,6 @@
 #include <math.h>
 
 #include <eez/core/util.h>
-#include <eez/core/utf8.h>
 
 #include <eez/gui/gui.h>
 
@@ -60,18 +59,18 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 			style->borderRadiusTLX > 0 || style->borderRadiusTLY > 0 || style->borderRadiusTRX > 0 || style->borderRadiusTRY > 0 ||
 			style->borderRadiusBRX > 0 || style->borderRadiusBRY > 0 || style->borderRadiusBLX > 0 || style->borderRadiusBLY > 0;
 
-
-		// TODO: @mvladic
-		// hasBorderRadius = 0;
-
-		if (color != TRANSPARENT_COLOR_INDEX && style && style->opacity == 255 && !(hasBorder && hasBorderRadius)) {
-			// non-transparent color
-			isTransparent = false;
-		} else if (style->backgroundImage) {
-			auto bitmap = getBitmap(style->backgroundImage);
-			if (bitmap->bpp != 32) {
-				// non-transparent bitmap
+		// with a border radius the corners (and their antialiased edge) don't cover
+		// what is below them, and the background image is not drawn
+		if (!hasBorderRadius) {
+			if (color != TRANSPARENT_COLOR_INDEX && style->opacity == 255) {
+				// non-transparent color
 				isTransparent = false;
+			} else if (style->backgroundImage) {
+				auto bitmap = getBitmap(style->backgroundImage);
+				if (bitmap && bitmap->bpp != 32) {
+					// non-transparent bitmap
+					isTransparent = false;
+				}
 			}
 		}
 	}
@@ -602,16 +601,36 @@ struct MultilineTextRender {
     std::vector<LineInfo> *lines = nullptr;
     std::vector<char> *linesText = nullptr;
 
-    // number of code points in n bytes of UTF-8 text
+    // number of code points in n bytes of UTF-8 text (decoded as in drawStr)
     static int countCodepoints(const char *str, int n) {
         int count = 0;
         const char *end = str + n;
         while (str < end) {
-            utf8_int32_t encoding;
-            str = utf8codepoint(str, &encoding);
+            int32_t encoding;
+            str = display::decodeUtf8(str, encoding);
+            if (!encoding) {
+                break;
+            }
             ++count;
         }
         return count;
+    }
+
+    // offset of the last character in the n bytes of text at str (0 if there
+    // is only one), a font tag with its font index is one character
+    static int lastCharOffset(const char *str, int n) {
+        const char *end = str + n;
+        const char *last = str;
+        const char *p = str;
+        while (p < end) {
+            const char *next = display::skipChar(p);
+            if (next == p) {
+                break;
+            }
+            last = p;
+            p = next;
+        }
+        return (int)(last - str);
     }
 
     // width of n bytes of UTF-8 text, starting in the currentFontIndex font
@@ -663,13 +682,11 @@ struct MultilineTextRender {
             while (lineWidth + (lineLength ? spaceWidth : 0) + width > x2 - x1 + 1) {
 				if (!lineLength) {
                     // word doesn't fit even into the empty line, cut off the last character
+                    // (a font tag is not separated from its font index)
                     if (i <= j) {
                         break;
                     }
-                    int k = i;
-                    do {
-                        --k;
-                    } while (k > j && (text[k] & 0xC0) == 0x80);
+                    int k = j + lastCharOffset(text + j, i - j);
                     if (k == j) {
                         // keep at least one character, even if it doesn't fit
                         break;

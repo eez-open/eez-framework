@@ -26,6 +26,7 @@ static const size_t MAX_TEXT_LEN = 128;
 bool CheckboxWidgetState::updateState() {
     WIDGET_STATE_START(CheckboxWidget);
 
+    WIDGET_STATE(styleId, overrideStyle(widgetCursor, widget->style));
     WIDGET_STATE(flags.active, g_isActiveWidget);
     WIDGET_STATE(data, widget->data ? get(widgetCursor, widget->data) : 0);
     WIDGET_STATE(text, widget->text ? get(widgetCursor, widget->text) : Value());
@@ -35,8 +36,7 @@ bool CheckboxWidgetState::updateState() {
 
 void CheckboxWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
-    auto widget = (const CheckboxWidget *)widgetCursor.widget;
-    const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
+    const Style *style = getStyle(styleId);
 
     char label[MAX_TEXT_LEN + 1];
     label[0] = 0;

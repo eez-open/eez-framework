@@ -26,7 +26,16 @@ namespace flow {
 
 EvalStack g_stack;
 
-static void evalExpression(FlowState *flowState, const uint8_t *instructions, int *numInstructionBytes) {
+// Removes what an evaluation left on the stack above sp (e.g. the operands of an
+// operation that stopped at an error), so the next evaluation starts clean.
+static void restoreStack(size_t sp) {
+    while (g_stack.sp > sp) {
+        g_stack.stack[--g_stack.sp] = Value();
+    }
+}
+
+// baseSp: the stack pointer at the start of the evaluation
+static void evalExpression(FlowState *flowState, const uint8_t *instructions, int *numInstructionBytes, size_t baseSp) {
 	auto flowDefinition = static_cast<FlowDefinition*>(flowState->assets->flowDefinition);
 	auto flow = flowState->flow;
 
@@ -71,11 +80,11 @@ static void evalExpression(FlowState *flowState, const uint8_t *instructions, in
                             g_stack.push(Value::makeArrayElementRef(arrayValue, elementIndex, 0x132e0e2f));
                         } else {
                             g_stack.push(Value::makeError());
-                            g_stack.setErrorMessage("Array element index out of bounds\n");
+                            g_stack.setErrorMessage("Array element index out of bounds");
                         }
                     } else {
                         g_stack.push(Value::makeError());
-                        g_stack.setErrorMessage("Integer value expected for array element index\n");
+                        g_stack.setErrorMessage("Integer value expected for array element index");
                     }
                 } else if (arrayValue.isDynamicArray()) {
                     auto dynamicArray = arrayValue.getDynamicArray();
@@ -87,11 +96,11 @@ static void evalExpression(FlowState *flowState, const uint8_t *instructions, in
                             g_stack.push(Value::makeArrayElementRef(arrayValue, elementIndex, 0x132e0e2f));
                         } else {
                             g_stack.push(Value::makeError());
-                            g_stack.setErrorMessage("Array element index out of bounds\n");
+                            g_stack.setErrorMessage("Array element index out of bounds");
                         }
                     } else {
                         g_stack.push(Value::makeError());
-                        g_stack.setErrorMessage("Integer value expected for array element index\n");
+                        g_stack.setErrorMessage("Integer value expected for array element index");
                     }
                 } else if (arrayValue.isBlob()) {
                     auto blobRef = arrayValue.getBlob();
@@ -103,24 +112,75 @@ static void evalExpression(FlowState *flowState, const uint8_t *instructions, in
                             g_stack.push(Value::makeArrayElementRef(arrayValue, elementIndex, 0x132e0e2f));
                         } else {
                             g_stack.push(Value::makeError());
-                            g_stack.setErrorMessage("Blob element index out of bounds\n");
+                            g_stack.setErrorMessage("Blob element index out of bounds");
                         }
                     } else {
                         g_stack.push(Value::makeError());
-                        g_stack.setErrorMessage("Integer value expected for blob element index\n");
+                        g_stack.setErrorMessage("Integer value expected for blob element index");
                     }
 
                 } else {
                     g_stack.push(Value::makeError());
-                    g_stack.setErrorMessage("Array value expected\n");
+                    g_stack.setErrorMessage("Array value expected");
                 }
             }
 		} else if (instructionType == EXPR_EVAL_INSTRUCTION_TYPE_OPERATION) {
 			g_evalOperations[instructionArg](g_stack);
+		} else if ((instruction & EXPR_EVAL_INSTRUCTION_TYPE_JUMP_MASK) == EXPR_EVAL_INSTRUCTION_TYPE_JUMP && instruction <= EXPR_EVAL_INSTRUCTION_JUMP_OR) {
+            // the operand is a forward offset in 16-bit words, counted from the
+            // word after the operand
+            int next = i + 4;
+            int target = next + 2 * (instructions[i + 2] + (instructions[i + 3] << 8));
+
+            if (instruction == EXPR_EVAL_INSTRUCTION_JUMP) {
+                i = target;
+            } else if (instruction == EXPR_EVAL_INSTRUCTION_JUMP_IF_FALSE) {
+                // t ? c : a, the target is the JUMP over the alternate. The test is
+                // popped and checked like the CONDITIONAL operation does it, an
+                // error is the result.
+                auto conditionValue = g_stack.sp > baseSp ? g_stack.pop() : Value::makeError();
+                if (conditionValue.isError()) {
+                    g_stack.push(conditionValue);
+                    i = target;
+                } else {
+                    int err;
+                    auto condition = conditionValue.toBool(&err);
+                    if (err != 0) {
+                        g_stack.push(Value::makeError());
+                        i = target;
+                    } else if (condition) {
+                        i = next;
+                    } else {
+                        // the alternate, after the JUMP instruction and its operand
+                        i = target + 4;
+                    }
+                }
+            } else {
+                // a && b, a || b: when the left operand decides the result, it is
+                // replaced with the result and the right operand and the
+                // LOGICAL_AND / LOGICAL_OR operation are skipped
+                if (g_stack.sp <= baseSp) {
+                    g_stack.push(Value::makeError());
+                    i = target;
+                } else {
+                    Value &top = g_stack.stack[g_stack.sp - 1];
+                    top = top.getValue();
+                    bool isOr = instruction == EXPR_EVAL_INSTRUCTION_JUMP_OR;
+                    if (top.isError()) {
+                        i = target;
+                    } else if (top.toBool() == isOr) {
+                        top = Value(isOr, VALUE_TYPE_BOOLEAN);
+                        i = target;
+                    } else {
+                        i = next;
+                    }
+                }
+            }
+            continue;
 		} else {
             if (instruction == EXPR_EVAL_INSTRUCTION_TYPE_END_WITH_DST_VALUE_TYPE) {
     			i += 2;
-                if (g_stack.sp == 1) {
+                if (g_stack.sp == baseSp + 1) {
                     auto finalResult = g_stack.pop();
 
                     #define VALUE_TYPE (instructions[i] + (instructions[i + 1] << 8) + (instructions[i + 2] << 16) + (instructions[i + 3] << 24))
@@ -167,7 +227,10 @@ bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *ins
 	g_stack.iterators = iterators;
     g_stack.errorMessage = nullptr;
 
-	evalExpression(flowState, instructions, numInstructionBytes);
+	evalExpression(flowState, instructions, numInstructionBytes, savedSp);
+
+    // why the evaluation failed, nullptr if not known
+    const char *evalErrorMessage = g_stack.errorMessage;
 
 	g_stack.flowState = savedFlowState;
 	g_stack.componentIndex = savedComponentIndex;
@@ -181,12 +244,15 @@ bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *ins
         }
     }
 
-    FlowError flowError = errorMessage.setDescription(g_stack.errorMessage);
+    restoreStack(savedSp);
+
+    FlowError flowError = errorMessage.setDescription(evalErrorMessage);
     throwError(flowState, componentIndex, flowError);
 	return false;
 }
 
 bool evalAssignableExpression(FlowState *flowState, int componentIndex, const uint8_t *instructions, Value &result, const FlowError &errorMessage, int *numInstructionBytes, const int32_t *iterators) {
+    size_t savedSp = g_stack.sp;
     FlowState *savedFlowState = g_stack.flowState;
 	int savedComponentIndex = g_stack.componentIndex;
 	const int32_t *savedIterators = g_stack.iterators;
@@ -197,14 +263,17 @@ bool evalAssignableExpression(FlowState *flowState, int componentIndex, const ui
 	g_stack.iterators = iterators;
     g_stack.errorMessage = nullptr;
 
-	evalExpression(flowState, instructions, numInstructionBytes);
+	evalExpression(flowState, instructions, numInstructionBytes, savedSp);
+
+    // why the evaluation failed, nullptr if not known
+    const char *evalErrorMessage = g_stack.errorMessage;
 
 	g_stack.flowState = savedFlowState;
 	g_stack.componentIndex = savedComponentIndex;
 	g_stack.iterators = savedIterators;
     g_stack.errorMessage = savedErrorMessage;
 
-    if (g_stack.sp == 1) {
+    if (g_stack.sp == savedSp + 1) {
         auto finalResult = g_stack.pop();
         if (
             finalResult.getType() == VALUE_TYPE_VALUE_PTR ||
@@ -219,8 +288,10 @@ bool evalAssignableExpression(FlowState *flowState, int componentIndex, const ui
         }
     }
 
-    errorMessage.setDescription(g_stack.errorMessage);
-    throwError(flowState, componentIndex, errorMessage);
+    restoreStack(savedSp);
+
+    FlowError flowError = errorMessage.setDescription(evalErrorMessage);
+    throwError(flowState, componentIndex, flowError);
 
 	return false;
 }
@@ -282,6 +353,7 @@ int16_t getNativeVariableId(const WidgetCursor &widgetCursor) {
 			auto component = flow->components[widgetDataItem->componentIndex];
 			auto property = component->properties[widgetDataItem->propertyValueIndex];
 
+            size_t savedSp = g_stack.sp;
             FlowState *savedFlowState = g_stack.flowState;
             int savedComponentIndex = g_stack.componentIndex;
             const int32_t *savedIterators = g_stack.iterators;
@@ -292,19 +364,22 @@ int16_t getNativeVariableId(const WidgetCursor &widgetCursor) {
 			g_stack.iterators = widgetCursor.iterators;
             g_stack.errorMessage = nullptr;
 
-			evalExpression(flowState, property->evalInstructions, nullptr);
+			evalExpression(flowState, property->evalInstructions, nullptr, savedSp);
 
             g_stack.flowState = savedFlowState;
             g_stack.componentIndex = savedComponentIndex;
             g_stack.iterators = savedIterators;
             g_stack.errorMessage = savedErrorMessage;
 
-            if (g_stack.sp == 1) {
+            int16_t nativeVariableId = EEZ_DATA_ID_NONE;
+            if (g_stack.sp == savedSp + 1) {
                 auto finalResult = g_stack.pop();
                 if (finalResult.getType() == VALUE_TYPE_NATIVE_VARIABLE) {
-                    return finalResult.getInt();
+                    nativeVariableId = finalResult.getInt();
                 }
             }
+            restoreStack(savedSp);
+            return nativeVariableId;
 		}
 	}
 

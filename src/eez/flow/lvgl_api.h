@@ -60,7 +60,9 @@ typedef struct _ext_font_desc_t {
 #endif
 
 typedef void (*ActionExecFunc)(lv_event_t * e);
-void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj_t **objects, size_t numObjects, const ext_img_desc_t *images, size_t numImages, ActionExecFunc *actions);
+// objectsSize and imagesSize are the sizes of the arrays in bytes (sizeof(objects),
+// sizeof(images)), not the numbers of elements
+void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj_t **objects, size_t objectsSize, const ext_img_desc_t *images, size_t imagesSize, ActionExecFunc *actions);
 
 void eez_flow_init_styles(
     void (*add_style)(lv_obj_t *obj, int32_t styleIndex),
@@ -174,6 +176,10 @@ extern int g_eezFlowLvlgMeterTickIndex;
 int compareRollerOptions(lv_roller_t *roller, const char *new_val, const char *cur_val, lv_roller_mode_t mode);
 
 void eez_flow_set_theme(const char *themeName);
+// the number of themes given to eez_flow_init_themes (0 when it wasn't called)
+size_t eez_flow_get_num_themes();
+// the index of the theme in the list given to eez_flow_init_themes, -1 when the list doesn't have it
+int32_t eez_flow_get_theme_index(const char *themeName);
 uint32_t eez_flow_get_selected_theme_index();
 uint32_t eez_flow_get_theme_color(uint32_t colorIndex);
 

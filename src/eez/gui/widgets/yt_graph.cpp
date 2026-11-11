@@ -537,6 +537,11 @@ YTGraphWidgetState::~YTGraphWidgetState() {
     eez::free(buffer);
 }
 
+// NaN never compares equal: it would be taken as a change in every frame
+static bool isSameFloat(float a, float b) {
+    return a == b || (isNaN(a) && isNaN(b));
+}
+
 bool YTGraphWidgetState::updateState() {
     WIDGET_STATE_START(YTGraphWidget);
 
@@ -570,8 +575,20 @@ bool YTGraphWidgetState::updateState() {
     if (ytGraphUpdateMethod == YT_GRAPH_UPDATE_METHOD_STATIC) {
         for (int valueIndex = 0; valueIndex < MAX_NUM_OF_Y_VALUES; valueIndex++) {
             WIDGET_STATE(valueIsVisible[valueIndex], ytDataDataValueIsVisible(widgetCursor, widget->data, valueIndex));
-            WIDGET_STATE(valueDiv[valueIndex], ytDataGetDiv(widgetCursor, widget->data, valueIndex));
-            WIDGET_STATE(valueOffset[valueIndex], ytDataGetOffset(widgetCursor, widget->data, valueIndex));
+            // div and offset are used only for a visible value (they are
+            // read when it becomes visible, see WIDGET_STATE above)
+            if (valueIsVisible[valueIndex]) {
+                float div = ytDataGetDiv(widgetCursor, widget->data, valueIndex);
+                if (!hasPreviousState || !isSameFloat(div, valueDiv[valueIndex])) {
+                    valueDiv[valueIndex] = div;
+                    hasPreviousState = false;
+                }
+                float offset = ytDataGetOffset(widgetCursor, widget->data, valueIndex);
+                if (!hasPreviousState || !isSameFloat(offset, valueOffset[valueIndex])) {
+                    valueOffset[valueIndex] = offset;
+                    hasPreviousState = false;
+                }
+            }
         }
     }
 
@@ -687,7 +704,9 @@ void YTGraphWidgetState::render() {
 }
 
 bool YTGraphWidgetState::hasOnTouch() {
-    return ytDataGetGraphUpdateMethod(g_widgetCursor, g_widgetCursor.widget->data) == YT_GRAPH_UPDATE_METHOD_STATIC;
+    // from the state: g_widgetCursor is not this widget's cursor outside the
+    // enumeration of the widgets (e.g. when the touch is processed)
+    return ytGraphUpdateMethod == YT_GRAPH_UPDATE_METHOD_STATIC;
 }
 
 void YTGraphWidgetState::onTouch(const WidgetCursor &widgetCursor, Event &touchEvent) {

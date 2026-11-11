@@ -45,6 +45,8 @@ enum {
 
     GUI_QUEUE_MESSAGE_KEY_DOWN,
 
+    // runs a function with a parameter on the GUI thread (callInGuiThread)
+    GUI_QUEUE_MESSAGE_TYPE_CALL,
 };
 
 class AppContext;
@@ -54,6 +56,11 @@ void sendMessageToGuiThread(uint8_t messageType, uint32_t messageParam = 0, uint
 void sendTouchEventToGuiThread(Event &touchEvent);
 bool pushPageInGuiThread(AppContext *appContext, int pageId, Page *page);
 bool showPageInGuiThread(AppContext *appContext, int pageId);
+
+// Called on another thread: queues func(param) for the GUI thread and returns true.
+// Called on the GUI thread: returns false and does nothing (the caller does the
+// work itself).
+bool callInGuiThread(void (*func)(void *param), void *param);
 
 bool isGuiThread();
 

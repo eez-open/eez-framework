@@ -23,6 +23,10 @@
 #include <eez/flow/dashboard_api.h>
 #endif
 
+#if defined(EEZ_FOR_LVGL)
+#include <eez/flow/lvgl_api.h>
+#endif
+
 #if EEZ_OPTION_GUI
 #include <eez/gui/gui.h>
 #include <eez/gui/display.h>
@@ -37,10 +41,24 @@ void executeSetColorThemeComponent(FlowState *flowState, unsigned componentIndex
 		return;
 	}
 
-	const char *theme = themeValue.getString();
+    // a value that is not a string is looked up by its text
+    Value themeString = themeValue.toString(0x5d2e8c41);
+	const char *theme = themeString.getString();
+    if (!theme) {
+        throwError(flowState, componentIndex, FlowError::PropertyConvert("SetColorTheme", "Theme", "string"));
+        return;
+    }
 
 #if defined(EEZ_FOR_LVGL)
+    // the theme names are known when eez_flow_init_themes was called
+    if (eez_flow_get_num_themes() > 0 && eez_flow_get_theme_index(theme) == -1) {
+        char message[256];
+        snprintf(message, sizeof(message), "Unknown theme %s", theme);
+        throwError(flowState, componentIndex, FlowError::Plain(message));
+        return;
+    }
     lvglSetColorThemeHook(theme);
+    propagateValueThroughSeqout(flowState, componentIndex);
 #elif EEZ_OPTION_GUI
 
 #if defined(EEZ_DASHBOARD_API)

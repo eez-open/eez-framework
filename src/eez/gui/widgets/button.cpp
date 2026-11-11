@@ -30,7 +30,8 @@ bool ButtonWidgetState::updateState() {
     auto enabled = get(widgetCursor, widget->enabled);
     WIDGET_STATE(flags.enabled, enabled.getType() == VALUE_TYPE_UNDEFINED || enabled.getInt() ? 1 : 0);
 
-    const Style *style = getStyle(flags.enabled ? widget->style : widget->disabledStyle);
+    WIDGET_STATE(styleId, overrideStyle(widgetCursor, flags.enabled ? widget->style : widget->disabledStyle));
+    const Style *style = getStyle(styleId);
     WIDGET_STATE(flags.blinking, g_isBlinkTime && (isBlinking(widgetCursor, widget->data) || styleIsBlink(style)));
 
     WIDGET_STATE(data, widget->data ? get(widgetCursor, widget->data) : 0);
@@ -42,7 +43,9 @@ void ButtonWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
 
     auto widget = (const ButtonWidget *)widgetCursor.widget;
-    const Style *style = getStyle(flags.enabled ? widget->style : widget->disabledStyle);
+    // resolved again, the same as in updateState: the internal pages
+    // (page.cpp) render a ButtonWidgetState without calling updateState
+    const Style *style = getStyle(overrideStyle(widgetCursor, flags.enabled ? widget->style : widget->disabledStyle));
 
     if (widget->data) {
         if (data.isString()) {

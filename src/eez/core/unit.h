@@ -77,6 +77,7 @@ Unit getBaseUnit(Unit unit);
 float getUnitFactor(Unit unit);
 
 // if value is 0.01 and unit is UNIT_VOLT returns UNIT_MILLI_VOLT, etc
+// (the value is taken as a value in the base unit of unit)
 Unit findDerivedUnit(float value, Unit unit);
 
 Unit getSmallerUnit(Unit unit, float min, float precision);

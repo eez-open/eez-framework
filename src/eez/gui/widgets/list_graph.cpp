@@ -29,6 +29,16 @@ bool ListGraphWidgetState::updateState() {
     WIDGET_STATE(data, get(widgetCursor, widget->data));
     WIDGET_STATE(cursorData, get(widgetCursor, widget->cursorData));
 
+    // the flow creates a new array for every change of a list, so the lists
+    // are compared by reference
+    WIDGET_STATE(dwellData, get(widgetCursor, widget->dwellData));
+    WIDGET_STATE(y1Data, get(widgetCursor, widget->y1Data));
+    WIDGET_STATE(y2Data, get(widgetCursor, widget->y2Data));
+    WIDGET_STATE(y1Min, getMin(widgetCursor, widget->y1Data));
+    WIDGET_STATE(y1Max, getMax(widgetCursor, widget->y1Data));
+    WIDGET_STATE(y2Min, getMin(widgetCursor, widget->y2Data));
+    WIDGET_STATE(y2Max, getMax(widgetCursor, widget->y2Data));
+
     WIDGET_STATE_END()
 }
 
@@ -61,15 +71,8 @@ void ListGraphWidgetState::render() {
         float *list[2] = { getFloatList(widgetCursor, widget->y1Data),
                             getFloatList(widgetCursor, widget->y2Data) };
 
-        float min[2] = {
-            getMin(widgetCursor, widget->y1Data).getFloat(),
-            getMin(widgetCursor, widget->y2Data).getFloat()
-        };
-
-        float max[2] = {
-            getMax(widgetCursor, widget->y1Data).getFloat(),
-            getMax(widgetCursor, widget->y2Data).getFloat()
-        };
+        float min[2] = { y1Min.getFloat(), y2Min.getFloat() };
+        float max[2] = { y1Max.getFloat(), y2Max.getFloat() };
 
         int maxListLength = getFloatListLength(widgetCursor, widget->data);
 

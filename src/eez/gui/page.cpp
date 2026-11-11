@@ -12,12 +12,65 @@
 
 #if EEZ_OPTION_GUI
 
+#include <string.h>
+
 #include <eez/gui/gui.h>
+#if OPTION_KEYPAD
+#include <eez/gui/keypad.h>
+#endif
 
 namespace eez {
 namespace gui {
 
 Value g_alertMessage;
+
+////////////////////////////////////////////////////////////////////////////////
+
+// Removes an incomplete UTF-8 character from the end of the text, left there
+// when a longer text was cut.
+static void removeIncompleteUtf8Char(char *text) {
+    size_t n = strlen(text);
+
+    // the first byte of the last character
+    size_t start = n;
+    while (start > 0 && ((uint8_t)text[start - 1] & 0xC0) == 0x80) {
+        start--;
+    }
+    if (start == 0) {
+        return;
+    }
+    start--;
+
+    uint8_t first = (uint8_t)text[start];
+    size_t length = (first & 0xE0) == 0xC0 ? 2 : (first & 0xF0) == 0xE0 ? 3 : (first & 0xF8) == 0xF0 ? 4 : 1;
+    if (n - start < length) {
+        text[start] = 0;
+    }
+}
+
+void copyTextToBuffer(char *buffer, size_t bufferSize, const char *text) {
+    if (bufferSize == 0) {
+        return;
+    }
+
+    size_t n = text ? strlen(text) : 0;
+    if (n < bufferSize) {
+        memmove(buffer, text ? text : "", n + 1);
+    } else {
+        memmove(buffer, text, bufferSize - 1);
+        buffer[bufferSize - 1] = 0;
+        removeIncompleteUtf8Char(buffer);
+    }
+}
+
+// the text of the value in the buffer, cut at a UTF-8 character boundary
+static void valueToTextBuffer(const Value &value, char *buffer, size_t bufferSize) {
+    value.toText(buffer, (int)bufferSize);
+    if (strlen(buffer) + 1 == bufferSize) {
+        // the text can be cut
+        removeIncompleteUtf8Char(buffer);
+    }
+}
 
 void data_alert_message(DataOperationEnum operation, const WidgetCursor &widgetCursor, Value &value) {
     if (operation == DATA_OPERATION_GET) {
@@ -56,11 +109,15 @@ void Page::set() {
 }
 
 void Page::discard() {
-    getFoundWidgetAtDown().appContext->popPage();
+    getPageAppContext()->popPage();
 }
 
 bool Page::showAreYouSureOnDiscard() {
     return true;
+}
+
+AppContext *Page::getPageAppContext() {
+    return m_pageAppContext ? m_pageAppContext : getAppContextFromId(APP_CONTEXT_ID_DEVICE);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -68,10 +125,20 @@ bool Page::showAreYouSureOnDiscard() {
 void SetPage::edit() {
 }
 
+// The keypad that edited the value is closed, the page below it gets the value.
 void SetPage::onSetValue(float value) {
-    getFoundWidgetAtDown().appContext->popPage();
-    SetPage *page = (SetPage *)getFoundWidgetAtDown().appContext->getActivePage();
-    page->setValue(value);
+#if OPTION_KEYPAD
+    auto keypad = getActiveKeypad();
+    AppContext *appContext = keypad ? keypad->getPageAppContext() : getAppContextFromId(APP_CONTEXT_ID_DEVICE);
+#else
+    AppContext *appContext = getAppContextFromId(APP_CONTEXT_ID_DEVICE);
+#endif
+
+    appContext->popPage();
+    SetPage *page = (SetPage *)appContext->getActivePage();
+    if (page) {
+        page->setValue(value);
+    }
 }
 
 void SetPage::setValue(float value) {
@@ -89,24 +156,49 @@ bool InternalPage::closeIfTouchedOutside() {
 
 static ToastMessagePage g_toastMessagePage;
 
+// The toast shown before (if it is still shown) is replaced by the new one.
 ToastMessagePage *ToastMessagePage::findFreePage() {
+    g_toastMessagePage.dismiss();
     return &g_toastMessagePage;
 }
 
 void ToastMessagePage::pageFree() {
     appContext = nullptr;
+    dismiss();
+}
+
+// the toast is closed without its button
+void ToastMessagePage::dismiss() {
+    auto dismissedCallback = dismissed;
+    dismissed = nullptr;
+    if (dismissedCallback) {
+        dismissedCallback(actionParam);
+    }
+}
+
+void ToastMessagePage::setActionLabel(const char *label) {
+    if (label) {
+        copyTextToBuffer(actionLabelBuffer, sizeof(actionLabelBuffer), label);
+        actionLabel = actionLabelBuffer;
+    } else {
+        actionLabel = nullptr;
+    }
 }
 
 ////////////////////////////////////////
 
 ToastMessagePage *ToastMessagePage::create(AppContext *appContext, ToastType type, const char *message, bool autoDismiss) {
+    return create(appContext, type, Value(message), autoDismiss);
+}
+
+ToastMessagePage *ToastMessagePage::create(AppContext *appContext, ToastType type, Value message, bool autoDismiss) {
     ToastMessagePage *page = ToastMessagePage::findFreePage();
 
-    page->actionLabel = type == ERROR_TOAST && !autoDismiss ? "Close" : nullptr;
+    page->setActionLabel(type == ERROR_TOAST && !autoDismiss ? "Close" : nullptr);
     page->actionWidget.action = type == ERROR_TOAST && !autoDismiss ? ACTION_ID_INTERNAL_TOAST_ACTION_WITHOUT_PARAM : 0;
     page->actionWithoutParam = nullptr;
 
-    page->init(appContext, type, Value(message));
+    page->init(appContext, type, message);
 
     return page;
 }
@@ -114,7 +206,7 @@ ToastMessagePage *ToastMessagePage::create(AppContext *appContext, ToastType typ
 ToastMessagePage *ToastMessagePage::create(AppContext *appContext, ToastType type, Value message)  {
     ToastMessagePage *page = ToastMessagePage::findFreePage();
 
-    page->actionLabel = type == ERROR_TOAST ? "Close" : nullptr;
+    page->setActionLabel(type == ERROR_TOAST ? "Close" : nullptr);
     page->actionWidget.action = type == ERROR_TOAST ? ACTION_ID_INTERNAL_TOAST_ACTION_WITHOUT_PARAM : 0;
     page->actionWithoutParam = nullptr;
 
@@ -123,13 +215,14 @@ ToastMessagePage *ToastMessagePage::create(AppContext *appContext, ToastType typ
     return page;
 }
 
-ToastMessagePage *ToastMessagePage::create(AppContext *appContext, ToastType type, Value message, void (*action)(int param), const char *actionLabel, int actionParam) {
+ToastMessagePage *ToastMessagePage::create(AppContext *appContext, ToastType type, Value message, void (*action)(int param), const char *actionLabel, int actionParam, void (*dismissed)(int param)) {
     ToastMessagePage *page = ToastMessagePage::findFreePage();
 
-    page->actionLabel = actionLabel;
+    page->setActionLabel(actionLabel);
     page->actionWidget.action = ACTION_ID_INTERNAL_TOAST_ACTION;
     page->action = action;
     page->actionParam = actionParam;
+    page->dismissed = dismissed;
 
     page->init(appContext, type, message);
 
@@ -137,13 +230,17 @@ ToastMessagePage *ToastMessagePage::create(AppContext *appContext, ToastType typ
 }
 
 ToastMessagePage *ToastMessagePage::create(AppContext *appContext, ToastType type, const char *message, void (*action)(), const char *actionLabel) {
+    return create(appContext, type, Value(message), action, actionLabel);
+}
+
+ToastMessagePage *ToastMessagePage::create(AppContext *appContext, ToastType type, Value message, void (*action)(), const char *actionLabel) {
     ToastMessagePage *page = ToastMessagePage::findFreePage();
 
-    page->actionLabel = actionLabel;
+    page->setActionLabel(actionLabel);
     page->actionWidget.action = ACTION_ID_INTERNAL_TOAST_ACTION_WITHOUT_PARAM;
     page->actionWithoutParam = action;
 
-    page->init(appContext, type, Value(message));
+    page->init(appContext, type, message);
 
     return page;
 }
@@ -167,7 +264,7 @@ void ToastMessagePage::init(AppContext *appContext, ToastType type, const Value&
     char *line2 = nullptr;
     char *line3 = nullptr;
 
-    message.toText(messageBuffer, sizeof(messageBuffer));
+    valueToTextBuffer(message, messageBuffer, sizeof(messageBuffer));
 
     // split message to up to three lines
     line1 = messageBuffer;
@@ -406,15 +503,29 @@ bool ToastMessagePage::closeIfTouchedOutside() {
 
 void ToastMessagePage::executeAction() {
     auto appContext = g_toastMessagePage.appContext;
+    if (!appContext) {
+        return;
+    }
+    auto action = g_toastMessagePage.action;
+    auto actionParam = g_toastMessagePage.actionParam;
+    // closed by the button, not dismissed
+    g_toastMessagePage.dismissed = nullptr;
     appContext->popPage();
-    g_toastMessagePage.action(g_toastMessagePage.actionParam);
+    if (action) {
+        action(actionParam);
+    }
 }
 
 void ToastMessagePage::executeActionWithoutParam() {
     auto appContext = g_toastMessagePage.appContext;
+    if (!appContext) {
+        return;
+    }
+    auto actionWithoutParam = g_toastMessagePage.actionWithoutParam;
+    g_toastMessagePage.dismissed = nullptr;
     appContext->popPage();
-    if (g_toastMessagePage.actionWithoutParam) {
-        g_toastMessagePage.actionWithoutParam();
+    if (actionWithoutParam) {
+        actionWithoutParam();
     }
 }
 
@@ -754,22 +865,28 @@ void MenuWithButtonsPage::init(AppContext *appContext, const char *message, cons
     m_containerRectangleWidget.flags.ignoreLuminosity = 0;
 	m_containerRectangleWidget.flags.invertColors = 1;
 
+    // the texts are copied into the page: the widget texts are offsets from the
+    // widgets (AssetsPtr), they can't point far away (e.g. to the stack)
+    copyTextToBuffer(m_messageBuffer, sizeof(m_messageBuffer), message);
+
     m_messageTextWidget.type = WIDGET_TYPE_TEXT;
     m_messageTextWidget.data = EEZ_DATA_ID_NONE;
     m_messageTextWidget.action = EEZ_ACTION_ID_NONE;
     m_messageTextWidget.style = EEZ_STYLE_ID_MENU_WITH_BUTTONS_MESSAGE;
-    m_messageTextWidget.text = message;
+    m_messageTextWidget.text = m_messageBuffer;
     m_messageTextWidget.flags = 0;
     TextWidget_autoSize(m_messageTextWidget);
 
     size_t i;
 
-    for (i = 0; menuItems[i]; i++) {
+    for (i = 0; i < MAX_MENU_ITEMS && menuItems && menuItems[i]; i++) {
+        copyTextToBuffer(m_buttonTextBuffers[i], sizeof(m_buttonTextBuffers[i]), menuItems[i]);
+
         m_buttonTextWidgets[i].type = WIDGET_TYPE_TEXT;
         m_buttonTextWidgets[i].data = EEZ_DATA_ID_NONE;
         m_buttonTextWidgets[i].action = ACTION_ID_INTERNAL_MENU_WITH_BUTTONS;
         m_buttonTextWidgets[i].style = EEZ_STYLE_ID_MENU_WITH_BUTTONS_BUTTON;
-        m_buttonTextWidgets[i].text = menuItems[i];
+        m_buttonTextWidgets[i].text = m_buttonTextBuffers[i];
         m_buttonTextWidgets[i].flags = 0;
         TextWidget_autoSize(m_buttonTextWidgets[i]);
     }
@@ -784,10 +901,15 @@ void MenuWithButtonsPage::init(AppContext *appContext, const char *message, cons
         maxMenuItemWidth = MAX(maxMenuItemWidth, m_buttonTextWidgets[i].width);
     }
 
-    int menuItemsWidth = (int)(maxMenuItemWidth * m_numButtonTextWidgets + (m_numButtonTextWidgets - 1) * styleButton->paddingLeft);
+    int menuItemsWidth = 0;
+    int menuItemsHeight = 0;
+    if (m_numButtonTextWidgets > 0) {
+        menuItemsWidth = (int)(maxMenuItemWidth * m_numButtonTextWidgets + (m_numButtonTextWidgets - 1) * styleButton->paddingLeft);
+        menuItemsHeight = m_buttonTextWidgets[0].height;
+    }
 
     int contentWidth = MAX(m_messageTextWidget.width, menuItemsWidth);
-    int contentHeight = m_messageTextWidget.height + m_buttonTextWidgets[0].height;
+    int contentHeight = m_messageTextWidget.height + menuItemsHeight;
 
     width = styleContainer->borderSizeLeft + styleContainer->paddingLeft + contentWidth + styleContainer->paddingRight + styleContainer->borderSizeRight;
     height = styleContainer->borderSizeTop + styleContainer->paddingTop + contentHeight + styleContainer->paddingBottom + styleContainer->borderSizeBottom;
@@ -815,10 +937,18 @@ void MenuWithButtonsPage::init(AppContext *appContext, const char *message, cons
         xButtonTextWidget += maxMenuItemWidth + styleButton->paddingLeft;
     }
 
+    m_dirty = true;
 }
 
 void MenuWithButtonsPage::updateInternalPage() {
     WidgetCursor &widgetCursor = g_widgetCursor;
+
+    if (widgetCursor.hasPreviousState && !m_dirty && g_activeWidget == m_lastActiveWidget) {
+        return;
+    }
+
+    m_dirty = false;
+    m_lastActiveWidget = g_activeWidget;
 
     auto savedWidgetCursor = widgetCursor;
 
@@ -901,18 +1031,45 @@ void MenuWithButtonsPage::executeAction() {
 
 static QuestionPage g_questionPage;
 
-QuestionPage *QuestionPage::create(AppContext *appContext, const Value &message, const Value &buttons, void *userParam, void (*callback)(void *userParam, unsigned buttonIndex)) {
+// The question shown before (if it is still shown) is replaced by the new one.
+QuestionPage *QuestionPage::create(AppContext *appContext, const Value &message, const Value &buttons, void *userParam, void (*callback)(void *userParam, unsigned buttonIndex), void (*dismissed)(void *userParam)) {
     QuestionPage *page = &g_questionPage;
 
-    page->init(appContext, message, buttons, userParam, callback);
+    page->dismiss();
+
+    page->init(appContext, message, buttons, userParam, callback, dismissed);
 
     return page;
 }
 
-void QuestionPage::init(AppContext *appContext, const Value &message, const Value &buttons, void *userParam, void (*callback)(void *userParam, unsigned buttonIndex)) {
+void QuestionPage::pageFree() {
+    m_message = Value();
+    m_buttons = Value();
+    dismiss();
+}
+
+// the question is closed without a button
+void QuestionPage::dismiss() {
+    auto dismissed = m_dismissed;
+    m_dismissed = nullptr;
+    if (dismissed) {
+        dismissed(m_userParam);
+    }
+}
+
+void QuestionPage::init(AppContext *appContext, const Value &message, const Value &buttons, void *userParam, void (*callback)(void *userParam, unsigned buttonIndex), void (*dismissed)(void *userParam)) {
     m_appContext = appContext;
     m_userParam = userParam;
     m_callback = callback;
+    m_dismissed = dismissed;
+
+    // the page keeps the message and the buttons while it is shown
+    m_message = message.getValue();
+    m_buttons = buttons.getValue();
+
+    // the texts are copied into the page: the widget texts are offsets from the
+    // widgets (AssetsPtr), they can't point far away (e.g. to the heap)
+    valueToTextBuffer(m_message, m_messageBuffer, sizeof(m_messageBuffer));
 
     m_containerRectangleWidget.type = WIDGET_TYPE_RECTANGLE;
     m_containerRectangleWidget.data = EEZ_DATA_ID_NONE;
@@ -925,23 +1082,25 @@ void QuestionPage::init(AppContext *appContext, const Value &message, const Valu
     m_messageTextWidget.data = EEZ_DATA_ID_NONE;
     m_messageTextWidget.action = EEZ_ACTION_ID_NONE;
     m_messageTextWidget.style = EEZ_STYLE_ID_MENU_WITH_BUTTONS_MESSAGE;
-    m_messageTextWidget.text = message.getString();
+    m_messageTextWidget.text = m_messageBuffer;
     m_messageTextWidget.flags = 0;
     TextWidget_autoSize(m_messageTextWidget);
 
-    auto buttonsArray = buttons.getArray();
+    // at most MAX_MENU_ITEMS buttons are shown
+    auto buttonsArray = m_buttons.isArray() ? m_buttons.getArray() : nullptr;
+    m_numButtonTextWidgets = buttonsArray ? MIN(buttonsArray->arraySize, (uint32_t)MAX_MENU_ITEMS) : 0;
 
-    for (uint32_t i = 0; i < buttonsArray->arraySize; i++) {
+    for (size_t i = 0; i < m_numButtonTextWidgets; i++) {
+        valueToTextBuffer(buttonsArray->values[i], m_buttonTextBuffers[i], sizeof(m_buttonTextBuffers[i]));
+
         m_buttonTextWidgets[i].type = WIDGET_TYPE_TEXT;
         m_buttonTextWidgets[i].data = EEZ_DATA_ID_NONE;
         m_buttonTextWidgets[i].action = ACTION_ID_INTERNAL_QUESTION_PAGE_BUTTON;
         m_buttonTextWidgets[i].style = EEZ_STYLE_ID_MENU_WITH_BUTTONS_BUTTON;
-        m_buttonTextWidgets[i].text = buttonsArray->values[i].getString();
+        m_buttonTextWidgets[i].text = m_buttonTextBuffers[i];
         m_buttonTextWidgets[i].flags = 0;
         TextWidget_autoSize(m_buttonTextWidgets[i]);
     }
-
-    m_numButtonTextWidgets = buttonsArray->arraySize;
 
     const Style *styleContainer = getStyle(EEZ_STYLE_ID_MENU_WITH_BUTTONS_CONTAINER);
     const Style *styleButton = getStyle(EEZ_STYLE_ID_MENU_WITH_BUTTONS_BUTTON);
@@ -951,10 +1110,15 @@ void QuestionPage::init(AppContext *appContext, const Value &message, const Valu
         maxMenuItemWidth = MAX(maxMenuItemWidth, m_buttonTextWidgets[i].width);
     }
 
-    int menuItemsWidth = (int)(maxMenuItemWidth * m_numButtonTextWidgets + (m_numButtonTextWidgets - 1) * styleButton->paddingLeft);
+    int menuItemsWidth = 0;
+    int menuItemsHeight = 0;
+    if (m_numButtonTextWidgets > 0) {
+        menuItemsWidth = (int)(maxMenuItemWidth * m_numButtonTextWidgets + (m_numButtonTextWidgets - 1) * styleButton->paddingLeft);
+        menuItemsHeight = m_buttonTextWidgets[0].height;
+    }
 
     int contentWidth = MAX(m_messageTextWidget.width, menuItemsWidth);
-    int contentHeight = m_messageTextWidget.height + m_buttonTextWidgets[0].height;
+    int contentHeight = m_messageTextWidget.height + menuItemsHeight;
 
     width = styleContainer->borderSizeLeft + styleContainer->paddingLeft + contentWidth + styleContainer->paddingRight + styleContainer->borderSizeRight;
     height = styleContainer->borderSizeTop + styleContainer->paddingTop + contentHeight + styleContainer->paddingBottom + styleContainer->borderSizeBottom;
@@ -981,10 +1145,19 @@ void QuestionPage::init(AppContext *appContext, const Value &message, const Valu
         m_buttonTextWidgets[i].width = maxMenuItemWidth;
         xButtonTextWidget += maxMenuItemWidth + styleButton->paddingLeft;
     }
+
+    m_dirty = true;
 }
 
 void QuestionPage::updateInternalPage() {
     WidgetCursor &widgetCursor = g_widgetCursor;
+
+    if (widgetCursor.hasPreviousState && !m_dirty && g_activeWidget == m_lastActiveWidget) {
+        return;
+    }
+
+    m_dirty = false;
+    m_lastActiveWidget = g_activeWidget;
 
     auto savedWidgetCursor = widgetCursor;
 
@@ -1060,8 +1233,15 @@ WidgetCursor QuestionPage::findWidgetInternalPage(int x, int y, bool clicked) {
 }
 
 void QuestionPage::executeAction() {
+    auto callback = g_questionPage.m_callback;
+    auto userParam = g_questionPage.m_userParam;
+    auto buttonIndex = (unsigned)getFoundWidgetAtDown().cursor;
+    // closed by a button, not dismissed
+    g_questionPage.m_dismissed = nullptr;
     g_questionPage.m_appContext->popPage();
-    (*g_questionPage.m_callback)(g_questionPage.m_userParam, (unsigned)getFoundWidgetAtDown().cursor);
+    if (callback) {
+        callback(userParam, buttonIndex);
+    }
 }
 
 } // namespace gui

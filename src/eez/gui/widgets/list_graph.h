@@ -26,6 +26,13 @@ struct ListGraphWidget : public Widget {
 struct ListGraphWidgetState : public WidgetState {
 	Value data;
     Value cursorData;
+    Value dwellData;
+    Value y1Data;
+    Value y2Data;
+    Value y1Min;
+    Value y1Max;
+    Value y2Min;
+    Value y2Max;
 
     bool updateState() override;
     void render() override;

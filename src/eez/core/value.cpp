@@ -15,6 +15,9 @@
 #include <string.h>
 #include <inttypes.h>
 #include <ctype.h>
+#include <assert.h>
+#include <limits.h>
+#include <stdint.h>
 
 #include <eez/core/util.h>
 #include <eez/core/value.h>
@@ -186,8 +189,10 @@ static const char *UINT64_value_type_name(const Value &value) {
     return "uint64";
 }
 
+// a NaN is the same as another NaN (see Value::operator==)
 static bool compare_FLOAT_value(const Value &a, const Value &b) {
-    return a.type == b.type && a.getUnit() == b.getUnit() && a.getFloat() == b.getFloat() && a.getOptions() == b.getOptions();
+    return a.type == b.type && a.getUnit() == b.getUnit() && a.getOptions() == b.getOptions() &&
+        (a.getFloat() == b.getFloat() || (isNaN(a.getFloat()) && isNaN(b.getFloat())));
 }
 
 static void FLOAT_value_to_text(const Value &value, char *text, int count) {
@@ -210,7 +215,9 @@ static void FLOAT_value_to_text(const Value &value, char *text, int count) {
     bool fixedDecimals = (options & FLOAT_OPTIONS_FIXED_DECIMALS) != 0;
 
     if (floatValue != 0) {
-        if (!fixedDecimals) {
+        // a value in a base unit is shown in the derived unit that fits it
+        // (0.005 V as 5 mV), a value in another unit keeps its unit
+        if (!fixedDecimals && getBaseUnit(unit) == unit) {
             unit = findDerivedUnit(fabsf(floatValue), unit);
             floatValue /= getUnitFactor(unit);
         }
@@ -283,8 +290,10 @@ static const char *FLOAT_value_type_name(const Value &value) {
     return "float";
 }
 
+// a NaN is the same as another NaN (see Value::operator==)
 static bool compare_DOUBLE_value(const Value &a, const Value &b) {
-    return a.type == b.type && a.getUnit() == b.getUnit() && a.getDouble() == b.getDouble() && a.getOptions() == b.getOptions();
+    return a.type == b.type && a.getUnit() == b.getUnit() && a.getOptions() == b.getOptions() &&
+        (a.getDouble() == b.getDouble() || (isNaN(a.getDouble()) && isNaN(b.getDouble())));
 }
 
 static void DOUBLE_value_to_text(const Value &value, char *text, int count) {
@@ -307,7 +316,9 @@ static void DOUBLE_value_to_text(const Value &value, char *text, int count) {
     bool fixedDecimals = (options & FLOAT_OPTIONS_FIXED_DECIMALS) != 0;
 
     if (doubleValue != 0) {
-        if (!fixedDecimals) {
+        // a value in a base unit is shown in the derived unit that fits it
+        // (0.005 V as 5 mV), a value in another unit keeps its unit
+        if (!fixedDecimals && getBaseUnit(unit) == unit) {
             unit = findDerivedUnit(fabs(doubleValue), unit);
             doubleValue /= getUnitFactor(unit);
         }
@@ -595,8 +606,9 @@ static void PROPERTY_REF_value_to_text(const Value &value, char *text, int count
         (void *)value.getPropertyRef()->flowState, value.getPropertyRef()->componentIndex, value.getPropertyRef()->propertyIndex);
 }
 
+// an invalid date (NaN) is the same as another invalid date (see Value::operator==)
 static bool compare_DATE_value(const Value &a, const Value &b) {
-    return a.type == b.type && a.doubleValue == b.doubleValue;
+    return a.type == b.type && (a.doubleValue == b.doubleValue || (isNaN(a.doubleValue) && isNaN(b.doubleValue)));
 }
 
 static void DATE_value_to_text(const Value &value, char *text, int count) {
@@ -1058,13 +1070,60 @@ Value Value::getValue() const {
 }
 
 const char *Value::getString() const {
-    auto value = getValue(); // will convert VALUE_TYPE_STRING_ASSET to VALUE_TYPE_STRING by using copy constructor
-	if (value.type == VALUE_TYPE_STRING_REF) {
-		return ((StringRef *)value.refValue)->str;
+    // the string of this value or of a value stored in a variable or an array
+    // element is read where it is, without a temporary copy
+    if (type == VALUE_TYPE_STRING) {
+        return strValue;
+    }
+	if (type == VALUE_TYPE_STRING_REF) {
+		return ((StringRef *)refValue)->str;
 	}
-	if (value.type == VALUE_TYPE_STRING) {
-		return value.strValue;
-	}
+    if (type == VALUE_TYPE_STRING_ASSET) {
+        return (const char *)((uint8_t *)&int32Value + int32Value);
+    }
+    if (type == VALUE_TYPE_VALUE_PTR) {
+        return pValueValue ? pValueValue->getString() : nullptr;
+    }
+    if (type == VALUE_TYPE_ARRAY_ELEMENT_VALUE) {
+        auto arrayElementValue = (ArrayElementValue *)refValue;
+        if (arrayElementValue->arrayValue.isBlob()) {
+            // an element of a blob is a number
+            return nullptr;
+        }
+        auto array = arrayElementValue->arrayValue.getArray();
+        bool isStoredElement = array != nullptr;
+#if defined(EEZ_DASHBOARD_API)
+        if (isStoredElement && array->arrayType >= flow::defs_v3::FIRST_OBJECT_TYPE && array->arrayType <= flow::defs_v3::LAST_OBJECT_TYPE) {
+            isStoredElement = false;
+        }
+#endif
+        if (isStoredElement) {
+            if (arrayElementValue->elementIndex < 0 || arrayElementValue->elementIndex >= (int)array->arraySize) {
+                return nullptr;
+            }
+            return array->values[arrayElementValue->elementIndex].getString();
+        }
+    }
+
+    if (isIndirectValueType()) {
+        // A computed value (native variable, module field, property ref, element
+        // of a dynamic array or of a dashboard object, JSON member) can be a new
+        // string that only the temporary result owns, so the caller resolves it
+        // with getValue() and keeps the result while it uses the string.
+        assert(!"getString() of a computed value, resolve it with getValue() first");
+
+        auto value = getValue();
+        if (value.type == VALUE_TYPE_STRING) {
+            // a static string or a string in the assets
+            return value.strValue;
+        }
+        if (value.type == VALUE_TYPE_STRING_REF && value.refValue->refCounter > 1) {
+            // the string is also owned by something else, it stays after the
+            // temporary is freed
+            return ((StringRef *)value.refValue)->str;
+        }
+    }
+
 	return nullptr;
 }
 
@@ -1075,7 +1134,10 @@ const ArrayValue *Value::getArray() const {
     if (type == VALUE_TYPE_ARRAY_ASSET) {
         return (ArrayValue *)((uint8_t *)&int32Value + int32Value);
     }
-    return &((ArrayValueRef *)refValue)->arrayValue;
+    if (type == VALUE_TYPE_ARRAY_REF) {
+        return &((ArrayValueRef *)refValue)->arrayValue;
+    }
+    return nullptr;
 }
 
 ArrayValue *Value::getArray() {
@@ -1085,7 +1147,10 @@ ArrayValue *Value::getArray() {
     if (type == VALUE_TYPE_ARRAY_ASSET) {
         return (ArrayValue *)((uint8_t *)&int32Value + int32Value);
     }
-    return &((ArrayValueRef *)refValue)->arrayValue;
+    if (type == VALUE_TYPE_ARRAY_REF) {
+        return &((ArrayValueRef *)refValue)->arrayValue;
+    }
+    return nullptr;
 }
 
 double Value::toDouble(int *err) const {
@@ -1492,25 +1557,43 @@ Value Value::toString(uint32_t id) const {
 }
 
 Value Value::makeStringRef(const char *str, int len, uint32_t id) {
-    auto stringRef = ObjectAllocator<StringRef>::allocate(id);
-	if (stringRef == nullptr) {
-		return Value(0, VALUE_TYPE_NULL);
-	}
-
 	if (len == -1) {
 		len = (int)strlen(str);
 	}
 
-    stringRef->str = (char *)alloc(len + 1, id + 1);
-    if (stringRef->str == nullptr) {
-        ObjectAllocator<StringRef>::deallocate(stringRef);
+    char *chars;
+    Value value = makeStringRefBuffer(len, id, &chars);
+    if (chars == nullptr) {
+        return value;
+    }
+
+    stringCopyLength(chars, len + 1, str, len);
+	chars[len] = 0;
+
+	return value;
+}
+
+Value Value::makeStringRefBuffer(int len, uint32_t id, char **str) {
+    *str = nullptr;
+
+    // a negative length, or one whose allocation size doesn't fit in size_t,
+    // fails like an allocation
+    if (len < 0 || (size_t)len > SIZE_MAX - sizeof(StringRef) - 1) {
         return Value(0, VALUE_TYPE_NULL);
     }
 
-    stringCopyLength(stringRef->str, len + 1, str, len);
-	stringRef->str[len] = 0;
+    // the StringRef and the characters in one allocation
+    auto ptr = alloc(sizeof(StringRef) + len + 1, id);
+    if (ptr == nullptr) {
+        return Value(0, VALUE_TYPE_NULL);
+    }
 
+    StringRef *stringRef = new (ptr) StringRef;
+    stringRef->str = (char *)(stringRef + 1);
+    stringRef->str[0] = 0;
     stringRef->refCounter = 1;
+
+    *str = stringRef->str;
 
     Value value;
 
@@ -1522,33 +1605,39 @@ Value Value::makeStringRef(const char *str, int len, uint32_t id) {
 }
 
 Value Value::concatenateString(const Value &str1, const Value &str2) {
-    auto stringRef = ObjectAllocator<StringRef>::allocate(0xbab14c6a);;
-	if (stringRef == nullptr) {
-		return Value(0, VALUE_TYPE_NULL);
-	}
-
-    auto newStrLen = strlen(str1.getString()) + strlen(str2.getString()) + 1;
-    stringRef->str = (char *)alloc(newStrLen, 0xb5320162);
-    if (stringRef->str == nullptr) {
-        ObjectAllocator<StringRef>::deallocate(stringRef);
+    auto s1 = str1.getString();
+    auto s2 = str2.getString();
+    if (s1 == nullptr || s2 == nullptr) {
+        // not a string, e.g. the NULL value of a toString that failed
         return Value(0, VALUE_TYPE_NULL);
     }
 
-    stringCopy(stringRef->str, newStrLen, str1.getString());
-    stringAppendString(stringRef->str, newStrLen, str2.getString());
+    size_t len1 = strlen(s1);
+    size_t len2 = strlen(s2);
+    if (len1 + len2 > INT_MAX) {
+        return Value(0, VALUE_TYPE_NULL);
+    }
 
-    stringRef->refCounter = 1;
+    char *chars;
+    Value value = makeStringRefBuffer((int)(len1 + len2), 0xbab14c6a, &chars);
+    if (chars == nullptr) {
+        return value;
+    }
 
-    Value value;
-
-    value.type = VALUE_TYPE_STRING_REF;
-    value.options = VALUE_OPTIONS_REF;
-    value.refValue = stringRef;
+    memcpy(chars, s1, len1);
+    memcpy(chars + len1, s2, len2);
+    chars[len1 + len2] = 0;
 
 	return value;
 }
 
 Value Value::makeArrayRef(int arraySize, int arrayType, uint32_t id) {
+    // a negative size, or a size whose byte count doesn't fit in size_t, fails
+    // like an allocation
+    if (arraySize < 0 || (size_t)arraySize > (SIZE_MAX - sizeof(ArrayValueRef)) / sizeof(Value)) {
+        return Value(0, VALUE_TYPE_NULL);
+    }
+
     auto ptr = alloc(sizeof(ArrayValueRef) + (arraySize > 0 ? arraySize - 1 : 0) * sizeof(Value), id);
 	if (ptr == nullptr) {
 		return Value(0, VALUE_TYPE_NULL);
@@ -1618,7 +1707,8 @@ Value Value::makeBlobRef(const uint8_t *blob, uint32_t len, uint32_t id) {
 		return Value(0, VALUE_TYPE_NULL);
 	}
 
-	blobRef->blob = (uint8_t *)alloc(len, id + 1);
+    // at least one byte, so an empty blob is not taken as a failed allocation
+	blobRef->blob = (uint8_t *)alloc(len > 0 ? len : 1, id + 1);
     if (blobRef->blob == nullptr) {
         ObjectAllocator<BlobRef>::deallocate(blobRef);
         return Value(0, VALUE_TYPE_NULL);
@@ -1643,12 +1733,18 @@ Value Value::makeBlobRef(const uint8_t *blob, uint32_t len, uint32_t id) {
 }
 
 Value Value::makeBlobRef(const uint8_t *blob1, uint32_t len1, const uint8_t *blob2, uint32_t len2, uint32_t id) {
+    if (len2 > UINT32_MAX - len1) {
+        // the size doesn't fit in the blob length
+        return Value(0, VALUE_TYPE_NULL);
+    }
+
     auto blobRef = ObjectAllocator<BlobRef>::allocate(id);
 	if (blobRef == nullptr) {
 		return Value(0, VALUE_TYPE_NULL);
 	}
 
-	blobRef->blob = (uint8_t *)alloc(len1 + len2, id + 1);
+    // at least one byte, so an empty blob is not taken as a failed allocation
+	blobRef->blob = (uint8_t *)alloc(len1 + len2 > 0 ? len1 + len2 : 1, id + 1);
     if (blobRef->blob == nullptr) {
         ObjectAllocator<BlobRef>::deallocate(blobRef);
         return Value(0, VALUE_TYPE_NULL);
@@ -1729,10 +1825,16 @@ Value Value::clone() {
         auto array = getArray();
         auto resultArrayValue = makeArrayRef(array->arraySize, array->arrayType, 0x0ea48dcb);
         auto resultArray = resultArrayValue.getArray();
+        if (resultArray == nullptr) {
+            // out of memory: the NULL value
+            return resultArrayValue;
+        }
 
         for (uint32_t elementIndex = 0; elementIndex < array->arraySize; elementIndex++) {
             auto elementValue = array->values[elementIndex].clone();
-            if (elementValue.isError()) {
+            if (elementValue.type == VALUE_TYPE_NULL && array->values[elementIndex].type != VALUE_TYPE_NULL) {
+                // the clone of a string or an array element failed (out of
+                // memory): the partial copy is freed
                 return elementValue;
             }
             resultArray->values[elementIndex] = elementValue;

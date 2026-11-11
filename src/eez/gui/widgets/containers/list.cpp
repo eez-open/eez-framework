@@ -60,7 +60,7 @@ bool ListWidgetState::updateState() {
     int extent = isVertical ? widgetCursor.h : widgetCursor.w;
     int visibleLines = pitch > 0 ? (extent + widget->gap) / pitch : 0;
 
-    if (updateScrollState(widgetCursor, widget->data, visibleLines)) {
+    if (updateScrollState(widgetCursor, widget->data, visibleLines, hasPreviousState)) {
         hasPreviousState = false;
     }
 

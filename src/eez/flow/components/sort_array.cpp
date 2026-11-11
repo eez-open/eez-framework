@@ -104,6 +104,10 @@ void executeSortArrayComponent(FlowState *flowState, unsigned componentIndex) {
 
     auto arrayValue = srcArrayValue.clone();
     auto array = arrayValue.getArray();
+    if (!array) {
+        throwError(flowState, componentIndex, FlowError::Plain("Out of memory"));
+        return;
+    }
 
     if (component->arrayType != -1) {
         if (array->arrayType != (uint32_t)component->arrayType) {

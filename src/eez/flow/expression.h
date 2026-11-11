@@ -45,19 +45,32 @@ struct EvalStack {
 		return true;
 	}
 
+	// a temporary is moved onto the stack (no reference counting)
+	bool push(Value &&value) {
+		if (sp >= STACK_SIZE) {
+			throwError(flowState, componentIndex, "Evaluation stack is full\n");
+			return false;
+		}
+		stack[sp++] = static_cast<Value &&>(value);
+		return true;
+	}
+
 	bool push(Value *pValue) {
 		if (sp >= STACK_SIZE) {
+			throwError(flowState, componentIndex, "Evaluation stack is full\n");
 			return false;
 		}
 		stack[sp++] = Value(pValue, VALUE_TYPE_VALUE_PTR);
 		return true;
 	}
 
+	// the value is moved out, the slot is left undefined, so it doesn't keep a
+	// reference (e.g. to an array)
 	Value pop() {
         if (sp == 0) {
             return Value::makeError();
         }
-		return stack[--sp];
+		return static_cast<Value &&>(stack[--sp]);
 	}
 
     void setErrorMessage(const char *str) {

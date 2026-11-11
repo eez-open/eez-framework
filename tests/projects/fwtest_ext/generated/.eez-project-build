@@ -1,0 +1,6 @@
+{
+  "files": [
+    "ext_assets.cpp",
+    "ext_assets.h"
+  ]
+}

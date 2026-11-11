@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
 #include <vector>
 
@@ -23,6 +24,16 @@
 // polygon inside the pixel). A line gets, in each pixel, the part of the pixel
 // width that is within half the line width from the line, so the line through
 // the points has round joins and round caps.
+//
+// The coordinates are limited to +-1e6 pixels (an infinite coordinate is that
+// far away). A point with a NaN coordinate is not drawn: a filled contour is
+// closed without it, a line has a gap at it.
+//
+// A shape is drawn in strips of rows, so the memory of the coverage is a few
+// rows (at most 32 KB, or one row of a very wide shape), not the rectangle of
+// the shape. Only the pixels near the edges are computed one by
+// one: the target gets them with blendSpan, the runs of one color between the
+// edges with fillRect. Every pixel of a shape is drawn once.
 
 namespace eez {
 namespace gui {
@@ -41,7 +52,8 @@ struct Target {
     // pixel unchanged).
     virtual void blendSpan(int x, int y, int n, const uint32_t *pixels) = 0;
 
-    // Draws the color over the rectangle (inclusive, inside the clip rectangle).
+    // Draws the color over the rectangle (inclusive, inside the clip rectangle),
+    // blended with its alpha (not 0) as blendSpan would draw it.
     virtual void fillRect(int x1, int y1, int x2, int y2, uint32_t color) = 0;
 };
 
@@ -80,6 +92,10 @@ void fillPath(Target &target, const Path &path, uint32_t color);
 
 // Draws the line of the given width through the points of the path.
 void strokePath(Target &target, const Path &path, float lineWidth, uint32_t color);
+
+// Draws the line of the given width through the points (x and y of each point),
+// as strokePath of a path with these points (without building the path).
+void strokePolyline(Target &target, const float *points, size_t numPoints, float lineWidth, uint32_t color);
 
 // Rectangle x1, y1, x2, y2 (pixels, inclusive) with rounded corners: radii are
 // rtlx, rtly, rtrx, rtry, rbrx, rbry, rblx, rbly. The line (if lineWidth > 0

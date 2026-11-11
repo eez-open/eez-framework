@@ -233,7 +233,18 @@ struct WidgetState {
 	virtual bool onKeyboard(const WidgetCursor &widgetCursor, uint8_t key, uint8_t mod);
 };
 
+// Start of updateState: visibility and position. A hidden widget returns here,
+// the rest of its state is not updated (it is not rendered and its children
+// are not enumerated). When it is visible again, the change of isVisible
+// clears hasPreviousState, so the whole state is updated as for a new widget.
 #define WIDGET_STATE_START(WidgetClass) \
+    WIDGET_STATE_START_EVEN_IF_HIDDEN(WidgetClass) \
+    WIDGET_STATE_RETURN_IF_HIDDEN()
+
+// Same as WIDGET_STATE_START without the return for a hidden widget, for the
+// widgets with updateState that must run also while hidden (it has effects
+// outside of the state, e.g. it creates the flow state of a user widget).
+#define WIDGET_STATE_START_EVEN_IF_HIDDEN(WidgetClass) \
     const WidgetCursor &widgetCursor = g_widgetCursor; \
 	auto widget = (const WidgetClass *)widgetCursor.widget; \
 	bool hasPreviousState = widgetCursor.hasPreviousState; \
@@ -246,6 +257,11 @@ struct WidgetState {
         w = widgetCursor.w; \
         h = widgetCursor.h; \
         hasPreviousState = false; \
+    }
+
+#define WIDGET_STATE_RETURN_IF_HIDDEN() \
+    if (widget->visible && !isVisible.toBool()) { \
+        return !hasPreviousState; \
     }
 
 #define WIDGET_STATE(A, B) \
@@ -272,6 +288,8 @@ void enumWidget();
 void enumNoneWidget();
 
 extern bool g_foundWidgetAtDownInvalid;
+// the largest size of the widget states so far (the limit is GUI_STATE_BUFFER_SIZE)
+extern uint32_t g_maxGuiStateSize;
 void freeWidgetStates(WidgetState *topWidgetState);
 
 // called around the enumeration of all widgets in updateScreen

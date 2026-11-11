@@ -1,0 +1,119 @@
+"""Helpers that build .eez-project JSON objects for the test projects.
+
+See the eez-project skill (studio/.claude/skills/eez-project) for the format.
+Every object gets an objID derived from its key, so a regenerated project is the
+same file. Names of pages, actions, variables, styles and colors are global in
+the project: a part prefixes them with its area (flow_, gui_, ...).
+"""
+
+import json
+import os
+import uuid
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+NAMESPACE = uuid.UUID("6b1f3c1e-6c39-4a5e-9f63-2d1b9a1e0001")
+
+DISPLAY_WIDTH = 800
+DISPLAY_HEIGHT = 480
+
+
+def oid(*key):
+    return str(uuid.uuid5(NAMESPACE, "/".join(str(k) for k in key)))
+
+
+def load_font(name):
+    with open(os.path.join(HERE, "fonts", name + ".json"), encoding="utf-8") as f:
+        return json.load(f)
+
+
+################################################################################
+# styles, variables, actions
+
+def style(name, children=(), **props):
+    """A style; props are style keys (font, color, backgroundColor, borderSize, ...)."""
+    s = {"objID": oid("style", name), "name": name, "alwaysBuild": True}
+    s.update(props)
+    s["childStyles"] = list(children)
+    return s
+
+
+def variable(name, type_, default_value=None, native=False, key="var"):
+    v = {"objID": oid(key, name), "name": name, "type": type_, "native": native}
+    if default_value is not None:
+        v["defaultValue"] = default_value
+    return v
+
+
+def native_action(name):
+    return {
+        "objID": oid("action", name), "name": name, "implementationType": "native",
+        "components": [], "connectionLines": [], "localVariables": [],
+        "componentGroups": [], "userProperties": []
+    }
+
+
+def flow_action(name, components, connection_lines=(), local_variables=(), user_properties=()):
+    return {
+        "objID": oid("action", name), "name": name, "implementationType": "flow",
+        "components": list(components), "connectionLines": list(connection_lines),
+        "localVariables": list(local_variables), "componentGroups": [],
+        "userProperties": list(user_properties)
+    }
+
+
+################################################################################
+# pages and widgets
+
+def page(name, components, connection_lines=(), local_variables=(), **props):
+    p = {
+        "objID": oid("page", name), "name": name,
+        "left": 0, "top": 0, "width": DISPLAY_WIDTH, "height": DISPLAY_HEIGHT,
+        "components": list(components), "connectionLines": list(connection_lines),
+        "localVariables": list(local_variables), "userProperties": [], "componentGroups": [],
+    }
+    p.update(props)
+    return p
+
+
+def widget(type_, key, left, top, width, height, style_="default", **props):
+    """Any widget; props are its keys (data, text, widgets, eventHandlers, ...)."""
+    w = {
+        "type": type_, "objID": oid(key), "left": left, "top": top,
+        "width": width, "height": height, "style": {"useStyle": style_}
+    }
+    w.update(props)
+    return w
+
+
+def text(key, left, top, width, height, text_, style_="default", **props):
+    return widget("TextWidget", key, left, top, width, height, style_, text=text_, **props)
+
+
+def rectangle(key, left, top, width, height, style_, **props):
+    return widget("RectangleWidget", key, left, top, width, height, style_, **props)
+
+
+def event_handler(key, event_name="CLICKED", action=None):
+    """A widget event handler: to an action (by name), or a flow output when action is None."""
+    if action:
+        return {"objID": oid(key, "handler", event_name), "eventName": event_name, "handlerType": "action", "action": action}
+    return {"objID": oid(key, "handler", event_name), "eventName": event_name, "handlerType": "flow"}
+
+
+################################################################################
+# flow components
+
+def component(type_, key, left=0, top=0, width=150, height=50, **props):
+    """Any action component (StartActionComponent, LogActionComponent, ...)."""
+    c = {"type": type_, "objID": oid(key), "left": left, "top": top, "width": width, "height": height}
+    c.update(props)
+    return c
+
+
+def line(source_key, output, target_key, input_):
+    """A connection line between components given by their keys."""
+    return {
+        "objID": oid("line", source_key, output, target_key, input_),
+        "source": oid(source_key), "output": output,
+        "target": oid(target_key), "input": input_
+    }

@@ -44,9 +44,9 @@ struct UserWidgetWidgetExecutionState : public ComponenentExecutionState {
     int numOtherFlowStates;
 
     ~UserWidgetWidgetExecutionState() {
-        freeFlowState(flowState);
+        freeOwnedFlowState(flowState);
         for (int i = 0; i < numOtherFlowStates; i++) {
-            freeFlowState(otherFlowStates[i]);
+            freeOwnedFlowState(otherFlowStates[i]);
         }
     }
 };
@@ -117,7 +117,8 @@ FlowState *getUserWidgetFlowState(Assets *assets, FlowState *flowState, uint16_t
     // the current one becomes the most recent of the others, the least
     // recently used is freed if there is no room
     if (numOtherFlowStates == UserWidgetWidgetExecutionState::MAX_OTHER_FLOW_STATES) {
-        freeFlowState(otherFlowStates[0]);
+        // only this flow state: freeFlowState would free the whole execution state
+        freeOwnedFlowState(otherFlowStates[0]);
         for (int j = 1; j < numOtherFlowStates; j++) {
             otherFlowStates[j - 1] = otherFlowStates[j];
         }
@@ -130,13 +131,51 @@ FlowState *getUserWidgetFlowState(Assets *assets, FlowState *flowState, uint16_t
     return userWidgetFlowState;
 }
 
+void freeUserWidgetFlowState(FlowState *flowState) {
+    auto parentFlowState = flowState->parentFlowState;
+    auto userWidgetWidgetComponentIndex = flowState->parentComponentIndex;
+    auto userWidgetWidgetExecutionState = (UserWidgetWidgetExecutionState *)parentFlowState->componenentExecutionStates[userWidgetWidgetComponentIndex];
+
+    if (userWidgetWidgetExecutionState) {
+        auto &numOtherFlowStates = userWidgetWidgetExecutionState->numOtherFlowStates;
+        auto otherFlowStates = userWidgetWidgetExecutionState->otherFlowStates;
+
+        if (userWidgetWidgetExecutionState->flowState == flowState) {
+            if (numOtherFlowStates == 0) {
+                // the last one: the execution state frees it
+                deallocateComponentExecutionState(parentFlowState, userWidgetWidgetComponentIndex);
+                return;
+            }
+            // the most recently used other layout becomes the current one, the
+            // next render switches to the layout it shows
+            userWidgetWidgetExecutionState->flowState = otherFlowStates[--numOtherFlowStates];
+        } else {
+            for (int i = 0; i < numOtherFlowStates; i++) {
+                if (otherFlowStates[i] == flowState) {
+                    for (int j = i + 1; j < numOtherFlowStates; j++) {
+                        otherFlowStates[j - 1] = otherFlowStates[j];
+                    }
+                    numOtherFlowStates--;
+                    break;
+                }
+            }
+        }
+    }
+
+    freeOwnedFlowState(flowState);
+}
+
 void executeUserWidgetWidgetComponent(FlowState *flowState, unsigned componentIndex) {
     auto component = (UserWidgetWidgetComponent *)flowState->flow->components[componentIndex];
 
     auto userWidgetWidgetExecutionState = (UserWidgetWidgetExecutionState *)flowState->componenentExecutionStates[componentIndex];
     if (!userWidgetWidgetExecutionState) {
         createUserWidgetFlowState(flowState->assets, flowState, componentIndex, component->flowIndex);
-    } else {
+    } else if (component->inputs.count > 0) {
+        // the values of the inputs of the user widget go to the Input and
+        // Start components of the layout. A user widget without inputs (e.g.
+        // a layout from the data) has nothing to pass: the Start component
+        // ran when the flow state of the layout was created.
         auto userWidgetFlowState = userWidgetWidgetExecutionState->flowState;
         for (
             unsigned userWidgetComponentIndex = 0;

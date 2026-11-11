@@ -61,18 +61,26 @@ FlowState *g_lastFlowState;
 static bool g_isStopping = false;
 static bool g_isStopped = true;
 
+// some flow states, at any level of the tree, are marked with deleteOnNextTick
+static bool g_hasFlowStatesToDelete = false;
+
 static void doStop();
+static void freeFlowStatesToDelete(FlowState *parentFlowState);
 
 ////////////////////////////////////////////////////////////////////////////////
 
 unsigned start(Assets *assets) {
 	auto flowDefinition = static_cast<FlowDefinition *>(assets->flowDefinition);
-	if (flowDefinition->flows.count == 0) {
+	if (!flowDefinition || flowDefinition->flows.count == 0) {
 		return 0;
 	}
 
-    g_isStopped = false;
-    g_isStopping = false;
+    // only the main assets start the engine: starting external assets doesn't
+    // cancel a stop, and while the engine is stopped their flows don't run
+    if (!assets->external) {
+        g_isStopped = false;
+        g_isStopping = false;
+    }
 
     initGlobalVariables(assets);
 
@@ -149,37 +157,65 @@ void tick() {
             freeFlowState(flowState);
         }
 
-        if ((i + 1) % 5 == 0) {
-            if (millis() - startTickCount >= FLOW_TICK_MAX_DURATION_MS) {
-                g_tick_max_duration_count++;
-                break;
-            }
+        // the time budget of the tick is checked after every task
+        if (millis() - startTickCount >= FLOW_TICK_MAX_DURATION_MS) {
+            g_tick_max_duration_count++;
+            break;
         }
 	}
 
 	finishToDebuggerMessageHook();
 
     // delete flow states marked with deleteOnNextTick
-    for (FlowState *flowState = g_firstFlowState; flowState; ) {
-        FlowState* nextFlowState = flowState->nextSibling;
-        if (flowState->deleteOnNextTick) {
-            freeFlowState(flowState);
-        }
-        flowState = nextFlowState;
+    if (g_hasFlowStatesToDelete) {
+        g_hasFlowStatesToDelete = false;
+        freeFlowStatesToDelete(nullptr);
     }
+}
+
+// Frees the flow states marked with deleteOnNextTick among the children of the
+// flow state (the top level flow states if nullptr) and below them. A user
+// widget layout is also removed from the layouts its user widget keeps.
+static void freeFlowStatesToDelete(FlowState *parentFlowState) {
+    auto flowState = parentFlowState ? parentFlowState->firstChild : g_firstFlowState;
+    while (flowState) {
+        if (flowState->deleteOnNextTick) {
+            flowState->deleteOnNextTick = false;
+            freeFlowState(flowState);
+            // start again from the first child, freeing a flow state can
+            // change the list
+            flowState = parentFlowState ? parentFlowState->firstChild : g_firstFlowState;
+        } else {
+            freeFlowStatesToDelete(flowState);
+            flowState = flowState->nextSibling;
+        }
+    }
+}
+
+// Marks the flow states of the assets with deleteOnNextTick, at any level of the
+// tree (e.g. an external layout in a main page, also the layouts a user widget
+// keeps for later).
+static void markFlowStatesToDelete(FlowState *firstFlowState, Assets *assets) {
+    for (FlowState *flowState = firstFlowState; flowState; flowState = flowState->nextSibling) {
+        if (flowState->assets == assets) {
+            flowState->deleteOnNextTick = true;
+            g_hasFlowStatesToDelete = true;
+        }
+        markFlowStatesToDelete(flowState->firstChild, assets);
+    }
+}
+
+void stop() {
+    stop(g_mainAssets);
 }
 
 void stop(Assets* assets) {
     if (!assets) {
-        assets = g_mainAssets;
+        return;
     }
 
     if (assets->external) {
-        for (FlowState *flowState = g_firstFlowState; flowState; flowState = flowState->nextSibling) {
-            if (flowState->assets == assets) {
-                flowState->deleteOnNextTick = true;
-            }
-        }
+        markFlowStatesToDelete(g_firstFlowState, assets);
     } else {
         g_isStopping = true;
     }
@@ -190,9 +226,10 @@ void doStop() {
     finishToDebuggerMessageHook();
     g_debuggerIsConnected = false;
 
-    freeAllChildrenFlowStates(g_firstFlowState);
+    freeAllChildrenFlowStates(nullptr);
     g_firstFlowState = nullptr;
     g_lastFlowState = nullptr;
+    g_hasFlowStatesToDelete = false;
 
     g_isStopped = true;
 
@@ -295,6 +332,7 @@ void deletePageFlowState(Assets *assets, int16_t pageIndex) {
     for (FlowState *flowState = g_firstFlowState; flowState; flowState = flowState->nextSibling) {
         if (flowState->flowIndex == pageIndex) {
             flowState->deleteOnNextTick = true;
+            g_hasFlowStatesToDelete = true;
             return;
         }
     }
@@ -325,13 +363,22 @@ void setGlobalVariable(Assets *assets, uint32_t globalVariableIndex, const Value
     }
 }
 
+// Outside a native action these do nothing (undefined, nullptr). Called by a
+// native action without a CallAction (a widget event handler), the user
+// properties are a flow error.
+
 Value getUserProperty(unsigned propertyIndex) {
     Value value;
-    evalProperty(g_executeActionFlowState, g_executeActionComponentIndex, propertyIndex, value, FlowError::PropertyNum("CallAction", propertyIndex));
+    if (g_executeActionFlowState) {
+        evalProperty(g_executeActionFlowState, g_executeActionComponentIndex, propertyIndex, value, FlowError::PropertyNum("CallAction", propertyIndex));
+    }
     return value;
 }
 
 void setUserProperty(unsigned propertyIndex, const Value &value) {
+    if (!g_executeActionFlowState) {
+        return;
+    }
     Value dstValue;
     if (!evalAssignableProperty(g_executeActionFlowState, g_executeActionComponentIndex, propertyIndex, dstValue, FlowError::PropertyInArray("CallAction", "Assignable property", propertyIndex))) {
         return;
@@ -341,32 +388,57 @@ void setUserProperty(unsigned propertyIndex, const Value &value) {
 
 // signal to the flow engine that async action has been started
 AsyncAction *beginAsyncExecution() {
-    startAsyncExecution(g_executeActionFlowState, g_executeActionComponentIndex);
+    if (!g_executeActionFlowState) {
+        return nullptr;
+    }
+    // without a CallAction there is no component that waits for the end
+    if ((int)g_executeActionComponentIndex != -1) {
+        startAsyncExecution(g_executeActionFlowState, g_executeActionComponentIndex);
+    }
     AsyncAction *asyncAction = (AsyncAction *) alloc(sizeof(AsyncAction), 0xcb44f51e);
     asyncAction->flowState = g_executeActionFlowState;
     asyncAction->componentIndex = g_executeActionComponentIndex;
+    asyncAction->flowStateId = g_executeActionFlowState->flowStateId;
     return asyncAction;
+}
+
+// the flow state of the async action, nullptr if it was freed
+static FlowState *getAsyncActionFlowState(AsyncAction *asyncAction) {
+    return asyncAction ? getFlowStateById(asyncAction->flowStateId) : nullptr;
 }
 
 // signal to the flow engine that async action has been ended
 void endAsyncExecution(AsyncAction *asyncAction) {
-    endAsyncExecution(asyncAction->flowState, asyncAction->componentIndex);
-    propagateValueThroughSeqout(asyncAction->flowState, asyncAction->componentIndex);
+    if (!asyncAction) {
+        return;
+    }
+    auto flowState = getAsyncActionFlowState(asyncAction);
+    if (flowState && (int)asyncAction->componentIndex != -1) {
+        endAsyncExecution(flowState, asyncAction->componentIndex);
+        propagateValueThroughSeqout(flowState, asyncAction->componentIndex);
+    }
     eez::free(asyncAction);
 }
 
 Value getUserPropertyAsync(AsyncAction *asyncAction, unsigned propertyIndex) {
     Value value;
-    evalProperty(asyncAction->flowState, asyncAction->componentIndex, propertyIndex, value, FlowError::PropertyNum("CallAction", propertyIndex));
+    auto flowState = getAsyncActionFlowState(asyncAction);
+    if (flowState) {
+        evalProperty(flowState, asyncAction->componentIndex, propertyIndex, value, FlowError::PropertyNum("CallAction", propertyIndex));
+    }
     return value;
 }
 
 void setUserPropertyAsync(AsyncAction *asyncAction, unsigned propertyIndex, const Value &value) {
-    Value dstValue;
-    if (!evalAssignableProperty(asyncAction->flowState, asyncAction->componentIndex, propertyIndex, dstValue, FlowError::PropertyInArray("CallAction", "Assignable property", propertyIndex))) {
+    auto flowState = getAsyncActionFlowState(asyncAction);
+    if (!flowState) {
         return;
     }
-    assignValue(g_executeActionFlowState, g_executeActionComponentIndex, dstValue, value);
+    Value dstValue;
+    if (!evalAssignableProperty(flowState, asyncAction->componentIndex, propertyIndex, dstValue, FlowError::PropertyInArray("CallAction", "Assignable property", propertyIndex))) {
+        return;
+    }
+    assignValue(flowState, asyncAction->componentIndex, dstValue, value);
 }
 
 #if EEZ_OPTION_GUI
@@ -391,12 +463,16 @@ void executeFlowAction(const WidgetCursor &widgetCursor, int16_t actionId, void 
 		if (componentOutput->componentOutputIndex != -1) {
             if (widgetCursor.widget->type == WIDGET_TYPE_DROP_DOWN_LIST) {
                 auto params = Value::makeArrayRef(defs_v3::SYSTEM_STRUCTURE_DROP_DOWN_LIST_CHANGE_EVENT_NUM_FIELDS, defs_v3::SYSTEM_STRUCTURE_DROP_DOWN_LIST_CHANGE_EVENT, 0x53e3b30b);
+                auto indexes = Value::makeArrayRef(MAX_ITERATORS, defs_v3::ARRAY_TYPE_INTEGER, 0xb1f68ef8);
+                if (!params.getArray() || !indexes.getArray()) {
+                    throwError(flowState, componentOutput->componentIndex, FlowError::Plain("Out of memory"));
+                    return;
+                }
 
                 // index
                 ((ArrayValueRef *)params.refValue)->arrayValue.values[defs_v3::SYSTEM_STRUCTURE_DROP_DOWN_LIST_CHANGE_EVENT_FIELD_INDEX] = widgetCursor.iterators[0];
 
                 // indexes
-                auto indexes = Value::makeArrayRef(MAX_ITERATORS, defs_v3::ARRAY_TYPE_INTEGER, 0xb1f68ef8);
                 for (size_t i = 0; i < MAX_ITERATORS; i++) {
                     ((ArrayValueRef *)indexes.refValue)->arrayValue.values[i] = (int)widgetCursor.iterators[i];
                 }
@@ -408,12 +484,16 @@ void executeFlowAction(const WidgetCursor &widgetCursor, int16_t actionId, void 
                 propagateValue(flowState, componentOutput->componentIndex, componentOutput->componentOutputIndex, params);
             } else {
                 auto params = Value::makeArrayRef(defs_v3::SYSTEM_STRUCTURE_CLICK_EVENT_NUM_FIELDS, defs_v3::SYSTEM_STRUCTURE_CLICK_EVENT, 0x285940bb);
+                auto indexes = Value::makeArrayRef(MAX_ITERATORS, defs_v3::ARRAY_TYPE_INTEGER, 0xb1f68ef8);
+                if (!params.getArray() || !indexes.getArray()) {
+                    throwError(flowState, componentOutput->componentIndex, FlowError::Plain("Out of memory"));
+                    return;
+                }
 
                 // index
                 ((ArrayValueRef *)params.refValue)->arrayValue.values[defs_v3::SYSTEM_STRUCTURE_CLICK_EVENT_FIELD_INDEX] = widgetCursor.iterators[0];
 
                 // indexes
-                auto indexes = Value::makeArrayRef(MAX_ITERATORS, defs_v3::ARRAY_TYPE_INTEGER, 0xb1f68ef8);
                 for (size_t i = 0; i < MAX_ITERATORS; i++) {
                     ((ArrayValueRef *)indexes.refValue)->arrayValue.values[i] = (int)widgetCursor.iterators[i];
                 }

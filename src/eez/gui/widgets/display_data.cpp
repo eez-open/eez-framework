@@ -108,7 +108,8 @@ static void renderIntegerUnitAndFraction(DisplayDataWidgetState *widgetState, co
 bool DisplayDataWidgetState::updateState() {
     WIDGET_STATE_START(DisplayDataWidget);
 
-    const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
+    WIDGET_STATE(styleId, overrideStyle(widgetCursor, widget->style));
+    const Style *style = getStyle(styleId);
 
     WIDGET_STATE(flags.active, g_isActiveWidget);
     WIDGET_STATE(flags.focused, isFocusWidget(widgetCursor));
@@ -151,7 +152,7 @@ void DisplayDataWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
 
     auto widget = (const DisplayDataWidget *)widgetCursor.widget;
-    const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
+    const Style *style = getStyle(styleId);
 
     if (widget->displayOption == DISPLAY_OPTION_INTEGER_UNIT_AND_FRACTION) {
         renderIntegerUnitAndFraction(this, widget, style);

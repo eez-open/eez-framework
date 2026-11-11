@@ -151,9 +151,32 @@ static ExecuteComponentFunctionType g_executeComponentFunctions[] = {
     executeSetColorThemeComponent,  // COMPONENT_TYPE_SET_COLOR_THEME_ACTION
 };
 
+static const unsigned NUM_EXECUTE_COMPONENT_FUNCTIONS = sizeof(g_executeComponentFunctions) / sizeof(g_executeComponentFunctions[0]);
+
+static_assert(
+    NUM_EXECUTE_COMPONENT_FUNCTIONS == defs_v3::COMPONENT_TYPE_SET_COLOR_THEME_ACTION - defs_v3::COMPONENT_TYPE_START_ACTION + 1,
+    "g_executeComponentFunctions must have an entry for each action component type"
+);
+
+// the execute function of an action component type, nullptr for a type the
+// table doesn't have (assets from a newer Studio can have it)
+static ExecuteComponentFunctionType getExecuteComponentFunction(unsigned componentType) {
+    if (componentType >= defs_v3::COMPONENT_TYPE_START_ACTION) {
+        unsigned index = componentType - defs_v3::COMPONENT_TYPE_START_ACTION;
+        if (index < NUM_EXECUTE_COMPONENT_FUNCTIONS) {
+            return g_executeComponentFunctions[index];
+        }
+    }
+    return nullptr;
+}
+
+// a component type the table doesn't have is ignored
 void registerComponent(ComponentTypes componentType, ExecuteComponentFunctionType executeComponentFunction) {
 	if (componentType >= defs_v3::COMPONENT_TYPE_START_ACTION) {
-		g_executeComponentFunctions[componentType - defs_v3::COMPONENT_TYPE_START_ACTION] = executeComponentFunction;
+		unsigned index = componentType - defs_v3::COMPONENT_TYPE_START_ACTION;
+		if (index < NUM_EXECUTE_COMPONENT_FUNCTIONS) {
+			g_executeComponentFunctions[index] = executeComponentFunction;
+		}
 	}
 }
 
@@ -167,8 +190,7 @@ bool hasExecFunc(FlowState *flowState, unsigned componentIndex) {
         return false;
 #endif // EEZ_DASHBOARD_API
     } else if (component->type >= defs_v3::COMPONENT_TYPE_START_ACTION) {
-		auto executeComponentFunction = g_executeComponentFunctions[component->type - defs_v3::COMPONENT_TYPE_START_ACTION];
-		return executeComponentFunction != nullptr;
+		return getExecuteComponentFunction(component->type) != nullptr;
 	}
 #if EEZ_OPTION_GUI
     else if (component->type < 1000) {
@@ -194,7 +216,7 @@ void executeComponent(FlowState *flowState, unsigned componentIndex) {
 #endif // EEZ_DASHBOARD_API
         return;
     } else if (component->type >= defs_v3::COMPONENT_TYPE_START_ACTION) {
-		auto executeComponentFunction = g_executeComponentFunctions[component->type - defs_v3::COMPONENT_TYPE_START_ACTION];
+		auto executeComponentFunction = getExecuteComponentFunction(component->type);
 		if (executeComponentFunction != nullptr) {
 			executeComponentFunction(flowState, componentIndex);
 			return;

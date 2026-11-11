@@ -168,14 +168,27 @@ void eez_flow_set_delete_screen_func(void (*deleteScreenFunc)(int screenIndex)) 
     g_deleteScreenFunc = deleteScreenFunc;
 }
 
-void eez_flow_set_theme(const char *themeName) {
-    for (uint32_t i = 0; i < g_numThemes; i++) {
-        if (strcmp(themeName, g_themeNames[i]) == 0) {
-            g_selectedThemeIndex = i;
-            if (g_changeColorTheme) {
-                g_changeColorTheme(g_selectedThemeIndex);
+size_t eez_flow_get_num_themes() {
+    return g_numThemes;
+}
+
+int32_t eez_flow_get_theme_index(const char *themeName) {
+    if (themeName) {
+        for (size_t i = 0; i < g_numThemes; i++) {
+            if (strcmp(themeName, g_themeNames[i]) == 0) {
+                return (int32_t)i;
             }
-            return;
+        }
+    }
+    return -1;
+}
+
+void eez_flow_set_theme(const char *themeName) {
+    int32_t themeIndex = eez_flow_get_theme_index(themeName);
+    if (themeIndex != -1) {
+        g_selectedThemeIndex = (uint32_t)themeIndex;
+        if (g_changeColorTheme) {
+            g_changeColorTheme(g_selectedThemeIndex);
         }
     }
 }
@@ -189,6 +202,12 @@ unsigned g_screenStackPosition = 0;
 
 extern "C" int16_t eez_flow_get_current_screen() {
     return g_currentScreen + 1;
+}
+
+// a screen id (1-based) of the project: the upper limit is known after
+// eez_flow_init_screen_names
+static bool isValidScreenId(int32_t screenId) {
+    return screenId >= 1 && (g_numScreens == 0 || (size_t)screenId <= g_numScreens);
 }
 
 static bool isScreenCreated(int screenIndex) {
@@ -208,11 +227,18 @@ static void deleteScreen(int screenIndex) {
 }
 
 extern "C" void eez_flow_set_screen(int16_t screenId, lv_scr_load_anim_t animType, uint32_t speed, uint32_t delay) {
+    if (!isValidScreenId(screenId)) {
+        return;
+    }
     g_screenStackPosition = 0;
     eez::flow::replacePageHook(screenId, animType, speed, delay);
 }
 
 extern "C" void eez_flow_push_screen(int16_t screenId, lv_scr_load_anim_t animType, uint32_t speed, uint32_t delay) {
+    if (!isValidScreenId(screenId)) {
+        return;
+    }
+
     // remove the oldest screen from the stack if the stack is full
     if (g_screenStackPosition == EEZ_LVGL_SCREEN_STACK_SIZE) {
         for (unsigned i = 1; i < EEZ_LVGL_SCREEN_STACK_SIZE; i++) {
@@ -235,16 +261,25 @@ extern "C" void eez_flow_pop_screen(lv_scr_load_anim_t animType, uint32_t speed,
 }
 
 void eez_flow_create_screen(int16_t screenId) {
+    if (!isValidScreenId(screenId)) {
+        return;
+    }
     int16_t screenIndex = screenId - 1;
     createScreen(screenIndex);
 }
 
 void eez_flow_delete_screen(int16_t screenId) {
+    if (!isValidScreenId(screenId)) {
+        return;
+    }
     int16_t screenIndex = screenId - 1;
     deleteScreen(screenIndex);
 }
 
 bool eez_flow_is_screen_created(int16_t screenId) {
+    if (!isValidScreenId(screenId)) {
+        return false;
+    }
     int16_t screenIndex = screenId - 1;
     return isScreenCreated(screenIndex);
 }
@@ -265,11 +300,19 @@ void eez_flow_delete_screen_on_unload(int screenIndex) {
     );
 }
 
-extern "C" void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj_t **objects, size_t numObjects, const ext_img_desc_t *images, size_t numImages, ActionExecFunc *actions) {
+// Called for a flow error that nothing catches (throwError has logged it) and
+// for an End component in a page flow. The flow keeps running.
+static void stopScript() {
+    LV_LOG_ERROR("EEZ-FLOW: uncaught error or End component, the flow keeps running");
+}
+
+// objectsSize and imagesSize are the sizes of the arrays in bytes: the generated
+// code passes sizeof(objects) and sizeof(images)
+extern "C" void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj_t **objects, size_t objectsSize, const ext_img_desc_t *images, size_t imagesSize, ActionExecFunc *actions) {
     g_objects = objects;
-    g_numObjects = numObjects;
+    g_numObjects = objectsSize / sizeof(lv_obj_t *);
     g_images = images;
-    g_numImages = numImages;
+    g_numImages = imagesSize / sizeof(ext_img_desc_t);
     g_actions = actions;
 
     eez::initAssetsMemory();
@@ -289,6 +332,7 @@ extern "C" void eez_flow_init(const uint8_t *assets, uint32_t assetsSize, lv_obj
     eez::flow::executeLvglActionHook = executeLvglAction;
     eez::flow::getLvglGroupFromIndexHook = getLvglGroupFromIndex;
     eez::flow::lvglSetColorThemeHook = eez_flow_set_theme;
+    eez::flow::stopScriptHook = stopScript;
 
     eez::flow::start(eez::g_mainAssets);
 
@@ -343,6 +387,10 @@ ActionExecFunc g_actionExecFunctions[] = { 0 };
 }
 
 void replacePageHook(int16_t pageId, uint32_t animType, uint32_t speed, uint32_t delay) {
+    if (!isValidScreenId(pageId)) {
+        return;
+    }
+
     int16_t screenIndex = pageId - 1;
 
     // make sure screen is created
@@ -505,12 +553,14 @@ const char *_evalStringArrayPropertyAndJoin(void *flowState, unsigned componentI
         textValue[0] = 0;
         size_t textPosition = 0;
 
-        size_t separatorLength = strlen(separator);
-
+        // the elements that don't fit into textValue are left out
         for (uint32_t elementIndex = 0; elementIndex < array->arraySize; elementIndex++) {
             if (elementIndex > 0) {
-                eez::stringAppendString(textValue + textPosition, sizeof(textValue) - textPosition, separator);
-                textPosition += separatorLength;
+                eez::stringAppendString(textValue, sizeof(textValue), separator);
+                textPosition = strlen(textValue);
+            }
+            if (textPosition >= sizeof(textValue) - 1) {
+                break;
             }
             array->values[elementIndex].toText(textValue + textPosition, sizeof(textValue) - textPosition);
             textPosition = strlen(textValue);

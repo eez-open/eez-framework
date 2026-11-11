@@ -23,6 +23,8 @@ struct CheckboxWidget : public Widget {
 
 struct CheckboxWidgetState : public WidgetState {
     WidgetStateFlags flags;
+    // style after overrideStyle
+    int styleId;
     Value data;
     Value text;
 

@@ -22,6 +22,8 @@ struct ButtonWidget : public Widget {
 struct ButtonWidgetState : public WidgetState {
 	WidgetStateFlags flags;
 	Value data;
+    // style after overrideStyle: a change of the hook result redraws the widget
+    int styleId;
 
     bool updateState() override;
     void render() override;

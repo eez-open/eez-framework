@@ -78,8 +78,11 @@ static bool activePageHasBackdrop() {
 }
 
 static void executeActionThread() {
-#if EEZ_OPTION_THREADS
-    // why is this required?
+#if EEZ_OPTION_THREADS && defined(EEZ_PLATFORM_STM32)
+    // FreeRTOS: gives the tasks of a lower priority a chance to run before the
+    // action (e.g. to start the click of sound::playClick before a long action
+    // blocks this thread). The C++ threads of the other platforms are
+    // preemptive: there the sleep would only delay every action.
     sleepMs(1);
 #endif
 }

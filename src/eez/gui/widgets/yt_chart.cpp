@@ -210,6 +210,20 @@ YTChartWidgetState::~YTChartWidgetState() {
     eez::free(buffer);
 }
 
+// NaN never compares equal: it would be taken as a change in every frame
+static bool isSameFloat(float a, float b) {
+    return a == b || (isNaN(a) && isNaN(b));
+}
+
+// the expression is only a constant: [PUSH_CONSTANT index] [END]
+static bool isConstantExpression(const uint8_t *instructions) {
+    uint16_t instruction = instructions[0] + (instructions[1] << 8);
+    uint16_t nextInstruction = instructions[2] + (instructions[3] << 8);
+    return
+        (instruction & EXPR_EVAL_INSTRUCTION_TYPE_MASK) == EXPR_EVAL_INSTRUCTION_TYPE_PUSH_CONSTANT &&
+        nextInstruction == EXPR_EVAL_INSTRUCTION_TYPE_END;
+}
+
 bool YTChartWidgetState::updateState() {
     WIDGET_STATE_START(YTChartWidget);
 
@@ -239,29 +253,47 @@ bool YTChartWidgetState::updateState() {
         hasPreviousState = false;
     }
 
+    // The trace expressions are evaluated in every frame (what they depend on
+    // is not known), except an expression that is only a constant (evaluated
+    // for a new state or after a change) and min and max of a trace that
+    // doesn't use them, a hidden trace and a bit trace (they are evaluated
+    // again when the trace is visible, the change redraws the chart).
     for (uint8_t i = 0; i < numTraces; i++) {
         auto trace = component->traces[i];
 
         Value value;
 
-        bool visible = true;
-        if (flow::evalExpression(widgetCursor.flowState, widget->componentIndex, trace->visible, value, flow::FlowError::Plain("Failed to evaluate trace visible in YTChart widget"), nullptr, widgetCursor.iterators)) {
-            visible = value.toBool(nullptr);
-        }
-
-        float min = 0;
-        if (flow::evalExpression(widgetCursor.flowState, widget->componentIndex, trace->min, value, flow::FlowError::Plain("Failed to evaluate trace min in YTChart widget"), nullptr, widgetCursor.iterators)) {
-            min = value.toFloat(nullptr);
-        }
-
-        float max = 1.0f;
-        if (flow::evalExpression(widgetCursor.flowState, widget->componentIndex, trace->max, value, flow::FlowError::Plain("Failed to evaluate trace max in YTChart widget"), nullptr, widgetCursor.iterators)) {
-            max = value.toFloat(nullptr);
+        bool visible = traceVisible[i];
+        if (!hasPreviousState || !isConstantExpression(trace->visible)) {
+            visible = true;
+            if (flow::evalExpression(widgetCursor.flowState, widget->componentIndex, trace->visible, value, flow::FlowError::Plain("Failed to evaluate trace visible in YTChart widget"), nullptr, widgetCursor.iterators)) {
+                visible = value.toBool(nullptr);
+            }
         }
 
         int8_t bit = trace->type == YT_CHART_TRACE_TYPE_FIELD && trace->bit >= 0 && trace->bit <= 7 ? trace->bit : -1;
 
-        if (!hasPreviousState || visible != traceVisible[i] || min != traceMin[i] || max != traceMax[i] || bit != traceBit[i]) {
+        bool changed = !hasPreviousState || visible != traceVisible[i] || bit != traceBit[i];
+
+        float min = traceMin[i];
+        float max = traceMax[i];
+        if (visible && bit == -1) {
+            if (changed || !isConstantExpression(trace->min)) {
+                min = 0;
+                if (flow::evalExpression(widgetCursor.flowState, widget->componentIndex, trace->min, value, flow::FlowError::Plain("Failed to evaluate trace min in YTChart widget"), nullptr, widgetCursor.iterators)) {
+                    min = value.toFloat(nullptr);
+                }
+            }
+
+            if (changed || !isConstantExpression(trace->max)) {
+                max = 1.0f;
+                if (flow::evalExpression(widgetCursor.flowState, widget->componentIndex, trace->max, value, flow::FlowError::Plain("Failed to evaluate trace max in YTChart widget"), nullptr, widgetCursor.iterators)) {
+                    max = value.toFloat(nullptr);
+                }
+            }
+        }
+
+        if (changed || !isSameFloat(min, traceMin[i]) || !isSameFloat(max, traceMax[i])) {
             traceVisible[i] = visible;
             traceMin[i] = min;
             traceMax[i] = max;
@@ -294,7 +326,7 @@ bool YTChartWidgetState::updateState() {
         }
     }
 
-    if (!hasPreviousState || newPeriod != period) {
+    if (!hasPreviousState || !isSameFloat(newPeriod, period)) {
         period = newPeriod;
         redrawAll = true;
         hasPreviousState = false;

@@ -52,6 +52,43 @@ int g_eezFlowLvlgMeterTickIndex = 0;
 namespace eez {
 namespace flow {
 
+// Value::make*Ref and Value::concatenateString return a null (or an error)
+// value when the allocation fails
+static bool allocationFailed(const Value &value) {
+    return value.getType() == VALUE_TYPE_NULL || value.isError();
+}
+
+// pushes a value made by Value::make*Ref, or an error when its allocation failed
+static void pushAllocated(EvalStack &stack, const Value &value) {
+    stack.push(allocationFailed(value) ? Value::makeError() : value);
+}
+
+// The integer operations calculate operands of int32 or a smaller integer type
+// (also uint32 and boolean) in int64: the result is INT32 when it fits,
+// otherwise INT64. An INT64 result wraps on overflow (unsigned math).
+static Value makeIntegerValue(int64_t value) {
+    if (value >= INT32_MIN && value <= INT32_MAX) {
+        return Value((int)value, VALUE_TYPE_INT32);
+    }
+    return Value(value, VALUE_TYPE_INT64);
+}
+
+static int64_t wrappingAdd(int64_t a, int64_t b) {
+    return (int64_t)((uint64_t)a + (uint64_t)b);
+}
+
+static int64_t wrappingSub(int64_t a, int64_t b) {
+    return (int64_t)((uint64_t)a - (uint64_t)b);
+}
+
+static int64_t wrappingMul(int64_t a, int64_t b) {
+    return (int64_t)((uint64_t)a * (uint64_t)b);
+}
+
+static int64_t wrappingNeg(int64_t a) {
+    return (int64_t)(0 - (uint64_t)a);
+}
+
 Value op_add(const Value& a1, const Value& b1) {
     if (a1.isError()) {
         return a1;
@@ -82,24 +119,27 @@ Value op_add(const Value& a1, const Value& b1) {
         auto aBlob = a.getBlob();
         auto bBlob = b.getBlob();
 
-        return Value::makeBlobRef(aBlob->blob, aBlob->len, bBlob->blob, bBlob->len, 0xc622dd24);
+        auto res = Value::makeBlobRef(aBlob->blob, aBlob->len, bBlob->blob, bBlob->len, 0xc622dd24);
+        return allocationFailed(res) ? Value::makeError() : res;
     }
 
     auto a_valid = a.isString() || a.isDouble() || a.isFloat() || a.isInt64() || a.isInt32OrLess();
     auto b_valid = b.isString() || b.isDouble() || b.isFloat() || b.isInt64() || b.isInt32OrLess();
 
-    if (!a_valid && !b_valid) {
+    if (!a_valid || !b_valid) {
         return Value::makeError();
     }
 
     if (a.isString() || b.isString()) {
         Value value1 = a.toString(0x84eafaa8);
         Value value2 = b.toString(0xd273cab6);
+        if (!value1.isString() || !value2.isString()) {
+            return Value::makeError();
+        }
         auto res = Value::concatenateString(value1, value2);
-
-        char str1[128];
-        res.toText(str1, sizeof(str1));
-
+        if (allocationFailed(res)) {
+            return Value::makeError();
+        }
         return res;
     }
 
@@ -112,10 +152,10 @@ Value op_add(const Value& a1, const Value& b1) {
     }
 
     if (a.isInt64() || b.isInt64()) {
-        return Value(a.toInt64() + b.toInt64(), VALUE_TYPE_INT64);
+        return Value(wrappingAdd(a.toInt64(), b.toInt64()), VALUE_TYPE_INT64);
     }
 
-    return Value((int)(a.int32Value + b.int32Value), VALUE_TYPE_INT32);
+    return makeIntegerValue(a.toInt64() + b.toInt64());
 }
 
 Value op_sub(const Value& a1, const Value& b1) {
@@ -147,10 +187,10 @@ Value op_sub(const Value& a1, const Value& b1) {
     }
 
     if (a.isInt64() || b.isInt64()) {
-        return Value(a.toInt64() - b.toInt64(), VALUE_TYPE_INT64);
+        return Value(wrappingSub(a.toInt64(), b.toInt64()), VALUE_TYPE_INT64);
     }
 
-    return Value((int)(a.int32Value - b.int32Value), VALUE_TYPE_INT32);
+    return makeIntegerValue(a.toInt64() - b.toInt64());
 }
 
 Value op_mul(const Value& a1, const Value& b1) {
@@ -182,10 +222,11 @@ Value op_mul(const Value& a1, const Value& b1) {
     }
 
     if (a.isInt64() || b.isInt64()) {
-        return Value(a.toInt64() * b.toInt64(), VALUE_TYPE_INT64);
+        return Value(wrappingMul(a.toInt64(), b.toInt64()), VALUE_TYPE_INT64);
     }
 
-    return Value((int)(a.int32Value * b.int32Value), VALUE_TYPE_INT32);
+    // the product of two uint32 values can be out of the int64 range: it wraps
+    return makeIntegerValue(wrappingMul(a.toInt64(), b.toInt64()));
 }
 
 Value op_div(const Value& a1, const Value& b1) {
@@ -216,20 +257,13 @@ Value op_div(const Value& a1, const Value& b1) {
         return Value(a.toFloat() / b.toFloat(), VALUE_TYPE_FLOAT);
     }
 
-    if (a.isInt64() || b.isInt64()) {
-        auto d = b.toInt64();
-        if (d == 0) {
-            return Value::makeError();
-        }
-
-        return Value(1.0 * a.toInt64() / d, VALUE_TYPE_DOUBLE);
-    }
-
-    if (b.int32Value == 0) {
+    // integer / integer is a double
+    auto d = b.toInt64();
+    if (d == 0) {
         return Value::makeError();
     }
 
-    return Value(1.0 * a.int32Value / b.int32Value, VALUE_TYPE_DOUBLE);
+    return Value(1.0 * a.toInt64() / d, VALUE_TYPE_DOUBLE);
 }
 
 Value op_mod(const Value& a1, const Value& b1) {
@@ -252,28 +286,29 @@ Value op_mod(const Value& a1, const Value& b1) {
         return Value::makeError();
     }
 
+    // the result has the sign of the dividend, like in JavaScript
+
     if (a.isDouble() || b.isDouble()) {
-        return Value(a.toDouble() - floor(a.toDouble() / b.toDouble()) * b.toDouble(), VALUE_TYPE_DOUBLE);
+        return Value(fmod(a.toDouble(), b.toDouble()), VALUE_TYPE_DOUBLE);
     }
 
     if (a.isFloat() || b.isFloat()) {
-        return Value(a.toFloat() - floor(a.toFloat() / b.toFloat()) * b.toFloat(), VALUE_TYPE_FLOAT);
+        return Value(fmodf(a.toFloat(), b.toFloat()), VALUE_TYPE_FLOAT);
     }
 
-    if (a.isInt64() || b.isInt64()) {
-        auto d = b.toInt64();
-        if (d == 0) {
-            return Value::makeError();
-        }
-
-        return Value(a.toInt64() % d, VALUE_TYPE_INT64);
-    }
-
-    if (b.int32Value == 0) {
+    auto d = b.toInt64();
+    if (d == 0) {
         return Value::makeError();
     }
 
-    return Value((int)(a.int32Value % b.int32Value), VALUE_TYPE_INT32);
+    // x % -1 is 0 (INT64_MIN % -1 overflows)
+    int64_t result = d == -1 ? 0 : a.toInt64() % d;
+
+    if (a.isInt64() || b.isInt64()) {
+        return Value(result, VALUE_TYPE_INT64);
+    }
+
+    return makeIntegerValue(result);
 }
 
 Value op_left_shift(const Value& a1, const Value& b1) {
@@ -296,11 +331,14 @@ Value op_left_shift(const Value& a1, const Value& b1) {
         return Value::makeError();
     }
 
+    // the shift count is masked to 0..63 (int64) or 0..31 (int32, like in
+    // JavaScript); the shift is done in unsigned math
+
     if (a.isInt64() || b.isInt64()) {
-        return Value(a.toInt64() << b.toInt64(), VALUE_TYPE_INT64);
+        return Value((int64_t)((uint64_t)a.toInt64() << (b.toInt64() & 63)), VALUE_TYPE_INT64);
     }
 
-    return Value((int)(a.toInt32() << b.toInt32()), VALUE_TYPE_INT32);
+    return Value((int)((uint32_t)a.toInt32() << (b.toInt32() & 31)), VALUE_TYPE_INT32);
 }
 
 Value op_right_shift(const Value& a1, const Value& b1) {
@@ -323,11 +361,14 @@ Value op_right_shift(const Value& a1, const Value& b1) {
         return Value::makeError();
     }
 
+    // the shift count is masked to 0..63 (int64) or 0..31 (int32, like in
+    // JavaScript)
+
     if (a.isInt64() || b.isInt64()) {
-        return Value(a.toInt64() >> b.toInt64(), VALUE_TYPE_INT64);
+        return Value((int64_t)(a.toInt64() >> (b.toInt64() & 63)), VALUE_TYPE_INT64);
     }
 
-    return Value((int)(a.toInt32() >> b.toInt32()), VALUE_TYPE_INT32);
+    return Value((int)(a.toInt32() >> (b.toInt32() & 31)), VALUE_TYPE_INT32);
 
 }
 
@@ -454,7 +495,9 @@ static bool is_equal(const Value& a1, const Value& b1) {
     }
 
     if (a.getType() == b.getType()) {
-        return a == b;
+        // a NaN is not equal to anything, also not to another NaN (operator==
+        // takes two NaNs as the same value, for the change detection)
+        return !a.isNaNNumber() && a == b;
     }
 
     if (a.isInt32OrLess() && b.isInt32OrLess()) {
@@ -784,18 +827,8 @@ static void do_OPERATION_TYPE_UNARY_PLUS(EvalStack &stack) {
         return;
     }
 
-    if (a.isInt32()) {
-        stack.push(Value((int)a.getInt32(), VALUE_TYPE_INT32));
-        return;
-    }
-
-    if (a.isInt16()) {
-        stack.push(Value((int16_t)a.getInt16(), VALUE_TYPE_INT16));
-        return;
-    }
-
-    if (a.isInt8()) {
-        stack.push(Value((int8_t)a.getInt8(), VALUE_TYPE_INT8));
+    if (a.isInt32OrLess() && !a.isBoolean()) {
+        stack.push(makeIntegerValue(a.toInt64()));
         return;
     }
 
@@ -816,22 +849,12 @@ static void do_OPERATION_TYPE_UNARY_MINUS(EvalStack &stack) {
     }
 
     if (a.isInt64()) {
-        stack.push(Value((int64_t)-a.getInt64(), VALUE_TYPE_INT64));
+        stack.push(Value(wrappingNeg(a.getInt64()), VALUE_TYPE_INT64));
         return;
     }
 
-    if (a.isInt32()) {
-        stack.push(Value((int)-a.getInt32(), VALUE_TYPE_INT32));
-        return;
-    }
-
-    if (a.isInt16()) {
-        stack.push(Value((int16_t)-a.getInt16(), VALUE_TYPE_INT16));
-        return;
-    }
-
-    if (a.isInt8()) {
-        stack.push(Value((int8_t)-a.getInt8(), VALUE_TYPE_INT8));
+    if (a.isInt32OrLess() && !a.isBoolean()) {
+        stack.push(makeIntegerValue(-a.toInt64()));
         return;
     }
 
@@ -841,23 +864,19 @@ static void do_OPERATION_TYPE_UNARY_MINUS(EvalStack &stack) {
 static void do_OPERATION_TYPE_BINARY_ONE_COMPLEMENT(EvalStack &stack) {
     auto a = stack.pop().getValue();
 
-    if (a.isInt64()) {
+    if (a.getType() == VALUE_TYPE_UINT64) {
         stack.push(Value(~a.uint64Value, VALUE_TYPE_UINT64));
         return;
     }
 
-    if (a.isInt32()) {
-        stack.push(Value(~a.uint32Value, VALUE_TYPE_UINT32));
+    if (a.getType() == VALUE_TYPE_INT64) {
+        stack.push(Value((int64_t)~a.int64Value, VALUE_TYPE_INT64));
         return;
     }
 
-    if (a.isInt16()) {
-        stack.push(Value(~a.uint16Value, VALUE_TYPE_UINT16));
-        return;
-    }
-
-    if (a.isInt8()) {
-        stack.push(Value(~a.uint8Value, VALUE_TYPE_UINT8));
+    // the result is a signed int32, like in JavaScript
+    if (a.isInt32OrLess() && !a.isBoolean()) {
+        stack.push(Value((int)~a.toInt32(), VALUE_TYPE_INT32));
         return;
     }
 
@@ -907,12 +926,12 @@ static void do_OPERATION_TYPE_SYSTEM_GET_TICK(EvalStack &stack) {
 }
 
 static void do_OPERATION_TYPE_FLOW_INDEX(EvalStack &stack) {
+    auto a = stack.pop();
+
     if (!stack.iterators) {
         stack.push(Value::makeError());
         return;
     }
-
-    auto a = stack.pop();
 
     int err;
     auto iteratorIndex = a.toInt32(&err);
@@ -966,36 +985,44 @@ static void do_OPERATION_TYPE_FLOW_PAGE_TIMELINE_POSITION(EvalStack &stack) {
     stack.push(Value(stack.flowState->timelinePosition, VALUE_TYPE_FLOAT));
 }
 
+// pops count operands that an operation doesn't use because it stopped at an error
+static void popOperands(EvalStack &stack, int count) {
+    for (int i = 0; i < count; i++) {
+        stack.pop();
+    }
+}
+
 static void do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE(EvalStack &stack) {
     auto arrayTypeValue = stack.pop();
+    auto arraySizeValue = stack.pop();
+    auto numInitElementsValue = stack.pop();
+
+    // the init elements follow on the stack: their number is needed to pop them
+    // even if this operation stops at an error
+    int err = 0;
+    int numInitElements = numInitElementsValue.isError() ? 0 : numInitElementsValue.toInt32(&err);
+    if (numInitElementsValue.isError() || err) {
+        stack.push(Value::makeError());
+        return;
+    }
+
     if (arrayTypeValue.isError()) {
+        popOperands(stack, numInitElements);
         stack.push(arrayTypeValue);
         return;
     }
 
-    auto arraySizeValue = stack.pop();
     if (arraySizeValue.isError()) {
+        popOperands(stack, numInitElements);
         stack.push(arraySizeValue);
-        return;
-    }
-
-    auto numInitElementsValue = stack.pop();
-    if (numInitElementsValue.isError()) {
-        stack.push(numInitElementsValue);
         return;
     }
 
     int arrayType = arrayTypeValue.getInt();
 
-    int err;
     int arraySize = arraySizeValue.toInt32(&err);
-    if (err) {
-        stack.push(Value::makeError());
-        return;
-    }
-
-    int numInitElements = numInitElementsValue.toInt32(&err);
-    if (err) {
+    if (err || arraySize < 0) {
+        popOperands(stack, numInitElements);
         stack.push(Value::makeError());
         return;
     }
@@ -1027,6 +1054,11 @@ static void do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE(EvalStack &stack) {
 #endif
 
     auto arrayValue = Value::makeArrayRef(arraySize, arrayType, 0x837260d4);
+    if (allocationFailed(arrayValue)) {
+        popOperands(stack, numInitElements);
+        stack.push(Value::makeError());
+        return;
+    }
 
     auto array = arrayValue.getArray();
 
@@ -1038,6 +1070,11 @@ static void do_OPERATION_TYPE_FLOW_MAKE_ARRAY_VALUE(EvalStack &stack) {
         }
     }
 
+    // init elements that don't fit into the array
+    if (numInitElements > arraySize) {
+        popOperands(stack, numInitElements - arraySize);
+    }
+
     stack.push(arrayValue);
 }
 
@@ -1045,6 +1082,10 @@ static void do_OPERATION_TYPE_FLOW_LANGUAGES(EvalStack &stack) {
     auto &languages = stack.flowState->assets->languages;
 
     auto arrayValue = Value::makeArrayRef(languages.count, VALUE_TYPE_STRING, 0xff4787fc);
+    if (allocationFailed(arrayValue)) {
+        stack.push(Value::makeError());
+        return;
+    }
 
     auto array = arrayValue.getArray();
 
@@ -1056,11 +1097,22 @@ static void do_OPERATION_TYPE_FLOW_LANGUAGES(EvalStack &stack) {
 }
 
 static void do_OPERATION_TYPE_FLOW_TRANSLATE(EvalStack &stack) {
-    auto textResourceIndexValue = stack.pop();
+    auto textResourceIndexValue = stack.pop().getValue();
 
     if (textResourceIndexValue.isString()) {
+        // the result must not point into the argument: it can be a string that
+        // is freed when this operation returns
+        if (!g_translateHook) {
+            stack.push(textResourceIndexValue);
+            return;
+        }
         const char *textId = textResourceIndexValue.getString();
-        stack.push(g_translateHook ? g_translateHook(textId) : textId);
+        const char *text = g_translateHook(textId);
+        if (text == textId) {
+            stack.push(textResourceIndexValue);
+            return;
+        }
+        pushAllocated(stack, Value::makeStringRef(text ? text : "", -1, 0x5c3a7e21));
         return;
     }
 
@@ -1089,6 +1141,10 @@ static void do_OPERATION_TYPE_FLOW_THEMES(EvalStack &stack) {
     auto &themes = stack.flowState->assets->colorsDefinition->themes;
 
     auto arrayValue = Value::makeArrayRef(themes.count, VALUE_TYPE_STRING, 0x03906e8f);
+    if (allocationFailed(arrayValue)) {
+        stack.push(Value::makeError());
+        return;
+    }
 
     auto array = arrayValue.getArray();
 
@@ -1236,7 +1292,7 @@ static void do_OPERATION_TYPE_DATE_TO_STRING(EvalStack &stack) {
 
     char str[128];
     date::toString(a.getDouble(), str, sizeof(str));
-    stack.push(Value::makeStringRef(str, -1, 0xbe440ec8));
+    pushAllocated(stack, Value::makeStringRef(str, -1, 0xbe440ec8));
 #else
     stack.push(Value::makeError());
 #endif
@@ -1256,7 +1312,7 @@ static void do_OPERATION_TYPE_DATE_TO_LOCALE_STRING(EvalStack &stack) {
 
     char str[128];
     date::toLocaleString(a.getDouble(), str, sizeof(str));
-    stack.push(Value::makeStringRef(str, -1, 0xbe440ec8));
+    pushAllocated(stack, Value::makeStringRef(str, -1, 0xbe440ec8));
 #else
     stack.push(Value::makeError());
 #endif
@@ -1271,6 +1327,10 @@ static void do_OPERATION_TYPE_DATE_FROM_STRING(EvalStack &stack) {
     }
 
     Value dateStrValue = a.toString(0x99cb1a93);
+    if (!dateStrValue.isString()) {
+        stack.push(Value::makeError());
+        return;
+    }
 
     auto date = (double)date::fromString(dateStrValue.getString());
     stack.push(Value(date, VALUE_TYPE_DATE));
@@ -1378,87 +1438,29 @@ static void do_OPERATION_TYPE_DATE_GET_MILLISECONDS(EvalStack &stack) {
 }
 
 static void do_OPERATION_TYPE_DATE_MAKE(EvalStack &stack) {
-    int err;
-    Value value;
+    // year, month, day, hours, minutes, seconds, milliseconds
+    int parts[7];
 
-    value = stack.pop().getValue();
-    if (value.isError()) {
-        stack.push(value);
-        return;
-    }
-    int year = value.toInt32(&err);
-    if (err) {
-        stack.push(Value::makeError());
-        return;
+    // all the operands are popped before any of them is checked
+    Value values[7];
+    for (int i = 0; i < 7; i++) {
+        values[i] = stack.pop().getValue();
     }
 
-    value = stack.pop().getValue();
-    if (value.isError()) {
-        stack.push(value);
-        return;
-    }
-    int month = value.toInt32(&err);
-    if (err) {
-        stack.push(Value::makeError());
-        return;
-    }
-
-    value = stack.pop().getValue();
-    if (value.isError()) {
-        stack.push(value);
-        return;
-    }
-    int day = value.toInt32(&err);
-    if (err) {
-        stack.push(Value::makeError());
-        return;
+    for (int i = 0; i < 7; i++) {
+        if (values[i].isError()) {
+            stack.push(values[i]);
+            return;
+        }
+        int err;
+        parts[i] = values[i].toInt32(&err);
+        if (err) {
+            stack.push(Value::makeError());
+            return;
+        }
     }
 
-    value = stack.pop().getValue();
-    if (value.isError()) {
-        stack.push(value);
-        return;
-    }
-    int hours = value.toInt32(&err);
-    if (err) {
-        stack.push(Value::makeError());
-        return;
-    }
-
-    value = stack.pop().getValue();
-    if (value.isError()) {
-        stack.push(value);
-        return;
-    }
-    int minutes = value.toInt32(&err);
-    if (err) {
-        stack.push(Value::makeError());
-        return;
-    }
-
-    value = stack.pop().getValue();
-    if (value.isError()) {
-        stack.push(value);
-        return;
-    }
-    int seconds = value.toInt32(&err);
-    if (err) {
-        stack.push(Value::makeError());
-        return;
-    }
-
-    value = stack.pop().getValue();
-    if (value.isError()) {
-        stack.push(value);
-        return;
-    }
-    int milliseconds = value.toInt32(&err);
-    if (err) {
-        stack.push(Value::makeError());
-        return;
-    }
-
-    auto date = (double)date::makeDate(year, month, day, hours, minutes, seconds, milliseconds);
+    auto date = (double)date::makeDate(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6]);
     stack.push(Value(date, VALUE_TYPE_DATE));
 }
 
@@ -1480,12 +1482,12 @@ static void do_OPERATION_TYPE_MATH_SIN(EvalStack &stack) {
     }
 
     if (a.isInt64()) {
-        stack.push(Value(sin(a.toInt64()), VALUE_TYPE_FLOAT));
+        stack.push(Value(sin((double)a.toInt64()), VALUE_TYPE_DOUBLE));
         return;
     }
 
     if (a.isInt32OrLess()) {
-        stack.push(Value(sinf(a.int32Value), VALUE_TYPE_FLOAT));
+        stack.push(Value((float)sin((double)a.toInt64()), VALUE_TYPE_FLOAT));
         return;
     }
 
@@ -1510,12 +1512,12 @@ static void do_OPERATION_TYPE_MATH_COS(EvalStack &stack) {
     }
 
     if (a.isInt64()) {
-        stack.push(Value(cos(a.toInt64()), VALUE_TYPE_FLOAT));
+        stack.push(Value(cos((double)a.toInt64()), VALUE_TYPE_DOUBLE));
         return;
     }
 
     if (a.isInt32OrLess()) {
-        stack.push(Value(cosf(a.int32Value), VALUE_TYPE_FLOAT));
+        stack.push(Value((float)cos((double)a.toInt64()), VALUE_TYPE_FLOAT));
         return;
     }
 
@@ -1524,6 +1526,8 @@ static void do_OPERATION_TYPE_MATH_COS(EvalStack &stack) {
 
 static void do_OPERATION_TYPE_MATH_POW(EvalStack &stack) {
     auto baseValue = stack.pop().getValue();
+    auto exponentValue = stack.pop().getValue();
+
     if (baseValue.isError()) {
         stack.push(Value::makeError());
         return;
@@ -1533,7 +1537,6 @@ static void do_OPERATION_TYPE_MATH_POW(EvalStack &stack) {
         return;
     }
 
-    auto exponentValue = stack.pop().getValue();
     if (exponentValue.isError()) {
         stack.push(Value::makeError());
         return;
@@ -1600,12 +1603,12 @@ static void do_OPERATION_TYPE_MATH_LOG(EvalStack &stack) {
     }
 
     if (a.isInt64()) {
-        stack.push(Value(log(a.toInt64()), VALUE_TYPE_FLOAT));
+        stack.push(Value(log((double)a.toInt64()), VALUE_TYPE_DOUBLE));
         return;
     }
 
     if (a.isInt32OrLess()) {
-        stack.push(Value(logf(a.int32Value), VALUE_TYPE_FLOAT));
+        stack.push(Value((float)log((double)a.toInt64()), VALUE_TYPE_FLOAT));
         return;
     }
 
@@ -1630,12 +1633,12 @@ static void do_OPERATION_TYPE_MATH_LOG10(EvalStack &stack) {
     }
 
     if (a.isInt64()) {
-        stack.push(Value(log10(a.toInt64()), VALUE_TYPE_FLOAT));
+        stack.push(Value(log10((double)a.toInt64()), VALUE_TYPE_DOUBLE));
         return;
     }
 
     if (a.isInt32OrLess()) {
-        stack.push(Value(log10f(a.int32Value), VALUE_TYPE_FLOAT));
+        stack.push(Value((float)log10((double)a.toInt64()), VALUE_TYPE_FLOAT));
         return;
     }
 
@@ -1660,22 +1663,14 @@ static void do_OPERATION_TYPE_MATH_ABS(EvalStack &stack) {
     }
 
     if (a.isInt64()) {
-        stack.push(Value((int64_t)abs(a.getInt64()), VALUE_TYPE_INT64));
+        auto value = a.getInt64();
+        stack.push(Value(value < 0 ? wrappingNeg(value) : value, VALUE_TYPE_INT64));
         return;
     }
 
-    if (a.isInt32()) {
-        stack.push(Value((int)abs(a.getInt32()), VALUE_TYPE_INT32));
-        return;
-    }
-
-    if (a.isInt16()) {
-        stack.push(Value(abs(a.getInt16()), VALUE_TYPE_INT16));
-        return;
-    }
-
-    if (a.isInt8()) {
-        stack.push(Value(abs(a.getInt8()), VALUE_TYPE_INT8));
+    if (a.isInt32OrLess() && !a.isBoolean()) {
+        auto value = a.toInt64();
+        stack.push(makeIntegerValue(value < 0 ? -value : value));
         return;
     }
 
@@ -1745,10 +1740,6 @@ static double roundN(double value, unsigned int numDigits) {
 static void do_OPERATION_TYPE_MATH_ROUND(EvalStack &stack) {
     auto numArgs = stack.pop().getInt();
     auto a = stack.pop().getValue();
-    if (a.isError()) {
-        stack.push(a);
-        return;
-    }
 
     unsigned int numDigits;
     if (numArgs > 1) {
@@ -1756,6 +1747,11 @@ static void do_OPERATION_TYPE_MATH_ROUND(EvalStack &stack) {
         numDigits = b.toInt32();
     } else {
         numDigits = 0;
+    }
+
+    if (a.isError()) {
+        stack.push(a);
+        return;
     }
 
     if (a.isInt32OrLess()) {
@@ -1785,38 +1781,48 @@ static void do_OPERATION_TYPE_MATH_MIN(EvalStack &stack) {
     auto numArgs = stack.pop().getInt();
 
     Value minValue;
+    Value errorValue;
 
+    // all the arguments are popped, also after an error
     for (int i = 0; i < numArgs; i++) {
         auto value = stack.pop().getValue();
+        if (errorValue.isError()) {
+            continue;
+        }
         if (value.isError()) {
-            stack.push(value);
-            return;
+            errorValue = value;
+            continue;
         }
         if (minValue.isUndefinedOrNull() || is_less(value, minValue)) {
             minValue = value;
         }
     }
 
-    stack.push(minValue);
+    stack.push(errorValue.isError() ? errorValue : minValue);
 }
 
 static void do_OPERATION_TYPE_MATH_MAX(EvalStack &stack) {
     auto numArgs = stack.pop().getInt();
 
     Value maxValue;
+    Value errorValue;
 
+    // all the arguments are popped, also after an error
     for (int i = 0; i < numArgs; i++) {
         auto value = stack.pop().getValue();
+        if (errorValue.isError()) {
+            continue;
+        }
         if (value.isError()) {
-            stack.push(value);
-            return;
+            errorValue = value;
+            continue;
         }
         if (maxValue.isUndefinedOrNull() || is_great(value, maxValue)) {
             maxValue = value;
         }
     }
 
-    stack.push(maxValue);
+    stack.push(errorValue.isError() ? errorValue : maxValue);
 }
 
 static void do_OPERATION_TYPE_STRING_LENGTH(EvalStack &stack) {
@@ -1841,22 +1847,23 @@ static void do_OPERATION_TYPE_STRING_SUBSTRING(EvalStack &stack) {
     auto numArgs = stack.pop().getInt();
 
     Value strValue = stack.pop().getValue();
+    Value startValue = stack.pop().getValue();
+    Value endValue;
+    if (numArgs == 3) {
+        endValue = stack.pop().getValue();
+    }
+
     if (strValue.isError()) {
         stack.push(strValue);
         return;
     }
-    Value startValue = stack.pop().getValue();
     if (startValue.isError()) {
         stack.push(startValue);
         return;
     }
-    Value endValue;
-    if (numArgs == 3) {
-        endValue = stack.pop().getValue();
-        if (endValue.isError()) {
-            stack.push(endValue);
-            return;
-        }
+    if (endValue.isError()) {
+        stack.push(endValue);
+        return;
     }
 
     const char *str = strValue.getString();
@@ -1900,7 +1907,7 @@ static void do_OPERATION_TYPE_STRING_SUBSTRING(EvalStack &stack) {
 
     if (start < end) {
         Value resultValue = Value::makeStringRef(str + start, end - start, 0x203b08a2);
-        stack.push(resultValue);
+        pushAllocated(stack, resultValue);
         return;
     }
 
@@ -1909,11 +1916,12 @@ static void do_OPERATION_TYPE_STRING_SUBSTRING(EvalStack &stack) {
 
 static void do_OPERATION_TYPE_STRING_FIND(EvalStack &stack) {
     auto a = stack.pop().getValue();
+    auto b = stack.pop().getValue();
+
     if (a.isError()) {
         stack.push(a);
         return;
     }
-    auto b = stack.pop().getValue();
     if (b.isError()) {
         stack.push(b);
         return;
@@ -1936,28 +1944,6 @@ static void do_OPERATION_TYPE_STRING_FIND(EvalStack &stack) {
 }
 
 typedef enum {
-    type_int,
-    type_signed_char,
-    type_short_int,
-    type_long_int,
-    type_long_long_int,
-    type_intmax_t,
-
-    type_size_t,
-
-    type_unsigned_int,
-    type_unsigned_char,
-    type_unsigned_short_int,
-    type_unsigned_long_int,
-    type_unsigned_long_long_int,
-    type_uintmax_t,
-
-    type_double,
-
-    type_string
-} FormatType;
-
-typedef enum {
     length_none,
     length_hh,
     length_h,
@@ -1969,42 +1955,158 @@ typedef enum {
     length_L
 } FormatLength;
 
-static size_t do_string_format(FormatType type, const Value& b, char *result, size_t result_size, const char *format) {
-    if (type == type_int) return snprintf(result, result_size, format, (int)b.getInt());
-    if (type == type_signed_char) return snprintf(result, result_size, format, (signed char)b.getInt32());
-    if (type == type_short_int) return snprintf(result, result_size, format, (short int)b.getInt32());
-    if (type == type_long_int) return snprintf(result, result_size, format, (long int)b.getInt64());
-    if (type == type_long_long_int) return snprintf(result, result_size, format, (long long int)b.getInt64());
-    if (type == type_intmax_t) return snprintf(result, result_size, format, (intmax_t)b.getInt64());
+// Finds the conversion of a String.format format: there must be exactly one,
+// "%[flags][width][.precision][length]specifier" ("%%" is not a conversion).
+// '*' width/precision and the specifiers n and p are not supported.
+static bool parseFormat(const char *format, FormatLength &length, char &specifier) {
+    int numConversions = 0;
 
-    if (type == type_size_t) return snprintf(result, result_size, format, (size_t)b.getInt64());
-
-    if (type == type_unsigned_int) return snprintf(result, result_size, format, (unsigned int)b.getUInt32());
-    if (type == type_unsigned_char) return snprintf(result, result_size, format, (unsigned char)b.getUInt32());
-    if (type == type_unsigned_short_int) return snprintf(result, result_size, format, (unsigned short int)b.getUInt32());
-    if (type == type_unsigned_long_int) return snprintf(result, result_size, format, (unsigned long int)b.getUInt64());
-    if (type == type_unsigned_long_long_int) return snprintf(result, result_size, format, (unsigned long long int)b.getUInt64());
-    if (type == type_uintmax_t) return snprintf(result, result_size, format, (uintmax_t)b.getUInt64());
-
-    if (type == type_double) {
-        if (b.isDouble()) {
-            return snprintf(result, result_size, format, b.getDouble());
+    for (const char *p = format; *p; p++) {
+        if (*p != '%') {
+            continue;
         }
-        float f = b.toFloat();
-        return snprintf(result, result_size, format, f);
+
+        p++;
+        if (*p == '%') {
+            continue;
+        }
+
+        while (*p && strchr("-+ #0", *p)) {
+            p++;
+        }
+        while (*p >= '0' && *p <= '9') {
+            p++;
+        }
+        if (*p == '.') {
+            p++;
+            while (*p >= '0' && *p <= '9') {
+                p++;
+            }
+        }
+
+        FormatLength conversionLength = length_none;
+        if (p[0] == 'h' && p[1] == 'h') {
+            conversionLength = length_hh;
+            p += 2;
+        } else if (p[0] == 'l' && p[1] == 'l') {
+            conversionLength = length_ll;
+            p += 2;
+        } else if (*p == 'h') {
+            conversionLength = length_h;
+            p++;
+        } else if (*p == 'l') {
+            conversionLength = length_l;
+            p++;
+        } else if (*p == 'j') {
+            conversionLength = length_j;
+            p++;
+        } else if (*p == 'z') {
+            conversionLength = length_z;
+            p++;
+        } else if (*p == 't') {
+            conversionLength = length_t;
+            p++;
+        } else if (*p == 'L') {
+            conversionLength = length_L;
+            p++;
+        }
+
+        if (!*p || !strchr("diuoxXfFeEgGaAcs", *p)) {
+            return false;
+        }
+
+        length = conversionLength;
+        specifier = *p;
+        numConversions++;
     }
 
-    return snprintf(result, result_size, format, b.getString());
+    return numConversions == 1;
+}
+
+// Formats the value with the format, the value is converted to the C type of the
+// conversion (an integer conversion of a float truncates, like JavaScript's
+// parseInt). Returns the snprintf result, -1 if the value can't be converted.
+static int do_string_format(const char *format, FormatLength length, char specifier, const Value &value, char *result, size_t resultSize) {
+    int err = 0;
+
+    if (specifier == 'd' || specifier == 'i') {
+        int64_t v = value.toInt64(&err);
+        if (err) {
+            return -1;
+        }
+        switch (length) {
+        case length_none: return snprintf(result, resultSize, format, (int)v);
+        case length_hh: return snprintf(result, resultSize, format, (signed char)v);
+        case length_h: return snprintf(result, resultSize, format, (short)v);
+        case length_l: return snprintf(result, resultSize, format, (long)v);
+        case length_ll: return snprintf(result, resultSize, format, (long long)v);
+        case length_j: return snprintf(result, resultSize, format, (intmax_t)v);
+        case length_z: return snprintf(result, resultSize, format, (size_t)v);
+        case length_t: return snprintf(result, resultSize, format, (ptrdiff_t)v);
+        default: return -1;
+        }
+    }
+
+    if (specifier == 'u' || specifier == 'o' || specifier == 'x' || specifier == 'X') {
+        int64_t v = value.toInt64(&err);
+        if (err) {
+            return -1;
+        }
+        switch (length) {
+        case length_none: return snprintf(result, resultSize, format, (unsigned int)v);
+        case length_hh: return snprintf(result, resultSize, format, (unsigned char)v);
+        case length_h: return snprintf(result, resultSize, format, (unsigned short)v);
+        case length_l: return snprintf(result, resultSize, format, (unsigned long)v);
+        case length_ll: return snprintf(result, resultSize, format, (unsigned long long)v);
+        case length_j: return snprintf(result, resultSize, format, (uintmax_t)v);
+        case length_z: return snprintf(result, resultSize, format, (size_t)v);
+        case length_t: return snprintf(result, resultSize, format, (ptrdiff_t)v);
+        default: return -1;
+        }
+    }
+
+    if (strchr("fFeEgGaA", specifier)) {
+        double v = value.toDouble(&err);
+        if (err) {
+            return -1;
+        }
+        if (length == length_none || length == length_l) {
+            return snprintf(result, resultSize, format, v);
+        }
+        if (length == length_L) {
+            return snprintf(result, resultSize, format, (long double)v);
+        }
+        return -1;
+    }
+
+    if (specifier == 'c') {
+        int32_t v = value.toInt32(&err);
+        if (err || length != length_none) {
+            return -1;
+        }
+        return snprintf(result, resultSize, format, (int)v);
+    }
+
+    // 's'
+    if (length != length_none) {
+        return -1;
+    }
+    Value str = value.toString(0x5e6b2b1c);
+    if (!str.isString()) {
+        return -1;
+    }
+    return snprintf(result, resultSize, format, str.getString());
 }
 
 static void do_OPERATION_TYPE_STRING_FORMAT(EvalStack &stack) {
     auto a = stack.pop().getValue();
+    auto b = stack.pop().getValue();
+
     if (a.isError()) {
         stack.push(a);
         return;
     }
 
-    auto b = stack.pop().getValue();
     if (b.isError()) {
         stack.push(b);
         return;
@@ -2022,85 +2124,37 @@ static void do_OPERATION_TYPE_STRING_FORMAT(EvalStack &stack) {
 #endif
 
     const char *format = a.getString();
-    size_t formatLength = strlen(format);
-    if (formatLength == 0) {
+
+    FormatLength length;
+    char specifier;
+    if (!parseFormat(format, length, specifier)) {
         stack.push(Value::makeError());
         return;
     }
 
-    char specifier = format[formatLength-1];
+    // the result is formatted into a stack buffer, a longer result again into a
+    // heap buffer of its length
+    char buffer[128];
+    int resultStrLen = do_string_format(format, length, specifier, b, buffer, sizeof(buffer));
+    if (resultStrLen < 0) {
+        stack.push(Value::makeError());
+        return;
+    }
 
-    char l1 = formatLength > 1 ? format[formatLength-2] : 0;
-    char l2 = formatLength > 2 ? format[formatLength-3] : 0;
-    FormatLength length = length_none;
-    if (l1 == 'h' && l2 == 'h') length = length_hh;
-    else if (l1 == 'h') length = length_h;
-    else if (l1 == 'l') length = length_l;
-    else if (l1 == 'l' && l2 == 'l') length = length_ll;
-    else if (l1 == 'j') length = length_j;
-    else if (l1 == 'z') length = length_z;
-    else if (l1 == 't') length = length_t;
-    else if (l1 == 'L') length = length_L;
-
-    FormatType type = type_int;
-
-
-    if (specifier == 'd' || specifier == 'i') {
-        if (length == length_none) {
-            type = type_int;
-        } else if (length == length_hh) {
-            type = type_signed_char;
-        } else if (length == length_h) {
-            type = type_short_int;
-        } else if (length == length_l) {
-            type = type_long_int;
-        } else if (length == length_ll) {
-            type = type_long_long_int;
-        } else if (length == length_j) {
-            type = type_intmax_t;
-        } else if (length == length_z) {
-            type = type_size_t;
-        } else {
-            stack.push(Value::makeError());
-            return;
-        }
-    } else if (specifier == 'u' || specifier == 'o' || specifier == 'x' || specifier == 'X') {
-        if (length == length_none) {
-            type = type_unsigned_int;
-        } else if (length == length_hh) {
-            type = type_unsigned_char;
-        } else if (length == length_h) {
-            type = type_unsigned_short_int;
-        } else if (length == length_l) {
-            type = type_unsigned_long_int;
-        } else if (length == length_ll) {
-            type = type_unsigned_long_long_int;
-        } else if (length == length_j) {
-            type = type_uintmax_t;
-        } else if (length == length_z) {
-            type = type_size_t;
-        } else {
-            stack.push(Value::makeError());
-            return;
-        }
-    } else if (specifier == 'f' || specifier == 'F' || specifier == 'e' || specifier == 'E' || specifier == 'g' || specifier == 'G' || specifier == 'a' || specifier == 'A') {
-        type = type_double;
-    } else if (specifier == 'c') {
-        type = type_int;
-    } else if (specifier == 's') {
-        type = type_string;
+    if ((size_t)resultStrLen < sizeof(buffer)) {
+        pushAllocated(stack, Value::makeStringRef(buffer, -1, 0x1e1227fd));
     } else {
-        stack.push(Value::makeError());
-        return;
+        char *resultStr = (char *)eez::alloc(resultStrLen + 1, 0x987ee4eb);
+        if (!resultStr) {
+            stack.push(Value::makeError());
+            return;
+        }
+        do_string_format(format, length, specifier, b, resultStr, resultStrLen + 1);
+
+        pushAllocated(stack, Value::makeStringRef(resultStr, -1, 0x1e1227fd));
+
+        eez::free(resultStr);
     }
-
-    int resultStrLen = (int)do_string_format(type, b, NULL, 0, format);
-    char *resultStr = (char *)eez::alloc(resultStrLen + 1, 0x987ee4eb);
-    do_string_format(type, b, resultStr, resultStrLen + 1, format);
-
-    stack.push(Value::makeStringRef(resultStr, -1, 0x1e1227fd));
-
-    eez::free(resultStr);
 
 #if defined(EEZ_DASHBOARD_API)
     }
@@ -2109,18 +2163,17 @@ static void do_OPERATION_TYPE_STRING_FORMAT(EvalStack &stack) {
 
 static void do_OPERATION_TYPE_STRING_FORMAT_PREFIX(EvalStack &stack) {
     auto a = stack.pop().getValue();
+    auto b = stack.pop().getValue();
+    auto c = stack.pop().getValue();
+
     if (a.isError()) {
         stack.push(a);
         return;
     }
-
-    auto b = stack.pop().getValue();
     if (b.isError()) {
         stack.push(b);
         return;
     }
-
-    auto c = stack.pop().getValue();
     if (c.isError()) {
         stack.push(c);
         return;
@@ -2141,16 +2194,17 @@ static void do_OPERATION_TYPE_STRING_FORMAT_PREFIX(EvalStack &stack) {
 
 static void do_OPERATION_TYPE_STRING_PAD_START(EvalStack &stack) {
     auto a = stack.pop().getValue();
+    auto b = stack.pop().getValue();
+    auto c = stack.pop().getValue();
+
     if (a.isError()) {
         stack.push(a);
         return;
     }
-    auto b = stack.pop().getValue();
     if (b.isError()) {
         stack.push(b);
         return;
     }
-    auto c = stack.pop().getValue();
     if (c.isError()) {
         stack.push(c);
         return;
@@ -2180,8 +2234,14 @@ static void do_OPERATION_TYPE_STRING_PAD_START(EvalStack &stack) {
     }
     int padStrLen = (int)strlen(padStr.getString());
 
+    // nothing to pad, or nothing to pad with: the string as it is
+    if (targetLength == strLen || padStrLen == 0) {
+        stack.push(str);
+        return;
+    }
+
     Value resultValue = Value::makeStringRef("", targetLength, 0xf43b14dd);
-    if (resultValue.type == VALUE_TYPE_NULL) {
+    if (allocationFailed(resultValue)) {
         stack.push(Value::makeError());
         return;
     }
@@ -2199,11 +2259,12 @@ static void do_OPERATION_TYPE_STRING_PAD_START(EvalStack &stack) {
 
 static void do_OPERATION_TYPE_STRING_SPLIT(EvalStack &stack) {
     auto strValue = stack.pop().getValue();
+    auto delimValue = stack.pop().getValue();
+
     if (strValue.isError()) {
         stack.push(strValue);
         return;
     }
-    auto delimValue = stack.pop().getValue();
     if (delimValue.isError()) {
         stack.push(delimValue);
         return;
@@ -2224,6 +2285,10 @@ static void do_OPERATION_TYPE_STRING_SPLIT(EvalStack &stack) {
     auto strLen = strlen(str);
 
     char *strCopy = (char *)eez::alloc(strLen + 1, 0xea9d0bc0);
+    if (!strCopy) {
+        stack.push(Value::makeError());
+        return;
+    }
     stringCopy(strCopy, strLen + 1, str);
 
     // get num parts
@@ -2236,15 +2301,30 @@ static void do_OPERATION_TYPE_STRING_SPLIT(EvalStack &stack) {
 
     eez::free(strCopy);
     strCopy = (char *)eez::alloc(strLen + 1, 0xea9d0bc1);
+    if (!strCopy) {
+        stack.push(Value::makeError());
+        return;
+    }
     stringCopy(strCopy, strLen + 1, str);
 
     // make array
     auto arrayValue = Value::makeArrayRef((int)arraySize, VALUE_TYPE_STRING, 0xe82675d4);
+    if (allocationFailed(arrayValue)) {
+        eez::free(strCopy);
+        stack.push(Value::makeError());
+        return;
+    }
     auto array = arrayValue.getArray();
     int i = 0;
     token = strtok(strCopy, delim);
     while (token != NULL) {
-        array->values[i++] = Value::makeStringRef(token, -1, 0x45209ec0);
+        auto element = Value::makeStringRef(token, -1, 0x45209ec0);
+        if (allocationFailed(element)) {
+            eez::free(strCopy);
+            stack.push(Value::makeError());
+            return;
+        }
+        array->values[i++] = element;
         token = strtok(NULL, delim);
     }
 
@@ -2272,18 +2352,18 @@ static void do_OPERATION_TYPE_STRING_FROM_CODE_POINT(EvalStack &stack) {
     utf8catcodepoint(str, charCode, sizeof(str));
 
     Value resultValue = Value::makeStringRef(str, (int)strlen(str), 0x02c2e778);
-    stack.push(resultValue);
+    pushAllocated(stack, resultValue);
     return;
 }
 
 static void do_OPERATION_TYPE_STRING_CODE_POINT_AT(EvalStack &stack) {
     auto strValue = stack.pop().getValue();
+    Value indexValue = stack.pop().getValue();
+
     if (strValue.isError()) {
         stack.push(strValue);
         return;
     }
-
-    Value indexValue = stack.pop().getValue();
     if (indexValue.isError()) {
         stack.push(indexValue);
         return;
@@ -2347,6 +2427,15 @@ static void do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
     auto numArgs = stack.pop().getInt();
 
     auto arrayValue = stack.pop().getValue();
+    Value fromValue;
+    if (numArgs > 1) {
+        fromValue = stack.pop().getValue();
+    }
+    Value toValue;
+    if (numArgs > 2) {
+        toValue = stack.pop().getValue();
+    }
+
     if (arrayValue.isError()) {
         stack.push(arrayValue);
         return;
@@ -2354,7 +2443,6 @@ static void do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
 
     int from = 0;
     if (numArgs > 1) {
-        auto fromValue = stack.pop().getValue();
         if (fromValue.isError()) {
             stack.push(fromValue);
             return;
@@ -2374,7 +2462,6 @@ static void do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
 
     int to = -1;
     if (numArgs > 2) {
-        auto toValue = stack.pop().getValue();
         if (toValue.isError()) {
             stack.push(toValue);
             return;
@@ -2416,6 +2503,10 @@ static void do_OPERATION_TYPE_ARRAY_SLICE(EvalStack &stack) {
     auto size = to - from;
 
     auto resultArrayValue = Value::makeArrayRef(size, array->arrayType, 0xe2d78c65);
+    if (allocationFailed(resultArrayValue)) {
+        stack.push(Value::makeError());
+        return;
+    }
     auto resultArray = resultArrayValue.getArray();
 
     for (int elementIndex = from; elementIndex < to && elementIndex < (int)array->arraySize; elementIndex++) {
@@ -2433,23 +2524,24 @@ static void do_OPERATION_TYPE_ARRAY_ALLOCATE(EvalStack &stack) {
     }
     int err;
     auto size = sizeValue.toInt32(&err);
-    if (err) {
+    if (err || size < 0) {
         stack.push(Value::makeError());
         return;
     }
 
     auto resultArrayValue = Value::makeArrayRef(size, defs_v3::ARRAY_TYPE_ANY, 0xe2d78c65);
 
-    stack.push(resultArrayValue);
+    pushAllocated(stack, resultArrayValue);
 }
 
 static void do_OPERATION_TYPE_ARRAY_APPEND(EvalStack &stack) {
     auto arrayValue = stack.pop().getValue();
+    auto value = stack.pop().getValue();
+
     if (arrayValue.isError()) {
         stack.push(arrayValue);
         return;
     }
-    auto value = stack.pop().getValue();
     if (value.isError()) {
         stack.push(value);
         return;
@@ -2469,6 +2561,10 @@ static void do_OPERATION_TYPE_ARRAY_APPEND(EvalStack &stack) {
 
     auto array = arrayValue.getArray();
     auto resultArrayValue = Value::makeArrayRef(array->arraySize + 1, array->arrayType, 0x664c3199);
+    if (allocationFailed(resultArrayValue)) {
+        stack.push(Value::makeError());
+        return;
+    }
     auto resultArray = resultArrayValue.getArray();
 
     for (uint32_t elementIndex = 0; elementIndex < array->arraySize; elementIndex++) {
@@ -2518,6 +2614,10 @@ static void do_OPERATION_TYPE_ARRAY_INSERT(EvalStack &stack) {
 
     auto array = arrayValue.getArray();
     auto resultArrayValue = Value::makeArrayRef(array->arraySize + 1, array->arrayType, 0xc4fa9cd9);
+    if (allocationFailed(resultArrayValue)) {
+        stack.push(Value::makeError());
+        return;
+    }
     auto resultArray = resultArrayValue.getArray();
 
     if (position < 0) {
@@ -2541,11 +2641,12 @@ static void do_OPERATION_TYPE_ARRAY_INSERT(EvalStack &stack) {
 
 static void do_OPERATION_TYPE_ARRAY_REMOVE(EvalStack &stack) {
     auto arrayValue = stack.pop().getValue();
+    auto positionValue = stack.pop().getValue();
+
     if (arrayValue.isError()) {
         stack.push(arrayValue);
         return;
     }
-    auto positionValue = stack.pop().getValue();
     if (positionValue.isError()) {
         stack.push(positionValue);
         return;
@@ -2574,6 +2675,10 @@ static void do_OPERATION_TYPE_ARRAY_REMOVE(EvalStack &stack) {
 
     if (position >= 0 && position < (int32_t)array->arraySize) {
         auto resultArrayValue = Value::makeArrayRef(array->arraySize - 1, array->arrayType, 0x40e9bb4b);
+        if (allocationFailed(resultArrayValue)) {
+            stack.push(Value::makeError());
+            return;
+        }
         auto resultArray = resultArrayValue.getArray();
 
         for (uint32_t elementIndex = 0; (int)elementIndex < position; elementIndex++) {
@@ -2732,7 +2837,7 @@ static void do_OPERATION_TYPE_CRYPTO_SHA256(EvalStack &stack) {
 
     auto result = Value::makeBlobRef(buf, SHA256_BLOCK_SIZE, 0x1f0c0c0c);
 
-    stack.push(result);
+    pushAllocated(stack, result);
 #else
     stack.push(Value::makeError());
 #endif
@@ -2746,14 +2851,14 @@ static void do_OPERATION_TYPE_BLOB_ALLOCATE(EvalStack &stack) {
     }
     int err;
     auto size = sizeValue.toInt32(&err);
-    if (err) {
+    if (err || size < 0) {
         stack.push(Value::makeError());
         return;
     }
 
     auto result = Value::makeBlobRef(nullptr, size, 0xd3de43f1);
 
-    stack.push(result);
+    pushAllocated(stack, result);
 }
 
 static void do_OPERATION_TYPE_BLOB_TO_STRING(EvalStack &stack) {
@@ -2798,7 +2903,7 @@ static void do_OPERATION_TYPE_JSON_GET(EvalStack &stack) {
         return;
     }
 
-    stack.push(Value::makeJsonMemberRef(jsonValue, propertyValue.toString(0xc73d02e7), 0xebcc230a));
+    pushAllocated(stack, Value::makeJsonMemberRef(jsonValue, propertyValue.toString(0xc73d02e7), 0xebcc230a));
 #else
     stack.push(Value::makeError());
 #endif

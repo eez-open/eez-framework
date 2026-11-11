@@ -84,7 +84,9 @@ void GaugeWidgetState::render() {
 	float value = data.toFloat();
 	float threshold = thresholdValue.toFloat();
 
-	auto unit = unitValue.toString(0xa9ddede3).getString();
+	// the string is kept in unitString while it is used
+	Value unitString = unitValue.toString(0xa9ddede3);
+	const char *unit = unitString.getString();
 
 	if (isNaN(min) || isNaN(max) || isNaN(value) || isinf(min) || isinf(max) || isinf(value) || min >= max) {
 		min = 0.0;
@@ -146,8 +148,12 @@ void GaugeWidgetState::render() {
 	auto BAR_WIDTH = BORDER_WIDTH / 2;
 
 	auto radBorderInner = radBorderOuter - BORDER_WIDTH;
+
+	// reused, the path keeps its memory between the draws
+	static Path path;
+
 	{
-		Path path;
+		path.clear();
 		arcBar(path, x0 + xCenter, y0 + yCenter, radBorderOuter, radBorderInner, 0);
 		setColorByValue(colorBorder);
 		strokePath(path, 1.5f);
@@ -158,7 +164,7 @@ void GaugeWidgetState::render() {
 	auto radBarInner = radBarOuter - BAR_WIDTH;
 	auto angle = remap(value, min, 180.0f, max, 0.0f);
 	{
-		Path path;
+		path.clear();
 		arcBar(path, x0 + xCenter, y0 + yCenter, radBarOuter, radBarInner, angle);
 		setColorByValue(colorBar);
 		fillPath(path);
@@ -180,11 +186,18 @@ void GaugeWidgetState::render() {
 		drawPolyline(points, 2, THRESHOLD_LINE_WIDTH);
 	}
 
-	// draw ticks
+	// draw ticks: at min + i * ft (not accumulated, ft can be below the float
+	// resolution at min), at most MAX_TICKS
+	static const int MAX_TICKS = 100;
 	font::Font ticksFont = styleGetFont(ticksStyle);
 	auto ft = firstTick(max - min);
 	auto ticksRad = radBorderOuter + 1;
-	for (auto tickValue = min; tickValue <= max; tickValue += ft) {
+	int numTicks = ft > 0 && !isinf(ft) ? MAX_TICKS : 0;
+	for (int tickIndex = 0; tickIndex < numTicks; tickIndex++) {
+		float tickValue = min + tickIndex * ft;
+		if (tickValue > max) {
+			break;
+		}
 		auto tickAngleDeg = remap(tickValue, min, 180.0f, max, 0);
 		if (tickAngleDeg <= 180.0) {
 			auto tickAngle = deg2Rad(tickAngleDeg);

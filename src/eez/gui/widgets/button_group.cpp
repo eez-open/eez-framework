@@ -25,6 +25,13 @@ void drawButtons(const WidgetCursor &widgetCursor, const Style *style, const Sty
     auto x = widgetCursor.x;
     auto y = widgetCursor.y;
 
+    if (count <= 0) {
+        // no buttons, only the background
+        display::setColor(style->backgroundColor);
+        display::fillRect(x, y, x + widgetCursor.w - 1, y + widgetCursor.h - 1);
+        return;
+    }
+
     WidgetCursor widgetCursorForLabel = widgetCursor;
 
     if (widgetCursor.w > widgetCursor.h) {
@@ -117,8 +124,10 @@ void ButtonGroupWidgetState::render() {
     const Style* selectedStyle = getStyle(widget->selectedStyle);
 
     if (widgetCursor.flowState) {
-        auto buttonLabelsArray = data.getArray();
-        drawButtons(widgetCursor, style, selectedStyle, selectedButton.getInt(), buttonLabelsArray->arraySize, buttonLabelsArray);
+        // the labels are an array, other data draws no buttons
+        auto buttonLabelsArray = data.isArray() ? data.getArray() : nullptr;
+        int count = buttonLabelsArray ? (int)buttonLabelsArray->arraySize : 0;
+        drawButtons(widgetCursor, style, selectedStyle, selectedButton.getInt(), count, buttonLabelsArray);
     } else {
         drawButtons(widgetCursor, style, selectedStyle, data.getInt(), count(widgetCursor, widget->data), nullptr);
     }
@@ -132,16 +141,30 @@ void ButtonGroupWidgetState::onTouch(const WidgetCursor &widgetCursor, Event &to
     if (touchEvent.type == EVENT_TYPE_TOUCH_DOWN) {
         auto widget = (const ButtonGroupWidget *)widgetCursor.widget;
 
-        int count_ = data.isArray() ? data.getArray()->arraySize : count(widgetCursor, widget->data);
+        int count_;
+        if (widgetCursor.flowState) {
+            count_ = data.isArray() ? (int)data.getArray()->arraySize : 0;
+        } else {
+            count_ = count(widgetCursor, widget->data);
+        }
+        if (count_ <= 0) {
+            return;
+        }
 
         int selectedButton;
         if (widgetCursor.w > widgetCursor.h) {
             int w = widgetCursor.w / count_;
+            if (w <= 0) {
+                return;
+            }
             int x = widgetCursor.x + (widgetCursor.w - w * count_) / 2;
 
             selectedButton = (touchEvent.x - x) / w;
         } else {
             int h = widgetCursor.h / count_;
+            if (h <= 0) {
+                return;
+            }
             int y = widgetCursor.y + (widgetCursor.h - h * count_) / 2;
             selectedButton = (touchEvent.y - y) / h;
         }

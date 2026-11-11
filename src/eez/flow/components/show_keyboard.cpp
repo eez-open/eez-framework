@@ -52,24 +52,37 @@ void executeShowKeyboardComponent(FlowState *flowState, unsigned componentIndex)
         return;
     }
 
-	static FlowState *g_showKeyboardFlowState;
-	static unsigned g_showKeyboardComponentIndex;
+	// the ShowKeyboard components waiting for the keyboard they opened: a weak
+	// reference, the flow state can be freed while the keyboard is open (its flow
+	// stopped), then OK and Cancel only close the keyboard
+	static ComponentRefStack<8> g_keyboardRefs;
 
-	g_showKeyboardFlowState = flowState;
-	g_showKeyboardComponentIndex = componentIndex;
+	g_keyboardRefs.push(ComponentRef(flowState, componentIndex));
 
 	startAsyncExecution(flowState, componentIndex);
 
 	auto onOk = [](char *value) {
-		propagateValue(g_showKeyboardFlowState, g_showKeyboardComponentIndex, 0, Value::makeStringRef(value, -1, 0x87d32fe2));
+		auto ref = g_keyboardRefs.pop();
+		auto flowState = ref.getFlowState();
+		if (flowState) {
+			propagateValue(flowState, ref.componentIndex, 0, Value::makeStringRef(value, -1, 0x87d32fe2));
+		}
 		getAppContextFromId(APP_CONTEXT_ID_DEVICE)->popPage();
-		endAsyncExecution(g_showKeyboardFlowState, g_showKeyboardComponentIndex);
+		if (flowState) {
+			endAsyncExecution(flowState, ref.componentIndex);
+		}
 	};
 
 	auto onCancel = []() {
-		propagateValue(g_showKeyboardFlowState, g_showKeyboardComponentIndex, 1);
+		auto ref = g_keyboardRefs.pop();
+		auto flowState = ref.getFlowState();
+		if (flowState) {
+			propagateValue(flowState, ref.componentIndex, 1);
+		}
 		getAppContextFromId(APP_CONTEXT_ID_DEVICE)->popPage();
-		endAsyncExecution(g_showKeyboardFlowState, g_showKeyboardComponentIndex);
+		if (flowState) {
+			endAsyncExecution(flowState, ref.componentIndex);
+		}
 	};
 
 	const char *label = labelValue.getString();

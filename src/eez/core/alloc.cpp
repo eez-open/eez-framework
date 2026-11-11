@@ -28,14 +28,35 @@
 #endif
 #endif
 
-#if defined(EEZ_PLATFORM_CM5_RASPI)
+// EEZ-GUI on a PC (simulator, CM5, Studio): alloc is malloc
+#if !defined(EEZ_FOR_LVGL) && !defined(EEZ_DASHBOARD_API) && (defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__) || defined(EEZ_PLATFORM_CM5_RASPI))
+#define EEZ_ALLOC_FROM_C_HEAP 1
+#else
+#define EEZ_ALLOC_FROM_C_HEAP 0
+#endif
+
 #include <stdlib.h>
 #include <stdint.h>
-#include <malloc.h>
-#endif
 
 #include <eez/core/alloc.h>
 #include <eez/core/os.h>
+
+#if EEZ_ALLOC_FROM_C_HEAP && !defined(__EMSCRIPTEN__)
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#include <psapi.h>
+#elif defined(__APPLE__)
+#include <malloc/malloc.h>
+#else
+#include <malloc.h>
+#endif
+#endif
 
 namespace eez {
 
@@ -115,7 +136,7 @@ void getAllocInfo(uint32_t &free, uint32_t &alloc) {
 	alloc = emscripten_get_heap_size();
 }
 
-#elif defined(EEZ_PLATFORM_CM5_RASPI)
+#elif EEZ_ALLOC_FROM_C_HEAP
 
 void initAllocHeap(uint8_t *heap, size_t heapSize) {
 }
@@ -134,13 +155,36 @@ template<typename T> void freeObject(T *ptr) {
 }
 
 void getAllocInfo(uint32_t &free, uint32_t &alloc) {
+	size_t allocBytes = 0;
+	size_t freeBytes = 0;
+
+#if defined(__EMSCRIPTEN__)
+	allocBytes = emscripten_get_heap_size();
+	freeBytes = emscripten_get_heap_max() - emscripten_get_heap_size();
+#elif defined(_WIN32)
+	// the private bytes of the process and the free physical memory
+	PROCESS_MEMORY_COUNTERS_EX counters;
+	if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS *)&counters, sizeof(counters))) {
+		allocBytes = counters.PrivateUsage;
+	}
+	MEMORYSTATUSEX status;
+	status.dwLength = sizeof(status);
+	if (GlobalMemoryStatusEx(&status)) {
+		freeBytes = (size_t)status.ullAvailPhys;
+	}
+#elif defined(__APPLE__)
+	malloc_statistics_t statistics;
+	malloc_zone_statistics(nullptr, &statistics);
+	allocBytes = statistics.size_in_use;
+	freeBytes = statistics.size_allocated - statistics.size_in_use;
+#else
 	struct mallinfo2 mi = mallinfo2();
 
 	// bytes in use: heap chunks + mmap-ed chunks
-	size_t allocBytes = mi.uordblks + mi.hblkhd;
+	allocBytes = mi.uordblks + mi.hblkhd;
 
 	// free: memory available to the system + free chunks retained by malloc
-	size_t freeBytes = mi.fordblks;
+	freeBytes = mi.fordblks;
 	FILE *fp = fopen("/proc/meminfo", "r");
 	if (fp) {
 		char line[128];
@@ -153,6 +197,7 @@ void getAllocInfo(uint32_t &free, uint32_t &alloc) {
 		}
 		fclose(fp);
 	}
+#endif
 
 	free = freeBytes > UINT32_MAX ? UINT32_MAX : (uint32_t)freeBytes;
 	alloc = allocBytes > UINT32_MAX ? UINT32_MAX : (uint32_t)allocBytes;
@@ -185,7 +230,14 @@ EEZ_MUTEX_DECLARE(alloc);
 #pragma GCC diagnostic pop
 #endif
 
+// initAssetsMemory sets up the heap before the first allocation. A later call,
+// e.g. initAllocHeap(ALLOC_BUFFER, ALLOC_BUFFER_SIZE) by the application after
+// initMemory, would drop everything allocated, so it is ignored.
 void initAllocHeap(uint8_t *heap, size_t heapSize) {
+    if (g_heap) {
+        return;
+    }
+
     g_heap = heap;
 
 	AllocBlock *first = (AllocBlock *)g_heap;

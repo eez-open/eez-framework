@@ -27,7 +27,8 @@ struct YTGraphWidgetState : public WidgetState {
 	WidgetStateFlags flags;
 	Value data;
     uint32_t refreshCounter;
-    uint8_t iChannel;
+    // widget cursor (-1 outside of a List or a Grid)
+    int iChannel;
     uint8_t ytGraphUpdateMethod;
     uint32_t numHistoryValues;
     uint32_t historyValuePosition;

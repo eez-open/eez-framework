@@ -104,7 +104,23 @@ void endDamageProbe(DamageProbe &probe);
 
 VideoBuffer getBufferPointer();
 
+// What the last frame cost (for tests and tuning): the pixels composed from
+// the render buffers into the frame, transferred to the screen and of the
+// backdrop blurred, and the number of rectangles composed and transferred.
+struct FrameStats {
+    uint32_t composedPixels;
+    uint32_t composedRects;
+    uint32_t presentedPixels;
+    uint32_t presentedRects;
+    uint32_t blurredPixels;
+};
+const FrameStats &getFrameStats();
+
+// The RGB pixels (3 bytes each) of the frame of the device app context,
+// getScreenshotWidth() x getScreenshotHeight(). Valid until releaseScreenshot.
 const uint8_t *takeScreenshot();
+int getScreenshotWidth();
+int getScreenshotHeight();
 void releaseScreenshot();
 
 #ifdef GUI_CALC_FPS
@@ -226,6 +242,16 @@ int getCursorXPosition(int cursorPosition, const char *text, int textLength, int
 int8_t measureGlyph(int32_t encoding, gui::font::Font &font);
 int measureStr(const char *text, int textLength, gui::font::Font &font, int max_width = 0, int startFontIndex = 0);
 int getFontIndexAtEnd(const char *text, int textLength, int fontIndex);
+
+// Decodes the UTF-8 character at text into codePoint and returns the text after
+// it. At the terminating NUL codePoint is 0 and text is returned. A byte that
+// doesn't start a valid UTF-8 sequence, also a sequence cut short by the NUL, is
+// U+FFFD and one byte long, so the decoding never steps over the NUL.
+const char *decodeUtf8(const char *text, int32_t &codePoint);
+
+// Returns the text after the character at text, as decodeUtf8, but a font tag
+// that starts a font (see drawStr) is one character with its font index.
+const char *skipChar(const char *text);
 
 enum DisplayState {
     OFF,

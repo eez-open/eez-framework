@@ -157,7 +157,31 @@ static bool pingComponent(FlowState *flowState, unsigned componentIndex, int sou
 }
 
 
-static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parentFlowState, int parentComponentIndex, const Value& inputValue) {
+// the id of the last flow state created (FlowState::flowStateId)
+static uint32_t g_lastFlowStateId;
+
+static FlowState *findFlowStateById(FlowState *firstFlowState, uint32_t flowStateId) {
+    for (FlowState *flowState = firstFlowState; flowState; flowState = flowState->nextSibling) {
+        if (flowState->flowStateId == flowStateId) {
+            return flowState;
+        }
+        auto childFlowState = findFlowStateById(flowState->firstChild, flowStateId);
+        if (childFlowState) {
+            return childFlowState;
+        }
+    }
+    return nullptr;
+}
+
+FlowState *getFlowStateById(uint32_t flowStateId) {
+    if (flowStateId == 0) {
+        return nullptr;
+    }
+    return findFlowStateById(g_firstFlowState, flowStateId);
+}
+
+// Creates the flow state, without queuing its components (pingComponents).
+static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parentFlowState, int parentComponentIndex, const Value& inputValue, bool isAction) {
 	auto flowDefinition = static_cast<FlowDefinition *>(assets->flowDefinition);
 	auto flow = flowDefinition->flows[flowIndex];
 
@@ -175,9 +199,22 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
 
 	flowState->assets = assets;
 
+    if (++g_lastFlowStateId == 0) {
+        // after 2^32 flow states: 0 is no flow state
+        g_lastFlowStateId = 1;
+    }
+    flowState->flowStateId = g_lastFlowStateId;
+#if defined(EEZ_FOR_LVGL) || defined(EEZ_DASHBOARD_API)
+    // the offset in the heap, the Dashboard API finds the flow state by it
+    // (getFlowStateFromFlowStateIndex)
     flowState->flowStateIndex = (int)((uint8_t *)flowState - ALLOC_BUFFER);
+#else
+    // the id of the flow state in the debugger messages
+    flowState->flowStateIndex = flowState->flowStateId;
+#endif
 	flowState->flow = flowDefinition->flows[flowIndex];
 	flowState->flowIndex = flowIndex;
+	flowState->isAction = isAction;
 	flowState->error = false;
     flowState->deleteOnNextTick = false;
 	flowState->refCounter = 0;
@@ -252,26 +289,27 @@ static FlowState *initFlowState(Assets *assets, int flowIndex, FlowState *parent
 
 	onFlowStateCreated(flowState);
 
-	for (unsigned componentIndex = 0; componentIndex < flow->components.count; componentIndex++) {
+	return flowState;
+}
+
+// queues the components that are ready to run
+static void pingComponents(FlowState *flowState) {
+	for (unsigned componentIndex = 0; componentIndex < flowState->flow->components.count; componentIndex++) {
 		pingComponent(flowState, componentIndex);
 	}
-
-	return flowState;
 }
 
 FlowState *initActionFlowState(int flowIndex, FlowState *parentFlowState, int parentComponentIndex, const Value &inputValue) {
-	auto flowState = initFlowState(parentFlowState->assets, flowIndex, parentFlowState, parentComponentIndex, inputValue);
-	if (flowState) {
-		flowState->isAction = true;
-	}
-	return flowState;
+	return initFlowState(parentFlowState->assets, flowIndex, parentFlowState, parentComponentIndex, inputValue, true);
+}
+
+void startActionFlowState(FlowState *flowState) {
+	pingComponents(flowState);
 }
 
 FlowState *initPageFlowState(Assets *assets, int flowIndex, FlowState *parentFlowState, int parentComponentIndex) {
-	auto flowState = initFlowState(assets, flowIndex, parentFlowState, parentComponentIndex, Value());
-	if (flowState) {
-		flowState->isAction = false;
-	}
+	auto flowState = initFlowState(assets, flowIndex, parentFlowState, parentComponentIndex, Value(), false);
+	pingComponents(flowState);
 	return flowState;
 }
 
@@ -307,17 +345,11 @@ bool canFreeFlowState(FlowState *flowState) {
     return true;
 }
 
-void freeFlowState(FlowState *flowState) {
+// Frees the flow state itself, also if an execution state of its parent component
+// owns it.
+static void freeFlowStateNow(FlowState *flowState) {
     auto parentFlowState = flowState->parentFlowState;
     if (parentFlowState) {
-        if (flowState->parentComponentIndex != -1) {
-            auto componentExecutionState = parentFlowState->componenentExecutionStates[flowState->parentComponentIndex];
-            if (componentExecutionState) {
-                deallocateComponentExecutionState(parentFlowState, flowState->parentComponentIndex);
-                return;
-            }
-        }
-
         if (parentFlowState->firstChild == flowState) {
             parentFlowState->firstChild = flowState->nextSibling;
         }
@@ -355,7 +387,7 @@ void freeFlowState(FlowState *flowState) {
     removeTasksFromQueueForFlowState(flowState);
     removeWatchesForFlowState(flowState);
 
-    freeAllChildrenFlowStates(flowState->firstChild);
+    freeAllChildrenFlowStates(flowState);
 
 	onFlowStateDestroyed(flowState);
 
@@ -363,13 +395,47 @@ void freeFlowState(FlowState *flowState) {
 	free(flowState);
 }
 
-void freeAllChildrenFlowStates(FlowState *firstChildFlowState) {
-    auto flowState = firstChildFlowState;
-    while (flowState != nullptr) {
-        auto nextFlowState = flowState->nextSibling;
-        freeAllChildrenFlowStates(flowState->firstChild);
-        freeFlowState(flowState);
-        flowState = nextFlowState;
+void freeFlowState(FlowState *flowState) {
+    auto parentFlowState = flowState->parentFlowState;
+    if (parentFlowState && flowState->parentComponentIndex != -1) {
+        auto componentExecutionState = parentFlowState->componenentExecutionStates[flowState->parentComponentIndex];
+        if (componentExecutionState) {
+#if EEZ_OPTION_GUI
+            if (flowState->parentComponent->type == defs_v3::COMPONENT_TYPE_USER_WIDGET_WIDGET) {
+                // the user widget keeps the flow states of several layouts
+                freeUserWidgetFlowState(flowState);
+                return;
+            }
+#endif
+            // the execution state of the parent component owns this flow
+            // state: freeing it frees this flow state
+            deallocateComponentExecutionState(parentFlowState, flowState->parentComponentIndex);
+            return;
+        }
+    }
+
+    freeFlowStateNow(flowState);
+}
+
+void freeOwnedFlowState(FlowState *flowState) {
+    freeFlowStateNow(flowState);
+}
+
+void freeAllChildrenFlowStates(FlowState *parentFlowState) {
+    // take the first child again after each one: freeing a child can free some
+    // of its siblings too (the flow states owned by the same execution state)
+    while (true) {
+        auto childFlowState = parentFlowState ? parentFlowState->firstChild : g_firstFlowState;
+        if (!childFlowState) {
+            break;
+        }
+
+        freeFlowState(childFlowState);
+
+        if ((parentFlowState ? parentFlowState->firstChild : g_firstFlowState) == childFlowState) {
+            // the execution state that owned it didn't free it
+            freeFlowStateNow(childFlowState);
+        }
     }
 }
 
@@ -683,19 +749,24 @@ void onEvent(FlowState *flowState, FlowEvent flowEvent, Value eventValue) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static bool findCatchErrorComponent(FlowState *flowState, FlowState *&catchErrorFlowState, int &catchErrorComponentIndex) {
+// The CatchError component of the flow state (unless skipCatchErrorComponents),
+// the @error output of the component that called the flow (CallAction), then
+// the same for the parent flow states.
+static bool findCatchErrorComponent(FlowState *flowState, bool skipCatchErrorComponents, FlowState *&catchErrorFlowState, int &catchErrorComponentIndex) {
     if (!flowState) {
         return false;
     }
 
-	for (unsigned componentIndex = 0; componentIndex < flowState->flow->components.count; componentIndex++) {
-		auto component = flowState->flow->components[componentIndex];
-		if (component->type == defs_v3::COMPONENT_TYPE_CATCH_ERROR_ACTION) {
-			catchErrorFlowState = flowState;
-			catchErrorComponentIndex = componentIndex;
-			return true;
-		}
-	}
+    if (!skipCatchErrorComponents) {
+        for (unsigned componentIndex = 0; componentIndex < flowState->flow->components.count; componentIndex++) {
+            auto component = flowState->flow->components[componentIndex];
+            if (component->type == defs_v3::COMPONENT_TYPE_CATCH_ERROR_ACTION) {
+                catchErrorFlowState = flowState;
+                catchErrorComponentIndex = componentIndex;
+                return true;
+            }
+        }
+    }
 
     if (flowState->parentFlowState && flowState->parentComponent && flowState->parentComponent->errorCatchOutput != -1) {
         catchErrorFlowState = flowState->parentFlowState;
@@ -703,15 +774,18 @@ static bool findCatchErrorComponent(FlowState *flowState, FlowState *&catchError
         return true;
     }
 
-    return findCatchErrorComponent(flowState->parentFlowState, catchErrorFlowState, catchErrorComponentIndex);
+    return findCatchErrorComponent(flowState->parentFlowState, false, catchErrorFlowState, catchErrorComponentIndex);
 }
 
 void throwError(FlowState *flowState, int componentIndex, const char *errorMessage) {
-    auto component = flowState->flow->components[componentIndex];
-
     if (!g_enableThrowError) {
         return;
     }
+
+    // an invalid component index (e.g. -1, a native action called without a
+    // CallAction) is an error of the flow, not of a component
+    Component *component = componentIndex >= 0 && componentIndex < (int)flowState->flow->components.count ?
+        flowState->flow->components[componentIndex] : nullptr;
 
 #if defined(EEZ_FOR_LVGL)
     LV_LOG_ERROR("EEZ-FLOW error: %s", errorMessage);
@@ -719,7 +793,7 @@ void throwError(FlowState *flowState, int componentIndex, const char *errorMessa
     printf("throwError: %s\n", errorMessage);
 #endif
 
-	if (component->errorCatchOutput != -1) {
+	if (component && component->errorCatchOutput != -1) {
 		propagateValue(
 			flowState,
 			componentIndex,
@@ -731,7 +805,11 @@ void throwError(FlowState *flowState, int componentIndex, const char *errorMessa
 		int catchErrorComponentIndex;
 		if (
             findCatchErrorComponent(
-                component->type == defs_v3::COMPONENT_TYPE_ERROR_ACTION ? flowState->parentFlowState : flowState,
+                flowState,
+                // the Error component throws to the caller of its flow: a
+                // CatchError of the same flow doesn't catch it, the @error
+                // output of the CallAction does
+                component && component->type == defs_v3::COMPONENT_TYPE_ERROR_ACTION,
                 catchErrorFlowState,
                 catchErrorComponentIndex
             )
@@ -742,13 +820,25 @@ void throwError(FlowState *flowState, int componentIndex, const char *errorMessa
                 }
             }
 
-            auto component = catchErrorFlowState->flow->components[catchErrorComponentIndex];
+            auto catchErrorComponent = catchErrorFlowState->flow->components[catchErrorComponentIndex];
 
-            if (component->type == defs_v3::COMPONENT_TYPE_CATCH_ERROR_ACTION) {
-                auto catchErrorComponentExecutionState = allocateComponentExecutionState<CatchErrorComponenentExecutionState>(catchErrorFlowState, catchErrorComponentIndex);
-                catchErrorComponentExecutionState->message = Value::makeStringRef(errorMessage, (int)strlen(errorMessage), 0x9473eef2);
+            if (catchErrorComponent->type == defs_v3::COMPONENT_TYPE_CATCH_ERROR_ACTION) {
+                // an error that comes before the component handled the previous
+                // one is added to its messages: the component runs once per error
+                auto catchErrorComponentExecutionState = (CatchErrorComponenentExecutionState *)catchErrorFlowState->componenentExecutionStates[catchErrorComponentIndex];
+                if (!catchErrorComponentExecutionState) {
+                    catchErrorComponentExecutionState = allocateComponentExecutionState<CatchErrorComponenentExecutionState>(catchErrorFlowState, catchErrorComponentIndex);
+                }
 
-                if (!addToQueue(catchErrorFlowState, catchErrorComponentIndex, -1, -1, -1, false)) {
+                if (!catchErrorComponentExecutionState->pushMessage(Value::makeStringRef(errorMessage, (int)strlen(errorMessage), 0x9473eef2))) {
+                    // too many errors waiting for the component
+                    onFlowError(flowState, componentIndex, errorMessage);
+                    stopScriptHook();
+                } else if (!addToQueue(catchErrorFlowState, catchErrorComponentIndex, -1, -1, -1, false)) {
+                    catchErrorComponentExecutionState->removeLastMessage();
+                    if (catchErrorComponentExecutionState->numMessages == 0) {
+                        deallocateComponentExecutionState(catchErrorFlowState, catchErrorComponentIndex);
+                    }
                     onFlowError(flowState, componentIndex, errorMessage);
                     stopScriptHook();
                 }
@@ -756,7 +846,7 @@ void throwError(FlowState *flowState, int componentIndex, const char *errorMessa
                 propagateValue(
                     catchErrorFlowState,
                     catchErrorComponentIndex,
-                    component->errorCatchOutput,
+                    catchErrorComponent->errorCatchOutput,
                     Value::makeStringRef(errorMessage, (int)strlen(errorMessage), 0x9473eef3)
                 );
             }

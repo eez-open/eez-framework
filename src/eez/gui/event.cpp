@@ -89,6 +89,13 @@ static Event g_lastTouchUpEvent;
 // processTouchEvent is reentered when the page touched outside is closed
 static int g_processTouchEventDepth;
 
+// touch events read on the GUI thread, in their order (postTouchEvent): at most
+// one per frame from touch::tick in the display update, the room for more is
+// for an application that calls touch::tick elsewhere on the GUI thread
+static const int MAX_POSTED_TOUCH_EVENTS = 4;
+static Event g_postedTouchEvents[MAX_POSTED_TOUCH_EVENTS];
+static int g_numPostedTouchEvents;
+
 ////////////////////////////////////////////////////////////////////////////////
 
 static void processTouchEvent(EventType type, Event &touchEvent);
@@ -361,17 +368,47 @@ void processPostponedTouchEvents() {
     }
 }
 
+void postTouchEvent(const Event &touchEvent) {
+    if (g_numPostedTouchEvents == MAX_POSTED_TOUCH_EVENTS) {
+        // no room: the older events are processed now, in their order
+        processPostedTouchEvents();
+    }
+    g_postedTouchEvents[g_numPostedTouchEvents++] = touchEvent;
+}
+
+void processPostedTouchEvents() {
+    // one at a time from the front: an event posted while one is processed
+    // comes after it
+    while (g_numPostedTouchEvents > 0) {
+        Event touchEvent = g_postedTouchEvents[0];
+        g_numPostedTouchEvents--;
+        for (int i = 0; i < g_numPostedTouchEvents; i++) {
+            g_postedTouchEvents[i] = g_postedTouchEvents[i + 1];
+        }
+        processTouchEvent(touchEvent);
+    }
+}
+
 OnTouchFunctionType getWidgetTouchFunction(const WidgetCursor &widgetCursor) {
     if (widgetCursor) {
-        auto action = getWidgetAction(widgetCursor);
-        if (action && !widgetCursor.appContext->isWidgetActionEnabled(widgetCursor)) {
-            return nullptr;
+        // isWidgetActionEnabled is called once (it can read the enabled data of a button)
+        if (getWidgetAction(widgetCursor)) {
+            if (!widgetCursor.appContext->isWidgetActionEnabled(widgetCursor)) {
+                return nullptr;
+            }
+
+            if (widgetCursor.currentState->hasOnTouch()) {
+                return onWidgetTouch;
+            }
+
+            return onWidgetDefaultTouch;
         }
 
         if (widgetCursor.currentState->hasOnTouch()) {
 			return onWidgetTouch;
 		}
 
+        // without an action: enabled only by an app context that overrides it
         if (widgetCursor.appContext->isWidgetActionEnabled(widgetCursor)) {
             return onWidgetDefaultTouch;
         }

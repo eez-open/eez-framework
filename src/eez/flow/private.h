@@ -46,14 +46,48 @@ struct ComponenentExecutionState {
 	virtual ~ComponenentExecutionState() {}
 };
 
+// The messages of the errors a CatchError component has to handle, oldest first.
+// Every error is handled: the component is queued once per message.
 struct CatchErrorComponenentExecutionState : public ComponenentExecutionState {
-	Value message;
+    static const int MAX_MESSAGES = 16;
+
+	Value messages[MAX_MESSAGES];
+    int firstMessage = 0;
+    int numMessages = 0;
+
+    bool pushMessage(const Value &message) {
+        if (numMessages == MAX_MESSAGES) {
+            return false;
+        }
+        messages[(firstMessage + numMessages++) % MAX_MESSAGES] = message;
+        return true;
+    }
+
+    // undoes the last pushMessage
+    void removeLastMessage() {
+        if (numMessages > 0) {
+            messages[(firstMessage + --numMessages) % MAX_MESSAGES] = Value();
+        }
+    }
+
+    Value popMessage() {
+        Value message = messages[firstMessage];
+        messages[firstMessage] = Value();
+        firstMessage = (firstMessage + 1) % MAX_MESSAGES;
+        numMessages--;
+        return message;
+    }
 };
 
 struct FlowState {
 	Assets *assets;
 
+    // the flow state in the debugger messages: in LVGL and Dashboard builds the
+    // offset in the heap, in EEZ-GUI builds flowStateId
     uint32_t flowStateIndex;
+    // unique for the flow states created since the start, never reused (0 is no
+    // flow state): a weak reference to the flow state, see getFlowStateById
+    uint32_t flowStateId;
 	Flow *flow;
 	uint16_t flowIndex;
 	bool isAction;
@@ -96,15 +130,79 @@ extern const char *(*g_translateHook)(const char *textId);
 extern FlowState *g_firstFlowState;
 extern FlowState *g_lastFlowState;
 
+// The flow state of an action. Its components are not queued yet: the caller
+// sets the user properties, then calls startActionFlowState (or frees the flow
+// state if a property failed).
 FlowState *initActionFlowState(int flowIndex, FlowState *parentFlowState, int parentComponentIndex, const Value &value);
+// queues the components of the action flow state that are ready to run (Start)
+void startActionFlowState(FlowState *flowState);
 FlowState *initPageFlowState(Assets *assets, int flowIndex, FlowState *parentFlowState, int parentComponentIndex);
 
 void incRefCounterForFlowState(FlowState *flowState);
 void decRefCounterForFlowState(FlowState *flowState);
 
+// The flow state with this id (FlowState::flowStateId), nullptr if it was freed.
+// It walks the flow states, so it is for callbacks (dialogs, async actions), not
+// for every frame.
+FlowState *getFlowStateById(uint32_t flowStateId);
+
+// A weak reference to a component of a flow state, for a callback that can come
+// after the flow state was freed (e.g. a keypad closed after its flow stopped).
+struct ComponentRef {
+    uint32_t flowStateId = 0;
+    unsigned componentIndex = 0;
+
+    ComponentRef() {}
+    ComponentRef(FlowState *flowState, unsigned componentIndex_)
+        : flowStateId(flowState ? flowState->flowStateId : 0), componentIndex(componentIndex_) {}
+
+    // nullptr if the flow state was freed
+    FlowState *getFlowState() const {
+        return flowStateId ? getFlowStateById(flowStateId) : nullptr;
+    }
+};
+
+// The components waiting for the answer of open dialogs of one kind, the most
+// recently opened one last: a dialog is answered before the one below it. When
+// more than N are waiting, the oldest is forgotten.
+template <int N>
+struct ComponentRefStack {
+    ComponentRef refs[N];
+    int count = 0;
+
+    void push(const ComponentRef &ref) {
+        if (count == N) {
+            for (int i = 1; i < N; i++) {
+                refs[i - 1] = refs[i];
+            }
+            count--;
+        }
+        refs[count++] = ref;
+    }
+
+    // the most recent one, an empty reference if there is none
+    ComponentRef top() const {
+        return count > 0 ? refs[count - 1] : ComponentRef();
+    }
+
+    ComponentRef pop() {
+        return count > 0 ? refs[--count] : ComponentRef();
+    }
+};
+
 bool canFreeFlowState(FlowState *flowState);
 void freeFlowState(FlowState *flowState);
-void freeAllChildrenFlowStates(FlowState *flowState);
+// frees a flow state that an execution state of its parent component owns (a
+// layout of a user widget), without freeing that execution state
+void freeOwnedFlowState(FlowState *flowState);
+#if EEZ_OPTION_GUI
+// Frees a layout flow state of a user widget component. The execution state of
+// the component keeps the flow states of several layouts: only this one is
+// freed, the execution state goes with its last flow state.
+void freeUserWidgetFlowState(FlowState *flowState);
+#endif
+// frees the children of the flow state, all the flow states if it is nullptr
+void freeAllChildrenFlowStates(FlowState *parentFlowState);
 
 void deallocateComponentExecutionState(FlowState *flowState, unsigned componentIndex);
 
@@ -146,6 +244,9 @@ void endAsyncExecution(FlowState *flowState, int componentIndex);
 
 void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIndex, const Value& value);
 
+// The flow state and the CallAction component of the native action that is
+// running, nullptr outside a native action. The component index is -1 for an
+// action called without a CallAction (a widget event handler).
 extern FlowState *g_executeActionFlowState;
 extern unsigned g_executeActionComponentIndex;
 

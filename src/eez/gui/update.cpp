@@ -55,6 +55,11 @@ void updateScreen() {
 		g_rootWidget->style = 0;
 	}
 
+	// set below by freeWidgetStates (refresh) or while the states are updated, if
+	// the state of the widget found on touch down is freed or moved: then the
+	// widget is searched for again (or forgotten) at the end of the update
+	g_foundWidgetAtDownInvalid = false;
+
 	if (g_refreshScreen) {
 		g_refreshScreen = false;
 
@@ -82,8 +87,6 @@ void updateScreen() {
 	g_widgetCursor.currentState = g_widgetStateStart;
 	g_widgetCursor.refreshed = !hasPreviousState;
 	g_widgetCursor.hasPreviousState = hasPreviousState;
-
-	g_foundWidgetAtDownInvalid = false;
 
     g_widgetCursor.x = 0;
     g_widgetCursor.y = 0;

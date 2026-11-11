@@ -300,6 +300,10 @@ void executeMQTTInitComponent(FlowState *flowState, unsigned componentIndex) {
 
     Value connectionValue = Value::makeArrayRef(defs_v3::OBJECT_TYPE_MQTT_CONNECTION_NUM_FIELDS, defs_v3::OBJECT_TYPE_MQTT_CONNECTION, 0x51ba2203);
     auto connectionArray = connectionValue.getArray();
+    if (!connectionArray) {
+        throwError(flowState, componentIndex, FlowError::Plain("Out of memory"));
+        return;
+    }
     connectionArray->values[defs_v3::OBJECT_TYPE_MQTT_CONNECTION_FIELD_PROTOCOL] = protocolValue;
     connectionArray->values[defs_v3::OBJECT_TYPE_MQTT_CONNECTION_FIELD_HOST] = hostValue;
     connectionArray->values[defs_v3::OBJECT_TYPE_MQTT_CONNECTION_FIELD_PORT] = portValue;
@@ -310,6 +314,10 @@ void executeMQTTInitComponent(FlowState *flowState, unsigned componentIndex) {
 
     Value statusValue = Value::makeArrayRef(defs_v3::SYSTEM_STRUCTURE_OBJECT_VARIABLE_STATUS_NUM_FIELDS, defs_v3::SYSTEM_STRUCTURE_OBJECT_VARIABLE_STATUS, 0x51ba2203);
     auto statusArray = statusValue.getArray();
+    if (!statusArray) {
+        throwError(flowState, componentIndex, FlowError::Plain("Out of memory"));
+        return;
+    }
     statusArray->values[defs_v3::SYSTEM_STRUCTURE_OBJECT_VARIABLE_STATUS_FIELD_LABEL] = Value("", VALUE_TYPE_STRING);
     statusArray->values[defs_v3::SYSTEM_STRUCTURE_OBJECT_VARIABLE_STATUS_FIELD_IMAGE] = Value("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsIAAA7CARUoSoAAAAItSURBVEhL1dZNSBVRGMbxmcjCiFz14aJVlKtcVFjUJghCIlq5aBHoQiwoyJaRCzdRUUhQUIuIyKiEdoLuolCQEgQzyk8KjTZhidEnwe3/nJl3ermc8m5c9MCPmTtn5rz3zMw596alUilZzqzIt8uWYgRpmp5ncxQ/4YelL/EJ9/AQ87CkOIMT4VOS/MIq9NDvuXBEBfIiL/VxCW/Qjmr4tMG+mMwU/boCW7ETB3EKdzEFu8h7jr3w0XUandrHYwViWYdDeAT/DeUbTsPnAL5jOlZAw9b9+1v2oB++iFyGzzFER9CHEfTiAhpRg/KcxGf4Ilfh0xIrMAN/kUyjE7Xw2Yc5+HM7UCRWQJ35C7x3aIVPPWbhzzuCkFgBPczj6MIQyh+q3MEaWBqgOWLteo03IVrAR5NrF26jvJCe1VpYmuHbr2PJAj778Qq+kx74ZeYBrO0r6mMF9CbcQAs264CLHvIgrBM5C8s2LMDabsUK6P7ZCR9wCf413YgXsHMWsR2Wa7C2iViBcXeCGcYWWHbjC6y9G5Yd0CzW8ehEixWQUWyA5QqsTROuDopW1gHoeFGgkt8Dve8Xs92Qm9DtUfQ2Hc52Q8ePs90/qfQHR+uLXltFE/JpthuiBc7yLN9qNCGVFqhCU7Yb8iTfKrpFWnWVt/iBaAF18q9o/bFM5FtFr/D6bDf5CBUoVmVf4D40fD3s12V0XPd9NZT30OSbzK2Eokk2Bk28kP/9X0WS/AaVCm1sgeHGuwAAAABJRU5ErkJggg==", VALUE_TYPE_STRING);
     statusArray->values[defs_v3::SYSTEM_STRUCTURE_OBJECT_VARIABLE_STATUS_FIELD_COLOR] = Value("gray", VALUE_TYPE_STRING);
@@ -640,10 +648,13 @@ void eez_mqtt_on_event_callback(void *handle, EEZ_MQTT_Event event, void *eventD
 
                 Value messageValue = Value::makeArrayRef(defs_v3::SYSTEM_STRUCTURE_MQTT_MESSAGE_NUM_FIELDS, defs_v3::SYSTEM_STRUCTURE_MQTT_MESSAGE, 0xe256716a);
                 auto messageArray = messageValue.getArray();
-                messageArray->values[defs_v3::SYSTEM_STRUCTURE_MQTT_MESSAGE_FIELD_TOPIC] = Value::makeStringRef(messageEvent->topic, -1, 0x5bdff567);
-                messageArray->values[defs_v3::SYSTEM_STRUCTURE_MQTT_MESSAGE_FIELD_PAYLOAD] = Value::makeStringRef(messageEvent->payload, -1, 0xcfa25e4f);
+                // out of memory: the message is dropped
+                if (messageArray) {
+                    messageArray->values[defs_v3::SYSTEM_STRUCTURE_MQTT_MESSAGE_FIELD_TOPIC] = Value::makeStringRef(messageEvent->topic, -1, 0x5bdff567);
+                    messageArray->values[defs_v3::SYSTEM_STRUCTURE_MQTT_MESSAGE_FIELD_PAYLOAD] = Value::makeStringRef(messageEvent->payload, -1, 0xcfa25e4f);
 
-                componentExecutionState->addEvent(component->messageEventOutputIndex, messageValue);
+                    componentExecutionState->addEvent(component->messageEventOutputIndex, messageValue);
+                }
             }
         }
     }

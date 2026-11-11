@@ -10,10 +10,11 @@
 
 #include <eez/conf-internal.h>
 
-#include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <eez/core/memory.h>
+#include <eez/core/alloc.h>
 
 #if defined(EEZ_FOR_LVGL)
 #ifdef LV_LVGL_H_INCLUDE_SIMPLE
@@ -23,31 +24,11 @@
 #endif
 #endif
 
+#if defined(EEZ_DASHBOARD_API)
+#include <emscripten/heap.h>
+#endif
+
 namespace eez {
-
-#if (defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__) || defined(EEZ_PLATFORM_CM5_RASPI)) && !defined(EEZ_FOR_LVGL) && !defined(EEZ_DASHBOARD_API)
-uint8_t g_memory[MEMORY_SIZE] = { 0 };
-#endif
-
-uint8_t *DECOMPRESSED_ASSETS_START_ADDRESS;
-uint8_t *FLOW_TO_DEBUGGER_MESSAGE_BUFFER;
-
-#if EEZ_OPTION_GUI
-    uint8_t *VRAM_BUFFER1_START_ADDRESS;
-    uint8_t *VRAM_BUFFER2_START_ADDRESS;
-
-    #if EEZ_OPTION_GUI_ANIMATIONS
-        uint8_t *VRAM_ANIMATION_BUFFER1_START_ADDRESS;
-        uint8_t *VRAM_ANIMATION_BUFFER2_START_ADDRESS;
-    #endif
-
-    uint8_t *VRAM_AUX_BUFFER_START_ADDRESSES[NUM_AUX_BUFFERS];
-
-    uint8_t *SCREENSHOOT_BUFFER_START_ADDRESS;
-
-    uint8_t *GUI_STATE_BUFFER;
-    uint32_t g_maxGuiStateSize;
-#endif
 
 uint8_t *ALLOC_BUFFER = 0;
 uint32_t ALLOC_BUFFER_SIZE = 0;
@@ -57,10 +38,6 @@ void initMemory() {
     initOtherMemory();
 }
 
-#if defined(EEZ_DASHBOARD_API)
-#include <emscripten/heap.h>
-#endif
-
 void initAssetsMemory() {
 #if defined(EEZ_FOR_LVGL)
 #if defined(LV_MEM_SIZE)
@@ -68,60 +45,34 @@ void initAssetsMemory() {
 #endif
 #elif defined(EEZ_DASHBOARD_API)
     ALLOC_BUFFER_SIZE = emscripten_get_heap_max();
-#else
+#elif defined(EEZ_PLATFORM_STM32)
     ALLOC_BUFFER = MEMORY_BEGIN;
     ALLOC_BUFFER_SIZE = MEMORY_SIZE;
-    DECOMPRESSED_ASSETS_START_ADDRESS = allocBuffer(MAX_DECOMPRESSED_ASSETS_SIZE);
+    initAllocHeap(ALLOC_BUFFER, ALLOC_BUFFER_SIZE);
 #endif
 }
 
 void initOtherMemory() {
-#if !defined(EEZ_FOR_LVGL) && !defined(EEZ_DASHBOARD_API)
-    FLOW_TO_DEBUGGER_MESSAGE_BUFFER = allocBuffer(FLOW_TO_DEBUGGER_MESSAGE_BUFFER_SIZE);
-#endif
-
-#if EEZ_OPTION_GUI
-    uint32_t VRAM_BUFFER_SIZE = DISPLAY_WIDTH * DISPLAY_HEIGHT * DISPLAY_BPP / 8;
-
-    VRAM_BUFFER1_START_ADDRESS = allocBuffer(VRAM_BUFFER_SIZE);
-    VRAM_BUFFER2_START_ADDRESS = allocBuffer(VRAM_BUFFER_SIZE);
-
-    for (size_t i = 0; i < NUM_AUX_BUFFERS; i++) {
-        VRAM_AUX_BUFFER_START_ADDRESSES[i] = allocBuffer(VRAM_BUFFER_SIZE);
-    }
-
-#if EEZ_OPTION_GUI_ANIMATIONS
-    VRAM_ANIMATION_BUFFER1_START_ADDRESS = allocBuffer(VRAM_BUFFER_SIZE);
-    VRAM_ANIMATION_BUFFER2_START_ADDRESS = allocBuffer(VRAM_BUFFER_SIZE);
-    SCREENSHOOT_BUFFER_START_ADDRESS = VRAM_ANIMATION_BUFFER1_START_ADDRESS;
-#else
-    SCREENSHOOT_BUFFER_START_ADDRESS = allocBuffer(VRAM_BUFFER_SIZE * 2);
-#endif
-
-    GUI_STATE_BUFFER = allocBuffer(GUI_STATE_BUFFER_SIZE);
-#endif
 }
 
 uint8_t *allocBuffer(uint32_t size) {
 #if defined(EEZ_FOR_LVGL)
 #if LVGL_VERSION_MAJOR >= 9
-    return (uint8_t *)lv_malloc(size);
+    auto buffer = (uint8_t *)lv_malloc(size);
 #else
-    return (uint8_t *)lv_mem_alloc(size);
+    auto buffer = (uint8_t *)lv_mem_alloc(size);
 #endif
 #elif defined(EEZ_DASHBOARD_API)
-    return (uint8_t *)::malloc(size);
+    auto buffer = (uint8_t *)::malloc(size);
 #else
-    size = ((size + 1023) / 1024) * 1024;
-
-    auto buffer = ALLOC_BUFFER;
-
-    assert(ALLOC_BUFFER_SIZE > size);
-    ALLOC_BUFFER += size;
-    ALLOC_BUFFER_SIZE -= size;
-
-    return buffer;
+    static const uintptr_t ALIGNMENT = 64;
+    auto memory = (uint8_t *)alloc(size + ALIGNMENT - 1, 0x2d6e8f1a);
+    auto buffer = memory ? (uint8_t *)(((uintptr_t)memory + ALIGNMENT - 1) & ~(ALIGNMENT - 1)) : nullptr;
 #endif
+    if (buffer) {
+        memset(buffer, 0, size);
+    }
+    return buffer;
 }
 
 } // eez

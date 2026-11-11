@@ -69,6 +69,7 @@ namespace gui {
 bool g_isActiveWidget;
 EnumWidgetsCallback g_findCallback;
 bool g_foundWidgetAtDownInvalid;
+uint32_t g_maxGuiStateSize;
 
 bool g_isRTL = false;
 

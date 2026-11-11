@@ -40,16 +40,21 @@ ScrollLists g_findEnclosingScrollLists;
 static int getTouchScrollPixelOffset(const WidgetCursor &widgetCursor, int startPosition);
 static int getTouchScrollLocalPosition(const WidgetCursor &widgetCursor, int startPosition);
 
-static bool isYtDataSupported(const WidgetCursor &widgetCursor, int16_t id) {
-    Value value;
-    DATA_OPERATION_FUNCTION(id, DATA_OPERATION_YT_DATA_GET_SIZE, widgetCursor, value);
-    return value.getType() != VALUE_TYPE_UNDEFINED;
-}
-
-bool ScrollableWidgetState::updateScrollState(const WidgetCursor &widgetCursor, int16_t data, int visibleLines) {
+bool ScrollableWidgetState::updateScrollState(const WidgetCursor &widgetCursor, int16_t data, int visibleLines, bool hasPreviousState) {
     bool changed = false;
 
-    localPosition = !isYtDataSupported(widgetCursor, data);
+    // The data is asked if it supports DATA_OPERATION_YT_DATA_GET_SIZE only
+    // for a new state or after a change (e.g. of the count), otherwise the
+    // data (e.g. an expression) would be evaluated twice in every frame. If it
+    // is supported, the size is needed in every frame anyway, and it also
+    // tells if it is still supported.
+    int size = 0;
+    if (!hasPreviousState || !localPosition) {
+        Value sizeValue;
+        DATA_OPERATION_FUNCTION(data, DATA_OPERATION_YT_DATA_GET_SIZE, widgetCursor, sizeValue);
+        localPosition = sizeValue.getType() == VALUE_TYPE_UNDEFINED;
+        size = (int)sizeValue.getUInt32();
+    }
 
     int newStartPosition;
     if (localPosition) {
@@ -60,7 +65,6 @@ bool ScrollableWidgetState::updateScrollState(const WidgetCursor &widgetCursor, 
             newStartPosition = maxPosition * itemsPerLine;
         }
     } else {
-        int size = ytDataGetSize(widgetCursor, data);
         int pageSize = ytDataGetPageSize(widgetCursor, data);
         // last line can be only partially filled
         maxPosition = size > pageSize ? (size - pageSize + itemsPerLine - 1) / itemsPerLine : 0;

@@ -46,10 +46,24 @@ void QRCodeWidgetState::render() {
     else if (widget->errorCorrection == 2) errCorLvl = qrcodegen_Ecc_QUARTILE;
     else errCorLvl = qrcodegen_Ecc_HIGH;
 
-	qrcodegen_encodeText(data.getString(), tempBuffer, qrcode, errCorLvl, qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true);
+    // a value that is not a string is encoded as its text (undefined and null
+    // as an empty text)
+    char textBuffer[64];
+    const char *text = data.isString() ? data.getString() : nullptr;
+    if (!text) {
+        data.toText(textBuffer, sizeof(textBuffer));
+        text = textBuffer;
+    }
+
+	bool encoded = qrcodegen_encodeText(text, tempBuffer, qrcode, errCorLvl, qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true);
 
     display::setColor(style->backgroundColor);
     display::fillRect(widgetCursor.x, widgetCursor.y, widgetCursor.x + widgetCursor.w - 1, widgetCursor.y + widgetCursor.h - 1);
+
+    if (!encoded) {
+        // the text is too long for a QR code: only the background
+        return;
+    }
 
     int size = qrcodegen_getSize(qrcode);
     int border = 1;
@@ -59,7 +73,9 @@ void QRCodeWidgetState::render() {
     double xPadding = (widgetCursor.w - sizePx * size) / 2;
     double yPadding = (widgetCursor.h - sizePx * size) / 2;
 
-    display::Path path;
+    // reused, the path keeps its memory between the draws
+    static display::Path path;
+    path.clear();
 
     for (int y = 0; y < size; y++) {
 		for (int x = 0; x < size; x++) {

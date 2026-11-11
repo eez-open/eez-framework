@@ -55,24 +55,42 @@ void executeShowKeypadComponent(FlowState *flowState, unsigned componentIndex) {
         return;
     }
 
-	static FlowState *g_showKeyboardFlowState;
-	static unsigned g_showKeyboardComponentIndex;
+    // the precision for the keypad units (e.g. uA for a value below 1 mA), also
+    // evaluated before the keypad is opened: an error must not leave the
+    // component waiting
+    Value precisionValue;
+    if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_PRECISION, precisionValue, FlowError::Property("ShowKeypad", "Precision"))) {
+        return;
+    }
 
-	g_showKeyboardFlowState = flowState;
-	g_showKeyboardComponentIndex = componentIndex;
+	// the ShowKeypad components waiting for the keypad they opened: a weak
+	// reference, the flow state can be freed while the keypad is open (its flow
+	// stopped), then OK and Cancel only close the keypad
+	static ComponentRefStack<8> g_keypadRefs;
+
+	g_keypadRefs.push(ComponentRef(flowState, componentIndex));
 
 	startAsyncExecution(flowState, componentIndex);
 
 	auto onOk = [](float value) {
+		auto ref = g_keypadRefs.top();
+		auto flowState = ref.getFlowState();
+		if (!flowState) {
+			g_keypadRefs.pop();
+			getAppContextFromId(APP_CONTEXT_ID_DEVICE)->popPage();
+			return;
+		}
+		auto componentIndex = ref.componentIndex;
+
         Value precisionValue;
-        if (!evalProperty(g_showKeyboardFlowState, g_showKeyboardComponentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_PRECISION, precisionValue, FlowError::Property("ShowKeypad", "Precision"))) {
+        if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_PRECISION, precisionValue, FlowError::Property("ShowKeypad", "Precision"))) {
             return;
         }
 
         float precision = precisionValue.toFloat();
 
         Value unitValue;
-        if (!evalProperty(g_showKeyboardFlowState, g_showKeyboardComponentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_UNIT, unitValue, FlowError::Property("ShowKeypad", "Unit"))) {
+        if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_UNIT, unitValue, FlowError::Property("ShowKeypad", "Unit"))) {
             return;
         }
 
@@ -80,27 +98,27 @@ void executeShowKeypadComponent(FlowState *flowState, unsigned componentIndex) {
 
         value = roundPrec(value, precision) / getUnitFactor(unit);
 
-		propagateValue(g_showKeyboardFlowState, g_showKeyboardComponentIndex, 0, Value(value, VALUE_TYPE_FLOAT));
+		g_keypadRefs.pop();
+		propagateValue(flowState, componentIndex, 0, Value(value, VALUE_TYPE_FLOAT));
 		getAppContextFromId(APP_CONTEXT_ID_DEVICE)->popPage();
-        endAsyncExecution(g_showKeyboardFlowState, g_showKeyboardComponentIndex);
+        endAsyncExecution(flowState, componentIndex);
 	};
 
 	auto onCancel = []() {
-		propagateValue(g_showKeyboardFlowState, g_showKeyboardComponentIndex, 1);
+		auto ref = g_keypadRefs.pop();
+		auto flowState = ref.getFlowState();
+		if (flowState) {
+			propagateValue(flowState, ref.componentIndex, 1);
+		}
 		getAppContextFromId(APP_CONTEXT_ID_DEVICE)->popPage();
-		endAsyncExecution(g_showKeyboardFlowState, g_showKeyboardComponentIndex);
+		if (flowState) {
+			endAsyncExecution(flowState, ref.componentIndex);
+		}
 	};
-
 
 	Unit unit = getUnitFromName(unitValue.getString());
 
     initialValue.unit = unit;
-
-    // the precision for the keypad units (e.g. uA for a value below 1 mA)
-    Value precisionValue;
-    if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_KEYPAD_ACTION_COMPONENT_PROPERTY_PRECISION, precisionValue, FlowError::Property("ShowKeypad", "Precision"))) {
-        return;
-    }
 
 	showKeypadHook(labelValue, initialValue, minValue, maxValue, unit, precisionValue.toFloat(), onOk, onCancel);
 }

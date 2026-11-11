@@ -25,6 +25,8 @@ struct RadioWidget : public Widget {
 
 struct RadioWidgetState : public WidgetState {
     WidgetStateFlags flags;
+    // style after overrideStyle
+    int styleId;
     Value data;
     Value value;
     Value text;

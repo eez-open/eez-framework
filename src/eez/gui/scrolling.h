@@ -65,8 +65,10 @@ struct ScrollableWidgetState : public WidgetState {
 protected:
     // Called from updateState after count, isVertical, pitch, lineExtent and
     // itemsPerLine are set. visibleLines is the number of lines that
-    // completely fit inside the widget. Returns true if items are moved.
-    bool updateScrollState(const WidgetCursor &widgetCursor, int16_t data, int visibleLines);
+    // completely fit inside the widget, hasPreviousState is false for a new
+    // state or if something is changed (e.g. the count). Returns true if
+    // items are moved.
+    bool updateScrollState(const WidgetCursor &widgetCursor, int16_t data, int visibleLines, bool hasPreviousState);
 
     // Saved between beginEnumChildren and endEnumChildren.
     struct EnumChildrenContext {

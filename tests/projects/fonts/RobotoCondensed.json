@@ -1,0 +1,1938 @@
+{
+  "objID": "93bb176c-0535-4e6c-c753-cf9dd84b49e6",
+  "name": "RobotoCondensed",
+  "renderingEngine": "freetype",
+  "source": {
+    "objID": "fddffcfe-22fc-4847-e48b-a431f8351cc1",
+    "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+    "size": 14
+  },
+  "bpp": 8,
+  "height": 26,
+  "ascent": 21,
+  "descent": 5,
+  "glyphs": [
+    {
+      "objID": "6bfd91dc-dd15-4a0d-9cfc-9573c1f5d14f",
+      "encoding": 32,
+      "x": 0,
+      "y": 0,
+      "width": 0,
+      "height": 0,
+      "dx": 4,
+      "glyphBitmap": {
+        "width": 0,
+        "height": 0,
+        "pixelArray": ""
+      },
+      "source": {
+        "objID": "1bbb5c10-3bb8-4e42-b2c6-dd557d51f603",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 32
+      }
+    },
+    {
+      "objID": "89eea92e-6263-4785-fcea-3e63690f1333",
+      "encoding": 33,
+      "x": 1,
+      "y": 0,
+      "width": 3,
+      "height": 14,
+      "dx": 5,
+      "glyphBitmap": {
+        "width": 3,
+        "height": 14,
+        "pixelArray": "5afc5958ff5755ff5452ff514fff4e4bff4a48ff4745ff4442ff413fff3e02080200000038e54941f654"
+      },
+      "source": {
+        "objID": "ea489a3a-39ca-4005-85a5-f3bfad5bdb94",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 33
+      }
+    },
+    {
+      "objID": "9ce46e55-7aa4-4104-9bca-c802e2825624",
+      "encoding": 34,
+      "x": 1,
+      "y": 9,
+      "width": 5,
+      "height": 5,
+      "dx": 6,
+      "glyphBitmap": {
+        "width": 5,
+        "height": 5,
+        "pixelArray": "ba8e38fc14bc873aff0abc6f3bf100bc583cd9000302010400"
+      },
+      "source": {
+        "objID": "5e1e67ae-869c-45a3-b31c-d7a42bfafdd1",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 34
+      }
+    },
+    {
+      "objID": "82f11a8c-b7de-4263-a356-955e0a37368f",
+      "encoding": 35,
+      "x": 1,
+      "y": 0,
+      "width": 9,
+      "height": 14,
+      "dx": 10,
+      "glyphBitmap": {
+        "width": 9,
+        "height": 14,
+        "pixelArray": "00000076c2004eec02000000ae8f0086bb00000000e55800bd840030fcfcfffdfcfffee50f5080fc5164ff6949000065db003dfd070000008bb50063dd00000000b18f0089b70000c5fcfffefcfffffc53394dff7048ea9048180023ff1a04fb4600000046f70220ff2300000069d60042fc050000008bb50064dd000000"
+      },
+      "source": {
+        "objID": "4954e66a-a19a-4526-e2da-ce20f49470b8",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 35
+      }
+    },
+    {
+      "objID": "13bdc985-45b8-43e2-8553-b7f16bd691a4",
+      "encoding": 36,
+      "x": 0,
+      "y": -2,
+      "width": 9,
+      "height": 19,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 9,
+        "height": 19,
+        "pixelArray": "00000000080300000000000000f85800000000000000f858000000000045d3ffed7a0100002cfbe083caff69000089ff2a000ae9cb0000b4f2000000a7fd0500a2fe1500003154050056ffb312000000000002a7ffee840d000000000159d5ffe12b0000000000026cfec500051c0e000000a6ff151eff870000007eff2802edcd020001c2f5090082ffbd76b9ff9900000381ebffec8b080000000024ff280000000000001dc820000000"
+      },
+      "source": {
+        "objID": "4a1c72eb-7ac1-4804-ef6f-03c52c3ab4eb",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 36
+      }
+    },
+    {
+      "objID": "771a84bf-8d8b-4b54-9076-51f163eaf62b",
+      "encoding": 37,
+      "x": 1,
+      "y": 0,
+      "width": 11,
+      "height": 14,
+      "dx": 12,
+      "glyphBitmap": {
+        "width": 11,
+        "height": 14,
+        "pixelArray": "29c8f5a109000000000000bfa335da73000000000000fc380084b30009bc140000fc360083b50074c8010000c19c29d47b10ed400000002ecffcac0d85b7000000000000010019f430000000000000000096a6000000000000000024f52387f0d64000000000a8944aef3f83e503000032f31888ac0010ff270000b9830088aa000fff28000ec40f004ded3476e9040000010000028ef3db4700"
+      },
+      "source": {
+        "objID": "45d1f182-0f28-48fb-e2e5-23558e40ab33",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 37
+      }
+    },
+    {
+      "objID": "25417122-d4e7-446f-ac29-d8a62a60448d",
+      "encoding": 38,
+      "x": 0,
+      "y": 0,
+      "width": 10,
+      "height": 14,
+      "dx": 10,
+      "glyphBitmap": {
+        "width": 10,
+        "height": 14,
+        "pixelArray": "000031c4f7cd430000000007e5ea7ad0f5130000003dff700031ff5c0000004fff5b0033ff560000001efeac0abdee1200000000a2ffd6f64300000000003bffff47000000000025e9e4ffa30016742201cdf01c9bff5441ff3e23ff8b000ddfec8aff1732ff7500003fffffca000cf8be010000b6ff80000089ffb16badfffaf019000379dffddc7547ffad"
+      },
+      "source": {
+        "objID": "ce8ad4b5-4af1-4c6b-c63c-fafa9f5ae12e",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 38
+      }
+    },
+    {
+      "objID": "7268b0ee-4699-4dc4-c676-3ec8c5572889",
+      "encoding": 39,
+      "x": 0,
+      "y": 9,
+      "width": 3,
+      "height": 5,
+      "dx": 3,
+      "glyphBitmap": {
+        "width": 3,
+        "height": 5,
+        "pixelArray": "09fc570aff4f0bff3f0cff30010401"
+      },
+      "source": {
+        "objID": "2c0a009c-433b-4cfd-fb90-6744d741003b",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 39
+      }
+    },
+    {
+      "objID": "2051e1bf-08d8-4dff-ce4f-dd74cd933299",
+      "encoding": 40,
+      "x": 1,
+      "y": -4,
+      "width": 5,
+      "height": 19,
+      "dx": 6,
+      "glyphBitmap": {
+        "width": 5,
+        "height": 19,
+        "pixelArray": "0000006c4b000050f42e000cea7b000079eb080004e79500003cff50000075ff2300009bf8020000bae6000000c2e1000000bae90000009dfa03000079ff20000039ff4d000003e9920000007de806000012ec7100000055f1250000006e4f"
+      },
+      "source": {
+        "objID": "1b7a5ac3-7722-4ea0-db2d-2638c6128605",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 40
+      }
+    },
+    {
+      "objID": "19c893ac-ad8c-45c1-a43a-d4f40437c4c0",
+      "encoding": 41,
+      "x": 0,
+      "y": -4,
+      "width": 5,
+      "height": 19,
+      "dx": 6,
+      "glyphBitmap": {
+        "width": 5,
+        "height": 19,
+        "pixelArray": "55640000002df64a00000080e70e00000ff475000000a6e10200005bff31000027ff72000005ff97000000eeb5000000e6be000000edb7000008fd9b00002cff76000056ff3600009ae3030008ec7b000070e90e0027ef4d00005768000000"
+      },
+      "source": {
+        "objID": "e92813f3-4dcf-42a1-b394-6d92c5b1abff",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 41
+      }
+    },
+    {
+      "objID": "3d0d6703-9eb3-4f6f-8f80-4fdc684c7d4a",
+      "encoding": 42,
+      "x": 0,
+      "y": 6,
+      "width": 8,
+      "height": 8,
+      "dx": 8,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 8,
+        "pixelArray": "00000093cd0000000000008fc9000000517a1c89c20d626781fbfde9f1f5ffaa000f68ffff8018000001aed4c8c50400006ffe382cfa84000038780000755600"
+      },
+      "source": {
+        "objID": "ca5cd31f-a233-42ef-8171-9ebe02a9cb35",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 42
+      }
+    },
+    {
+      "objID": "9f04c305-73cb-4ab1-b5f3-bfea0c13855d",
+      "encoding": 43,
+      "x": 0,
+      "y": 1,
+      "width": 9,
+      "height": 10,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 9,
+        "height": 10,
+        "pixelArray": "0000001eec7e00000000000020ff8800000000000020ff8800000000000020ff8800000034fcfcfdfffffcfc9222a4a4b0ffd5a4a45f00000020ff8800000000000020ff8800000000000020ff880000000000001de87c000000"
+      },
+      "source": {
+        "objID": "c9e2d6c6-b217-43a1-af8a-47a5017c9fbc",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 43
+      }
+    },
+    {
+      "objID": "a0c0527b-45da-49d8-e00c-ab1826f2059e",
+      "encoding": 44,
+      "x": 0,
+      "y": -3,
+      "width": 3,
+      "height": 6,
+      "dx": 4,
+      "glyphBitmap": {
+        "width": 3,
+        "height": 6,
+        "pixelArray": "00040400d4dc00d6da07f3b152ff5462a901"
+      },
+      "source": {
+        "objID": "dcaeb39d-1fc3-440f-e1bf-0449ca0bb953",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 44
+      }
+    },
+    {
+      "objID": "554dcfe6-38e4-4ec3-e3e5-482fc7226502",
+      "encoding": 45,
+      "x": 0,
+      "y": 4,
+      "width": 5,
+      "height": 2,
+      "dx": 5,
+      "glyphBitmap": {
+        "width": 5,
+        "height": 2,
+        "pixelArray": "8efcfcfc433d6c6c6c1d"
+      },
+      "source": {
+        "objID": "db1ab5cc-8aa6-4fc7-ec62-8950815f93fc",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 45
+      }
+    },
+    {
+      "objID": "16490d07-a5dc-448a-ad2a-a698dfc35f1b",
+      "encoding": 46,
+      "x": 1,
+      "y": 0,
+      "width": 3,
+      "height": 3,
+      "dx": 5,
+      "glyphBitmap": {
+        "width": 3,
+        "height": 3,
+        "pixelArray": "0003007afb4b79f74b"
+      },
+      "source": {
+        "objID": "b2f575e8-11b4-489e-c6dc-81c8664d418d",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 46
+      }
+    },
+    {
+      "objID": "4360ce2d-a5f4-4a65-e644-f600e6c6788f",
+      "encoding": 47,
+      "x": 0,
+      "y": -1,
+      "width": 7,
+      "height": 15,
+      "dx": 7,
+      "glyphBitmap": {
+        "width": 7,
+        "height": 15,
+        "pixelArray": "0000000020fc3f0000000071ec0400000000c39f0000000017fe4e0000000065f40900000000b6ac000000000ef95b0000000058fb1100000000a9ba0000000008f369000000004cff1a000000009dc70000000004eb76000000003fff250000000090d40000000000"
+      },
+      "source": {
+        "objID": "da85b395-4499-4eaf-f163-848f9b74b901",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 47
+      }
+    },
+    {
+      "objID": "787a2739-7c84-47a2-aadd-d9921496ecbe",
+      "encoding": 48,
+      "x": 1,
+      "y": 0,
+      "width": 8,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 14,
+        "pixelArray": "0037c5f8e17401001bf2e077b1ff69007dff300002d0d800b7e70000008aff13dec200000067ff3becb50000005aff4af0b400000058ff4cf0b400000058ff4cedb60000005aff48dcc500000067ff39b4ea0100008bff1279ff340002cfd90018f1df70abff6b000036c7fbe5780100"
+      },
+      "source": {
+        "objID": "08df6bf1-1755-49ad-bd8c-3f06573c3b1d",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 48
+      }
+    },
+    {
+      "objID": "8657740b-4ddf-4acc-ce8e-8d388562a185",
+      "encoding": 49,
+      "x": 1,
+      "y": 0,
+      "width": 5,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 5,
+        "height": 14,
+        "pixelArray": "0000096ad60f78e8fff884fca3c8f83d1f00acf8000000acf8000000acf8000000acf8000000acf8000000acf8000000acf8000000acf8000000acf8000000acf8000000acf8"
+      },
+      "source": {
+        "objID": "b4419e1b-8729-4cd7-9623-22962791e16c",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 49
+      }
+    },
+    {
+      "objID": "9df88b49-9f35-4d8f-9890-898f62cc212f",
+      "encoding": 50,
+      "x": 0,
+      "y": 0,
+      "width": 9,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 9,
+        "height": 14,
+        "pixelArray": "000056cff8e38104000058ffcb75b7ff880000dadf070002d3f40513ff970000008fff2006301900000095fe0e000000000003d9c700000000000061ff5900000000001cefc5020000000004c2f426000000000082ff5c000000000041fe9e000000000016e6d50b0000000000b3ff8f646464644100ecffffffffffffa4"
+      },
+      "source": {
+        "objID": "3927bb05-76bf-462b-8dc1-cf639f1fee5c",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 50
+      }
+    },
+    {
+      "objID": "6fa5d1fe-5642-4c26-c91b-f8fbc29f5597",
+      "encoding": 51,
+      "x": 0,
+      "y": 0,
+      "width": 8,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 14,
+        "pixelArray": "00047ce2f8cc4a00008bffa975d4fd360cf8b4000019fe9d22bc56000000dec4000000000008f3ac000000001091ff47000000fcffff76000000006c7eddf132000000000017f6b4000000000000bce831bc4a000000bde51dffa200000ef3b200aaff9b6fcefd3a000b8fe9fccc4800"
+      },
+      "source": {
+        "objID": "a7d8c549-c079-4485-906a-bbd3b61456ac",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 51
+      }
+    },
+    {
+      "objID": "ed97c2b0-65fc-4e0e-f71f-12374b1d8583",
+      "encoding": 52,
+      "x": 0,
+      "y": 0,
+      "width": 9,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 9,
+        "height": 14,
+        "pixelArray": "0000000009e0fc10000000000074ffff100000000010eef9ff100000000085eea3ff1000000019f67894ff1000000097e90b94ff10000025fc700094ff100000a8e4080094ff100033ff68000094ff1000a1fffdfcfcfffffd8e496c6c6c6cc2ff763d000000000094ff1000000000000094ff1000000000000094ff1000"
+      },
+      "source": {
+        "objID": "5785ebbb-00cf-4d8d-b8e2-6ad4a2cb4c2a",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 52
+      }
+    },
+    {
+      "objID": "967b0428-2df6-41b7-b1e0-0cd8d61c1ada",
+      "encoding": 53,
+      "x": 1,
+      "y": 0,
+      "width": 8,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 14,
+        "pixelArray": "00b1fcfcfcfcfc3400c9e39c9c9c9c2000dea6000000000000f49200000000000aff7e00000000001fffc2def5b21a0035ffeb9cc0ffcf0306431e00009aff47000000000033ff80000000000010ff9270b001000029ff8167ff41000078ff480fe5e77a8cf9cc020027b7f7f1a71600"
+      },
+      "source": {
+        "objID": "27210312-0914-43e1-f55e-9c6a31cf975f",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 53
+      }
+    },
+    {
+      "objID": "123866c5-6835-4d57-c92a-957fb579d302",
+      "encoding": 54,
+      "x": 1,
+      "y": 0,
+      "width": 8,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 14,
+        "pixelArray": "000031a1e69500000049faec974800000ee9d1150000000067ff3d0000000000aaea020000000000cecd9eeeed8a0400eeffe27ebaff8100faf11d0003ceee02fcab0000007fff28efb200000064ff3acade0000007cff267fff3b0002c9ea0314e8e976b4ff73000029befae3740100"
+      },
+      "source": {
+        "objID": "dc6a5c23-a786-40e7-9c6a-2ff3da88b94b",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 54
+      }
+    },
+    {
+      "objID": "7571c71e-55db-420d-c810-89a8f7432aa9",
+      "encoding": 55,
+      "x": 0,
+      "y": 0,
+      "width": 9,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 9,
+        "height": 14,
+        "pixelArray": "38fcfcfcfcfcfcfc86186c6c6c6c6c98ff5900000000000097f40b000000000007efa200000000000053ff47000000000000b2e904000000000016fb900000000000006fff35000000000000cdda0100000000002cff7f0000000000008aff24000000000004e6c800000000000047ff6d000000000000a5fc1600000000"
+      },
+      "source": {
+        "objID": "90578192-b945-4f47-804a-b9cc0cf7f944",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 55
+      }
+    },
+    {
+      "objID": "f0f9cf88-9110-4998-bae0-80bfbeb870a4",
+      "encoding": 56,
+      "x": 0,
+      "y": 0,
+      "width": 9,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 9,
+        "height": 14,
+        "pixelArray": "000059d5f9d65900000048ffcd75d1ff470000b4f9110015fab00000d8ce000000cfd40000c1e5010001e5bc000063ff6d066eff5e0000019effffff9501000038f4c374c7f0330000cbda050007e0c7000fff9300000098ff0e15ff8f00000093ff1501e8d1020002d5e6010072ffb66bb8ff7000000170ddfedc6d0100"
+      },
+      "source": {
+        "objID": "1389b520-3fc4-4785-f9ad-4654dd983d08",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 56
+      }
+    },
+    {
+      "objID": "7cf22a69-0896-4c46-d94d-973c7f7844eb",
+      "encoding": 57,
+      "x": 0,
+      "y": 0,
+      "width": 8,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 14,
+        "pixelArray": "000168def7bb26000060ffc280f2e40f01dbd7050055ff701bff87000002f1ba35ff64000000c1e12eff71000000b1f309fbaa000005daf300b5fb4e0d99ffea0027e9ffffd8d3d3000012605c0ae1b3000000000028ff720000000009b8f6140000478bdffd600000009fe8b33c0000"
+      },
+      "source": {
+        "objID": "9afde588-2959-4bdf-bee9-40e1a62bb11c",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 57
+      }
+    },
+    {
+      "objID": "23a1fb0d-abed-457e-b6b3-e6b0dbf9f0f2",
+      "encoding": 58,
+      "x": 1,
+      "y": 0,
+      "width": 3,
+      "height": 11,
+      "dx": 4,
+      "glyphBitmap": {
+        "width": 3,
+        "height": 11,
+        "pixelArray": "0003007afb4b7af94b0001000000000000000000000000000003007afb4b79f74b"
+      },
+      "source": {
+        "objID": "de6646db-50af-443e-fff3-2140b5e7471f",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 58
+      }
+    },
+    {
+      "objID": "9db1de32-c98c-428b-db4d-fc07d3b09e94",
+      "encoding": 59,
+      "x": 0,
+      "y": -3,
+      "width": 4,
+      "height": 14,
+      "dx": 4,
+      "glyphBitmap": {
+        "width": 4,
+        "height": 14,
+        "pixelArray": "00000300007afb4b007af94b00000100000000000000000000000000000000000004040000d4dc0000d6da0007f3b10052ff540062a90100"
+      },
+      "source": {
+        "objID": "21a504fd-e78b-44cb-c136-b3167874d5da",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 59
+      }
+    },
+    {
+      "objID": "36de093b-f2a1-4abf-bf9b-2d27baa0595d",
+      "encoding": 60,
+      "x": 0,
+      "y": 1,
+      "width": 8,
+      "height": 9,
+      "dx": 8,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 9,
+        "pixelArray": "00000000002baf1400000020a1fef410001893faf082130031f5eb790f00000032f7e26c09000000001a97fce9780f0000000024a6fff10f000000000030b5140000000000000001"
+      },
+      "source": {
+        "objID": "6a84833b-220c-48d2-f966-69a28a4487e6",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 60
+      }
+    },
+    {
+      "objID": "8ab96899-b781-46da-b11b-608895300c73",
+      "encoding": 61,
+      "x": 1,
+      "y": 3,
+      "width": 7,
+      "height": 6,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 7,
+        "height": 6,
+        "pixelArray": "9efcfcfcfcfcdd5384848484847400000000000000000000000000009efcfcfcfcfcdd50808080808070"
+      },
+      "source": {
+        "objID": "a70a9107-3baf-46a4-f5fe-f9ed909966ea",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 61
+      }
+    },
+    {
+      "objID": "3fe9dc37-9c21-4a30-f3f4-741696db91cb",
+      "encoding": 62,
+      "x": 1,
+      "y": 1,
+      "width": 7,
+      "height": 9,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 7,
+        "height": 9,
+        "pixelArray": "975e0400000000a4ffda5d0400000143b7ffda5d040000002d9ffacf00000031a6fcd20143b9ffde6105a2ffdf630500009c64060000000001000000000000"
+      },
+      "source": {
+        "objID": "bb9d0967-d0a0-4abf-9f5b-243bd95726db",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 62
+      }
+    },
+    {
+      "objID": "cb0146e7-235c-4708-887d-3b964f4a0b08",
+      "encoding": 63,
+      "x": 0,
+      "y": 0,
+      "width": 8,
+      "height": 14,
+      "dx": 8,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 14,
+        "pixelArray": "0013a2eff1a6130000bbffa6a5ffb6001fff990000a6ff151a6c2b000071ff34000000000097ff1a000000001bf1bf0000000005c2f9300000000078ff620000000001ead0010000000011ff98000000000002140b000000000000000000000000000ad88300000000000dea92000000"
+      },
+      "source": {
+        "objID": "bef9b2a6-d85e-49b1-c61c-ff895005207f",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 63
+      }
+    },
+    {
+      "objID": "3d1a597a-1875-42ad-cd04-1ae9a119a581",
+      "encoding": 64,
+      "x": 1,
+      "y": -4,
+      "width": 13,
+      "height": 17,
+      "dx": 15,
+      "glyphBitmap": {
+        "width": 13,
+        "height": 17,
+        "pixelArray": "0000000871ccf6f2c361030000000018d1df7d44497fe7b508000005c8b70a0000000013ca93000072e41200000000000020f72104e666000058e1ef9b0f00ae763afc0f0039fb724fff48006da971d30000c1a0001fff32004bcba1a50012ff4d0034ff1c003ce0b5900045ff1a0048ff070041dcb78e005bff06005df1000062bea09e004cff1b0098ea0000a4807dc4001dfeab73e6ff4056f21e48f8100078f5ce229ffad7440006e675000000000000000000000062f53b00000000000000000000018df88e422e51a81500000000000048b7effcdd8f10000000"
+      },
+      "source": {
+        "objID": "20c616f8-fb96-42aa-934d-91b7c29f435b",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 64
+      }
+    },
+    {
+      "objID": "b6e8807f-0b9e-4079-ed0b-2da3cc26a1fd",
+      "encoding": 65,
+      "x": 0,
+      "y": 0,
+      "width": 11,
+      "height": 14,
+      "dx": 11,
+      "glyphBitmap": {
+        "width": 11,
+        "height": 14,
+        "pixelArray": "000000005ffc620000000000000000afffb2000000000000000af6edf80c0000000000004eff6eff520000000000009ded05eda1000000000003eaa800a7ee04000000003cff60005eff41000000008cff190018ff9100000001dcd1000000cee10100002bfffffcfcfcffff3000007aff8f7c7c7c8fff800000cae90200000002e8d0001bff9e00000000009bff2169ff5200000000004cff70"
+      },
+      "source": {
+        "objID": "8212f937-38d6-474d-9af9-dbe5f6ec9280",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 65
+      }
+    },
+    {
+      "objID": "7fb10be5-98f2-4664-cf66-fbabce6f2295",
+      "encoding": 66,
+      "x": 1,
+      "y": 0,
+      "width": 9,
+      "height": 14,
+      "dx": 10,
+      "glyphBitmap": {
+        "width": 9,
+        "height": 14,
+        "pixelArray": "8afcfcfcfad97502008cff917c82d0ff78008cff28000009ecde008cff28000000baff028cff28000000d7e9008cff28000672ff82008cfffdfcffffb302008cff877073b5ff74008cff28000001c0f80c8cff2800000078ff3e8cff280000007aff3f8cff28000002c8fc138cff877074c0ff98008cffffffffe0820600"
+      },
+      "source": {
+        "objID": "9bea2d8a-d6de-4ebe-fa3a-b9368d644fcb",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 66
+      }
+    },
+    {
+      "objID": "67f53163-97ce-44be-dba5-54608c5619f7",
+      "encoding": 67,
+      "x": 1,
+      "y": 0,
+      "width": 10,
+      "height": 14,
+      "dx": 11,
+      "glyphBitmap": {
+        "width": 10,
+        "height": 14,
+        "pixelArray": "000051c7f6eeb12a00000070ffd68798f2f123001af8c508000039ffa00071ff4c00000000dce700a4ff1300000000658c02bafc0100000000000000bcf80000000000000000bcf80000000000000000bafb0000000000000000a4ff120000000053740274ff4900000000d8e9001efbb80300002fffa300007fffc37890ecf32500000161d2fceeaf2b0000"
+      },
+      "source": {
+        "objID": "90bafbfd-7633-45c0-8ab4-16c1ea194dc4",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 67
+      }
+    },
+    {
+      "objID": "40a998c9-745c-4830-b99b-7597be945b9d",
+      "encoding": 68,
+      "x": 1,
+      "y": 0,
+      "width": 9,
+      "height": 14,
+      "dx": 11,
+      "glyphBitmap": {
+        "width": 9,
+        "height": 14,
+        "pixelArray": "77fcfcfcedb43d000078ff9b7d91e3fe5d0078ff3c00000dcaf21478ff3c0000004aff6a78ff3c0000000eff9f78ff3c00000000f5b978ff3c00000000f0bc78ff3c00000000f0bc78ff3c00000000f5ba78ff3c00000010ffa178ff3c0000004eff6d78ff3c00000cccf41778ff92718ae1fe620078ffffffecb23d0000"
+      },
+      "source": {
+        "objID": "f1aee88d-bd5a-421f-eeb3-31559757502d",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 68
+      }
+    },
+    {
+      "objID": "b2b41f8f-0f19-4051-f5fa-63472d2463ad",
+      "encoding": 69,
+      "x": 1,
+      "y": 0,
+      "width": 8,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 14,
+        "pixelArray": "8afcfcfcfcfcfc9e8cff917c7c7c7c4e8cff2800000000008cff2800000000008cff2800000000008cff2800000000008cfffdfcfcfced008cff8e78787871008cff2800000000008cff2800000000008cff2800000000008cff2800000000008cff8770707070518cffffffffffffb8"
+      },
+      "source": {
+        "objID": "2f2e39ed-58eb-4281-a540-5db472a64d1b",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 69
+      }
+    },
+    {
+      "objID": "e9212e4b-11fc-4d25-ddbd-47d6d4927c25",
+      "encoding": 70,
+      "x": 1,
+      "y": 0,
+      "width": 8,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 14,
+        "pixelArray": "8afcfcfcfcfcfc7b8cff917c7c7c7c3d8cff2800000000008cff2800000000008cff2800000000008cff2800000000008cfffdfcfcfcb6008cff8e78787857008cff2800000000008cff2800000000008cff2800000000008cff2800000000008cff2800000000008cff280000000000"
+      },
+      "source": {
+        "objID": "a1662b8e-6032-4ad1-811b-a1ccc48ad0d0",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 70
+      }
+    },
+    {
+      "objID": "e0e79c8a-927b-405d-f8bc-6363ab2ee73f",
+      "encoding": 71,
+      "x": 1,
+      "y": 0,
+      "width": 9,
+      "height": 14,
+      "dx": 11,
+      "glyphBitmap": {
+        "width": 9,
+        "height": 14,
+        "pixelArray": "000e8ddefae69b180008cfffb181abfddd0d67ff7700000070ff75b7fb0b0000000dfcb7e0d400000000002923f3c200000000000000f4c000000000000000f4c000005bfcfcfcc9f3c400002c7878f4ccdfdb0000000000e8ccb1ff1700000000e8cc55ff980100000bf0cc02b5ffbd7889dfff78000577d7fcf2be4e00"
+      },
+      "source": {
+        "objID": "642c2659-b3aa-4e2b-ebd3-507d71db63e0",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 71
+      }
+    },
+    {
+      "objID": "b2cca62d-97c4-405f-a0a2-316b7fba9ec5",
+      "encoding": 72,
+      "x": 1,
+      "y": 0,
+      "width": 10,
+      "height": 14,
+      "dx": 12,
+      "glyphBitmap": {
+        "width": 10,
+        "height": 14,
+        "pixelArray": "63fc4f000000003ffc7364ff500000000040ff7464ff500000000040ff7464ff500000000040ff7464ff500000000040ff7464ff500000000040ff7464fffefcfcfcfcfdff7464ffa3787878789aff7464ff500000000040ff7464ff500000000040ff7464ff500000000040ff7464ff500000000040ff7464ff500000000040ff7464ff500000000040ff74"
+      },
+      "source": {
+        "objID": "e59b66f9-651a-4113-aacd-b60f351c997c",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 72
+      }
+    },
+    {
+      "objID": "5286cb90-5816-4588-e449-b05e4e1cf007",
+      "encoding": 73,
+      "x": 1,
+      "y": 0,
+      "width": 3,
+      "height": 14,
+      "dx": 5,
+      "glyphBitmap": {
+        "width": 3,
+        "height": 14,
+        "pixelArray": "77fc3c78ff3c78ff3c78ff3c78ff3c78ff3c78ff3c78ff3c78ff3c78ff3c78ff3c78ff3c78ff3c78ff3c"
+      },
+      "source": {
+        "objID": "fd1111c4-45a8-46ea-cf1f-dbf8391385e0",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 73
+      }
+    },
+    {
+      "objID": "6de04f9c-62d6-42f0-e287-e5326e92debc",
+      "encoding": 74,
+      "x": 0,
+      "y": 0,
+      "width": 8,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 14,
+        "pixelArray": "000000000000e1d1000000000000e4d4000000000000e4d4000000000000e4d4000000000000e4d4000000000000e4d4000000000000e4d4000000000000e4d4000000000000e4d4000000000000e5d463e844000003f4c744ff8c000042ff9404d2fd9a83ecf726001ba8f0fac43900"
+      },
+      "source": {
+        "objID": "1af51ccc-6aa4-46a8-d973-6f08d25a7610",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 74
+      }
+    },
+    {
+      "objID": "58165c6c-b80f-43d0-fbdf-9c9048f6e9c8",
+      "encoding": 75,
+      "x": 1,
+      "y": 0,
+      "width": 10,
+      "height": 14,
+      "dx": 10,
+      "glyphBitmap": {
+        "width": 10,
+        "height": 14,
+        "pixelArray": "baf5000000009efc6900bcf800000052ffb40100bcf8000018ece9160000bcf80001b5ff49000000bcf80067ff9100000000bcf827f5d30800000000bcfacfff980000000000bcffffdffd3100000000bcff8b2dfcc602000000bcfa040092ff61000000bcf8000011eceb120000bcf800000067ff960000bcf800000003cffe3300bcf8000000003cffc902"
+      },
+      "source": {
+        "objID": "21e213c4-e69c-4881-b458-df43a9b6328d",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 75
+      }
+    },
+    {
+      "objID": "d47e7147-c81e-4e68-c150-4268328373f8",
+      "encoding": 76,
+      "x": 1,
+      "y": 0,
+      "width": 8,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 14,
+        "pixelArray": "8afc2800000000008cff2800000000008cff2800000000008cff2800000000008cff2800000000008cff2800000000008cff2800000000008cff2800000000008cff2800000000008cff2800000000008cff2800000000008cff2800000000008cff8770707070358cffffffffffff78"
+      },
+      "source": {
+        "objID": "c87e9db7-5759-4a2e-a02b-5c80a2d860c3",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 76
+      }
+    },
+    {
+      "objID": "83d79443-d541-4c8c-b67b-5aebe86c95f8",
+      "encoding": 77,
+      "x": 1,
+      "y": 0,
+      "width": 12,
+      "height": 14,
+      "dx": 14,
+      "glyphBitmap": {
+        "width": 12,
+        "height": 14,
+        "pixelArray": "8afcc800000000000072fce18cffff1b0000000000c2ffe48cffff690000000015fdffe48cffe5b80000000061ffe3e48cff99fa0e000000b0e4b4e48cff4eff5600000af692bae48cff1be9a500004eff3fc2e48cff2098ef05009de903c9e48cff2745ff4303ea9900cfe48cff2805ee933cff4600d0e48cff28009fe28cee0500d0e48cff28004cfff1a00000d0e48cff280007f2ff4d0000d0e48cff280000a6f3080000d0e4"
+      },
+      "source": {
+        "objID": "2ae75636-f871-44a7-d2d0-a6f7a6252e3d",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 77
+      }
+    },
+    {
+      "objID": "1ebd89ac-1c0e-45e3-8e97-f1544ee3f6d0",
+      "encoding": 78,
+      "x": 1,
+      "y": 0,
+      "width": 10,
+      "height": 14,
+      "dx": 12,
+      "glyphBitmap": {
+        "width": 10,
+        "height": 14,
+        "pixelArray": "5ffc91000000003cfc7360fff81b0000003cff7460ffff930000003cff7460ffdbf91b00003cff7460ff6af59300003cff7460ff5489f91c003cff7460ff5414f494003cff7460ff540087f91c3cff7460ff540013f3953cff7460ff54000085f959ff7460ff54000012f2d1ff7460ff5400000083ffff7460ff5400000011f1ff7460ff540000000081ff74"
+      },
+      "source": {
+        "objID": "9e4e38fa-caab-4792-9a37-8e28e707fc7e",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 78
+      }
+    },
+    {
+      "objID": "1f0fcd5e-08f8-4a39-dd16-4b5992a9d6d1",
+      "encoding": 79,
+      "x": 0,
+      "y": 0,
+      "width": 11,
+      "height": 14,
+      "dx": 11,
+      "glyphBitmap": {
+        "width": 11,
+        "height": 14,
+        "pixelArray": "00000a87defade880a00000005c3ffc190beffc405000065ff820000007bff660000c1f30900000008f2c20001f3c10000000000c3f20109ffa80000000000acff0a0cffa40000000000a8ff0c0cffa40000000000a8ff0c0affa80000000000abff0a01f4bf0000000000c0f40100c5f10700000006f1c700006cff770000006eff6f000007cbffb485b1ffd0090000000c8be1fde4920f0000"
+      },
+      "source": {
+        "objID": "d56fbfeb-cb93-49db-90b2-222bf0ab1287",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 79
+      }
+    },
+    {
+      "objID": "d39f9a7e-0d28-4b55-b57f-168c1fea934d",
+      "encoding": 80,
+      "x": 1,
+      "y": 0,
+      "width": 10,
+      "height": 14,
+      "dx": 11,
+      "glyphBitmap": {
+        "width": 10,
+        "height": 14,
+        "pixelArray": "47fcfcfcfcf3be3e000048ffb27c7c92effc3e0048ff680000002afdc30048ff6800000000c4fc0548ff6800000000aeff0d48ff6800000001e1ed0148ff6800001088ff960048fffefcfcffffc5110048ffb27878714002000048ff6c0000000000000048ff6c0000000000000048ff6c0000000000000048ff6c0000000000000048ff6c00000000000000"
+      },
+      "source": {
+        "objID": "14cb90e2-bcb5-473f-862c-aaecc7fd7f91",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 80
+      }
+    },
+    {
+      "objID": "c2299639-8cb9-4663-fc84-bf73241bdfdf",
+      "encoding": 81,
+      "x": 0,
+      "y": -3,
+      "width": 11,
+      "height": 17,
+      "dx": 11,
+      "glyphBitmap": {
+        "width": 11,
+        "height": 17,
+        "pixelArray": "00000f91e2fada7f070000000bd2ffb991c6ffb80200007aff6e0000018fff550000d6e60300000011fdb00008ffaf0000000000d7de001eff980000000000c0f60020ff940000000000bcf80020ff940000000000bcf8001eff980000000000bff5000affaf0000000000d3df0000d8e5030000000dfcb300007eff6700000080ff5e00000dd6feae85b7ffbc020000001194e6fdf5ff8701000000000000000cb9ff9a040000000000000006a696020000000000000000020100"
+      },
+      "source": {
+        "objID": "b0563bd9-0758-4b68-e589-cdb1dee340d8",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 81
+      }
+    },
+    {
+      "objID": "ea12a057-027c-4e69-d83a-f6bd7b1a91af",
+      "encoding": 82,
+      "x": 1,
+      "y": 0,
+      "width": 9,
+      "height": 14,
+      "dx": 10,
+      "glyphBitmap": {
+        "width": 9,
+        "height": 14,
+        "pixelArray": "96fcfcfcf8d26b010098ff8b7c87daff7b0098ff1c00000fe1f00698ff1c00000093ff2a98ff1c00000082ff3498ff1c000000bafe0f98ff1c000a72ffb30098fffdfcffffcb160098ff8778afff4f000098ff1c0018fac0000098ff1c0000a3ff330098ff1c000033ffa50098ff1c000000c4fb1d98ff1c00000054ff89"
+      },
+      "source": {
+        "objID": "5e6cb4d4-508f-4077-c480-86cdb99c7390",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 82
+      }
+    },
+    {
+      "objID": "36ef8b51-c8d5-4461-cbbc-d2b3984a7876",
+      "encoding": 83,
+      "x": 0,
+      "y": 0,
+      "width": 10,
+      "height": 14,
+      "dx": 10,
+      "glyphBitmap": {
+        "width": 10,
+        "height": 14,
+        "pixelArray": "00002ab0eff4bd4000000021f0f0958ae1fb47000094ff3f000012ecd40000c3f701000000a3ff1400b0ff28000000101c040054ffd941000000000000007bfdffcf62030000000000279bf4ffcd1b000000000000108effb90004180e00000000c0fe1015ffa80000000096ff2400d1f117000004d6f407003ef6e68b7ac9ff7f00000031b1effbd46b0100"
+      },
+      "source": {
+        "objID": "4cf395ce-bda7-4c3b-9cfe-af04f5b7ec5a",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 83
+      }
+    },
+    {
+      "objID": "76217610-738e-42e8-dac6-d744b91355ec",
+      "encoding": 84,
+      "x": 0,
+      "y": 0,
+      "width": 10,
+      "height": 14,
+      "dx": 10,
+      "glyphBitmap": {
+        "width": 10,
+        "height": 14,
+        "pixelArray": "6ffcfcfcfcfcfcfcfc5b377c7c7cf4e67c7c7c2d00000000e8cc0000000000000000e8cc0000000000000000e8cc0000000000000000e8cc0000000000000000e8cc0000000000000000e8cc0000000000000000e8cc0000000000000000e8cc0000000000000000e8cc0000000000000000e8cc0000000000000000e8cc0000000000000000e8cc00000000"
+      },
+      "source": {
+        "objID": "a61b5681-0bb1-4970-db74-848846625196",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 84
+      }
+    },
+    {
+      "objID": "345a78cd-c18b-4e00-8c4c-b10227d89b43",
+      "encoding": 85,
+      "x": 1,
+      "y": 0,
+      "width": 9,
+      "height": 14,
+      "dx": 11,
+      "glyphBitmap": {
+        "width": 9,
+        "height": 14,
+        "pixelArray": "9efc1000000008fcaea0ff1000000008ffb0a0ff1000000008ffb0a0ff1000000008ffb0a0ff1000000008ffb0a0ff1000000008ffb0a0ff1000000008ffb0a0ff1000000008ffb0a0ff1000000008ffb0a0ff1100000009ffb093ff230000001bffa05dff720000006aff6608d8fba375a0f9d70900189be7fee79a1600"
+      },
+      "source": {
+        "objID": "ad5ac31a-d0fb-4d8f-8ed9-8d417fd140c9",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 85
+      }
+    },
+    {
+      "objID": "7231a0f5-9b96-4756-db3d-22000447e5ae",
+      "encoding": 86,
+      "x": 0,
+      "y": 0,
+      "width": 11,
+      "height": 14,
+      "dx": 11,
+      "glyphBitmap": {
+        "width": 11,
+        "height": 14,
+        "pixelArray": "46fc90000000000089fc4d08f4d70000000000d1f80b00aeff1d00000019ffb5000062ff620000005dff68000017fea7000000a3ff1c000000c8eb020002e8ce000000007cff32002fff81000000002fff770075ff340000000001e2bd00bbe602000000000096f913f89a00000000000049ff8fff4d00000000000008f5faf70a00000000000000b0ffb3000000000000000063ff6600000000"
+      },
+      "source": {
+        "objID": "cbc33ff5-1421-4f98-899c-3750e4752189",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 86
+      }
+    },
+    {
+      "objID": "d75c5f46-6c99-46b1-96ab-0eb1f202c8bc",
+      "encoding": 87,
+      "x": 0,
+      "y": 0,
+      "width": 14,
+      "height": 14,
+      "dx": 14,
+      "glyphBitmap": {
+        "width": 14,
+        "height": 14,
+        "pixelArray": "3ffc7000000077fc2b000000cbdd11ff9e000000b1ff61000003f8af00dfcb000001e9ff98000027ff7e00adf6020022ffd3cf000053ff4c007cff24005aff6bfc0a007fff1b004bff500093d521ff3d00abea01001aff7d00cb9a01e97400d8b9000001e9aa09fb5f00b0ab08fd88000000b7d63cff240078e230ff5600000086fc7be901003fff74ff2500000055ffcbae00000bfcc8f20200000024ffff73000000ceffc30000000002f2ff3800000096ff920000000000c1f8060000005dff610000"
+      },
+      "source": {
+        "objID": "eeb41781-a096-4d57-ab9c-71c939755b88",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 87
+      }
+    },
+    {
+      "objID": "9dceb65e-5e2b-47a8-952e-fbbfa103a9ea",
+      "encoding": 88,
+      "x": 0,
+      "y": 0,
+      "width": 10,
+      "height": 14,
+      "dx": 10,
+      "glyphBitmap": {
+        "width": 10,
+        "height": 14,
+        "pixelArray": "17f2e1060000006cfc86008bff5e000004def3140015f4d2010055ff8500000087ff4701caf21200000013f2bc3eff82000000000082ffd3f011000000000010f0ff7f00000000000018f6ff8b00000000000090ffc8f618000000001cf8b335ff900000000096ff3e00c0f81c00001ffac901004cff9500009cff54000002d6fa1f24fcdc0300000063ff9b"
+      },
+      "source": {
+        "objID": "908b5527-b794-4c28-f18b-666de7fac499",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 88
+      }
+    },
+    {
+      "objID": "2c4a9bd3-5e93-4fd3-ac96-73c0647fbf8b",
+      "encoding": 89,
+      "x": 0,
+      "y": 0,
+      "width": 10,
+      "height": 14,
+      "dx": 10,
+      "glyphBitmap": {
+        "width": 10,
+        "height": 14,
+        "pixelArray": "7ffc640000000075fc6f19fac900000001daf30f00a2ff2e00003fff91000033ff930000a4fe24000000c2ef0911f8b10000000052ff5c6dff410000000003dfc1d2d101000000000072ffff610000000000000ff5ec0800000000000000e0d00000000000000000e0d00000000000000000e0d00000000000000000e0d00000000000000000e0d000000000"
+      },
+      "source": {
+        "objID": "d037366c-1611-46f5-c750-98703816b070",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 89
+      }
+    },
+    {
+      "objID": "a38be6a5-5df1-4534-cbc6-ac8606ff930c",
+      "encoding": 90,
+      "x": 0,
+      "y": 0,
+      "width": 10,
+      "height": 14,
+      "dx": 10,
+      "glyphBitmap": {
+        "width": 10,
+        "height": 14,
+        "pixelArray": "18fcfcfcfcfcfcfce1000c7c7c7c7c7c8fffc50000000000000090ff4000000000000023fab300000000000000a9fd2a00000000000037ff9a00000000000001c2f51a0000000000004fff8200000000000005d8e90d00000000000068ff690000000000000de9d90500000000000082ff5100000000000013f5f07170707070701028ffffffffffffffff24"
+      },
+      "source": {
+        "objID": "d92e3afc-e922-47cc-fa4d-a1f5102f6bbf",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 90
+      }
+    },
+    {
+      "objID": "ccd1020e-7a78-42f9-c3e6-9e88f208ee0a",
+      "encoding": 91,
+      "x": 1,
+      "y": -3,
+      "width": 4,
+      "height": 18,
+      "dx": 5,
+      "glyphBitmap": {
+        "width": 4,
+        "height": 18,
+        "pixelArray": "bafcfc57bcf36c26bce80000bce80000bce80000bce80000bce80000bce80000bce80000bce80000bce80000bce80000bce80000bce80000bce80000bce80000bcf26824bcffff58"
+      },
+      "source": {
+        "objID": "98d2dc9f-25f1-4678-a3d2-6b34cf8cd22b",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 91
+      }
+    },
+    {
+      "objID": "caaafd24-dba2-41e3-8f2d-8e0e1b007bd6",
+      "encoding": 92,
+      "x": 0,
+      "y": -1,
+      "width": 7,
+      "height": 15,
+      "dx": 7,
+      "glyphBitmap": {
+        "width": 7,
+        "height": 15,
+        "pixelArray": "5ffc2b0000000014fd7c0000000000bfcd00000000006eff1f000000001eff6f0000000000ccc000000000007bfd14000000002aff610000000001d8b2000000000087f80c0000000036ff540000000002e4a5000000000094f0060000000043ff470000000005ed98"
+      },
+      "source": {
+        "objID": "56b3e4b5-2f6b-4958-e7df-83d893c4b2a7",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 92
+      }
+    },
+    {
+      "objID": "38b46d76-d287-4979-f11c-e4c05a8275d7",
+      "encoding": 93,
+      "x": 0,
+      "y": -3,
+      "width": 4,
+      "height": 18,
+      "dx": 5,
+      "glyphBitmap": {
+        "width": 4,
+        "height": 18,
+        "pixelArray": "b6fcfc5f4e94ff600044ff600044ff600044ff600044ff600044ff600044ff600044ff600044ff600044ff600044ff600044ff600044ff600044ff600044ff604b91ff60b8ffff60"
+      },
+      "source": {
+        "objID": "5e39caa0-dd85-4af2-a17b-234cb2506e29",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 93
+      }
+    },
+    {
+      "objID": "077daa8c-9395-4097-ba32-edd63bf09e4d",
+      "encoding": 94,
+      "x": 0,
+      "y": 6,
+      "width": 7,
+      "height": 8,
+      "dx": 7,
+      "glyphBitmap": {
+        "width": 7,
+        "height": 8,
+        "pixelArray": "000036fc35000000008cff8900000001e1dade01000037ff4bff3200008dd901de870002e28f0093dc0138ff460048ff3002040100010402"
+      },
+      "source": {
+        "objID": "0a2de57c-6bf7-4f9c-d30e-470a4caa4186",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 94
+      }
+    },
+    {
+      "objID": "d840d8cf-4b2d-49bc-e3ce-c69a22c8c2d9",
+      "encoding": 95,
+      "x": 0,
+      "y": -2,
+      "width": 8,
+      "height": 2,
+      "dx": 8,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 2,
+        "pixelArray": "c8ffffffffffff785268686868686831"
+      },
+      "source": {
+        "objID": "a90b73c5-d4c7-4a78-d982-1138760c24c7",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 95
+      }
+    },
+    {
+      "objID": "b7f3dbde-04dd-4a53-ac1d-b067b2c37d0a",
+      "encoding": 96,
+      "x": 0,
+      "y": 11,
+      "width": 5,
+      "height": 4,
+      "dx": 6,
+      "glyphBitmap": {
+        "width": 5,
+        "height": 4,
+        "pixelArray": "24eddf1100004cffa90100007ed1220000010000"
+      },
+      "source": {
+        "objID": "4e56c214-fed9-4602-eeb1-d9f37cd2f7cb",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 96
+      }
+    },
+    {
+      "objID": "eaf845dd-9360-4a1e-e68f-28109b647de1",
+      "encoding": 97,
+      "x": 1,
+      "y": 0,
+      "width": 8,
+      "height": 10,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 10,
+        "pixelArray": "005bd1f9e08103005effbb72b3ff6500add0040006f4b0000000000000e4bc000166caf5fcffbc0078ffa5503deebc00e5c7010000e8bc00f6b8000015f4bd00b2fd9a8be1fbc8001db0f6e969c5f103"
+      },
+      "source": {
+        "objID": "70ec79b7-cc5d-4a9a-e1a8-62b56ec59529",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 97
+      }
+    },
+    {
+      "objID": "a432c68b-1a14-48a5-ed0a-7e25ba986463",
+      "encoding": 98,
+      "x": 1,
+      "y": 0,
+      "width": 8,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 14,
+        "pixelArray": "f1aa000000000000f4ac000000000000f4ac000000000000f4ac000000000000f4af8aedf1a51100f4fbcd7fb4ffab00f4d6080000b2fe0ff4ac0000006dff3df4ac00000056ff4ef4ac00000056ff4ff4ac0000006bff3ff4d2060000aeff11f4f8c678acffae00f4988ff0f3a61100"
+      },
+      "source": {
+        "objID": "c95d38de-8f01-46b7-f44a-9d5fcb7cc6b1",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 98
+      }
+    },
+    {
+      "objID": "2459ea1e-eb74-4df4-fbcc-2087c20bec59",
+      "encoding": 99,
+      "x": 1,
+      "y": 0,
+      "width": 8,
+      "height": 10,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 10,
+        "pixelArray": "004ac8f6eb960c0040fed67894fca800b5f410000092fd14eabd0000002e841cfca9000000000000fca9000000000000ebbc00000011340cb8f10c00007fff1d47ffce7088f7ad000052cdfae98e0c00"
+      },
+      "source": {
+        "objID": "ea5ca759-52c7-4e62-cefe-b025cd0cce80",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 99
+      }
+    },
+    {
+      "objID": "156b5bf9-afe9-4ceb-f6a1-ff02a3ee8118",
+      "encoding": 100,
+      "x": 0,
+      "y": 0,
+      "width": 8,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 14,
+        "pixelArray": "000000000000b6e9000000000000b8ec000000000000b8ec000000000000b8ec000d9ceeef8fbdec00a6ffb77fc9feec10feb2010007d8ec41ff6a000000bcec52ff52000000bcec53ff52000000bcec40ff69000000bcec0efdaf000006d7ec00a2ffaf77c4fcec000c9cf1f294a2ec"
+      },
+      "source": {
+        "objID": "8cc87563-92a3-45c0-ba6e-ebb470002b25",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 100
+      }
+    },
+    {
+      "objID": "2caeefca-464e-4361-e512-78e3900e3f7e",
+      "encoding": 101,
+      "x": 0,
+      "y": 0,
+      "width": 9,
+      "height": 10,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 9,
+        "height": 10,
+        "pixelArray": "000046caf8e78f09000038fccb74a0ff960000b0ed0a0000b3f40400edb000000075ff2803fffffcfcfcfeff3704ffc76c6c6c6c6c1801f7b300000000000000c6f11000000428000052ffd87674cce606000057cdfaf3b93600"
+      },
+      "source": {
+        "objID": "f1458b54-0d2d-42c9-9208-2396390ca415",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 101
+      }
+    },
+    {
+      "objID": "72ab6254-3b46-4148-8026-3f2cf4f98b2f",
+      "encoding": 102,
+      "x": 0,
+      "y": 0,
+      "width": 6,
+      "height": 14,
+      "dx": 6,
+      "glyphBitmap": {
+        "width": 6,
+        "height": 14,
+        "pixelArray": "00001caff5be0000b3ff9b670004fbb60000000cff9900005bfdfffffc4f2060ffbc581c000cff980000000cff980000000cff980000000cff980000000cff980000000cff980000000cff980000000cff980000"
+      },
+      "source": {
+        "objID": "cff92e5d-3e2c-4961-a502-a4036d86045a",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 102
+      }
+    },
+    {
+      "objID": "2288341a-3029-4b0a-e6c9-42a8ef773323",
+      "encoding": 103,
+      "x": 0,
+      "y": -4,
+      "width": 8,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 14,
+        "pixelArray": "000c9aedef9494f100a0ffbd7fc6f9f40afbbe010005d1f435ff76000000b0f446ff5e000000b0f447ff5e000000b0f437ff74000000b0f409fab8010004cff4009cffb377c0fff4000b9af1f49ab8f4000000000000b7ef001c2200000df0c7008bef8a73cfff5b000b85dffcd76300"
+      },
+      "source": {
+        "objID": "6f5c48c3-f8c3-41e8-c4c1-5c86e651e1ba",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 103
+      }
+    },
+    {
+      "objID": "0537c3b2-dab9-4ea6-b3c5-6f5df2670db5",
+      "encoding": 104,
+      "x": 1,
+      "y": 0,
+      "width": 7,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 7,
+        "height": 14,
+        "pixelArray": "ddc10000000000e0c40000000000e0c40000000000e0c40000000000e0c573e4f3a309e0fcdf83bcff79e0ee190005ecc2e0c4000000c6dbe0c4000000c4dce0c4000000c4dce0c4000000c4dce0c4000000c4dce0c4000000c4dce0c4000000c4dc"
+      },
+      "source": {
+        "objID": "71d8c84c-2913-4b9f-9e80-2617b7bd37c2",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 104
+      }
+    },
+    {
+      "objID": "a2d3aaf3-a3de-4631-c1bd-a14655f42421",
+      "encoding": 105,
+      "x": 1,
+      "y": 0,
+      "width": 2,
+      "height": 14,
+      "dx": 4,
+      "glyphBitmap": {
+        "width": 2,
+        "height": 14,
+        "pixelArray": "afb8bec901010000cdd1d0d4d0d4d0d4d0d4d0d4d0d4d0d4d0d4d0d4"
+      },
+      "source": {
+        "objID": "0dc0d9e8-c1fe-4244-bcfc-bb4ed50b65f6",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 105
+      }
+    },
+    {
+      "objID": "c1a7e78b-e2ae-497d-ffb4-1f4c9ba9477e",
+      "encoding": 106,
+      "x": -1,
+      "y": -4,
+      "width": 4,
+      "height": 18,
+      "dx": 4,
+      "glyphBitmap": {
+        "width": 4,
+        "height": 18,
+        "pixelArray": "0000c6a00000d6b100000101000000000000d9c50000dcc80000dcc80000dcc80000dcc80000dcc80000dcc80000dcc80000dcc80000dcc80000dcc80000e5c32b90ff9248fac719"
+      },
+      "source": {
+        "objID": "f159c75a-f422-45d0-f7ab-4b33b0995c2a",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 106
+      }
+    },
+    {
+      "objID": "f6a21f93-15fe-4e26-da9d-7dfb05e51458",
+      "encoding": 107,
+      "x": 1,
+      "y": 0,
+      "width": 8,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 14,
+        "pixelArray": "86fc1c000000000088ff1c000000000088ff1c000000000088ff1c000000000088ff1c0028f3ca0788ff1c07cef0220088ff1c8bff4f000088ff60ff8a00000088fff3ff3c00000088ffe2efd105000088ff376aff74000088ff1c03cdf51f0088ff1c0037feb20188ff1c00009aff51"
+      },
+      "source": {
+        "objID": "e519c6c9-ac3c-4e14-93be-1ad79ddb2818",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 107
+      }
+    },
+    {
+      "objID": "7bdea829-3b07-4d7d-8a24-a0c3aefdd85b",
+      "encoding": 108,
+      "x": 1,
+      "y": 0,
+      "width": 2,
+      "height": 14,
+      "dx": 4,
+      "glyphBitmap": {
+        "width": 2,
+        "height": 14,
+        "pixelArray": "a2fca4ffa4ffa4ffa4ffa4ffa4ffa4ffa4ffa4ffa4ffa4ffa4ffa4ff"
+      },
+      "source": {
+        "objID": "4d6c29dd-06b5-4a07-dfb5-4c633752c379",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 108
+      }
+    },
+    {
+      "objID": "a34618ec-9cae-4bc9-f0ad-aeda64403ff0",
+      "encoding": 109,
+      "x": 1,
+      "y": 0,
+      "width": 12,
+      "height": 10,
+      "dx": 14,
+      "glyphBitmap": {
+        "width": 12,
+        "height": 10,
+        "pixelArray": "e5ac8eebf097098deaf1a10ae8ffc47fcdffe0dc80bbff80e8d705000ff8fd200003e5cde8b8000000d7d9000000bbe7e8b8000000d4d4000000b8e8e8b8000000d4d4000000b8e8e8b8000000d4d4000000b8e8e8b8000000d4d4000000b8e8e8b8000000d4d4000000b8e8e8b8000000d4d4000000b8e8"
+      },
+      "source": {
+        "objID": "255abcb1-1d84-4c62-ffb6-ff7a41a63b72",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 109
+      }
+    },
+    {
+      "objID": "ddef7abe-9659-4eff-96c9-bdc2d00e8280",
+      "encoding": 110,
+      "x": 1,
+      "y": 0,
+      "width": 7,
+      "height": 10,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 7,
+        "height": 10,
+        "pixelArray": "ddb270e4f3a309e0f9df83bcff79e0ee190005ecc2e0c4000000c6dbe0c4000000c4dce0c4000000c4dce0c4000000c4dce0c4000000c4dce0c4000000c4dce0c4000000c4dc"
+      },
+      "source": {
+        "objID": "ba11d9e3-3f39-4f73-8c71-aa666884026b",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 110
+      }
+    },
+    {
+      "objID": "8e009ebf-ccdf-407a-9051-236cb8b23b20",
+      "encoding": 111,
+      "x": 1,
+      "y": 0,
+      "width": 8,
+      "height": 10,
+      "dx": 10,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 10,
+        "pixelArray": "0024b0f1f0af230018e9f08789f2e8178aff41000044ff88cde701000001e8c9e3c700000000c7dfe4c600000000c6dfcde501000000dfca8dff3a000033ff8a1aeded7f7be6ec190028b5f4f5b52700"
+      },
+      "source": {
+        "objID": "4d16d025-1966-4518-fcf2-78a102f7ecb4",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 111
+      }
+    },
+    {
+      "objID": "4d29fb93-2f77-4d5b-fb5c-bbfa4a2e3eda",
+      "encoding": 112,
+      "x": 1,
+      "y": -4,
+      "width": 8,
+      "height": 14,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 14,
+        "pixelArray": "f58f93eeefa00e00f8f9c07ec0ffa300f8c9030001bffb0af8ac00000074ff36f8ac0000005bff47f8ac0000005aff47f8ac00000070ff37f8c1010001b7fc0bf8ffac6aadffa600f8b39df3f3a20f00f8a8000000000000f8a8000000000000f8a8000000000000f8a8000000000000"
+      },
+      "source": {
+        "objID": "05d379c1-6cf4-4014-ee9b-73f3c4e62c58",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 112
+      }
+    },
+    {
+      "objID": "2b062a58-d198-42ec-e4be-0e5891150917",
+      "encoding": 113,
+      "x": 1,
+      "y": -4,
+      "width": 8,
+      "height": 14,
+      "dx": 10,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 14,
+        "pixelArray": "0053d4f9cf64fc5f37fee68088f2ff609aff2c00005eff60cde200000048ff60deca00000048ff60dfca00000048ff60cee100000048ff609aff2700005aff6038ffe07780f0ff600057d8fdd286ff60000000000048ff60000000000048ff60000000000048ff60000000000048ff60"
+      },
+      "source": {
+        "objID": "a966a229-c414-46c7-e025-1109689e865b",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 113
+      }
+    },
+    {
+      "objID": "e532be4a-2826-4a11-ce69-ebc77e8f9cf5",
+      "encoding": 114,
+      "x": 1,
+      "y": 0,
+      "width": 5,
+      "height": 10,
+      "dx": 6,
+      "glyphBitmap": {
+        "width": 5,
+        "height": 10,
+        "pixelArray": "aaee73ef71acfff8b757acff460000acf9000000acf8000000acf8000000acf8000000acf8000000acf8000000acf8000000"
+      },
+      "source": {
+        "objID": "3e8b681f-fec1-4981-e56b-aa0480ed645b",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 114
+      }
+    },
+    {
+      "objID": "00bc2eaf-94b9-4ee6-efa2-bee6f0024f3b",
+      "encoding": 115,
+      "x": 1,
+      "y": 0,
+      "width": 7,
+      "height": 10,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 7,
+        "height": 10,
+        "pixelArray": "0055ccf8dc760139ffc373baff6890ff170004d9b976ff81090000000bb6ffea841100000144b5ffed3c0b0a00003cf3cad3e1030000c3e870ffb66a95ff9a0170d7fbe4910c"
+      },
+      "source": {
+        "objID": "2dcab8b6-e4f3-40ec-d36e-31bd991a5ceb",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 115
+      }
+    },
+    {
+      "objID": "c0bf6ef9-c4aa-4291-eb1e-546649bc5c69",
+      "encoding": 116,
+      "x": 0,
+      "y": 0,
+      "width": 6,
+      "height": 12,
+      "dx": 6,
+      "glyphBitmap": {
+        "width": 6,
+        "height": 12,
+        "pixelArray": "0010fc8e00000010ff90000096fdfffffc143563ffb758070010ff9000000010ff9000000010ff9000000010ff9000000010ff900000000eff9600000001e7e67d0d00005eecf00f"
+      },
+      "source": {
+        "objID": "8713ae6c-cb7b-4951-de93-208fe49bd56d",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 116
+      }
+    },
+    {
+      "objID": "43734dc8-7fff-4292-c3ac-4098a455e4a4",
+      "encoding": 117,
+      "x": 1,
+      "y": 0,
+      "width": 7,
+      "height": 10,
+      "dx": 9,
+      "glyphBitmap": {
+        "width": 7,
+        "height": 10,
+        "pixelArray": "ddbd000000c5d9e0c0000000c8dce0c0000000c8dce0c0000000c8dce0c0000000c8dce0c0000000c8dcdec4000000c8dcc3eb05000ee6dc7bffb07cd5ffdc0ba4f6f096bedc"
+      },
+      "source": {
+        "objID": "da9070a8-750c-457a-c2f0-f919c9ebcd8e",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 117
+      }
+    },
+    {
+      "objID": "8757820e-7c19-4007-8fda-d265ee051e50",
+      "encoding": 118,
+      "x": 0,
+      "y": 0,
+      "width": 8,
+      "height": 10,
+      "dx": 8,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 10,
+        "pixelArray": "7dfc29000038fc6d32ff6c000078ff2301e4b00000b9d6000097f00405f58a00004aff3739ff3e000008f57a7aef04000000afbebaa60000000062f9f55a0000000017fefd120000000000c7c2000000"
+      },
+      "source": {
+        "objID": "a77b050f-e7df-49d8-949f-75b543962d63",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 118
+      }
+    },
+    {
+      "objID": "cdb26165-09f3-42e1-cb92-e849c8a79a63",
+      "encoding": 119,
+      "x": 0,
+      "y": 0,
+      "width": 12,
+      "height": 10,
+      "dx": 12,
+      "glyphBitmap": {
+        "width": 12,
+        "height": 10,
+        "pixelArray": "94f7090000cbbf00000efa8f58ff3d0014fffa0d0042ff521aff770057ffff4c0078ff1400dbb0009bc9e09100aed300009cea01e08499d600e59400005eff47ff3f52ff37ff5500001fffc5f50710fcb1ff16000000e1ffb70000c5ffd600000000a2ff7200007fff970000000064ff2e000038ff580000"
+      },
+      "source": {
+        "objID": "aef6fd8e-49dc-4b58-dbc1-a8384aa40dcc",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 119
+      }
+    },
+    {
+      "objID": "bee325a9-b1b6-4f53-ddf1-675ab5b9099d",
+      "encoding": 120,
+      "x": 0,
+      "y": 0,
+      "width": 8,
+      "height": 10,
+      "dx": 8,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 10,
+        "pixelArray": "2dfaa8000062fc7900a0fd2303d9e40a001cf79554ff5f00000086f7d4d0030000000eebff450000000015f2ff510000000094f6c9db06000027fc9144ff6d0000b0fb1d01cbec103eff9d000051ff89"
+      },
+      "source": {
+        "objID": "fa088bf6-5917-490b-d6cc-02fb6276ded7",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 120
+      }
+    },
+    {
+      "objID": "30ed703b-f7e7-427e-8728-9953e2a8bd70",
+      "encoding": 121,
+      "x": 0,
+      "y": -4,
+      "width": 8,
+      "height": 14,
+      "dx": 8,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 14,
+        "pixelArray": "79fc47000047fc722fff89000088ff2a01e2cb0000c9e0010096fd100efc9600004aff4e4aff4c000009f68f8af80b000000b1d1cab80000000065fffd6e000000001affff240000000000cdda000000000000da90000000000038ff44000000138ce6d00200000020f7cb2800000000"
+      },
+      "source": {
+        "objID": "d20e31e1-efed-45b8-e0b9-9af209d65a19",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 121
+      }
+    },
+    {
+      "objID": "ae5db4e2-c9e6-4978-ec97-eb14484ec433",
+      "encoding": 122,
+      "x": 0,
+      "y": 0,
+      "width": 8,
+      "height": 10,
+      "dx": 8,
+      "glyphBitmap": {
+        "width": 8,
+        "height": 10,
+        "pixelArray": "18fcfcfcfcfcfc670b70707070d7ff3a0000000037fe9b0000000005d1e9110000000075ff580000000021f6b60100000001b7f5200000000058ff73000000000ce8f4686464643c20ffffffffffff98"
+      },
+      "source": {
+        "objID": "61f7ef6a-c92b-4415-e006-508398a44911",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 122
+      }
+    },
+    {
+      "objID": "11fbbf48-c13f-478d-e2ec-aed3af34a0e7",
+      "encoding": 123,
+      "x": 0,
+      "y": -3,
+      "width": 6,
+      "height": 18,
+      "dx": 6,
+      "glyphBitmap": {
+        "width": 6,
+        "height": 18,
+        "pixelArray": "0000001baf5200000fe2c915000066ff3c0000009eff07000000a8fc00000000a9fc00000000baee0000013af7a7000040ffe7140000189eff6500000001d6d400000000abf900000000a8fc00000000a8fd0000000096ff0e0000005bff4a0000000adad71e00000016ae51"
+      },
+      "source": {
+        "objID": "3c2e65cf-0ea7-44f6-8b87-09a6a72183ea",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 123
+      }
+    },
+    {
+      "objID": "85b47d5d-3ad8-47e8-ef65-423577f465d7",
+      "encoding": 124,
+      "x": 1,
+      "y": -3,
+      "width": 2,
+      "height": 17,
+      "dx": 5,
+      "glyphBitmap": {
+        "width": 2,
+        "height": 17,
+        "pixelArray": "5ffc60ff60ff60ff60ff60ff60ff60ff60ff60ff60ff60ff60ff60ff60ff60ff60ff"
+      },
+      "source": {
+        "objID": "a2680945-5dd5-42ed-f4c8-a48ea7690b27",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 124
+      }
+    },
+    {
+      "objID": "47bcb4b7-1d86-4495-8253-eac637690f9f",
+      "encoding": 125,
+      "x": 0,
+      "y": -3,
+      "width": 6,
+      "height": 18,
+      "dx": 6,
+      "glyphBitmap": {
+        "width": 6,
+        "height": 18,
+        "pixelArray": "5cac1900000019cfdc0b00000045ff5a0000000fff9600000005ffa000000004ffa000000001f5b000000000abf43301000013ddff38000065ff98150000dcce01000003ffa300000004ffa000000005ff9f00000016ff8b00000054ff4e000023ddc90300005ba912000000"
+      },
+      "source": {
+        "objID": "c741533b-68e6-4a3c-a2e3-18890317544a",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 125
+      }
+    },
+    {
+      "objID": "2d79fd01-bb29-4144-a0d3-c30828dcd525",
+      "encoding": 126,
+      "x": 0,
+      "y": 3,
+      "width": 12,
+      "height": 6,
+      "dx": 12,
+      "glyphBitmap": {
+        "width": 12,
+        "height": 6,
+        "pixelArray": "007979f39898040000851f1f14efef36bbbb951b1bf1101014efef36bbbb951b1bf110102c9393000f0fc6ffff8b0000000000000000011616000000000000000000011616000000"
+      },
+      "source": {
+        "objID": "b875fca8-6142-4325-c28d-2570fa4afdee",
+        "filePath": "fonts\\RobotoCondensed-Regular.ttf",
+        "size": 14,
+        "encoding": 126
+      }
+    },
+    {
+      "objID": "509df706-c7a4-4265-812a-ff2e461e8f2f",
+      "encoding": 128,
+      "x": 1,
+      "y": 4,
+      "width": 6,
+      "height": 6,
+      "dx": 8,
+      "glyphBitmap": {
+        "width": 6,
+        "height": 6,
+        "pixelArray": "0691eade770072ffffffff4cbbffffffff96adffffffff8952fffffffe2a0051aa9c3900"
+      },
+      "source": {
+        "objID": "9e1f3ad7-7015-4695-e558-ae67c4679b29",
+        "filePath": "C:\\Work\\eez\\eez-bb3plus-cm5-firmware\\eez\\fonts\\Oswald-Medium.ttf",
+        "size": 14,
+        "encoding": 8226
+      }
+    }
+  ],
+  "alwaysBuild": true,
+  "lvglAdditionalSources": []
+}

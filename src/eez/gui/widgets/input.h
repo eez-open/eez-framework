@@ -29,6 +29,11 @@ struct InputWidget : public Widget {
 struct InputWidgetState : public WidgetState {
 	WidgetStateFlags flags;
 	Value data;
+	// style after overrideStyle and the text colors after the
+	// overrideStyleColor hooks (focus colors when focused)
+	int styleId;
+	uint16_t color;
+	uint16_t activeColor;
 
     bool updateState() override;
 	void render() override;

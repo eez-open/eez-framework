@@ -50,6 +50,7 @@ static bool isRadioChecked(const Value &dataValue, const Value &radioValue) {
 bool RadioWidgetState::updateState() {
     WIDGET_STATE_START(RadioWidget);
 
+    WIDGET_STATE(styleId, overrideStyle(widgetCursor, widget->style));
     WIDGET_STATE(flags.active, g_isActiveWidget);
     WIDGET_STATE(data, widget->data ? get(widgetCursor, widget->data) : Value());
     WIDGET_STATE(value, widget->value ? get(widgetCursor, widget->value) : Value());
@@ -60,8 +61,7 @@ bool RadioWidgetState::updateState() {
 
 void RadioWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
-    auto widget = (const RadioWidget *)widgetCursor.widget;
-    const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
+    const Style *style = getStyle(styleId);
 
     char label[MAX_TEXT_LEN + 1];
     label[0] = 0;

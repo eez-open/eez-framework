@@ -19,8 +19,17 @@ namespace flow {
 
 void executeCatchErrorComponent(FlowState *flowState, unsigned componentIndex) {
 	auto catchErrorComponentExecutionState = (CatchErrorComponenentExecutionState *)flowState->componenentExecutionStates[componentIndex];
-	propagateValue(flowState, componentIndex, 1, catchErrorComponentExecutionState->message);
-    deallocateComponentExecutionState(flowState, componentIndex);
+    if (!catchErrorComponentExecutionState || catchErrorComponentExecutionState->numMessages == 0) {
+        return;
+    }
+
+    // the component is queued once per error: handle the oldest one
+    Value message = catchErrorComponentExecutionState->popMessage();
+    if (catchErrorComponentExecutionState->numMessages == 0) {
+        deallocateComponentExecutionState(flowState, componentIndex);
+    }
+
+	propagateValue(flowState, componentIndex, 1, message);
 	propagateValueThroughSeqout(flowState, componentIndex);
 }
 

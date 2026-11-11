@@ -35,6 +35,11 @@ void onTouchEvent(bool pressed, int x, int y, Event &lastEvent);
 void processTouchEvent(Event &event);
 // Called once per GUI tick, sends touch events postponed until the next tick.
 void processPostponedTouchEvents();
+// A touch event read on the GUI thread (by touch::tick in the display update)
+// is kept until processPostedTouchEvents, which guiTick calls right after the
+// display update, so the next frame shows what the touch did.
+void postTouchEvent(const Event &event);
+void processPostedTouchEvents();
 
 extern bool g_isLongTouch;
 

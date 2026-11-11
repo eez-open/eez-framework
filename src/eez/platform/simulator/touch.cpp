@@ -36,18 +36,40 @@ namespace eez {
 namespace platform {
 namespace touch {
 
+#if defined(EEZ_PLATFORM_CM5_RASPI)
+// the touch screen was pressed at the last read, at this position
+static bool g_touchWasPressed;
+static int g_lastPressedTouchX;
+static int g_lastPressedTouchY;
+#endif
+
 void read(bool &isPressed, int &x, int &y) {
     readEvents();
 
     using namespace eez::gui;
 
 #if defined(EEZ_PLATFORM_CM5_RASPI)
+    // the touch screen, else the mouse
     int touchX = 0, touchY = 0, touchPressed = 0;
     eez_custom_touch_measure_callback(&touchX, &touchY, &touchPressed);
     if (touchPressed) {
+        g_touchWasPressed = true;
+        g_lastPressedTouchX = touchX;
+        g_lastPressedTouchY = touchY;
+
         isPressed = true;
         x = touchX;
         y = touchY;
+        return;
+    }
+
+    if (g_touchWasPressed) {
+        // the release is where the finger was lifted: the last pressed position
+        g_touchWasPressed = false;
+
+        isPressed = false;
+        x = g_lastPressedTouchX;
+        y = g_lastPressedTouchY;
         return;
     }
 #endif

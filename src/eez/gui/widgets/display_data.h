@@ -25,13 +25,16 @@ struct DisplayDataWidget : public Widget {
 struct DisplayDataWidgetState : public WidgetState {
 	WidgetStateFlags flags;
 	Value data;
+    // style after overrideStyle
+    int styleId;
     uint16_t color;
     uint16_t backgroundColor;
     uint16_t activeColor;
     uint16_t activeBackgroundColor;
     uint32_t dataRefreshLastTime;
     int16_t cursorPosition;
-    uint8_t xScroll;
+    // in pixels
+    int xScroll;
 
     bool updateState() override;
     void render() override;

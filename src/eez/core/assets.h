@@ -269,14 +269,15 @@ struct Style {
 
     uint16_t borderColor;
 
+    // in the order Studio writes them: top left, top right, bottom right, bottom left
     uint8_t borderRadiusTLX;
 	uint8_t borderRadiusTLY;
     uint8_t borderRadiusTRX;
 	uint8_t borderRadiusTRY;
-    uint8_t borderRadiusBLX;
-	uint8_t borderRadiusBLY;
     uint8_t borderRadiusBRX;
 	uint8_t borderRadiusBRY;
+    uint8_t borderRadiusBLX;
+	uint8_t borderRadiusBLY;
 
     int8_t font; // > 0 main assets font, < 0 external assets font (see getFontData)
     uint8_t opacity; // 0 - 255
@@ -361,6 +362,21 @@ static const uint16_t EXPR_EVAL_INSTRUCTION_ARRAY_ELEMENT                = (5 <<
 static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_OPERATION               = (6 << 13);
 static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_END                     = (7 << 13);
 static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_END_WITH_DST_VALUE_TYPE = (7 << 13) | (1 << 12);
+
+// Type 7 with bit 11 set and bit 12 clear: a jump, the kind is in the low bits.
+// The instruction is followed by one uint16 operand, a forward offset in 16-bit
+// words counted from the word after the operand.
+//   t ? c : a  ->  [t] [JUMP_IF_FALSE off1] [c] [JUMP off2] [a]
+//                  (off1 points at the JUMP off2 instruction)
+//   a && b     ->  [a] [JUMP_AND off] [b] [OPERATION LOGICAL_AND]
+//   a || b     ->  [a] [JUMP_OR off] [b] [OPERATION LOGICAL_OR]
+static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_JUMP_MASK = (7 << 13) | (1 << 12) | (1 << 11);
+static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_JUMP      = (7 << 13) | (1 << 11);
+
+static const uint16_t EXPR_EVAL_INSTRUCTION_JUMP          = EXPR_EVAL_INSTRUCTION_TYPE_JUMP | 0;
+static const uint16_t EXPR_EVAL_INSTRUCTION_JUMP_IF_FALSE = EXPR_EVAL_INSTRUCTION_TYPE_JUMP | 1;
+static const uint16_t EXPR_EVAL_INSTRUCTION_JUMP_AND      = EXPR_EVAL_INSTRUCTION_TYPE_JUMP | 2;
+static const uint16_t EXPR_EVAL_INSTRUCTION_JUMP_OR       = EXPR_EVAL_INSTRUCTION_TYPE_JUMP | 3;
 
 struct Property {
 	uint8_t evalInstructions[1];

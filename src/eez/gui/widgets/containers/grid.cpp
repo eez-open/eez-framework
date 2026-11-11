@@ -59,7 +59,7 @@ bool GridWidgetState::updateState() {
     // number of lines that completely fit inside the grid
     int visibleLines = pitch > 0 ? extent / pitch : 0;
 
-    if (updateScrollState(widgetCursor, widget->data, visibleLines)) {
+    if (updateScrollState(widgetCursor, widget->data, visibleLines, hasPreviousState)) {
         hasPreviousState = false;
     }
 

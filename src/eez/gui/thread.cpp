@@ -44,6 +44,11 @@ EEZ_MESSAGE_QUEUE_DECLARE(gui, {
             Page *page;
         } changePage;
 
+        struct {
+            void (*func)(void *param);
+            void *param;
+        } call;
+
         Event touchEvent;
     };
 });
@@ -130,6 +135,8 @@ void processGuiQueue(uint32_t timeout) {
         flow::onDebuggerClientDisconnected();
     } else if (type == GUI_QUEUE_MESSAGE_DEBUGGER_INPUT_AVAILABLE) {
         flow::onDebuggerInputAvailableHook();
+    } else if (type == GUI_QUEUE_MESSAGE_TYPE_CALL) {
+        obj.call.func(obj.call.param);
     } else {
         g_hooks.onGuiQueueMessage(type, obj.param);
     }
@@ -162,13 +169,18 @@ void sendMessageToGuiThread(uint8_t messageType, uint32_t messageParam, uint32_t
 void sendTouchEventToGuiThread(Event &touchEvent) {
 	touchEvent.time = millis();
 
+    if (isGuiThread()) {
+        // read by the display update (touch::tick): processed in guiTick right
+        // after it, not behind the VSYNC message of the next frame
+        postTouchEvent(touchEvent);
+        return;
+    }
+
 #if EEZ_OPTION_THREADS
     guiMessageQueueObject obj;
     obj.type = GUI_QUEUE_MESSAGE_TYPE_TOUCH_EVENT;
     obj.touchEvent = touchEvent;
 	EEZ_MESSAGE_QUEUE_PUT(gui, obj, 0);
-#else
-	processTouchEvent(touchEvent);
 #endif
 }
 
@@ -194,6 +206,20 @@ bool showPageInGuiThread(AppContext *appContext, int pageId) {
         obj.type = GUI_QUEUE_MESSAGE_TYPE_SHOW_PAGE;
         obj.changePage.appContext = appContext;
         obj.changePage.pageId = pageId;
+        EEZ_MESSAGE_QUEUE_PUT(gui, obj, WAIT_FOREVER);
+        return true;
+    }
+#endif
+    return false;
+}
+
+bool callInGuiThread(void (*func)(void *param), void *param) {
+#if EEZ_OPTION_THREADS
+    if (!isGuiThread()) {
+        guiMessageQueueObject obj;
+        obj.type = GUI_QUEUE_MESSAGE_TYPE_CALL;
+        obj.call.func = func;
+        obj.call.param = param;
         EEZ_MESSAGE_QUEUE_PUT(gui, obj, WAIT_FOREVER);
         return true;
     }

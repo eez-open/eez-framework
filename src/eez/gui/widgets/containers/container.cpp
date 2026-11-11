@@ -32,7 +32,12 @@ namespace eez {
 namespace gui {
 
 bool ContainerWidgetState::updateState() {
-    WIDGET_STATE_START(ContainerWidget);
+    WIDGET_STATE_START_EVEN_IF_HIDDEN(ContainerWidget);
+
+	// the overlay data is updated also while the container is hidden
+	if (widget->overlay == EEZ_DATA_ID_NONE) {
+		WIDGET_STATE_RETURN_IF_HIDDEN();
+	}
 
 	WIDGET_STATE(styleId, overrideStyle(widgetCursor, widget->style));
 	WIDGET_STATE(flags.active, g_isActiveWidget);

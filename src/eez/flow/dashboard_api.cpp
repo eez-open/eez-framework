@@ -534,12 +534,14 @@ EM_PORT_API(Value *) evalProperty(int flowStateIndex, int componentIndex, int pr
     }
 
     Value result;
-    if (!eez::flow::evalProperty(flowState, componentIndex, propertyIndex, result, FlowError::Plain("Failed to evaluate property"), nullptr, iterators)) {
-        return nullptr;
-    }
+    bool evaluated = eez::flow::evalProperty(flowState, componentIndex, propertyIndex, result, FlowError::Plain("Failed to evaluate property"), nullptr, iterators);
 
     if (disableThrowError) {
         eez::flow::enableThrowError(true);
+    }
+
+    if (!evaluated) {
+        return nullptr;
     }
 
     auto pValue = ObjectAllocator<Value>::allocate(0xb7e697b8);

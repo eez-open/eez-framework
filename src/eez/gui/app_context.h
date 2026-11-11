@@ -104,12 +104,32 @@ public:
     void infoMessage(const char *message, void (*action)(), const char *actionLabel);
     void errorMessage(const char *message, bool autoDismiss = false);
     void errorMessage(Value value);
-    void errorMessageWithAction(Value value, void (*action)(int param), const char *actionLabel, int actionParam);
     void errorMessageWithAction(const char *message, void (*action)(), const char *actionLabel);
+
+    // A toast with a button: action is called with actionParam when the button is
+    // pressed, dismissed (optional) with actionParam when the toast is closed
+    // without the button (touched outside, closed by code, replaced by another
+    // page or by a newer toast).
+    void infoMessageWithAction(Value value, void (*action)(int param), const char *actionLabel, int actionParam, void (*dismissed)(int param) = nullptr);
+    void errorMessageWithAction(Value value, void (*action)(int param), const char *actionLabel, int actionParam, void (*dismissed)(int param) = nullptr);
 
     void yesNoDialog(int yesNoPageId, const char *message, void (*yes_callback)(), void (*no_callback)(), void (*cancel_callback)());
     void yesNoDialog(int yesNoPageId, Value value, void(*yes_callback)(), void(*no_callback)(), void(*cancel_callback)());
-    void questionDialog(Value message, Value buttons, void *userParam, void (*callback)(void *userParam, unsigned buttonIndex));
+
+    // The question page with a button for each string of the buttons array (at
+    // most MAX_MENU_ITEMS): callback is called with the index of the pressed
+    // button, dismissed (optional) when the question is closed without a button
+    // (closed by code, replaced by a newer question).
+    void questionDialog(Value message, Value buttons, void *userParam, void (*callback)(void *userParam, unsigned buttonIndex), void (*dismissed)(void *userParam) = nullptr);
+
+    // The toasts and dialogs above can be asked for on any thread: on another
+    // thread they are made later on the GUI thread, with copies of the message
+    // and the buttons. The action labels are used as they are, so they must stay
+    // valid (string literals). The callbacks are called on the GUI thread.
+
+    // makes a toast or a dialog asked for on another thread (the GUI queue calls
+    // it with a DeferredMessage of app_context.cpp)
+    static void showDeferredMessage(void *param);
 
 	// TODO these should be private
 	void(*m_dialogYesCallback)();
@@ -140,6 +160,9 @@ protected:
 
     void getPageRect(int pageId, const Page *page, int &x, int &y, int &w, int &h);
     bool isPageFullyCovered(int pageNavigationStackIndex);
+
+    // is the page object on the stack, not counting the stack index exceptIndex
+    bool isPageObjectOnStack(const Page *page, int exceptIndex = -1);
 
     virtual bool canExecuteActionWhenTouchedOutsideOfActivePage(int pageId, int action);
 

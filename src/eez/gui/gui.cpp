@@ -69,16 +69,21 @@ void guiTick() {
 	}
 #endif
 
+    // the touch up postponed in the previous frame (its pressed widget has been
+    // drawn now), then the touch read by the display update of this frame
     processPostponedTouchEvents();
+    processPostedTouchEvents();
 
     g_wasBlinkTime = g_isBlinkTime;
     g_isBlinkTime = (millis() % (2 * CONF_GUI_BLINK_TIME)) > CONF_GUI_BLINK_TIME;
 
+    // before the flow tick: what the application does there (e.g. stops some
+    // flows, queues flow actions) is done by the one flow tick of this frame
+	g_hooks.stateManagment();
+
     if (g_mainAssets->flowDefinition) {
         flow::tick();
     }
-
-	g_hooks.stateManagment();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

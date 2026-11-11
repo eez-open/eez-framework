@@ -10,6 +10,7 @@
 
 #include <eez/conf-internal.h>
 
+#include <stdint.h>
 #include <string.h>
 
 #include <eez/core/unit.h>
@@ -208,21 +209,66 @@ float getUnitFactor(Unit unit) {
 	return g_unitFactor[unit];
 }
 
-static Unit getDerivedUnit(Unit unit, float factor) {
+static const float FACTORS[] = { 1E-12F, 1E-9F, 1E-6F, 1E-3F, 1E0F, 1E3F, 1E6F, 1E9F, 1E12F };
+static const int NUM_FACTORS = sizeof(FACTORS) / sizeof(float);
+static const int FACTOR_INDEX_ONE = 4; // 1E0F
+
+#define X UNIT_UNKNOWN
+
+// For each unit, the unit of each factor of FACTORS: the first unit with the
+// same base unit and that factor (g_baseUnit, g_unitFactor), X when there is
+// none. Units with the same base unit have the same row.
+static const uint8_t g_derivedUnits[][NUM_FACTORS] = {
+	// 1E-12, 1E-9, 1E-6, 1E-3, 1, 1E3, 1E6, 1E9, 1E12
+	{ X, X, X, X, UNIT_NONE, X, X, X, X }, // UNIT_NONE
+	{ X, X, X, UNIT_MILLI_VOLT, UNIT_VOLT, X, X, X, X }, // UNIT_VOLT
+	{ X, X, X, UNIT_MILLI_VOLT, UNIT_VOLT, X, X, X, X }, // UNIT_MILLI_VOLT
+	{ X, X, UNIT_MICRO_AMPER, UNIT_MILLI_AMPER, UNIT_AMPER, X, X, X, X }, // UNIT_AMPER
+	{ X, X, UNIT_MICRO_AMPER, UNIT_MILLI_AMPER, UNIT_AMPER, X, X, X, X }, // UNIT_MILLI_AMPER
+	{ X, X, UNIT_MICRO_AMPER, UNIT_MILLI_AMPER, UNIT_AMPER, X, X, X, X }, // UNIT_MICRO_AMPER
+	{ X, X, X, UNIT_MILLI_WATT, UNIT_WATT, X, X, X, X }, // UNIT_WATT
+	{ X, X, X, UNIT_MILLI_WATT, UNIT_WATT, X, X, X, X }, // UNIT_MILLI_WATT
+	{ X, X, X, UNIT_MILLI_SECOND, UNIT_SECOND, X, X, X, X }, // UNIT_SECOND
+	{ X, X, X, UNIT_MILLI_SECOND, UNIT_SECOND, X, X, X, X }, // UNIT_MILLI_SECOND
+	{ X, X, X, X, UNIT_CELSIUS, X, X, X, X }, // UNIT_CELSIUS
+	{ X, X, X, X, UNIT_RPM, X, X, X, X }, // UNIT_RPM
+	{ X, X, X, X, UNIT_OHM, UNIT_KOHM, UNIT_MOHM, X, X }, // UNIT_OHM
+	{ X, X, X, X, UNIT_OHM, UNIT_KOHM, UNIT_MOHM, X, X }, // UNIT_KOHM
+	{ X, X, X, X, UNIT_OHM, UNIT_KOHM, UNIT_MOHM, X, X }, // UNIT_MOHM
+	{ X, X, X, X, UNIT_PERCENT, X, X, X, X }, // UNIT_PERCENT
+	{ X, X, X, UNIT_MILLI_HERTZ, UNIT_HERTZ, UNIT_KHERTZ, UNIT_MHERTZ, X, X }, // UNIT_HERTZ
+	{ X, X, X, UNIT_MILLI_HERTZ, UNIT_HERTZ, UNIT_KHERTZ, UNIT_MHERTZ, X, X }, // UNIT_MILLI_HERTZ
+	{ X, X, X, UNIT_MILLI_HERTZ, UNIT_HERTZ, UNIT_KHERTZ, UNIT_MHERTZ, X, X }, // UNIT_KHERTZ
+	{ X, X, X, UNIT_MILLI_HERTZ, UNIT_HERTZ, UNIT_KHERTZ, UNIT_MHERTZ, X, X }, // UNIT_MHERTZ
+	{ X, X, X, X, UNIT_JOULE, X, X, X, X }, // UNIT_JOULE
+	{ UNIT_PICO_FARAD, UNIT_NANO_FARAD, UNIT_MICRO_FARAD, UNIT_MILLI_FARAD, UNIT_FARAD, X, X, X, X }, // UNIT_FARAD
+	{ UNIT_PICO_FARAD, UNIT_NANO_FARAD, UNIT_MICRO_FARAD, UNIT_MILLI_FARAD, UNIT_FARAD, X, X, X, X }, // UNIT_MILLI_FARAD
+	{ UNIT_PICO_FARAD, UNIT_NANO_FARAD, UNIT_MICRO_FARAD, UNIT_MILLI_FARAD, UNIT_FARAD, X, X, X, X }, // UNIT_MICRO_FARAD
+	{ UNIT_PICO_FARAD, UNIT_NANO_FARAD, UNIT_MICRO_FARAD, UNIT_MILLI_FARAD, UNIT_FARAD, X, X, X, X }, // UNIT_NANO_FARAD
+	{ UNIT_PICO_FARAD, UNIT_NANO_FARAD, UNIT_MICRO_FARAD, UNIT_MILLI_FARAD, UNIT_FARAD, X, X, X, X }, // UNIT_PICO_FARAD
+	{ X, X, X, UNIT_MILLI_SECOND, UNIT_SECOND, X, X, X, X }, // UNIT_MINUTE
+	{ X, X, X, X, UNIT_VOLT_AMPERE, X, X, X, X }, // UNIT_VOLT_AMPERE
+	{ X, X, X, X, UNIT_VOLT_AMPERE, X, X, X, X }, // UNIT_VOLT_AMPERE_REACTIVE
+	{ X, X, X, X, UNIT_DEGREE, X, X, X, X }, // UNIT_DEGREE
+	{ X, X, X, UNIT_MILLI_VOLT_PP, UNIT_VOLT_PP, X, X, X, X }, // UNIT_VOLT_PP
+	{ X, X, X, UNIT_MILLI_VOLT_PP, UNIT_VOLT_PP, X, X, X, X }, // UNIT_MILLI_VOLT_PP
+	{ X, X, UNIT_MICRO_AMPER_PP, UNIT_MILLI_AMPER_PP, UNIT_AMPER_PP, X, X, X, X }, // UNIT_AMPER_PP
+	{ X, X, UNIT_MICRO_AMPER_PP, UNIT_MILLI_AMPER_PP, UNIT_AMPER_PP, X, X, X, X }, // UNIT_MILLI_AMPER_PP
+	{ X, X, UNIT_MICRO_AMPER_PP, UNIT_MILLI_AMPER_PP, UNIT_AMPER_PP, X, X, X, X }, // UNIT_MICRO_AMPER_PP
+};
+
+#undef X
+
+static_assert(sizeof(g_derivedUnits) / sizeof(g_derivedUnits[0]) == sizeof(g_baseUnit) / sizeof(Unit), "a row of g_derivedUnits for each unit");
+
+// the unit with the base unit of unit and the factor FACTORS[factorIndex],
+// UNIT_UNKNOWN when there is none
+static Unit getDerivedUnit(Unit unit, int factorIndex) {
 	if (unit == UNIT_UNKNOWN) {
 		return UNIT_UNKNOWN;
 	}
-
-	for (size_t i = 0; i < sizeof(g_baseUnit) / sizeof(Unit); i++) {
-		if (g_baseUnit[i] == g_baseUnit[unit] && g_unitFactor[i] == factor) {
-			return (Unit)i;
-		}
-	}
-
-	return UNIT_UNKNOWN;
+	return (Unit)g_derivedUnits[unit][factorIndex];
 }
-
-static const float FACTORS[] = { 1E-12F, 1E-9F, 1E-6F, 1E-3F, 1E0F, 1E3F, 1E6F, 1E9F, 1E12F };
 
 Unit findDerivedUnit(float value, Unit unit) {
 	Unit result;
@@ -231,26 +277,18 @@ Unit findDerivedUnit(float value, Unit unit) {
 		return unit;
 	}
 
-	for (int factorIndex = 1; ; factorIndex++) {
-		float factor = FACTORS[factorIndex];
-		if (factor > 1.0F) {
-			break;
-		}
-		if (value < factor) {
-			result = getDerivedUnit(unit, FACTORS[factorIndex - 1]);
+	for (int factorIndex = 1; factorIndex <= FACTOR_INDEX_ONE; factorIndex++) {
+		if (value < FACTORS[factorIndex]) {
+			result = getDerivedUnit(unit, factorIndex - 1);
 			if (result != UNIT_UNKNOWN) {
 				return result;
 			}
 		}
 	}
 
-	for (int factorIndex = sizeof(FACTORS) / sizeof(float) - 1; factorIndex >= 0; factorIndex--) {
-		float factor = FACTORS[factorIndex];
-		if (factor == 1.0F) {
-			break;
-		}
-		if (value >= factor) {
-			result = getDerivedUnit(unit, factor);
+	for (int factorIndex = NUM_FACTORS - 1; factorIndex > FACTOR_INDEX_ONE; factorIndex--) {
+		if (value >= FACTORS[factorIndex]) {
+			result = getDerivedUnit(unit, factorIndex);
 			if (result != UNIT_UNKNOWN) {
 				return result;
 			}
@@ -260,29 +298,29 @@ Unit findDerivedUnit(float value, Unit unit) {
 	return unit;
 }
 
-static float getSmallerFactor(float factor) {
-	for (int factorIndex = sizeof(FACTORS) / sizeof(float) - 1; factorIndex > 0; factorIndex--) {
-		float itFactor = FACTORS[factorIndex];
-		if (itFactor < factor) {
-			return itFactor;
+// the index of the biggest factor of FACTORS smaller than factor, 0 when there
+// is none
+static int getSmallerFactorIndex(float factor) {
+	for (int factorIndex = NUM_FACTORS - 1; factorIndex > 0; factorIndex--) {
+		if (FACTORS[factorIndex] < factor) {
+			return factorIndex;
 		}
 	}
-	return FACTORS[0];
+	return 0;
 }
 
 Unit getSmallerUnit(Unit unit, float min, float precision) {
 	float factor = getUnitFactor(unit);
 	if (precision <= factor || min <= factor) {
-		return getDerivedUnit(unit, getSmallerFactor(factor));
+		return getDerivedUnit(unit, getSmallerFactorIndex(factor));
 	}
 	return UNIT_UNKNOWN;
 }
 
 Unit getBiggestUnit(Unit unit, float max) {
-	for (int factorIndex = sizeof(FACTORS) / sizeof(float) - 1; factorIndex >= 0; factorIndex--) {
-		float factor = FACTORS[factorIndex];
-		if (max >= factor) {
-			auto result = getDerivedUnit(unit, factor);
+	for (int factorIndex = NUM_FACTORS - 1; factorIndex >= 0; factorIndex--) {
+		if (max >= FACTORS[factorIndex]) {
+			auto result = getDerivedUnit(unit, factorIndex);
 			if (result != UNIT_UNKNOWN) {
 				return result;
 			}
@@ -292,10 +330,10 @@ Unit getBiggestUnit(Unit unit, float max) {
 }
 
 Unit getSmallestUnit(Unit unit, float min, float precision) {
-	for (int factorIndex = 0; factorIndex < int(sizeof(FACTORS) / sizeof(float)); factorIndex++) {
+	for (int factorIndex = 0; factorIndex < NUM_FACTORS; factorIndex++) {
 		float factor = FACTORS[factorIndex];
 		if (precision <= factor || min <= factor) {
-			auto result = getDerivedUnit(unit, factor);
+			auto result = getDerivedUnit(unit, factorIndex);
 			if (result != UNIT_UNKNOWN) {
 				return result;
 			}

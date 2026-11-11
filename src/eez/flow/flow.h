@@ -26,9 +26,17 @@ extern uint32_t g_wasmModuleId;
 
 struct FlowState;
 
+// 0 if the assets have no flows. External assets don't start the engine:
+// their flows run while the flows of the main assets run.
 unsigned start(Assets *assets);
 void tick();
-void stop(Assets* assets = nullptr);
+// stops the flows of the main assets, which stops all the flows
+void stop();
+// stops the flows of the assets; nullptr (e.g. assets that are already
+// unloaded) does nothing. For external assets their flow states, at any level
+// (e.g. a layout in a page of other assets, also the layouts a user widget
+// keeps), are deleted at the end of the next tick.
+void stop(Assets* assets);
 
 bool isFlowStopped();
 unsigned getTickMaxDurationCounter();
@@ -48,14 +56,21 @@ Value getGlobalVariable(Assets *assets, uint32_t globalVariableIndex);
 void setGlobalVariable(uint32_t globalVariableIndex, const Value &value);
 void setGlobalVariable(Assets *assets, uint32_t globalVariableIndex, const Value &value);
 
+// The user properties of the CallAction of the native action that is running.
+// Outside a native action they do nothing; in a native action called without
+// a CallAction (a widget event handler) they are a flow error.
 Value getUserProperty(unsigned propertyIndex);
 void setUserProperty(unsigned propertyIndex, const Value &value);
 
-// Support for async execution for the native user actions
+// Support for async execution for the native user actions. beginAsyncExecution
+// returns nullptr outside a native action.
 //
 struct AsyncAction {
+    // the flow state can be freed before the action ends (its flow stopped): the
+    // functions below find it by flowStateId and do nothing if it is gone
     eez::flow::FlowState *flowState;
     unsigned componentIndex;
+    uint32_t flowStateId;
 };
 
 // signal to the flow engine that async action has been started

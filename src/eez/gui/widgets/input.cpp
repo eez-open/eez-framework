@@ -13,9 +13,11 @@
 #if EEZ_OPTION_GUI
 
 #include <math.h>
+#include <string.h>
 
 #include <eez/core/alloc.h>
 #include <eez/core/util.h>
+#include <eez/core/utf8.h>
 
 #include <eez/gui/gui.h>
 #include <eez/gui/data.h>
@@ -75,6 +77,10 @@ Value getInputWidgetInfo(const gui::WidgetCursor &widgetCursor) {
 	return get(widgetCursor, ((const InputWidget*)widgetCursor.widget)->info);
 }
 
+// set while InputWidgetState::updateState reads the data: the string is
+// returned without a copy, the state copies it only when it is changed
+static bool g_readStringInPlace;
+
 Value getInputWidgetData(const gui::WidgetCursor &widgetCursor, const Value &dataValue) {
 	auto widget = (const InputWidget*)widgetCursor.widget;
 
@@ -83,20 +89,52 @@ Value getInputWidgetData(const gui::WidgetCursor &widgetCursor, const Value &dat
 		float factor = getUnitFactor(unit);
 		auto baseUnit = getBaseUnit(unit);
     	return Value(dataValue.toFloat() * factor, baseUnit);
+	} else if (dataValue.isString()) {
+		if (g_readStringInPlace) {
+			return dataValue;
+		}
+		// a copy: the string of the data can be in a buffer that is reused
+		const char *str = dataValue.getString();
+        return Value::makeStringRef(str ? str : "", -1, 0xa3d4f1d4);
 	} else {
-        return Value::makeStringRef(dataValue.getString(), -1, 0xa3d4f1d4);
+		// a number is shown as its text, undefined and null as an empty text
+		return dataValue.toString(0xa3d4f1d4);
 	}
 }
 
 bool InputWidgetState::updateState() {
     WIDGET_STATE_START(InputWidget);
 
-	const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
+	WIDGET_STATE(styleId, overrideStyle(widgetCursor, widget->style));
+	const Style *style = getStyle(styleId);
 
 	WIDGET_STATE(flags.active, g_isActiveWidget);
 	WIDGET_STATE(flags.focused, isFocusWidget(widgetCursor));
 	WIDGET_STATE(flags.blinking, g_isBlinkTime && styleIsBlink(style));
-	WIDGET_STATE(data, get(widgetCursor, widget->data));
+	WIDGET_STATE(color,       flags.focused ? style->focusColor           : g_hooks.overrideStyleColor(widgetCursor, style));
+	WIDGET_STATE(activeColor, flags.focused ? style->focusBackgroundColor : g_hooks.overrideActiveStyleColor(widgetCursor, style));
+
+	// A string is compared where it is (no copy in every frame) and copied
+	// only when it is changed: the string of a VALUE_TYPE_STRING value can be
+	// in a buffer that is reused, the string of a string asset and of a
+	// string ref doesn't change.
+	g_readStringInPlace = true;
+	Value newData = get(widgetCursor, widget->data);
+	g_readStringInPlace = false;
+	if (newData.isString()) {
+		const char *str = newData.getString();
+		const char *oldStr = data.isString() ? data.getString() : nullptr;
+		if (!hasPreviousState || !oldStr || strcmp(oldStr, str ? str : "") != 0) {
+			hasPreviousState = false;
+			if (newData.getType() == VALUE_TYPE_STRING || !str) {
+				data = Value::makeStringRef(str ? str : "", -1, 0xa3d4f1d4);
+			} else {
+				data = newData;
+			}
+		}
+	} else {
+		WIDGET_STATE(data, newData);
+	}
 
     WIDGET_STATE_END()
 }
@@ -106,20 +144,28 @@ void InputWidgetState::render() {
 
 	auto widget = (const InputWidget*)widgetCursor.widget;
 
-	const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
+	const Style *style = getStyle(styleId);
 
-	uint16_t overrideColor                 = flags.focused ? style->focusColor           : g_hooks.overrideStyleColor(widgetCursor, style);
+	uint16_t overrideColor                 = color;
 	uint16_t overrideBackgroundColor       = flags.focused ? style->focusBackgroundColor : style->backgroundColor;
-	uint16_t overrideActiveColor           = flags.focused ? style->focusBackgroundColor : g_hooks.overrideActiveStyleColor(widgetCursor, style);
+	uint16_t overrideActiveColor           = activeColor;
 	uint16_t overrideActiveBackgroundColor = flags.focused ? style->focusColor           : style->activeBackgroundColor;
 
 	char text[MAX_TEXT_LEN + 1];
 	data.toText(text, sizeof(text));
 
 	if ((widget->flags & INPUT_WIDGET_TYPE_TEXT) && (widget->flags & INPUT_WIDGET_PASSWORD_FLAG)) {
+		// one * for each character (UTF-8 continuation bytes are skipped)
+		int n = 0;
 		for (int i = 0; text[i]; i++) {
-			text[i] = '*';
+#if UTF8_SUPPORT
+			if (((uint8_t)text[i] & 0xC0) == 0x80) {
+				continue;
+			}
+#endif
+			text[n++] = '*';
 		}
+		text[n] = 0;
 	}
 
 	drawText(

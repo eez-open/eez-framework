@@ -151,6 +151,15 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
         } else if (general->action == PLAY_ANIMATION) {
             auto specific = (LVGLComponent_PlayAnimation_ActionType *)general;
 
+            if (specific->property >= sizeof(anim_set_callbacks) / sizeof(anim_set_callbacks[0])) {
+                throwError(flowState, componentIndex, FlowError::Plain("Unknown animation property in LVGL Play Animation"));
+                return;
+            }
+            if (specific->path >= sizeof(anim_path_callbacks) / sizeof(anim_path_callbacks[0])) {
+                throwError(flowState, componentIndex, FlowError::Plain("Unknown animation path in LVGL Play Animation"));
+                return;
+            }
+
             auto target = getLvglObjectFromIndexHook(flowState->lvglWidgetStartIndex + specific->target);
             if (!target) {
                 if (!executionState) {
@@ -208,7 +217,12 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                 }
 
                 if (specific->property == IMAGE_IMAGE || specific->property == LABEL_TEXT) {
-                    const char *strValue = value.toString(0xe42b3ca2).getString();
+                    Value stringValue = value.toString(0xe42b3ca2);
+                    const char *strValue = stringValue.getString();
+                    if (!strValue) {
+                        throwError(flowState, componentIndex, FlowError::PropertyInActionConvert("LVGL Set Property", "Value", "string", actionIndex));
+                        return;
+                    }
                     if (specific->property == IMAGE_IMAGE) {
                         const void *src = getLvglImageByNameHook(strValue);
                         if (src) {
@@ -217,7 +231,7 @@ void executeLVGLComponent(FlowState *flowState, unsigned componentIndex) {
                             throwError(flowState, componentIndex, FlowError::NotFoundInAction("Image", strValue, "LVGL Set Property", actionIndex));
                         }
                     } else {
-                        lv_label_set_text(target, strValue ? strValue : "");
+                        lv_label_set_text(target, strValue);
                     }
                 } else if (specific->property == BASIC_HIDDEN) {
                     int err;
@@ -444,171 +458,267 @@ const char *getFullObjectName(FlowState *flowState, const char *objectName) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#define ACTION_START(NAME) static void NAME(FlowState *flowState, unsigned componentIndex, const ListOfAssetsPtr<Property> &properties, uint32_t actionIndex) { \
+// The property functions below convert the evaluated value of an action
+// property. On failure they throw the error and return false.
+
+static bool isUndefinedOrNull(const Value &value) {
+    return value.getType() == VALUE_TYPE_UNDEFINED || value.getType() == VALUE_TYPE_NULL;
+}
+
+static bool getInt32Property(FlowState *flowState, unsigned componentIndex, const Value &value, const char *actionName, const char *propertyName, uint32_t actionIndex, int32_t &result) {
+    int err;
+    result = value.toInt32(&err);
+    if (err) {
+        throwError(flowState, componentIndex, FlowError::PropertyInActionConvert(actionName, propertyName, "integer", actionIndex));
+        return false;
+    }
+    return true;
+}
+
+// through int64, so an unsigned value above INT32_MAX (a color, for example) keeps its bits
+static bool getUInt32Property(FlowState *flowState, unsigned componentIndex, const Value &value, const char *actionName, const char *propertyName, uint32_t actionIndex, uint32_t &result) {
+    int err;
+    result = (uint32_t)value.toInt64(&err);
+    if (err) {
+        throwError(flowState, componentIndex, FlowError::PropertyInActionConvert(actionName, propertyName, "integer", actionIndex));
+        return false;
+    }
+    return true;
+}
+
+static bool getBooleanProperty(FlowState *flowState, unsigned componentIndex, const Value &value, const char *actionName, const char *propertyName, uint32_t actionIndex, bool &result) {
+    int err;
+    result = value.toBool(&err);
+    if (err) {
+        throwError(flowState, componentIndex, FlowError::PropertyInActionConvert(actionName, propertyName, "boolean", actionIndex));
+        return false;
+    }
+    return true;
+}
+
+// a screen name or a screen id (1-based)
+static bool getScreenProperty(FlowState *flowState, unsigned componentIndex, const Value &value, const char *actionName, const char *propertyName, uint32_t actionIndex, int32_t &screen) {
+    if (value.isString()) {
+        const char *screenName = value.getString();
+        screen = getLvglScreenByNameHook(screenName);
+        if (screen < 1) {
+            throwError(flowState, componentIndex, FlowError::NotFoundInAction("Screen", screenName, actionName, actionIndex));
+            return false;
+        }
+        return true;
+    }
+
+    if (isUndefinedOrNull(value)) {
+        throwError(flowState, componentIndex, FlowError::NullInAction("Screen", actionName, actionIndex));
+        return false;
+    }
+
+    int err;
+    screen = value.toInt32(&err);
+    if (err) {
+        throwError(flowState, componentIndex, FlowError::PropertyInActionConvert(actionName, propertyName, "screen", actionIndex));
+        return false;
+    }
+    return true;
+}
+
+// a widget value, a widget name or a widget index (relative to the user widget
+// of the flow)
+static bool getWidgetProperty(FlowState *flowState, unsigned componentIndex, Value &value, const char *actionName, const char *propertyName, uint32_t actionIndex, lv_obj_t *&obj) {
+    if (value.isWidget()) {
+        obj = (lv_obj_t *)value.getWidget();
+        // a widget value holds the object pointer, the object can be deleted since
+        if (obj && !lv_obj_is_valid(obj)) {
+            char message[128];
+            snprintf(message, sizeof(message), "Widget '%s' in '%s' action #%d was deleted", propertyName, actionName, (int)actionIndex + 1);
+            throwError(flowState, componentIndex, FlowError::Plain(message));
+            return false;
+        }
+    } else if (value.isString()) {
+        const char *objectName = value.getString();
+        const char *fullObjectName = getFullObjectName(flowState, objectName);
+        int32_t widgetIndex = getLvglObjectByNameHook(fullObjectName);
+        if (widgetIndex == -1) {
+            throwError(flowState, componentIndex, FlowError::NotFoundInAction("Widget", objectName, actionName, actionIndex));
+            return false;
+        }
+        obj = getLvglObjectFromIndexHook(widgetIndex);
+    } else if (isUndefinedOrNull(value)) {
+        obj = nullptr;
+    } else {
+        int err;
+        int32_t widgetIndex = value.toInt32(&err);
+        if (err) {
+            throwError(flowState, componentIndex, FlowError::PropertyInActionConvert(actionName, propertyName, "widget", actionIndex));
+            return false;
+        }
+        for (FlowState *fs = flowState; fs; fs = fs->parentFlowState) widgetIndex += fs->lvglWidgetStartIndex;
+        obj = getLvglObjectFromIndexHook(widgetIndex);
+    }
+
+    if (!obj) {
+        throwError(flowState, componentIndex, FlowError::NullInAction("Widget", actionName, actionIndex));
+        return false;
+    }
+    return true;
+}
+
+// a group name or a group index
+static bool getGroupProperty(FlowState *flowState, unsigned componentIndex, const Value &value, const char *actionName, const char *propertyName, uint32_t actionIndex, lv_group_t *&group) {
+    if (value.isString()) {
+        const char *groupName = value.getString();
+        int32_t groupIndex = getLvglGroupByNameHook(groupName);
+        if (groupIndex == -1) {
+            throwError(flowState, componentIndex, FlowError::NotFoundInAction("Group", groupName, actionName, actionIndex));
+            return false;
+        }
+        group = getLvglGroupFromIndexHook(groupIndex);
+    } else if (isUndefinedOrNull(value)) {
+        group = nullptr;
+    } else {
+        int err;
+        int32_t groupIndex = value.toInt32(&err);
+        if (err) {
+            throwError(flowState, componentIndex, FlowError::PropertyInActionConvert(actionName, propertyName, "group", actionIndex));
+            return false;
+        }
+        group = getLvglGroupFromIndexHook(groupIndex);
+    }
+
+    if (!group) {
+        throwError(flowState, componentIndex, FlowError::NullInAction("Group", actionName, actionIndex));
+        return false;
+    }
+    return true;
+}
+
+// a style name or a style index
+static bool getStyleProperty(FlowState *flowState, unsigned componentIndex, const Value &value, const char *actionName, const char *propertyName, uint32_t actionIndex, int32_t &style) {
+    if (value.isString()) {
+        const char *styleName = value.getString();
+        style = getLvglStyleByNameHook(styleName);
+        if (style == -1) {
+            throwError(flowState, componentIndex, FlowError::NotFoundInAction("Style", styleName, actionName, actionIndex));
+            return false;
+        }
+        return true;
+    }
+
+    if (isUndefinedOrNull(value)) {
+        throwError(flowState, componentIndex, FlowError::NullInAction("Style", actionName, actionIndex));
+        return false;
+    }
+
+    int err;
+    style = value.toInt32(&err);
+    if (err) {
+        throwError(flowState, componentIndex, FlowError::PropertyInActionConvert(actionName, propertyName, "style", actionIndex));
+        return false;
+    }
+    return true;
+}
+
+// the path property of the anim* actions is an index into anim_path_callbacks
+static bool checkAnimationPath(FlowState *flowState, unsigned componentIndex, int32_t path, const char *actionName, uint32_t actionIndex) {
+    if (path >= 0 && (size_t)path < sizeof(anim_path_callbacks) / sizeof(anim_path_callbacks[0])) {
+        return true;
+    }
+    char message[128];
+    snprintf(message, sizeof(message), "Invalid 'path' value %d in '%s' action #%d", (int)path, actionName, (int)actionIndex + 1);
+    throwError(flowState, componentIndex, FlowError::Plain(message));
+    return false;
+}
+
+// An action returns false when it failed (the error is thrown): the component
+// then skips the remaining actions and the seqout.
+#define ACTION_START(NAME) static bool NAME(FlowState *flowState, unsigned componentIndex, const ListOfAssetsPtr<Property> &properties, uint32_t actionIndex) { \
     const char *actionName = #NAME; \
     int propIndex = 0;
 
-#define INT8_PROP(NAME) \
+#define EVAL_PROP(NAME) \
     Value NAME##Value; \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
-        return; \
-    }\
-    propIndex++; \
-    int8_t NAME = NAME##Value.getInt8();
+    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(actionName, #NAME, actionIndex))) { \
+        return false; \
+    } \
+    propIndex++;
 
-#define UINT8_PROP(NAME) \
-    Value NAME##Value; \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
-        return; \
-    }\
-    propIndex++; \
-    uint8_t NAME = NAME##Value.getUInt8();
+#define INT_PROP(TYPE, NAME) \
+    EVAL_PROP(NAME) \
+    int32_t NAME##Int32; \
+    if (!getInt32Property(flowState, componentIndex, NAME##Value, actionName, #NAME, actionIndex, NAME##Int32)) { \
+        return false; \
+    } \
+    TYPE NAME = (TYPE)NAME##Int32;
 
-#define INT16_PROP(NAME) \
-    Value NAME##Value; \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
-        return; \
-    }\
-    propIndex++; \
-    int16_t NAME = NAME##Value.getInt16();
-
-#define UINT16_PROP(NAME) \
-    Value NAME##Value; \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
-        return; \
-    }\
-    propIndex++; \
-    uint16_t NAME = NAME##Value.getUInt16();
-
-#define INT32_PROP(NAME) \
-    Value NAME##Value; \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
-        return; \
-    }\
-    propIndex++; \
-    int32_t NAME = NAME##Value.getInt();
+#define INT8_PROP(NAME) INT_PROP(int8_t, NAME)
+#define UINT8_PROP(NAME) INT_PROP(uint8_t, NAME)
+#define INT16_PROP(NAME) INT_PROP(int16_t, NAME)
+#define UINT16_PROP(NAME) INT_PROP(uint16_t, NAME)
+#define INT32_PROP(NAME) INT_PROP(int32_t, NAME)
 
 #define UINT32_PROP(NAME) \
-    Value NAME##Value; \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
-        return; \
-    }\
-    propIndex++; \
-    uint32_t NAME = NAME##Value.getUInt32();
+    EVAL_PROP(NAME) \
+    uint32_t NAME; \
+    if (!getUInt32Property(flowState, componentIndex, NAME##Value, actionName, #NAME, actionIndex, NAME)) { \
+        return false; \
+    }
 
 #define BOOL_PROP(NAME) \
-    Value NAME##Value; \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
-        return; \
-    }\
-    propIndex++; \
-    int32_t NAME = NAME##Value.getBoolean();
+    EVAL_PROP(NAME) \
+    bool NAME; \
+    if (!getBooleanProperty(flowState, componentIndex, NAME##Value, actionName, #NAME, actionIndex, NAME)) { \
+        return false; \
+    }
 
+// NAME##String keeps the converted text alive while NAME is used
 #define STR_PROP(NAME) \
-    Value NAME##Value; \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
-        return; \
-    }\
-    propIndex++; \
-    const char *NAME = NAME##Value.toString(0xe42b3ca2).getString();
+    EVAL_PROP(NAME) \
+    Value NAME##String = NAME##Value.toString(0xe42b3ca2); \
+    const char *NAME = NAME##String.getString(); \
+    if (!NAME) { \
+        throwError(flowState, componentIndex, FlowError::PropertyInActionConvert(actionName, #NAME, "string", actionIndex)); \
+        return false; \
+    }
 
 #define SCREEN_PROP(NAME) \
-    Value NAME##Value; \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
-        return; \
-    }\
-    propIndex++; \
+    EVAL_PROP(NAME) \
     int32_t NAME; \
-    if (NAME##Value.isString()) { \
-        const char *screenName = NAME##Value.getString(); \
-        NAME = getLvglScreenByNameHook(screenName); \
-        if (NAME == 0) { \
-            throwError(flowState, componentIndex, FlowError::NotFoundInAction("Screen", screenName, actionName, actionIndex)); \
-            return; \
-        } \
-    } else { \
-        NAME = NAME##Value.getInt(); \
+    if (!getScreenProperty(flowState, componentIndex, NAME##Value, actionName, #NAME, actionIndex, NAME)) { \
+        return false; \
     }
 
 #define WIDGET_PROP(NAME) \
-    Value NAME##Value; \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
-        return; \
-    }\
-    propIndex++; \
+    EVAL_PROP(NAME) \
     lv_obj_t *NAME; \
-    if (NAME##Value.isWidget()) { \
-        NAME = (lv_obj_t *)NAME##Value.getWidget(); \
-    } else if (NAME##Value.isString()) { \
-        const char *objectName = NAME##Value.getString(); \
-        const char *fullObjectName = getFullObjectName(flowState, objectName); \
-        int32_t widgetIndex = getLvglObjectByNameHook(fullObjectName); \
-        if (widgetIndex == -1) { \
-            throwError(flowState, componentIndex, FlowError::NotFoundInAction("Widget", objectName, actionName, actionIndex)); \
-            return; \
-        } \
-        NAME = getLvglObjectFromIndexHook(widgetIndex); \
-    } else { \
-        int32_t widgetIndex = NAME##Value.getInt(); \
-        for (FlowState *fs = flowState; fs; fs = fs->parentFlowState) widgetIndex += fs->lvglWidgetStartIndex; \
-        NAME = getLvglObjectFromIndexHook(widgetIndex); \
-    } \
-    if (!NAME) { \
-        throwError(flowState, componentIndex, FlowError::NullInAction("Widget", actionName, actionIndex)); \
-        return; \
+    if (!getWidgetProperty(flowState, componentIndex, NAME##Value, actionName, #NAME, actionIndex, NAME)) { \
+        return false; \
     }
 
 #define GROUP_PROP(NAME) \
-    Value NAME##Value; \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
-        return; \
-    }\
-    propIndex++; \
+    EVAL_PROP(NAME) \
     lv_group_t *NAME; \
-    if (NAME##Value.isString()) { \
-        const char *groupName = NAME##Value.getString(); \
-        int32_t NAME##_GroupIndex = getLvglGroupByNameHook(groupName); \
-        if (NAME##_GroupIndex == -1) { \
-            throwError(flowState, componentIndex, FlowError::NotFoundInAction("Group", groupName, actionName, actionIndex)); \
-            return; \
-        } \
-        NAME = getLvglGroupFromIndexHook(NAME##_GroupIndex); \
-    } else { \
-        int32_t NAME##_GroupIndex = NAME##Value.getInt(); \
-        NAME = getLvglGroupFromIndexHook(NAME##_GroupIndex); \
-    } \
-    if (!NAME) { \
-        throwError(flowState, componentIndex, FlowError::NullInAction("Group", actionName, actionIndex)); \
-        return; \
+    if (!getGroupProperty(flowState, componentIndex, NAME##Value, actionName, #NAME, actionIndex, NAME)) { \
+        return false; \
     }
 
 #define STYLE_PROP(NAME) \
-    Value NAME##Value; \
-    if (!evalExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyInAction(#NAME, actionName, actionIndex))) { \
-        return; \
-    }\
-    propIndex++; \
+    EVAL_PROP(NAME) \
     int32_t NAME; \
-    if (NAME##Value.isString()) { \
-        const char *styleName = NAME##Value.getString(); \
-        NAME = getLvglStyleByNameHook(styleName); \
-        if (NAME == -1) { \
-            throwError(flowState, componentIndex, FlowError::NotFoundInAction("Style", styleName, actionName, actionIndex)); \
-            return; \
-        } \
-    } else { \
-        NAME = NAME##Value.getInt(); \
+    if (!getStyleProperty(flowState, componentIndex, NAME##Value, actionName, #NAME, actionIndex, NAME)) { \
+        return false; \
     }
 
 #define RESULT(NAME, VALUE) \
     Value NAME##Value; \
-    if (!evalAssignableExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyAssignInAction(#NAME, actionName, actionIndex))) { \
-        return; \
-    }\
+    if (!evalAssignableExpression(flowState, componentIndex, properties[propIndex]->evalInstructions, NAME##Value, FlowError::PropertyAssignInAction(actionName, #NAME, actionIndex))) { \
+        return false; \
+    } \
     propIndex++; \
     assignValue(flowState, componentIndex, NAME##Value, VALUE);
 
-#define ACTION_END }
+#define ACTION_END \
+    return true; \
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -747,7 +857,8 @@ ACTION_START(objStyleSetProperty)
             lv_obj_set_local_style_prop(obj, (lv_style_prop_t)property, style_value, part | state);
         } else {
             throwError(flowState, componentIndex, FlowError::NotFoundInAction("Font", str, "objStyleSetProperty", actionIndex));
-        }        
+            return false;
+        }
     } else if (
 #if LVGL_VERSION_MAJOR >= 9        
         property == LV_STYLE_BG_IMAGE_SRC ||
@@ -769,7 +880,8 @@ ACTION_START(objStyleSetProperty)
             lv_obj_set_local_style_prop(obj, (lv_style_prop_t)property, style_value, part | state);
         } else {
             throwError(flowState, componentIndex, FlowError::NotFoundInAction("Font", str, "objStyleSetProperty", actionIndex));
-        }        
+            return false;
+        }
     } else if (
         property == LV_STYLE_BG_COLOR ||
         property == LV_STYLE_BG_GRAD_COLOR ||
@@ -926,6 +1038,7 @@ ACTION_START(imageSetSrc)
         lv_img_set_src(obj, src);
     } else {
         throwError(flowState, componentIndex, FlowError::NotFoundInAction("Image", str, "imageSetSrc", actionIndex));
+        return false;
     }
 ACTION_END
 
@@ -1044,6 +1157,9 @@ ACTION_END
     BOOL_PROP(relative); \
     BOOL_PROP(instant); \
     INT32_PROP(path); \
+    if (!checkAnimationPath(flowState, componentIndex, path, actionName, actionIndex)) { \
+        return false; \
+    } \
     INT32_PROP(repeatCount); \
     BOOL_PROP(playback);
 
@@ -1217,7 +1333,7 @@ ACTION_END
 
 ////////////////////////////////////////////////////////////////////////////////
 
-typedef void (*ActionType)(FlowState *flowState, unsigned componentIndex, const ListOfAssetsPtr<Property> &properties, uint32_t actionIndex);
+typedef bool (*ActionType)(FlowState *flowState, unsigned componentIndex, const ListOfAssetsPtr<Property> &properties, uint32_t actionIndex);
 
 static ActionType actions[] = {
     /* 0 */ &changeScreen,
@@ -1289,22 +1405,24 @@ static ActionType actions[] = {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// in case when getLvglObjectFromIndexHook returns nullptr, i.e. LVGL widget is not yet created, we need to store
-// the index of the next action to be executed in the component execution state, so we can try later
-struct LVGLApiExecutionState : public ComponenentExecutionState {
-    uint32_t actionIndex;
-};
-
-
 void executeLVGLApiComponent(FlowState *flowState, unsigned componentIndex) {
     auto component = (LVGLApiComponent *)flowState->flow->components[componentIndex];
 
-    auto executionState = (LVGLApiExecutionState *)flowState->componenentExecutionStates[componentIndex];
-
-    for (uint32_t actionIndex = executionState ? executionState->actionIndex : 0; actionIndex < component->actions.count; actionIndex++) {
-        // printf("actionIndex: %d\n", actionIndex + 1);
+    for (uint32_t actionIndex = 0; actionIndex < component->actions.count; actionIndex++) {
         auto actionType = (LVGLApiComponent_ActionType *)component->actions[actionIndex];
-        (*actions[actionType->action])(flowState, componentIndex, actionType->properties, actionIndex);
+
+        // assets from a newer Studio can have actions this table doesn't have
+        if (actionType->action >= sizeof(actions) / sizeof(actions[0])) {
+            char message[128];
+            snprintf(message, sizeof(message), "Unknown LVGL action %d in action #%d", (int)actionType->action, (int)actionIndex + 1);
+            throwError(flowState, componentIndex, FlowError::Plain(message));
+            return;
+        }
+
+        // a failed action has thrown an error: the remaining actions and the seqout are skipped
+        if (!(*actions[actionType->action])(flowState, componentIndex, actionType->properties, actionIndex)) {
+            return;
+        }
     }
 
     propagateValueThroughSeqout(flowState, componentIndex);

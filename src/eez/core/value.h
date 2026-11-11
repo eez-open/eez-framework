@@ -114,13 +114,17 @@ namespace flow {
 
 struct Value {
   public:
+    // The integer and float constructors set the whole 8-byte payload: an
+    // integer is sign or zero extended to 64 bits (so int32Value of any integer
+    // type up to 32 bits is the value itself), a float leaves the upper bytes 0.
+
     Value()
         : type(VALUE_TYPE_UNDEFINED), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint64Value(0)
     {
     }
 
 	Value(int value)
-        : type(VALUE_TYPE_INT32), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int32Value(value)
+        : type(VALUE_TYPE_INT32), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int64Value(value)
     {
     }
 
@@ -148,37 +152,37 @@ struct Value {
     }
 
     Value(int value, ValueType type_)
-        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int32Value(value)
+        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int64Value(value)
     {
     }
 
     Value(int value, ValueType type_, uint16_t options_)
-        : type(type_), unit(UNIT_UNKNOWN), options(options_), dstValueType(VALUE_TYPE_UNDEFINED), int32Value(value)
+        : type(type_), unit(UNIT_UNKNOWN), options(options_), dstValueType(VALUE_TYPE_UNDEFINED), int64Value(value)
     {
     }
 
     Value(int8_t value, ValueType type_)
-        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int8Value(value)
+        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int64Value(value)
     {
     }
 
     Value(uint8_t value, ValueType type_)
-        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint8Value(value)
+        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint64Value(value)
     {
     }
 
     Value(int16_t value, ValueType type_)
-        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int16Value(value)
+        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), int64Value(value)
     {
     }
 
     Value(uint16_t value, ValueType type_)
-        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint16Value(value)
+        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint64Value(value)
     {
     }
 
     Value(uint32_t value, ValueType type_)
-        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint32Value(value)
+        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint64Value(value)
     {
     }
 
@@ -193,18 +197,21 @@ struct Value {
     }
 
     Value(float value, Unit unit_)
-        : type(VALUE_TYPE_FLOAT), unit(unit_), options(0), dstValueType(VALUE_TYPE_UNDEFINED), floatValue(value)
+        : type(VALUE_TYPE_FLOAT), unit(unit_), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint64Value(0)
     {
+        floatValue = value;
     }
 
     Value(float value, Unit unit_, uint16_t options_)
-        : type(VALUE_TYPE_FLOAT), unit(unit_), options(options_), dstValueType(VALUE_TYPE_UNDEFINED), floatValue(value)
+        : type(VALUE_TYPE_FLOAT), unit(unit_), options(options_), dstValueType(VALUE_TYPE_UNDEFINED), uint64Value(0)
     {
+        floatValue = value;
     }
 
     Value(float value, ValueType type_)
-        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), floatValue(value)
+        : type(type_), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint64Value(0)
     {
+        floatValue = value;
     }
 
 	Value(double value, ValueType type_)
@@ -229,9 +236,16 @@ struct Value {
     }
 
 	Value(const Value& value)
-		: type(VALUE_TYPE_UNDEFINED), unit(UNIT_UNKNOWN), options(0), dstValueType(VALUE_TYPE_UNDEFINED), uint64Value(0)
+		: dstValueType(VALUE_TYPE_UNDEFINED)
 	{
-		*this = value;
+		copyFrom(value);
+	}
+
+	// the source is left undefined, its reference moves to this value
+	Value(Value &&value) noexcept
+		: dstValueType(VALUE_TYPE_UNDEFINED)
+	{
+		moveFrom(value);
 	}
 
 #if EEZ_OPTION_GUI
@@ -265,13 +279,36 @@ struct Value {
 #endif
     }
 
-    Value& operator = (const Value &value) {
-        freeRef();
+  private:
+    // copies the fields, the reference is not counted
+    void copyFields(const Value &value) {
+        type = value.type;
+        unit = value.unit;
+        options = value.options;
+        dstValueType = value.dstValueType;
+        memcpy((void *)&int64Value, (const void *)&value.int64Value, sizeof(int64_t));
+    }
 
+    // leaves this value undefined, the reference is not released
+    void clearFields() {
+        type = VALUE_TYPE_UNDEFINED;
+        unit = UNIT_UNKNOWN;
+        options = 0;
+        dstValueType = VALUE_TYPE_UNDEFINED;
+        uint64Value = 0;
+    }
+
+    // Copies the value into this value, whose reference is not released (it
+    // is being constructed or its old value is kept elsewhere). A string or an
+    // array in the assets becomes a STRING or ARRAY value that points to it
+    // (dstValueType is not changed), the reference of any other value is
+    // counted.
+    void copyFrom(const Value &value) {
         if (value.type == VALUE_TYPE_STRING_ASSET) {
             type = VALUE_TYPE_STRING;
             unit = 0;
             options = 0;
+            uint64Value = 0;
 
             DIAG_PUSH
             DIAG_IGNORE("-Wdangling-pointer")
@@ -281,36 +318,68 @@ struct Value {
             type = VALUE_TYPE_ARRAY;
             unit = 0;
             options = 0;
+            uint64Value = 0;
 
             DIAG_PUSH
             DIAG_IGNORE("-Wdangling-pointer")
             arrayValue = (ArrayValue *)((uint8_t *)&value.int32Value + value.int32Value);
             DIAG_POP
         } else {
-            type = value.type;
-            unit = value.unit;
-            options = value.options;
-            dstValueType = value.dstValueType;
-            memcpy((void *)&int64Value, (const void *)&value.int64Value, sizeof(int64_t));
+            copyFields(value);
 
             if (options & VALUE_OPTIONS_REF) {
                 refValue->refCounter++;
-            } /* else if (type == VALUE_TYPE_VALUE_PTR) {
-                if (pValueValue->options & VALUE_OPTIONS_REF) {
-                    pValueValue->refValue->refCounter++;
-                }
-            }*/
+            }
 
 #if defined(EEZ_DASHBOARD_API)
             if (type == VALUE_TYPE_JSON || type == VALUE_TYPE_STREAM) {
-                flow::dashboardObjectValueIncRef(value.int32Value);;
+                flow::dashboardObjectValueIncRef(value.int32Value);
             }
 #endif
         }
+    }
 
+    // Moves the value into this value, whose reference is not released: the
+    // reference of the source (also of a dashboard object) is not counted, it
+    // moves with the value, and the source is left undefined. A string or an
+    // array in the assets is copied (copyFrom), the source is not changed.
+    void moveFrom(Value &value) {
+        if (value.type == VALUE_TYPE_STRING_ASSET || value.type == VALUE_TYPE_ARRAY_ASSET) {
+            copyFrom(value);
+            return;
+        }
+        copyFields(value);
+        value.clearFields();
+    }
+
+  public:
+    Value& operator = (const Value &value) {
+        // the old value is released last: the source can be owned by it (the
+        // value itself, or an element of its array)
+        Value old;
+        old.copyFields(*this);
+        copyFrom(value);
         return *this;
     }
 
+    // the source is left undefined, its reference moves to this value
+    Value& operator = (Value &&value) noexcept {
+        if (this != &value) {
+            // the old value is released last: the source can be owned by it
+            // (an element of its array)
+            Value old;
+            old.copyFields(*this);
+            moveFrom(value);
+        }
+        return *this;
+    }
+
+    // The same value: the change detection of the widgets (WIDGET_STATE) and
+    // of the flow (propagated values, Watch Variable, user widget input
+    // actions) compares with these. A FLOAT, DOUBLE or DATE NaN is the same as
+    // another NaN, so a widget that shows NaN is not redrawn every frame. The
+    // == of the expressions (flow/operations.cpp) keeps a NaN not equal to
+    // anything (isNaNNumber).
     bool operator==(const Value &other) const {
 		return g_valueTypeCompareFunctions[type](*this, other);
 	}
@@ -318,6 +387,17 @@ struct Value {
 
     bool operator!=(const Value &other) const {
         return !(*this == other);
+    }
+
+    // a FLOAT, DOUBLE or DATE value that is NaN
+    bool isNaNNumber() const {
+        if (type == VALUE_TYPE_FLOAT) {
+            return floatValue != floatValue;
+        }
+        if (type == VALUE_TYPE_DOUBLE || type == VALUE_TYPE_DATE) {
+            return doubleValue != doubleValue;
+        }
+        return false;
     }
 
     ValueType getType() const {
@@ -446,8 +526,19 @@ struct Value {
 		return doubleValue;
 	}
 
+    // The string of a STRING, STRING_REF or STRING_ASSET value, also through a
+    // variable pointer (VALUE_PTR) or an element of an array; nullptr for other
+    // types. The pointer is valid while the value that owns the string lives.
+    // A computed value (native variable, module field, property ref, element of
+    // a dynamic array or of a dashboard object, JSON member) is not supported
+    // (an assert in debug builds): the caller resolves it with getValue() and
+    // keeps the result while it uses the string. Without the assert the string
+    // of a computed value is returned only when something else also owns it,
+    // otherwise nullptr.
 	const char *getString() const;
 
+    // The array of an ARRAY, ARRAY_ASSET or ARRAY_REF value, nullptr for other
+    // types (also for the NULL value of a failed makeArrayRef).
     const ArrayValue *getArray() const;
     ArrayValue *getArray();
 
@@ -550,9 +641,20 @@ struct Value {
 	int64_t toInt64(int *err = nullptr) const;
     bool toBool(int *err = nullptr) const;
 
+    // The functions that allocate (toString of a non-string, concatenateString,
+    // the make*Ref functions, clone of a string or an array) return a NULL value
+    // (VALUE_TYPE_NULL) when the allocation fails: check the type of the result
+    // (isString(), isArray(), ...) before using it.
+
 	Value toString(uint32_t id) const;
 
+	// a copy of the string (len -1: strlen(str)), one allocation
 	static Value makeStringRef(const char *str, int len, uint32_t id);
+	// A STRING_REF value with room for len characters and the terminating 0,
+	// for the caller to write the string into: *str is set to the characters
+	// (an empty string until the caller writes it). One allocation; on
+	// failure the NULL value and *str is nullptr.
+	static Value makeStringRefBuffer(int len, uint32_t id, char **str);
 	static Value concatenateString(const Value &str1, const Value &str2);
 
     static Value makeArrayRef(int arraySize, int arrayType, uint32_t id);
@@ -615,12 +717,9 @@ struct Value {
 	};
 };
 
+// The characters follow the StringRef in the same allocation (str points to
+// them), so the string is freed with the StringRef.
 struct StringRef : public Ref {
-    ~StringRef() {
-        if (str) {
-            eez::free(str);
-        }
-    }
 	char *str;
 };
 

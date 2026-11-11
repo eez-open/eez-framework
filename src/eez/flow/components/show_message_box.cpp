@@ -12,10 +12,15 @@
 
 #if EEZ_OPTION_GUI
 
+#include <limits.h>
+#include <stdint.h>
+#include <stdio.h>
+
 #include <eez/flow/flow.h>
 #include <eez/flow/components.h>
 #include <eez/flow/flow_defs_v3.h>
 #include <eez/flow/expression.h>
+#include <eez/flow/private.h>
 
 #include <eez/gui/gui.h>
 
@@ -30,38 +35,103 @@ struct ShowMessagePageActionComponent : public Component {
 	uint8_t type;
 };
 
+// keeps the flow state alive while the message box is open
 struct ShowMessagePageComponentExecutionState : public ComponenentExecutionState {
-	FlowState *flowState;
-    unsigned componentIndex;
 };
 
-ShowMessagePageComponentExecutionState *g_executionState;
+// The components waiting for the message box they opened to close, by the id of
+// the message box (the action parameter of the toast, the user parameter of the
+// question): weak references, the flow state can be freed while the message box
+// is open (its flow stopped), then the answer is ignored. A new toast replaces
+// the toast shown before and a new question the question shown before (they are
+// dismissed), so only a few components are waiting at the same time.
+struct WaitingComponents {
+    static const int N = 4;
 
-void infoMessageCallback() {
-    auto flowState = g_executionState->flowState;
-    auto componentIndex = g_executionState->componentIndex;
-    g_executionState = nullptr;
+    ComponentRef refs[N];
+    int ids[N] = {}; // 0: the slot is free
+    int lastId = 0;
 
-    deallocateComponentExecutionState(flowState, componentIndex);
+    // returns the id for the message box; when there is no free slot, the
+    // component that waits the longest is forgotten
+    int add(const ComponentRef &ref) {
+        int slot = 0;
+        for (int i = 0; i < N; i++) {
+            if (ids[i] == 0) {
+                slot = i;
+                break;
+            }
+            if (ids[i] < ids[slot]) {
+                slot = i;
+            }
+        }
 
-    propagateValueThroughSeqout(flowState, componentIndex);
+        lastId = lastId < INT_MAX ? lastId + 1 : 1;
+
+        refs[slot] = ref;
+        ids[slot] = lastId;
+        return lastId;
+    }
+
+    // the component waiting for the message box, an empty reference if none
+    ComponentRef take(int id) {
+        if (id != 0) {
+            for (int i = 0; i < N; i++) {
+                if (ids[i] == id) {
+                    ids[i] = 0;
+                    return refs[i];
+                }
+            }
+        }
+        return ComponentRef();
+    }
+};
+
+static WaitingComponents g_waitingComponents;
+
+static void *questionUserParam(int id) {
+    return (void *)(intptr_t)id;
 }
 
-void errorMessageCallback(int userParam) {
-    auto flowState = g_executionState->flowState;
-    auto componentIndex = g_executionState->componentIndex;
-    g_executionState = nullptr;
-
-    deallocateComponentExecutionState(flowState, componentIndex);
-
-    propagateValueThroughSeqout(flowState, componentIndex);
+static int questionId(void *userParam) {
+    return (int)(intptr_t)userParam;
 }
 
+// The component has ended: the action flow state is freed if nothing else keeps
+// it (e.g. no component is connected to the output that was used).
+static void freeFlowStateIfDone(FlowState *flowState) {
+    while (flowState && canFreeFlowState(flowState)) {
+        auto parentFlowState = flowState->parentFlowState;
+        freeFlowState(flowState);
+        flowState = parentFlowState;
+    }
+}
+
+// Close of the info or error toast, also when the toast is closed without it
+// (dismissed): the flow continues through @seqout.
+static void messageClosed(int id) {
+    auto ref = g_waitingComponents.take(id);
+    auto flowState = ref.getFlowState();
+    if (!flowState) {
+        return;
+    }
+
+    deallocateComponentExecutionState(flowState, ref.componentIndex);
+
+    propagateValueThroughSeqout(flowState, ref.componentIndex);
+
+    freeFlowStateIfDone(flowState);
+}
+
+// a button of the question is pressed: the output of the button
 void questionCallback(void *userParam, unsigned buttonIndex) {
-    auto executionState = (ShowMessagePageComponentExecutionState *)userParam;
+    auto ref = g_waitingComponents.take(questionId(userParam));
+    auto flowState = ref.getFlowState();
+    if (!flowState) {
+        return;
+    }
 
-    auto flowState = executionState->flowState;
-    auto componentIndex = executionState->componentIndex;
+    auto componentIndex = ref.componentIndex;
 
     deallocateComponentExecutionState(flowState, componentIndex);
 
@@ -70,6 +140,21 @@ void questionCallback(void *userParam, unsigned buttonIndex) {
     if (buttonIndex < component->outputs.count - 1) {
         propagateValue(flowState, componentIndex, 1 + buttonIndex);
     }
+
+    freeFlowStateIfDone(flowState);
+}
+
+// the question is closed without a button: no output, the component ends
+static void questionDismissed(void *userParam) {
+    auto ref = g_waitingComponents.take(questionId(userParam));
+    auto flowState = ref.getFlowState();
+    if (!flowState) {
+        return;
+    }
+
+    deallocateComponentExecutionState(flowState, ref.componentIndex);
+
+    freeFlowStateIfDone(flowState);
 }
 
 void executeShowMessageBoxComponent(FlowState *flowState, unsigned componentIndex) {
@@ -80,18 +165,8 @@ void executeShowMessageBoxComponent(FlowState *flowState, unsigned componentInde
         return;
     }
 
-    auto executionState = allocateComponentExecutionState<ShowMessagePageComponentExecutionState>(flowState, componentIndex);
-    executionState->flowState = flowState;
-    executionState->componentIndex = componentIndex;
-
-	if (component->type == MESSAGE_BOX_TYPE_INFO) {
-        g_executionState = executionState;
-		getAppContextFromId(APP_CONTEXT_ID_DEVICE)->infoMessage(messageValue.getString(), infoMessageCallback, "Close");
-	} else if (component->type == MESSAGE_BOX_TYPE_ERROR) {
-        g_executionState = executionState;
-		getAppContextFromId(APP_CONTEXT_ID_DEVICE)->errorMessageWithAction(messageValue, errorMessageCallback, "Close", 0);
-	} else if (component->type == MESSAGE_BOX_TYPE_QUESTION) {
-        Value buttonsValue;
+    Value buttonsValue;
+    if (component->type == MESSAGE_BOX_TYPE_QUESTION) {
         if (!evalProperty(flowState, componentIndex, defs_v3::SHOW_MESSAGE_BOX_ACTION_COMPONENT_PROPERTY_BUTTONS, buttonsValue, FlowError::Property("ShowMessageBox", "Buttons"))) {
             return;
         }
@@ -102,6 +177,14 @@ void executeShowMessageBoxComponent(FlowState *flowState, unsigned componentInde
         }
 
         auto buttonsArray = buttonsValue.getArray();
+
+        if (buttonsArray->arraySize > gui::MAX_MENU_ITEMS) {
+            char errorMessage[256];
+            snprintf(errorMessage, sizeof(errorMessage), "Too many buttons in ShowMessageBox: %d, the max. is %d", (int)buttonsArray->arraySize, (int)gui::MAX_MENU_ITEMS);
+            throwError(flowState, componentIndex, FlowError::Plain(errorMessage));
+            return;
+        }
+
         for (uint32_t i = 0; i < buttonsArray->arraySize; i++) {
             if (!buttonsArray->values[i].isString()) {
                 char errorMessage[256];
@@ -110,8 +193,23 @@ void executeShowMessageBoxComponent(FlowState *flowState, unsigned componentInde
                 return;
             }
         }
+    }
 
-        getAppContextFromId(APP_CONTEXT_ID_DEVICE)->questionDialog(messageValue, buttonsValue, executionState, questionCallback);
+    // the execution state is allocated before the message box is shown: a toast or
+    // a question shown before is dismissed when this one replaces it, which must
+    // not free this flow state
+    allocateComponentExecutionState<ShowMessagePageComponentExecutionState>(flowState, componentIndex);
+
+    int id = g_waitingComponents.add(ComponentRef(flowState, componentIndex));
+
+    auto appContext = getAppContextFromId(APP_CONTEXT_ID_DEVICE);
+
+	if (component->type == MESSAGE_BOX_TYPE_INFO) {
+		appContext->infoMessageWithAction(messageValue, messageClosed, "Close", id, messageClosed);
+	} else if (component->type == MESSAGE_BOX_TYPE_ERROR) {
+		appContext->errorMessageWithAction(messageValue, messageClosed, "Close", id, messageClosed);
+	} else if (component->type == MESSAGE_BOX_TYPE_QUESTION) {
+        appContext->questionDialog(messageValue, buttonsValue, questionUserParam(id), questionCallback, questionDismissed);
     }
 }
 

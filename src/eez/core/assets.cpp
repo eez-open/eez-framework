@@ -106,7 +106,6 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 #endif
 }
 
-#if defined(EEZ_FOR_LVGL) || defined(EEZ_DASHBOARD_API)
 static void allocMemoryForDecompressedAssets(const uint8_t *assetsData, uint32_t assetsDataSize, uint8_t *&decompressedAssetsMemoryBuffer, uint32_t &decompressedAssetsMemoryBufferSize) {
     EEZ_UNUSED(assetsDataSize);
 
@@ -126,11 +125,14 @@ static void allocMemoryForDecompressedAssets(const uint8_t *assetsData, uint32_t
     assert (header->tag == HEADER_TAG_COMPRESSED);
     uint32_t decompressedSize = header->decompressedSize;
 
-    decompressedAssetsMemoryBufferSize = decompressedDataOffset + decompressedSize;
+    decompressedAssetsMemoryBufferSize = (uint32_t)(decompressedDataOffset + decompressedSize);
 
     decompressedAssetsMemoryBuffer = (uint8_t *)eez::alloc(decompressedAssetsMemoryBufferSize, 0x587da194);
+    if (decompressedAssetsMemoryBuffer) {
+        // the fields before the settings are not in the compressed data
+        memset(decompressedAssetsMemoryBuffer, 0, decompressedDataOffset);
+    }
 }
-#endif
 
 void loadMainAssets(const uint8_t *assets, uint32_t assetsSize) {
     auto header = (Header *)assets;
@@ -141,15 +143,15 @@ void loadMainAssets(const uint8_t *assets, uint32_t assetsSize) {
         g_mainAssets = (Assets *)(assets + sizeof(uint32_t)/* skip HEADER_TAG*/);
 		g_mainAssetsAreMutable = false;
     } else {
-#if defined(EEZ_FOR_LVGL) || defined(EEZ_DASHBOARD_API)
-        uint8_t *DECOMPRESSED_ASSETS_START_ADDRESS = 0;
-        uint32_t MAX_DECOMPRESSED_ASSETS_SIZE = 0;
-        allocMemoryForDecompressedAssets(assets, assetsSize, DECOMPRESSED_ASSETS_START_ADDRESS, MAX_DECOMPRESSED_ASSETS_SIZE);
-#endif
-        g_mainAssets = (Assets *)DECOMPRESSED_ASSETS_START_ADDRESS;
+        // a buffer of the size of the decompressed assets
+        uint8_t *decompressedAssetsBuffer = nullptr;
+        uint32_t decompressedAssetsBufferSize = 0;
+        allocMemoryForDecompressedAssets(assets, assetsSize, decompressedAssetsBuffer, decompressedAssetsBufferSize);
+        assert(decompressedAssetsBuffer);
+        g_mainAssets = (Assets *)decompressedAssetsBuffer;
 		g_mainAssetsAreMutable = true;
         g_mainAssets->external = false;
-        auto decompressedSize = decompressAssetsData(assets, assetsSize, g_mainAssets, MAX_DECOMPRESSED_ASSETS_SIZE, nullptr);
+        auto decompressedSize = decompressAssetsData(assets, assetsSize, g_mainAssets, decompressedAssetsBufferSize, nullptr);
         assert(decompressedSize);
     }
 }

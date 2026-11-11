@@ -14,6 +14,7 @@
 
 #include <math.h>
 #include <assert.h>
+#include <stdio.h>
 #include <string.h>
 
 #include <eez/core/sound.h>
@@ -132,6 +133,7 @@ void AppContext::doShowPage(int pageId, Page *page, int previousPageId, bool act
     m_pageNavigationStack[m_pageNavigationStackPointer].timelinePosition = 0;
 
     if (page) {
+        page->m_pageAppContext = this;
         page->pageWillAppear();
     }
 
@@ -160,8 +162,9 @@ void AppContext::setPage(int pageId) {
 void AppContext::replacePage(int pageId, Page *page) {
     int previousPageId = getActivePageId();
 
+    // the page that stays on the stack is not freed
     Page *activePage = getActivePage();
-    if (activePage) {
+    if (activePage && activePage != page) {
     	activePage->pageFree();
     }
 
@@ -173,14 +176,33 @@ void AppContext::pushPage(int pageId, Page *page) {
         return;
     }
 
+    // the page goes above the active page, except above these pages, which it replaces
+    bool advance = getActivePageId() != EEZ_PAGE_ID_NONE && getActivePageId() != EEZ_PAGE_ID_ASYNC_OPERATION_IN_PROGRESS && getActivePageId() != INTERNAL_PAGE_ID_TOAST_MESSAGE;
+
+    if (advance && m_pageNavigationStackPointer + 1 >= CONF_GUI_PAGE_NAVIGATION_STACK_SIZE) {
+        // the page stack is full: the page is not shown
+        printf("pushPage: the page stack is full (%d pages), page %d is not shown\n", CONF_GUI_PAGE_NAVIGATION_STACK_SIZE, pageId);
+        if (page && !isPageObjectOnStack(page)) {
+            // e.g. a toast or a question that waits to be closed is dismissed
+            page->pageFree();
+        }
+        return;
+    }
+
     onBeforePushPage(pageId);
 
     int previousPageId = getActivePageId();
 
     // advance stack pointer
-    if (getActivePageId() != EEZ_PAGE_ID_NONE && getActivePageId() != EEZ_PAGE_ID_ASYNC_OPERATION_IN_PROGRESS && getActivePageId() != INTERNAL_PAGE_ID_TOAST_MESSAGE) {
+    if (advance) {
         m_pageNavigationStackPointer++;
-        assert (m_pageNavigationStackPointer < CONF_GUI_PAGE_NAVIGATION_STACK_SIZE);
+    } else {
+        // the replaced page is freed, unless it is the pushed page itself (a toast
+        // replaced by a newer toast)
+        Page *replacedPage = getActivePage();
+        if (replacedPage && replacedPage != page && !isPageObjectOnStack(replacedPage, m_pageNavigationStackPointer)) {
+            replacedPage->pageFree();
+        }
     }
 
     doShowPage(pageId, page, previousPageId, false, true);
@@ -236,6 +258,15 @@ Page *AppContext::getPage(int pageId) {
 bool AppContext::isPageOnStack(int pageId) {
     for (int i = 0; i <= m_pageNavigationStackPointer; ++i) {
         if (m_pageNavigationStack[i].pageId == pageId) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AppContext::isPageObjectOnStack(const Page *page, int exceptIndex) {
+    for (int i = 0; i <= m_pageNavigationStackPointer; ++i) {
+        if (i != exceptIndex && m_pageNavigationStack[i].page == page) {
             return true;
         }
     }
@@ -513,7 +544,139 @@ int AppContext::getLongTouchActionHook(const WidgetCursor &widgetCursor) {
     return EEZ_ACTION_ID_NONE;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Toasts and dialogs asked for on another thread are made on the GUI thread
+// (the toast and dialog pages, the font used to measure the texts and the page
+// stack belong to the GUI thread).
+
+enum DeferredMessageKind {
+    DEFERRED_INFO,
+    DEFERRED_INFO_WITH_ACTION,
+    DEFERRED_INFO_WITH_ACTION_PARAM,
+    DEFERRED_ERROR,
+    DEFERRED_ERROR_WITH_ACTION,
+    DEFERRED_ERROR_WITH_ACTION_PARAM,
+    DEFERRED_YES_NO,
+    DEFERRED_QUESTION
+};
+
+struct DeferredMessage {
+    DeferredMessageKind kind;
+    AppContext *appContext;
+    // copies only this message references (copyForGuiThread)
+    Value message;
+    Value buttons;
+    bool autoDismiss = false;
+    void (*action)() = nullptr;
+    void (*actionWithParam)(int param) = nullptr;
+    void (*dismissed)(int param) = nullptr;
+    const char *actionLabel = nullptr;
+    int actionParam = 0;
+    int yesNoPageId = 0;
+    void (*yesCallback)() = nullptr;
+    void (*noCallback)() = nullptr;
+    void (*cancelCallback)() = nullptr;
+    void *userParam = nullptr;
+    void (*questionCallback)(void *userParam, unsigned buttonIndex) = nullptr;
+    void (*questionDismissed)(void *userParam) = nullptr;
+};
+
+// A copy of the value for the GUI thread: the reference counts of Values are not
+// thread safe, so strings and arrays are copied into new ones that only the
+// message references; other values (no reference) are copied as they are.
+static Value copyForGuiThread(const Value &value) {
+    Value v = value.getValue();
+    if (!(v.getOptions() & VALUE_OPTIONS_REF)) {
+        return v;
+    }
+
+    if (v.isArray()) {
+        auto array = v.getArray();
+        Value copy = Value::makeArrayRef(array->arraySize, array->arrayType, 0x3b5d81e2);
+        auto copyArray = copy.getArray();
+        if (!copyArray) {
+            return Value();
+        }
+        for (uint32_t i = 0; i < array->arraySize; i++) {
+            copyArray->values[i] = copyForGuiThread(array->values[i]);
+        }
+        return copy;
+    }
+
+    Value text = v.toString(0x6a0e2b41);
+    const char *str = text.getString();
+    return Value::makeStringRef(str ? str : "", -1, 0x47c90d16);
+}
+
+static bool deferMessage(DeferredMessage *message) {
+    return callInGuiThread(AppContext::showDeferredMessage, message);
+}
+
+void AppContext::showDeferredMessage(void *param) {
+    auto message = (DeferredMessage *)param;
+    auto appContext = message->appContext;
+
+    switch (message->kind) {
+    case DEFERRED_INFO:
+        appContext->pushToastMessage(ToastMessagePage::create(appContext, INFO_TOAST, message->message));
+        break;
+    case DEFERRED_INFO_WITH_ACTION:
+        appContext->pushToastMessage(ToastMessagePage::create(appContext, INFO_TOAST, message->message, message->action, message->actionLabel));
+        break;
+    case DEFERRED_INFO_WITH_ACTION_PARAM:
+        appContext->pushToastMessage(ToastMessagePage::create(appContext, INFO_TOAST, message->message, message->actionWithParam, message->actionLabel, message->actionParam, message->dismissed));
+        break;
+    case DEFERRED_ERROR:
+        appContext->pushToastMessage(ToastMessagePage::create(appContext, ERROR_TOAST, message->message, message->autoDismiss));
+        sound::playBeep();
+        break;
+    case DEFERRED_ERROR_WITH_ACTION:
+        appContext->pushToastMessage(ToastMessagePage::create(appContext, ERROR_TOAST, message->message, message->action, message->actionLabel));
+        sound::playBeep();
+        break;
+    case DEFERRED_ERROR_WITH_ACTION_PARAM:
+        appContext->pushToastMessage(ToastMessagePage::create(appContext, ERROR_TOAST, message->message, message->actionWithParam, message->actionLabel, message->actionParam, message->dismissed));
+        sound::playBeep();
+        break;
+    case DEFERRED_YES_NO:
+        appContext->yesNoDialog(message->yesNoPageId, message->message, message->yesCallback, message->noCallback, message->cancelCallback);
+        break;
+    case DEFERRED_QUESTION:
+        appContext->questionDialog(message->message, message->buttons, message->userParam, message->questionCallback, message->questionDismissed);
+        break;
+    }
+
+    ObjectAllocator<DeferredMessage>::deallocate(message);
+}
+
+// a DeferredMessage for a call on another thread, nullptr on the GUI thread
+static DeferredMessage *newDeferredMessage(AppContext *appContext, DeferredMessageKind kind, const Value &message) {
+    if (isGuiThread()) {
+        return nullptr;
+    }
+    auto deferredMessage = ObjectAllocator<DeferredMessage>::allocate(0x2c6f3a9d);
+    if (!deferredMessage) {
+        return nullptr;
+    }
+    deferredMessage->kind = kind;
+    deferredMessage->appContext = appContext;
+    deferredMessage->message = copyForGuiThread(message);
+    return deferredMessage;
+}
+
+// a string copied into a string Value, for a message from another thread (it can
+// be in a buffer of the caller)
+static Value stringForGuiThread(const char *message) {
+    return isGuiThread() ? Value(message) : Value::makeStringRef(message ? message : "", -1, 0x1f7c3e55);
+}
+
 void AppContext::yesNoDialog(int yesNoPageId, const char *message, void (*yes_callback)(), void (*no_callback)(), void (*cancel_callback)()) {
+    if (!isGuiThread()) {
+        // a copy of the message for the GUI thread
+        yesNoDialog(yesNoPageId, Value::makeStringRef(message ? message : "", -1, 0x5d2a7c13), yes_callback, no_callback, cancel_callback);
+        return;
+    }
+
     set(WidgetCursor(), EEZ_DATA_ID_ALERT_MESSAGE, Value(message));
 
     m_dialogYesCallback = yes_callback;
@@ -524,6 +687,17 @@ void AppContext::yesNoDialog(int yesNoPageId, const char *message, void (*yes_ca
 }
 
 void AppContext::yesNoDialog(int yesNoPageId, Value value, void(*yes_callback)(), void(*no_callback)(), void(*cancel_callback)()) {
+    auto deferredMessage = newDeferredMessage(this, DEFERRED_YES_NO, value);
+    if (deferredMessage) {
+        deferredMessage->yesNoPageId = yesNoPageId;
+        deferredMessage->yesCallback = yes_callback;
+        deferredMessage->noCallback = no_callback;
+        deferredMessage->cancelCallback = cancel_callback;
+        if (deferMessage(deferredMessage)) {
+            return;
+        }
+    }
+
 	set(WidgetCursor(), EEZ_DATA_ID_ALERT_MESSAGE, value);
 
 	m_dialogYesCallback = yes_callback;
@@ -534,33 +708,96 @@ void AppContext::yesNoDialog(int yesNoPageId, Value value, void(*yes_callback)()
 }
 
 void AppContext::infoMessage(const char *message) {
+    auto deferredMessage = newDeferredMessage(this, DEFERRED_INFO, stringForGuiThread(message));
+    if (deferredMessage && deferMessage(deferredMessage)) {
+        return;
+    }
     pushToastMessage(ToastMessagePage::create(this, INFO_TOAST, message));
 }
 
 void AppContext::infoMessage(Value value) {
+    auto deferredMessage = newDeferredMessage(this, DEFERRED_INFO, value);
+    if (deferredMessage && deferMessage(deferredMessage)) {
+        return;
+    }
     pushToastMessage(ToastMessagePage::create(this, INFO_TOAST, value));
 }
 
 void AppContext::infoMessage(const char *message, void (*action)(), const char *actionLabel) {
+    auto deferredMessage = newDeferredMessage(this, DEFERRED_INFO_WITH_ACTION, stringForGuiThread(message));
+    if (deferredMessage) {
+        deferredMessage->action = action;
+        deferredMessage->actionLabel = actionLabel;
+        if (deferMessage(deferredMessage)) {
+            return;
+        }
+    }
     pushToastMessage(ToastMessagePage::create(this, INFO_TOAST, message, action, actionLabel));
 }
 
 void AppContext::errorMessage(const char *message, bool autoDismiss) {
+    auto deferredMessage = newDeferredMessage(this, DEFERRED_ERROR, stringForGuiThread(message));
+    if (deferredMessage) {
+        deferredMessage->autoDismiss = autoDismiss;
+        if (deferMessage(deferredMessage)) {
+            return;
+        }
+    }
     AppContext::pushToastMessage(ToastMessagePage::create(this, ERROR_TOAST, message, autoDismiss));
     sound::playBeep();
 }
 
 void AppContext::errorMessage(Value value) {
+    auto deferredMessage = newDeferredMessage(this, DEFERRED_ERROR, value);
+    if (deferredMessage) {
+        // the Value overload of create has no auto dismiss (a Close button)
+        deferredMessage->autoDismiss = false;
+        if (deferMessage(deferredMessage)) {
+            return;
+        }
+    }
     AppContext::pushToastMessage(ToastMessagePage::create(this, ERROR_TOAST, value));
     sound::playBeep();
 }
 
-void AppContext::errorMessageWithAction(Value value, void (*action)(int param), const char *actionLabel, int actionParam) {
-    AppContext::pushToastMessage(ToastMessagePage::create(this, ERROR_TOAST, value, action, actionLabel, actionParam));
+void AppContext::infoMessageWithAction(Value value, void (*action)(int param), const char *actionLabel, int actionParam, void (*dismissed)(int param)) {
+    auto deferredMessage = newDeferredMessage(this, DEFERRED_INFO_WITH_ACTION_PARAM, value);
+    if (deferredMessage) {
+        deferredMessage->actionWithParam = action;
+        deferredMessage->actionLabel = actionLabel;
+        deferredMessage->actionParam = actionParam;
+        deferredMessage->dismissed = dismissed;
+        if (deferMessage(deferredMessage)) {
+            return;
+        }
+    }
+    pushToastMessage(ToastMessagePage::create(this, INFO_TOAST, value, action, actionLabel, actionParam, dismissed));
+}
+
+void AppContext::errorMessageWithAction(Value value, void (*action)(int param), const char *actionLabel, int actionParam, void (*dismissed)(int param)) {
+    auto deferredMessage = newDeferredMessage(this, DEFERRED_ERROR_WITH_ACTION_PARAM, value);
+    if (deferredMessage) {
+        deferredMessage->actionWithParam = action;
+        deferredMessage->actionLabel = actionLabel;
+        deferredMessage->actionParam = actionParam;
+        deferredMessage->dismissed = dismissed;
+        if (deferMessage(deferredMessage)) {
+            return;
+        }
+    }
+    AppContext::pushToastMessage(ToastMessagePage::create(this, ERROR_TOAST, value, action, actionLabel, actionParam, dismissed));
     sound::playBeep();
 }
 
 void AppContext::errorMessageWithAction(const char *message, void (*action)(), const char *actionLabel) {
+    auto deferredMessage = newDeferredMessage(this, DEFERRED_ERROR_WITH_ACTION, stringForGuiThread(message));
+    if (deferredMessage) {
+        deferredMessage->action = action;
+        deferredMessage->actionLabel = actionLabel;
+        if (deferMessage(deferredMessage)) {
+            return;
+        }
+    }
     AppContext::pushToastMessage(ToastMessagePage::create(this, ERROR_TOAST, message, action, actionLabel));
     sound::playBeep();
 }
@@ -569,8 +806,23 @@ void AppContext::pushToastMessage(ToastMessagePage *toastMessage) {
     pushPage(INTERNAL_PAGE_ID_TOAST_MESSAGE, toastMessage);
 }
 
-void AppContext::questionDialog(Value message, Value buttons, void *userParam, void (*callback)(void *userParam, unsigned buttonIndex)) {
-    pushPage(INTERNAL_PAGE_ID_QUESTION, QuestionPage::create(this, message, buttons, userParam, callback));
+void AppContext::questionDialog(Value message, Value buttons, void *userParam, void (*callback)(void *userParam, unsigned buttonIndex), void (*dismissed)(void *userParam)) {
+    auto deferredMessage = newDeferredMessage(this, DEFERRED_QUESTION, message);
+    if (deferredMessage) {
+        deferredMessage->buttons = copyForGuiThread(buttons);
+        deferredMessage->userParam = userParam;
+        deferredMessage->questionCallback = callback;
+        deferredMessage->questionDismissed = dismissed;
+        if (deferMessage(deferredMessage)) {
+            return;
+        }
+    }
+
+    // the question page is one object: the question shown before is closed (it is
+    // dismissed)
+    removePageFromStack(INTERNAL_PAGE_ID_QUESTION);
+
+    pushPage(INTERNAL_PAGE_ID_QUESTION, QuestionPage::create(this, message, buttons, userParam, callback, dismissed));
 }
 
 void AppContext::getBoundingRect(Rect &rectBounding) {

@@ -19,7 +19,8 @@ namespace date {
 enum DstRule { DST_RULE_OFF, DST_RULE_EUROPE, DST_RULE_USA, DST_RULE_AUSTRALIA };
 enum Format { FORMAT_DMY_24, FORMAT_MDY_24, FORMAT_DMY_12, FORMAT_MDY_12 };
 
-typedef uint64_t Date;
+// milliseconds since 1970-01-01T00:00:00 (negative before 1970)
+typedef int64_t Date;
 
 extern Format g_localeFormat;
 extern int g_timeZone;

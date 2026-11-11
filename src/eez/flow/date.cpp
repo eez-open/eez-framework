@@ -21,18 +21,10 @@ namespace eez {
 namespace flow {
 namespace date {
 
-#define SECONDS_PER_MINUTE 60UL
-#define SECONDS_PER_HOUR (SECONDS_PER_MINUTE * 60)
-#define SECONDS_PER_DAY (SECONDS_PER_HOUR * 24)
-
-// leap year calulator expects year argument as years offset from 1970
-#define LEAP_YEAR(Y)                                                                               \
-    (((1970 + Y) > 0) && !((1970 + Y) % 4) && (((1970 + Y) % 100) || !((1970 + Y) % 400)))
-
-////////////////////////////////////////////////////////////////////////////////
-
-// API starts months from 1, this array starts from 0
-static const uint8_t monthDays[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+static const int64_t MS_PER_SECOND = 1000;
+static const int64_t MS_PER_MINUTE = 60 * MS_PER_SECOND;
+static const int64_t MS_PER_HOUR = 60 * MS_PER_MINUTE;
+static const int64_t MS_PER_DAY = 24 * MS_PER_HOUR;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -66,6 +58,9 @@ DstRule g_dstRule = DST_RULE_OFF;
 // PRIVATE function declarations
 //
 
+static int64_t floorDiv(int64_t a, int64_t b);
+static int64_t daysFromCivil(int64_t year, int month, int day);
+static void civilFromDays(int64_t days, int64_t &year, int &month, int &day);
 static void convertTime24to12(int &hours, bool &am);
 //static void convertTime12to24(int &hours, bool am);
 static bool isDst(Date time, DstRule dstRule);
@@ -81,7 +76,7 @@ Date now() {
 void toString(Date time, char *str, uint32_t strLen) {
     int year, month, day, hours, minutes, seconds, milliseconds;
     breakDate(time, year, month, day, hours, minutes, seconds, milliseconds);
-    snprintf(str, strLen, "%04d-%02d-%02dT%02d:%02d:%02d.%06d", year, month, day, hours, minutes, seconds, milliseconds);
+    snprintf(str, strLen, "%04d-%02d-%02dT%02d:%02d:%02d.%03d", year, month, day, hours, minutes, seconds, milliseconds);
 }
 
 void toLocaleString(Date time, char *str, uint32_t strLen) {
@@ -109,88 +104,43 @@ Date fromString(const char *str) {
 }
 
 Date makeDate(int year, int month, int day, int hours, int minutes, int seconds, int milliseconds) {
-    // seconds from 1970 till 1 jan 00:00:00 of the given year
-    year -= 1970;
+    // a month outside 1 to 12 continues into the previous or the next years
+    // (month 0 is December of the previous year, month 13 January of the next
+    // year), like JavaScript's Date
+    int64_t monthIndex = (int64_t)month - 1;
+    int64_t yearOffset = floorDiv(monthIndex, 12);
+    monthIndex -= yearOffset * 12;
 
-    Date time = year * 365 * SECONDS_PER_DAY;
+    // the day, hours, minutes, seconds and milliseconds are added as they are,
+    // also when they are out of their range
+    int64_t days = daysFromCivil(year + yearOffset, (int)monthIndex + 1, 1) + ((int64_t)day - 1);
+    int64_t timeOfDay = hours * MS_PER_HOUR + minutes * MS_PER_MINUTE + seconds * MS_PER_SECOND + milliseconds;
 
-    for (int i = 0; i < year; i++) {
-        if (LEAP_YEAR(i)) {
-            time += SECONDS_PER_DAY; // add extra days for leap years
-        }
-    }
-
-    // add days for this year, months start from 1
-    for (int i = 1; i < month; i++) {
-        if ((i == 2) && LEAP_YEAR(year)) {
-            time += SECONDS_PER_DAY * 29;
-        } else {
-            time += SECONDS_PER_DAY * monthDays[i - 1]; // monthDay array starts from 0
-        }
-    }
-    time += (day - 1) * SECONDS_PER_DAY;
-    time += hours * SECONDS_PER_HOUR;
-    time += minutes * SECONDS_PER_MINUTE;
-    time += seconds;
-
-    time *= 1000;
-
-    time += milliseconds;
-
-    return time;
+    // unsigned math: a year far out of range wraps instead of overflowing
+    return (Date)((uint64_t)days * (uint64_t)MS_PER_DAY + (uint64_t)timeOfDay);
 }
 
 void breakDate(Date time, int &result_year, int &result_month, int &result_day, int &result_hours, int &result_minutes, int &result_seconds, int &result_milliseconds) {
-    // break the given time_t into time components
-    uint8_t year;
-    uint8_t month, monthLength;
-    uint32_t days;
-
-    result_milliseconds = time % 1000;
-    time /= 1000; // now it is seconds
-
-    result_seconds = time % 60;
-    time /= 60; // now it is minutes
-
-    result_minutes = time % 60;
-    time /= 60; // now it is hours
-
-    result_hours = time % 24;
-    time /= 24; // now it is days
-
-    year = 0;
-    days = 0;
-    while ((unsigned)(days += (LEAP_YEAR(year) ? 366 : 365)) <= time) {
-        year++;
-    }
-    result_year = year + 1970; // year is offset from 1970
-
-    days -= LEAP_YEAR(year) ? 366 : 365;
-    time -= days; // now it is days in this year, starting at 0
-
-    days = 0;
-    month = 0;
-    monthLength = 0;
-    for (month = 0; month < 12; ++month) {
-        if (month == 1) { // february
-            if (LEAP_YEAR(year)) {
-                monthLength = 29;
-            } else {
-                monthLength = 28;
-            }
-        } else {
-            monthLength = monthDays[month];
-        }
-
-        if (time >= monthLength) {
-            time -= monthLength;
-        } else {
-            break;
-        }
+    // days since 1970-01-01 and milliseconds since the midnight of that day
+    int64_t days = time / MS_PER_DAY;
+    int64_t timeOfDay = time % MS_PER_DAY;
+    if (timeOfDay < 0) {
+        timeOfDay += MS_PER_DAY;
+        days--;
     }
 
-    result_month = month + 1; // jan is month 1
-    result_day = time + 1;    // day of month
+    result_milliseconds = (int)(timeOfDay % 1000);
+    timeOfDay /= 1000; // now it is seconds
+
+    result_seconds = (int)(timeOfDay % 60);
+    timeOfDay /= 60; // now it is minutes
+
+    result_minutes = (int)(timeOfDay % 60);
+    result_hours = (int)(timeOfDay / 60);
+
+    int64_t year;
+    civilFromDays(days, year, result_month, result_day);
+    result_year = (int)year;
 }
 
 int getYear(Date time) {
@@ -236,17 +186,17 @@ int getMilliseconds(Date time) {
 }
 
 Date utcToLocal(Date utc) {
-    Date local = utc + ((g_timeZone / 100) * 60 + g_timeZone % 100) * 60L * 1000L;
+    Date local = utc + ((g_timeZone / 100) * 60 + g_timeZone % 100) * MS_PER_MINUTE;
     if (isDst(local, g_dstRule)) {
-        local += SECONDS_PER_HOUR * 1000L;
+        local += MS_PER_HOUR;
     }
     return local;
 }
 
 Date localToUtc(Date local) {
-    Date utc = local - ((g_timeZone / 100) * 60 + g_timeZone % 100) * 60L * 1000L;
+    Date utc = local - ((g_timeZone / 100) * 60 + g_timeZone % 100) * MS_PER_MINUTE;
     if (isDst(local, g_dstRule)) {
-        utc -= SECONDS_PER_HOUR * 1000L;
+        utc -= MS_PER_HOUR;
     }
     return utc;
 }
@@ -255,6 +205,44 @@ Date localToUtc(Date local) {
 //
 // PRIVATE function definitions
 //
+
+// division rounded towards minus infinity, b > 0
+static int64_t floorDiv(int64_t a, int64_t b) {
+    int64_t quotient = a / b;
+    if (a % b < 0) {
+        quotient--;
+    }
+    return quotient;
+}
+
+// Days since 1970-01-01 of a date in the proleptic Gregorian calendar, month is
+// 1 to 12, day 1 to 31 (days_from_civil of
+// https://howardhinnant.github.io/date_algorithms.html).
+static int64_t daysFromCivil(int64_t year, int month, int day) {
+    // the year starts in March, so the leap day is the last day of the year
+    if (month <= 2) {
+        year--;
+    }
+    int64_t era = floorDiv(year, 400);
+    int yearOfEra = (int)(year - era * 400);                                         // [0, 399]
+    int dayOfYear = (153 * (month > 2 ? month - 3 : month + 9) + 2) / 5 + day - 1;   // [0, 365]
+    int dayOfEra = yearOfEra * 365 + yearOfEra / 4 - yearOfEra / 100 + dayOfYear;    // [0, 146096]
+    return era * 146097 + dayOfEra - 719468;
+}
+
+// The date of a number of days since 1970-01-01, month is 1 to 12 (civil_from_days
+// of https://howardhinnant.github.io/date_algorithms.html).
+static void civilFromDays(int64_t days, int64_t &year, int &month, int &day) {
+    days += 719468; // days since 0000-03-01
+    int64_t era = floorDiv(days, 146097);
+    int dayOfEra = (int)(days - era * 146097);                                                   // [0, 146096]
+    int yearOfEra = (dayOfEra - dayOfEra / 1460 + dayOfEra / 36524 - dayOfEra / 146096) / 365;   // [0, 399]
+    int dayOfYear = dayOfEra - (365 * yearOfEra + yearOfEra / 4 - yearOfEra / 100);              // [0, 365]
+    int monthFromMarch = (5 * dayOfYear + 2) / 153;                                              // [0, 11]
+    day = dayOfYear - (153 * monthFromMarch + 2) / 5 + 1;
+    month = monthFromMarch < 10 ? monthFromMarch + 3 : monthFromMarch - 9;
+    year = era * 400 + yearOfEra + (month <= 2 ? 1 : 0);
+}
 
 static void convertTime24to12(int &hours, bool &am) {
     if (hours == 0) {
@@ -320,9 +308,9 @@ static Date timeChangeRuleToLocal(TimeChangeRule &r, int year) {
 
     uint8_t dow = dayOfWeek(year, month, 1);
 
-    time += (7 * (week - 1) + (r.dow - dow + 7) % 7) * SECONDS_PER_DAY;
+    time += (7 * (week - 1) + (r.dow - dow + 7) % 7) * MS_PER_DAY;
     if (r.week == 0) {
-        time -= 7 * SECONDS_PER_DAY; // back up a week if this is a "Last" rule
+        time -= 7 * MS_PER_DAY; // back up a week if this is a "Last" rule
     }
 
     return time;

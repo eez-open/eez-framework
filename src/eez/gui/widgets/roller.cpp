@@ -12,6 +12,7 @@
 
 #if EEZ_OPTION_GUI
 
+#include <math.h>
 #include <stdio.h>
 
 #include <eez/core/util.h>
@@ -20,6 +21,8 @@
 #include <eez/gui/gui.h>
 #include <eez/gui/widgets/roller.h>
 
+#include <eez/flow/flow.h>
+#include <eez/flow/expression.h>
 #include <eez/flow/components/roller_widget.h>
 
 static const float FRICTION = 0.1f;
@@ -28,8 +31,60 @@ static const float BOUNCE_FORCE = 0.1f;
 namespace eez {
 namespace gui {
 
+// The flow variable (local or global variable, also through the properties of
+// user widgets) the data of the widget is bound to, nullptr if the data is
+// not a flow variable (e.g. a native variable or a module field). type is the
+// declared type of the variable, as for assignValue.
+static Value *getFlowVariable(const WidgetCursor &widgetCursor, uint32_t &type) {
+    using namespace flow;
+
+    auto flowState = widgetCursor.flowState;
+    int16_t dataId = widgetCursor.widget->data;
+    if (dataId >= 0 || !flowState || isFlowStopped()) {
+        return nullptr;
+    }
+
+    auto flowDataId = -dataId - 1;
+    if (flowDataId >= (int)flowState->flow->widgetDataItems.count) {
+        return nullptr;
+    }
+    auto widgetDataItem = flowState->flow->widgetDataItems[flowDataId];
+    if (!widgetDataItem || widgetDataItem->componentIndex == -1 || widgetDataItem->propertyValueIndex == -1) {
+        return nullptr;
+    }
+
+    Value dstValue;
+    if (!evalAssignableProperty(flowState, widgetDataItem->componentIndex, widgetDataItem->propertyValueIndex, dstValue, FlowError::Plain("Roller data is not assignable"), nullptr, widgetCursor.iterators)) {
+        return nullptr;
+    }
+
+    // a property of a user widget refers to the assignable expression of the
+    // parent, at most a few levels deep
+    for (int level = 0; level < 16 && dstValue.getType() == VALUE_TYPE_VALUE_PTR; level++) {
+        type = dstValue.dstValueType;
+
+        Value *pValue = dstValue.pValueValue;
+        while (pValue->getType() == VALUE_TYPE_VALUE_PTR) {
+            pValue = pValue->pValueValue;
+        }
+
+        if (pValue->getType() != VALUE_TYPE_PROPERTY_REF) {
+            // an array element, a JSON member, ... are set through SET
+            return pValue->isIndirectValueType() ? nullptr : pValue;
+        }
+
+        auto propertyRef = pValue->getPropertyRef();
+        if (!evalAssignableProperty(propertyRef->flowState, propertyRef->componentIndex, propertyRef->propertyIndex, dstValue, FlowError::Plain("Roller data is not assignable"))) {
+            return nullptr;
+        }
+    }
+
+    return nullptr;
+}
+
 bool RollerWidgetState::updateState() {
-    WIDGET_STATE_START(RollerWidget);
+    // also while hidden: a running roller (and the clear from the flow) sets the data
+    WIDGET_STATE_START_EVEN_IF_HIDDEN(RollerWidget);
 
 	const Style* selectedValueStyle = getStyle(widget->selectedValueStyle);
 	font::Font fontSelectedValue = styleGetFont(selectedValueStyle);
@@ -38,6 +93,9 @@ bool RollerWidgetState::updateState() {
 	}
 
 	textHeight = selectedValueStyle->paddingTop + fontSelectedValue.getHeight() + selectedValueStyle->paddingBottom;
+	if (textHeight <= 0) {
+		return true;
+	}
 
     minValue = get(widgetCursor, widget->min).toInt32();
     maxValue = get(widgetCursor, widget->max).toInt32();
@@ -59,16 +117,17 @@ bool RollerWidgetState::updateState() {
     if (isRunning) {
         updatePosition();
 
-		auto newDataValue = minValue + int(roundf(-position / textHeight));
+		// in 64 bits: the range can be wider than int
+		int64_t newDataValue = (int64_t)minValue + llroundf(-position / textHeight);
 		if (newDataValue < minValue) {
 			newDataValue = minValue;
 		} else if (newDataValue > maxValue) {
 			newDataValue = maxValue;
 		}
 
-		if (newDataValue != dataValue.getInt()) {
-			dataValue = newDataValue;
-			set(widgetCursor, widget->data, data);
+		if (newDataValue != dataValue.toInt32()) {
+			dataValue = Value((int)newDataValue, VALUE_TYPE_INT32);
+			set(widgetCursor, widget->data, dataValue);
 			sound::playClick();
 		}
 
@@ -76,7 +135,7 @@ bool RollerWidgetState::updateState() {
             isRunning = false;
         }
     } else {
-        position = -(dataValue.getInt() - minValue) * textHeight;
+        position = -(float)((int64_t)dataValue.toInt32() - minValue) * textHeight;
     }
 
     if (oldPosition != position) {
@@ -101,7 +160,7 @@ void RollerWidgetState::render() {
 	}
 
 	font::Font fontUnselectedValue = styleGetFont(unselectedValueStyle);
-	if (!fontUnselectedValue) {
+	if (!fontUnselectedValue || textHeight <= 0) {
 		return;
 	}
 
@@ -137,19 +196,40 @@ void RollerWidgetState::render() {
 	int clip3_x2 = widgetCursor.x + widgetCursor.w - 1;
 	int clip3_y2 = widgetCursor.y + widgetCursor.h - 1;
 
-    auto y = widgetCursor.y + (widgetCursor.h - textHeight) / 2 + (int)roundf(position);
+	// y of the item minValue, in 64 bits: the range can be wider than int
+	int64_t yFirstItem = widgetCursor.y + (widgetCursor.h - textHeight) / 2 + (int64_t)llroundf(position);
+
+	// index (from minValue) of the first item that is not above the widget
+	int64_t firstVisible = 0;
+	if (yFirstItem + textHeight <= widgetCursor.y) {
+		firstVisible = (widgetCursor.y - yFirstItem - textHeight) / textHeight + 1;
+	}
+
+	// The text expression of an item is evaluated while the data is the index
+	// of the item. A flow variable is assigned directly (no change notification,
+	// the flow doesn't run meanwhile) and restored after the items, other data
+	// (a native variable) is set through SET and restored.
+	uint32_t variableType = VALUE_TYPE_UNDEFINED;
+	Value *variable = getFlowVariable(widgetCursor, variableType);
+	Value savedValue = variable ? *variable : Value();
+	bool isDataSet = false;
 
 	display::setColor(unselectedValueStyle->color);
 
-    for (int i = minValue; i <= maxValue; i++, y += textHeight) {
-        if (y + textHeight <= widgetCursor.y) {
-            continue;
-        }
-        if (y >= widgetCursor.y + widgetCursor.h) {
+    for (int64_t k = firstVisible; (int64_t)minValue + k <= maxValue; k++) {
+        int64_t yItem = yFirstItem + k * textHeight;
+        if (yItem >= widgetCursor.y + widgetCursor.h) {
             break;
         }
+        int y = (int)yItem;
+        int i = (int)(minValue + k);
 
-        set(widgetCursor, widget->data, i);
+        if (variable) {
+            assignValue(*variable, Value(i, VALUE_TYPE_INT32), variableType);
+        } else {
+            set(widgetCursor, widget->data, i);
+        }
+        isDataSet = true;
 
         Value textValue = get(widgetCursor, widget->text);
 
@@ -192,7 +272,13 @@ void RollerWidgetState::render() {
 		}
     }
 
-    set(widgetCursor, widget->data, data);
+    if (isDataSet) {
+        if (variable) {
+            *variable = savedValue;
+        } else {
+            set(widgetCursor, widget->data, data);
+        }
+    }
 }
 
 bool RollerWidgetState::hasOnTouch() {
@@ -264,7 +350,7 @@ void RollerWidgetState::applyEdgeForce() {
         return;
     }
 
-    float edgeFrom = -(maxValue - minValue) * textHeight;
+    float edgeFrom = -(float)((int64_t)maxValue - minValue) * textHeight;
     float edgeTo = 0;
 
     if (position > edgeTo) {

@@ -46,6 +46,8 @@ class Keypad : public Page {
     virtual void setDefault();
 
     virtual void getKeypadText(char *text, size_t count);
+    // the text as a string value, a new one only when the text has changed
+    // (it is read in every frame)
     Value getKeypadTextValue();
 
     void insertChar(char c);
@@ -78,6 +80,9 @@ protected:
 private:
     bool m_isPassword;
     uint32_t m_lastKeyAppendTimeMs;
+
+    // the last value of getKeypadTextValue
+    Value m_keypadTextValue;
 
     void (*m_okCallback)(char *);
     void (*m_cancelCallback)();

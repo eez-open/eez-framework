@@ -30,11 +30,18 @@ void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIn
     // if componentIndex == -1 then execute flow at flowIndex without CallAction component
 
 	if (flowIndex >= (int)flowState->assets->flowDefinition->flows.count) {
-        // native action
+        // native action: getUserProperty etc. use these while it runs (a
+        // native action can run another one, e.g. through executeFlowAction)
+        auto savedExecuteActionFlowState = g_executeActionFlowState;
+        auto savedExecuteActionComponentIndex = g_executeActionComponentIndex;
+
         g_executeActionFlowState = flowState;
         g_executeActionComponentIndex = componentIndex;
 
 		executeActionFunction(flowIndex - flowState->assets->flowDefinition->flows.count);
+
+        g_executeActionFlowState = savedExecuteActionFlowState;
+        g_executeActionComponentIndex = savedExecuteActionComponentIndex;
 
         if ((int)componentIndex != -1 && !flowState->componenentAsyncStates[componentIndex]) {
 		    propagateValueThroughSeqout(flowState, componentIndex);
@@ -45,7 +52,7 @@ void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIn
 
 	FlowState *actionFlowState = initActionFlowState(flowIndex, flowState, componentIndex, inputValue);
 
-    // init user properties
+    // init user properties, the action runs only if all of them are evaluated
     if ((int)componentIndex != -1) {
         for (uint32_t i = 0; i < actionFlowState->flow->userPropertiesAssignable.count; i++) {
             auto isAssignable = actionFlowState->flow->userPropertiesAssignable.items[i];
@@ -53,14 +60,16 @@ void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIn
             Value value;
             if (isAssignable) {
                 if (!evalAssignableProperty(flowState, componentIndex, i, value, FlowError::UserProperty("CallAction", i))) {
-                    break;
+                    freeFlowState(actionFlowState);
+                    return;
                 }
                 if (value.getType() == VALUE_TYPE_FLOW_OUTPUT) {
                     value = Value::makePropertyRef(flowState, componentIndex, i, 0x5696e703);
                 }
             } else {
                 if (!evalProperty(flowState, componentIndex, i, value, FlowError::UserAssignableProperty("CallAction", i))) {
-                    break;
+                    freeFlowState(actionFlowState);
+                    return;
                 }
             }
 
@@ -70,6 +79,8 @@ void executeCallAction(FlowState *flowState, unsigned componentIndex, int flowIn
             onValueChanged(propValuePtr);
         }
     }
+
+    startActionFlowState(actionFlowState);
 
 	if (canFreeFlowState(actionFlowState)) {
         freeFlowState(actionFlowState);

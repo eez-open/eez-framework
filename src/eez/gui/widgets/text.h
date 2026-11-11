@@ -22,6 +22,13 @@ struct TextWidgetState : public WidgetState {
 	WidgetStateFlags flags;
 	Value data;
 
+    // style after overrideStyle and the text colors after the
+    // overrideStyleColor hooks (focus colors when focused): a change of the
+    // hook results redraws the widget
+    int styleId;
+    uint16_t color;
+    uint16_t activeColor;
+
     // widget size when "Fit to content" is enabled
     int16_t fitW = 0;
     int16_t fitH = 0;

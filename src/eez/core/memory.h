@@ -14,6 +14,12 @@
 
 #include <stdint.h>
 
+// Everything is allocated from the heap of alloc() (eez/core/alloc.h):
+// - LVGL: lv_malloc,
+// - Dashboard and EEZ-GUI on a PC (simulator, CM5, Studio): the C heap,
+// - EEZ-GUI on STM32: the memory from MEMORY_BEGIN of MEMORY_SIZE bytes
+//   (usually SDRAM), set up by initAssetsMemory before the first allocation.
+
 namespace eez {
 
 #ifdef CONF_MEMORY_BEGIN
@@ -21,93 +27,39 @@ namespace eez {
 #else
     #if defined(EEZ_FOR_LVGL) || defined(EEZ_DASHBOARD_API)
         static uint8_t * const MEMORY_BEGIN = 0;
-    #else
-        #if defined(EEZ_PLATFORM_STM32)
-            static uint8_t * const MEMORY_BEGIN = (uint8_t *)0xc0000000u;
-        #endif
-        #if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__) || defined(EEZ_PLATFORM_CM5_RASPI)
-            extern uint8_t g_memory[];
-            static uint8_t * const MEMORY_BEGIN = g_memory;
-        #endif
+    #elif defined(EEZ_PLATFORM_STM32)
+        static uint8_t * const MEMORY_BEGIN = (uint8_t *)0xc0000000u;
     #endif
 #endif
 
 #ifdef CONF_MEMORY_SIZE
     static const uint32_t MEMORY_SIZE = CONF_MEMORY_SIZE;
 #else
-    #if defined(EEZ_FOR_LVGL) || defined(EEZ_DASHBOARD_API)
-    #else
-        #if defined(EEZ_PLATFORM_STM32)
-            #if CONF_OPTION_FPGA
-                static const uint32_t MEMORY_SIZE = 32 * 1024 * 1024;
-            #elif defined(EEZ_PLATFORM_STM32F469I_DISCO)
-                static const uint32_t MEMORY_SIZE = 16 * 1024 * 1024;
-            #else
-                static const uint32_t MEMORY_SIZE = 8 * 1024 * 1024;
-            #endif
-        #endif
-        #if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
-            static const uint32_t MEMORY_SIZE = 64 * 1024 * 1024;
+    #if defined(EEZ_PLATFORM_STM32) && !defined(EEZ_FOR_LVGL) && !defined(EEZ_DASHBOARD_API)
+        #if CONF_OPTION_FPGA
+            static const uint32_t MEMORY_SIZE = 32 * 1024 * 1024;
+        #elif defined(EEZ_PLATFORM_STM32F469I_DISCO)
+            static const uint32_t MEMORY_SIZE = 16 * 1024 * 1024;
+        #else
+            static const uint32_t MEMORY_SIZE = 8 * 1024 * 1024;
         #endif
     #endif
 #endif
 
-
+// LVGL: LV_MEM_SIZE, Dashboard: the maximum heap size, EEZ-GUI on STM32: the
+// heap (MEMORY_BEGIN, MEMORY_SIZE), EEZ-GUI on a PC: 0
 extern uint8_t *ALLOC_BUFFER;
 extern uint32_t ALLOC_BUFFER_SIZE;
 
-#if !defined(EEZ_FOR_LVGL) && !defined(EEZ_DASHBOARD_API)
-    extern uint8_t *DECOMPRESSED_ASSETS_START_ADDRESS;
-    #if defined(CONF_MAX_DECOMPRESSED_ASSETS_SIZE)
-        static const uint32_t MAX_DECOMPRESSED_ASSETS_SIZE = CONF_MAX_DECOMPRESSED_ASSETS_SIZE;
-    #else
-        #if defined(EEZ_PLATFORM_STM32)
-            static const uint32_t MAX_DECOMPRESSED_ASSETS_SIZE = 2 * 1024 * 1024;
-        #endif
-        #if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__)
-            static const uint32_t MAX_DECOMPRESSED_ASSETS_SIZE = 8 * 1024 * 1024;
-        #endif
-    #endif
-#endif
-
-#if !defined(EEZ_FOR_LVGL) && !defined(EEZ_DASHBOARD_API)
-    extern uint8_t *FLOW_TO_DEBUGGER_MESSAGE_BUFFER;
-    #if defined(EEZ_FOR_LVGL)
-        static const uint32_t FLOW_TO_DEBUGGER_MESSAGE_BUFFER_SIZE = 32 * 1024;
-    #else
-        #if defined(EEZ_PLATFORM_STM32)
-            static const uint32_t FLOW_TO_DEBUGGER_MESSAGE_BUFFER_SIZE = 32 * 1024;
-        #endif
-        #if defined(EEZ_PLATFORM_SIMULATOR) || defined(__EMSCRIPTEN__) || defined(EEZ_PLATFORM_CM5_RASPI)
-            static const uint32_t FLOW_TO_DEBUGGER_MESSAGE_BUFFER_SIZE = 1024 * 1024;
-        #endif
-    #endif
-#endif
-
-#if EEZ_OPTION_GUI
-    extern uint8_t *VRAM_BUFFER1_START_ADDRESS;
-    extern uint8_t *VRAM_BUFFER2_START_ADDRESS;
-
-    #if EEZ_OPTION_GUI_ANIMATIONS
-        extern uint8_t *VRAM_ANIMATION_BUFFER1_START_ADDRESS;
-        extern uint8_t *VRAM_ANIMATION_BUFFER2_START_ADDRESS;
-    #endif
-
-    #ifndef NUM_AUX_BUFFERS
-        #define NUM_AUX_BUFFERS 6
-    #endif
-
-    extern uint8_t *VRAM_AUX_BUFFER_START_ADDRESSES[NUM_AUX_BUFFERS];
-
-    extern uint8_t* SCREENSHOOT_BUFFER_START_ADDRESS;
-
-    extern uint8_t* GUI_STATE_BUFFER;
-    extern uint32_t g_maxGuiStateSize;
-#endif
-
 void initMemory();
+// sets up the heap (EEZ-GUI on STM32)
 void initAssetsMemory();
+// nothing to do: the buffers are allocated where they are used
 void initOtherMemory();
+
+// A buffer that is never freed: zero-filled and, in EEZ-GUI, aligned to 64
+// bytes (DMA, the cache lines of the STM32F7/H7). nullptr if there is not
+// enough memory.
 uint8_t *allocBuffer(uint32_t size);
 
 } // eez
