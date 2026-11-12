@@ -756,8 +756,7 @@ struct MultilineTextRender {
             return false;
         }
 
-        auto spaceGlyph = font.getGlyph(' ');
-        spaceWidth = spaceGlyph ? spaceGlyph->dx : 0;
+        spaceWidth = display::measureGlyph(' ', font);
 
         return true;
     }

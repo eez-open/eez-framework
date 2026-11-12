@@ -211,7 +211,7 @@ def project(parts):
                 children=collect(parts, "STYLES"),
             ), tags("default", "base"))
         ],
-        "fonts": tag_items([load_font("RobotoCondensed"), load_font("Icons_WaveformS")], "base"),
+        "fonts": tag_items([load_font("RobotoCondensed"), load_font("Icons_WaveformS")], "base") + collect(parts, "FONTS"),
         "bitmaps": collect(parts, "BITMAPS"),
         "colors": [
             {"objID": oid("color", name), "name": name, "tags": tags(name, area_)}

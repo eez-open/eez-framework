@@ -19,6 +19,7 @@
 #include <eez/core/memory.h>
 #include <eez/core/debug.h>
 #include <eez/core/assets.h>
+#include <eez/gui/vector_font.h>
 #include <eez/flow/flow.h>
 
 #if EEZ_FOR_LVGL_LZ4_OPTION
@@ -135,6 +136,11 @@ static void allocMemoryForDecompressedAssets(const uint8_t *assetsData, uint32_t
 }
 
 void loadMainAssets(const uint8_t *assets, uint32_t assetsSize) {
+#if EEZ_OPTION_GUI && EEZ_OPTION_GUI_VECTOR_FONTS
+    // the cached vector fonts are of the previous assets
+    gui::vector_font::reset();
+#endif
+
     auto header = (Header *)assets;
     if (header->tag == HEADER_TAG) {
 		// assets are stored inside ROM as uncompressed data,

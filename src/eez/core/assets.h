@@ -310,15 +310,44 @@ struct GlyphsGroup {
     uint32_t length;
 };
 
+// FontData::kind
+#define FONT_KIND_BITMAP 0 // the glyphs are in the assets (FontData)
+#define FONT_KIND_VECTOR 1 // drawn from a font file at runtime (VectorFontData)
+
 struct FontData {
 	uint8_t ascent;
 	uint8_t descent;
-    uint8_t reserved1;
+    uint8_t kind;
     uint8_t reserved2;
 	uint32_t encodingStart;
 	uint32_t encodingEnd;
     ListOfAssetsPtr<GlyphsGroup> groups;
     ListOfAssetsPtr<GlyphData> glyphs;
+};
+
+// A TrueType or OpenType font file, stored once for all the vector fonts made
+// from it.
+struct FontFile {
+    uint32_t size;
+    uint8_t data[1];
+};
+
+// A font of kind FONT_KIND_VECTOR (see EEZ_OPTION_GUI_VECTOR_FONTS): the font
+// file at a size, with OpenType features. The ascent and descent are the
+// pixels above and below the baseline, as of a bitmap font.
+struct VectorFontData {
+	uint8_t ascent;
+	uint8_t descent;
+    uint8_t kind;
+    uint8_t reserved;
+    AssetsPtr<FontFile> file;
+    // pixels per em, in 1/64 px
+    uint32_t size;
+    // added after every glyph, in 1/64 px
+    int32_t letterSpacing;
+    // comma separated OpenType features as HarfBuzz parses them (e.g.
+    // "tnum,-liga"), null for the default features
+    AssetsPtr<const char> features;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

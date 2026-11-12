@@ -28,19 +28,23 @@ Font::Font(const FontData *fontData_)
 {
 }
 
-uint8_t Font::getAscent() {
+uint8_t Font::getAscent() const {
     return fontData->ascent;
 }
 
-uint8_t Font::getDescent() {
+uint8_t Font::getDescent() const {
     return fontData->descent;
 }
 
-uint8_t Font::getHeight() {
+uint8_t Font::getHeight() const {
     return fontData->ascent + fontData->descent;
 }
 
 const GlyphData *Font::getGlyph(int32_t encoding) {
+    if (fontData->kind != FONT_KIND_BITMAP) {
+        return nullptr;
+    }
+
 	auto start = fontData->encodingStart;
 	auto end = fontData->encodingEnd;
 

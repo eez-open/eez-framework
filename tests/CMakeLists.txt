@@ -34,6 +34,10 @@ target_compile_definitions(eez_framework PUBLIC EEZ_PLATFORM_CM5_RASPI)
 target_compile_options(eez_framework PRIVATE -w ${SANITIZE_FLAGS})
 target_link_libraries(eez_framework PUBLIC PkgConfig::SDL2 pthread)
 
+# FreeType and HarfBuzz of the vector fonts (EEZ_OPTION_GUI_VECTOR_FONTS)
+add_subdirectory("${FW_SRC}/../third_party" "${CMAKE_BINARY_DIR}/eez-third-party")
+target_link_libraries(eez_framework PUBLIC eez-harfbuzz eez-freetype)
+
 ################################################################################
 # the tests
 

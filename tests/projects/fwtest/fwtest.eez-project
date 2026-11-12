@@ -31927,6 +31927,119 @@
       "componentGroups": []
     },
     {
+      "objID": "0f4ab19f-3535-5617-8859-aacc7e8ad857",
+      "name": "render_vector",
+      "tags": "render",
+      "left": 0,
+      "top": 0,
+      "width": 800,
+      "height": 480,
+      "components": [
+        {
+          "type": "TextWidget",
+          "objID": "532c3697-2e80-579d-8817-cdaa5be28a92",
+          "left": 20,
+          "top": 20,
+          "width": 360,
+          "height": 40,
+          "style": {
+            "useStyle": "render_v"
+          },
+          "text": "AVATAR Wave Ty fi ffi 0123456789"
+        },
+        {
+          "type": "TextWidget",
+          "objID": "fb629892-f6eb-553d-9f67-da2f3cdb819b",
+          "left": 400,
+          "top": 20,
+          "width": 380,
+          "height": 40,
+          "style": {
+            "useStyle": "render_v_tnum"
+          },
+          "text": "tnum 0123456789 1111 8888"
+        },
+        {
+          "type": "TextWidget",
+          "objID": "07ce915c-eef4-5e17-a386-e15661684b20",
+          "left": 20,
+          "top": 80,
+          "width": 360,
+          "height": 40,
+          "style": {
+            "useStyle": "render_v"
+          },
+          "text": "Vector \u0002ÃÄ and icons"
+        },
+        {
+          "type": "TextWidget",
+          "objID": "645f2947-dfe1-5a75-a106-f2c9f9dbc3f5",
+          "left": 400,
+          "top": 80,
+          "width": 380,
+          "height": 40,
+          "style": {
+            "useStyle": "render_v_center"
+          },
+          "text": "Centered vector text"
+        },
+        {
+          "type": "TextWidget",
+          "objID": "57c31e40-8321-515b-a9ce-9a690f2c923d",
+          "left": 400,
+          "top": 140,
+          "width": 380,
+          "height": 40,
+          "style": {
+            "useStyle": "render_v_right"
+          },
+          "text": "Right 12.345 V"
+        },
+        {
+          "type": "TextWidget",
+          "objID": "dfb80de5-ec79-5137-afb5-e319c4871ba8",
+          "left": 20,
+          "top": 140,
+          "width": 360,
+          "height": 40,
+          "style": {
+            "useStyle": "render_v"
+          },
+          "text": "Grüße, €5, ½, ✓ – Ωμ"
+        },
+        {
+          "type": "MultilineTextWidget",
+          "objID": "803358ea-2e09-5709-a0b4-5ddd6c92c530",
+          "left": 20,
+          "top": 200,
+          "width": 360,
+          "height": 120,
+          "style": {
+            "useStyle": "render_v_ml"
+          },
+          "text": "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.",
+          "firstLineIndent": 0,
+          "hangingIndent": 0
+        },
+        {
+          "type": "TextWidget",
+          "objID": "87c19ae7-c8ac-501b-95ad-4752c5cf9c6d",
+          "left": 400,
+          "top": 200,
+          "width": 380,
+          "height": 40,
+          "style": {
+            "useStyle": "render_v"
+          },
+          "data": "render_text_a"
+        }
+      ],
+      "connectionLines": [],
+      "localVariables": [],
+      "userProperties": [],
+      "componentGroups": []
+    },
+    {
       "objID": "4a7390f9-b9a3-510c-93e8-d85c0b66360b",
       "name": "render_popup1",
       "tags": "render, popups",
@@ -36428,6 +36541,51 @@
           "childStyles": []
         },
         {
+          "objID": "9db41e19-cff0-5839-a685-43f9cb85b2a6",
+          "name": "render_v",
+          "tags": "render",
+          "alwaysBuild": true,
+          "font": "VRoboto",
+          "backgroundColor": "render_navy",
+          "color": "text",
+          "alignHorizontal": "left",
+          "padding": "4",
+          "childStyles": [
+            {
+              "objID": "ef9f92dd-6e15-5e52-b30e-b66917dd5247",
+              "name": "render_v_center",
+              "tags": "render",
+              "alwaysBuild": true,
+              "alignHorizontal": "center",
+              "childStyles": []
+            },
+            {
+              "objID": "29f2ed6a-abc1-576f-ae22-20e01d54d58b",
+              "name": "render_v_right",
+              "tags": "render",
+              "alwaysBuild": true,
+              "alignHorizontal": "right",
+              "childStyles": []
+            },
+            {
+              "objID": "ee311f65-afd9-523f-9a21-5b902c425a57",
+              "name": "render_v_tnum",
+              "tags": "render",
+              "alwaysBuild": true,
+              "font": "VRobotoTnum",
+              "childStyles": []
+            },
+            {
+              "objID": "d0e7abb3-1a8d-5eb1-b431-0503d1d3dd49",
+              "name": "render_v_ml",
+              "tags": "render",
+              "alwaysBuild": true,
+              "alignVertical": "top",
+              "childStyles": []
+            }
+          ]
+        },
+        {
           "objID": "733af147-e8ef-5a33-8ff6-f6a3e4929323",
           "name": "render_cb",
           "tags": "render",
@@ -38862,6 +39020,50 @@
       ],
       "alwaysBuild": true,
       "lvglAdditionalSources": []
+    },
+    {
+      "objID": "4a5a7b64-16aa-5a6e-b43f-466fc3c1aec3",
+      "name": "VRoboto",
+      "tags": "render",
+      "description": "",
+      "renderingEngine": "freetype",
+      "source": {
+        "objID": "00ce9f36-6851-5265-b583-eb3e273f9fe8",
+        "filePath": "../fonts/Roboto-Regular.ttf",
+        "size": 14
+      },
+      "bpp": 8,
+      "threshold": 128,
+      "height": 26,
+      "ascent": 21,
+      "descent": 5,
+      "glyphs": [],
+      "screenOrientation": "all",
+      "alwaysBuild": true,
+      "vector": true
+    },
+    {
+      "objID": "6a47052a-5def-5794-8777-5a7284f2e132",
+      "name": "VRobotoTnum",
+      "tags": "render",
+      "description": "",
+      "renderingEngine": "freetype",
+      "source": {
+        "objID": "e704f5e4-c86b-564c-8acc-8c0b637bedf0",
+        "filePath": "../fonts/Roboto-Regular.ttf",
+        "size": 14
+      },
+      "bpp": 8,
+      "threshold": 128,
+      "height": 26,
+      "ascent": 21,
+      "descent": 5,
+      "glyphs": [],
+      "screenOrientation": "all",
+      "alwaysBuild": true,
+      "vector": true,
+      "vectorFeatures": "tnum",
+      "vectorLetterSpacing": 1
     }
   ],
   "bitmaps": [

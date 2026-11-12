@@ -28,11 +28,24 @@ struct Font {
 		return fontData != nullptr;
 	}
 
+    // A vector font (FONT_KIND_VECTOR) is drawn from a font file: it has no
+    // glyphs in the assets, its text is measured and drawn by the display text
+    // functions (display.h).
+    bool isVector() const {
+        return fontData != nullptr && fontData->kind == FONT_KIND_VECTOR;
+    }
+
+    const VectorFontData *getVectorFontData() const {
+        return (const VectorFontData *)fontData;
+    }
+
+    // the glyph of a bitmap font, nullptr for a vector font (use
+    // display::measureGlyph and the other text functions)
     const GlyphData *getGlyph(int32_t encoding);
 
-    uint8_t getAscent();
-    uint8_t getDescent();
-    uint8_t getHeight();
+    uint8_t getAscent() const;
+    uint8_t getDescent() const;
+    uint8_t getHeight() const;
 };
 
 } // namespace font

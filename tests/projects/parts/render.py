@@ -68,6 +68,34 @@ def _bitmap(name, width, height, pixel, bpp):
     }
 
 
+################################################################################
+# vector fonts: Roboto Regular (fonts/Roboto-Regular.ttf, OFL) drawn at runtime,
+# the ascent and descent as Studio gives them for the size
+
+
+def _vector_font(name, size, ascent, descent, features=None, letter_spacing=None):
+    font = {
+        "objID": oid("font", name), "name": name, "description": "",
+        "renderingEngine": "freetype",
+        "source": {"objID": oid("font", name, "source"), "filePath": "../fonts/Roboto-Regular.ttf", "size": size},
+        "bpp": 8, "threshold": 128,
+        "height": ascent + descent, "ascent": ascent, "descent": descent,
+        "glyphs": [], "screenOrientation": "all", "alwaysBuild": True,
+        "vector": True,
+    }
+    if features:
+        font["vectorFeatures"] = features
+    if letter_spacing:
+        font["vectorLetterSpacing"] = letter_spacing
+    return font
+
+
+# both from the same font file, which is in the assets once
+FONTS = [
+    _vector_font("VRoboto", 14, 21, 5),
+    _vector_font("VRobotoTnum", 14, 21, 5, features="tnum", letter_spacing=1),
+]
+
 BITMAPS = [
     _bitmap("render_bmp16", 24, 16, _bmp16_pixel, 16),
     _bitmap("render_bmp32", 24, 16, _bmp32_pixel, 32),
@@ -189,6 +217,15 @@ STYLES = [
     style("render_a_zero", backgroundColor="render_blue_a0"),
     style("render_a_dyn", backgroundColor="render_red_a128", color="text"),
     style("render_a_page", backgroundColor="render_red_a128"),
+
+    # vector fonts (render_vector)
+    style("render_v", font="VRoboto", backgroundColor="render_navy", color="text", alignHorizontal="left",
+          padding="4", children=[
+              style("render_v_center", alignHorizontal="center"),
+              style("render_v_right", alignHorizontal="right"),
+              style("render_v_tnum", font="VRobotoTnum"),
+              style("render_v_ml", alignVertical="top"),
+          ]),
 
     # drawn directly by the tests (checkbox/radio, text measuring)
     style("render_cb", backgroundColor="render_navy", color="render_yellow", alignHorizontal="left", padding="4"),
@@ -394,6 +431,20 @@ def _dynamic_page():
     ])
 
 
+def _vector_page():
+    return page("render_vector", [
+        _box(("render_v", "kern"), 20, 20, 360, 40, "render_v", "AVATAR Wave Ty fi ffi 0123456789"),
+        _box(("render_v", "tnum"), 400, 20, 380, 40, "render_v_tnum", "tnum 0123456789 1111 8888"),
+        _box(("render_v", "tags"), 20, 80, 360, 40, "render_v", "Vector " + ICON_ON + "ÃÄ" + ICON_OFF + " and icons"),
+        _box(("render_v", "center"), 400, 80, 380, 40, "render_v_center", "Centered vector text"),
+        _box(("render_v", "right"), 400, 140, 380, 40, "render_v_right", "Right 12.345 V"),
+        _box(("render_v", "utf8"), 20, 140, 360, 40, "render_v", "Grüße, €5, ½, ✓ – Ωμ"),
+        _multiline(("render_v", "ml"), 20, 200, 360, 120, "render_v_ml",
+                   "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs."),
+        _dyn(("render_v", "dyn"), 400, 200, 380, 40, "render_v", "render_text_a"),
+    ])
+
+
 def _alpha_page():
     # everything with alpha is on an opaque green container, so the color of a
     # pixel is the color blended over green
@@ -452,4 +503,5 @@ PAGES = [
     _blink_page(),
     _dynamic_page(),
     _alpha_page(),
+    _vector_page(),
 ] + _popup_pages()

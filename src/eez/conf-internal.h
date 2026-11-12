@@ -61,6 +61,13 @@
         #define EEZ_OPTION_GUI_ANIMATIONS 1
     #endif
 
+    // Vector fonts: fonts drawn from a TrueType or OpenType font file at
+    // runtime with FreeType and HarfBuzz (third_party/CMakeLists.txt builds and
+    // links them). Without it a vector font draws nothing.
+    #ifndef EEZ_OPTION_GUI_VECTOR_FONTS
+        #define EEZ_OPTION_GUI_VECTOR_FONTS 0
+    #endif
+
     #ifndef EEZ_USE_SDL
         #define EEZ_USE_SDL 1
     #endif

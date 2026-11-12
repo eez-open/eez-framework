@@ -17,7 +17,9 @@ tests/run.sh --no-sanitize        # plain build
 tests/run.sh --tsan tsan          # data race tests (ThreadSanitizer)
 ```
 
-Needs `cmake`, `g++`, `libsdl2-dev` and `libsdl2-image-dev`. The build goes to
+Needs `cmake`, `g++`, `libsdl2-dev` and `libsdl2-image-dev`. FreeType and
+HarfBuzz (`../third_party`) are built with the tests: the configuration has the
+vector fonts (`EEZ_OPTION_GUI_VECTOR_FONTS`, tests in `render/vector_font_test.cpp`). The build goes to
 `~/.cache/eez-framework-tests`. `EEZ_FW_SRC=<path to eez-framework/src>` tests
 another framework copy.
 

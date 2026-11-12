@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <vector>
+
 #include <eez/core/utf8.h>
 #include <eez/core/util.h>
 #if OPTION_KEYBOARD
@@ -35,6 +37,7 @@
 #include <eez/gui/thread.h>
 #include <eez/gui/touch.h>
 #include <eez/gui/scrolling.h>
+#include <eez/gui/vector_font.h>
 
 #if defined(EEZ_NEMA_GFX)
 #include <eez/gui/nema_hal_stm32.h>
@@ -419,8 +422,6 @@ static int g_screenshotHeight;
 
 Color g_fc, g_bc;
 uint8_t g_opacity = 255;
-
-gui::font::Font g_font;
 
 static uint8_t g_colorCache[256][4];
 
@@ -2488,22 +2489,6 @@ void drawPolyline(const float *points, int numPoints, float lineWidth) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static int8_t measureGlyph(int32_t encoding) {
-    auto glyph = g_font.getGlyph(encoding);
-    if (!glyph)
-        return 0;
-
-    return glyph->dx;
-}
-
-int8_t measureGlyph(int32_t encoding, gui::font::Font &font) {
-    auto glyph = font.getGlyph(encoding);
-    if (!glyph)
-        return 0;
-
-    return glyph->dx;
-}
-
 // Text can contain font tags, see convertFontTags in Studio:
 // FONT_START_CHAR followed by a character whose code point is the font index
 // switches to that font, FONT_END_CHAR switches back to the default font.
@@ -2514,12 +2499,16 @@ static const utf8_int32_t FONT_END_CHAR = 0xE001;
 static const utf8_int32_t FONT_START_EXTERNAL_CHAR = 0xE002;
 
 // fontIndex as in getFontData: > 0 main assets font, < 0 external assets font
-static void setFontByIndex(int fontIndex, gui::font::Font &defaultFont) {
+static gui::font::Font getFontByIndex(int fontIndex, gui::font::Font &defaultFont) {
     const gui::FontData *fontData = nullptr;
     if (fontIndex < 0 || (g_mainAssets && fontIndex <= (int)g_mainAssets->fonts.count)) {
         fontData = getFontData(fontIndex);
     }
-    g_font = fontData ? gui::font::Font(fontData) : defaultFont;
+    return fontData ? gui::font::Font(fontData) : defaultFont;
+}
+
+static bool isFontTag(utf8_int32_t encoding) {
+    return encoding == FONT_START_CHAR || encoding == FONT_END_CHAR || encoding == FONT_START_EXTERNAL_CHAR;
 }
 
 const char *decodeUtf8(const char *text, int32_t &codePoint) {
@@ -2593,11 +2582,11 @@ const char *skipChar(const char *text) {
     return next;
 }
 
-// Returns true if encoding is a font tag marker (and applies it). In case of
-// FONT_START_CHAR and FONT_START_EXTERNAL_CHAR the font index character is
+// Returns true if encoding is a font tag marker and applies it to font. In case
+// of FONT_START_CHAR and FONT_START_EXTERNAL_CHAR the font index character is
 // consumed from the text; such a tag at the end of the text (without the font
 // index) changes nothing.
-static bool handleFontTag(utf8_int32_t encoding, const char *&text, int &i, int textLength, gui::font::Font &defaultFont) {
+static bool handleFontTag(utf8_int32_t encoding, const char *&text, int &i, int textLength, gui::font::Font &defaultFont, gui::font::Font &font) {
     if (encoding == FONT_START_CHAR || encoding == FONT_START_EXTERNAL_CHAR) {
         if (textLength == -1 || i + 1 < textLength) {
             utf8_int32_t index;
@@ -2605,13 +2594,13 @@ static bool handleFontTag(utf8_int32_t encoding, const char *&text, int &i, int 
             if (index) {
                 text = next;
                 ++i;
-                setFontByIndex(encoding == FONT_START_CHAR ? (int)index : -(int)index, defaultFont);
+                font = getFontByIndex(encoding == FONT_START_CHAR ? (int)index : -(int)index, defaultFont);
             }
         }
         return true;
     }
     if (encoding == FONT_END_CHAR) {
-        g_font = defaultFont;
+        font = defaultFont;
         return true;
     }
     return false;
@@ -2644,45 +2633,254 @@ int getFontIndexAtEnd(const char *text, int textLength, int fontIndex) {
     return fontIndex;
 }
 
-int measureStr(const char *text, int textLength, gui::font::Font &font, int max_width, int startFontIndex) {
-    g_font = font;
-    if (startFontIndex) {
-        setFontByIndex(startFontIndex, font);
+// A glyph of laid out text (see layoutText).
+struct TextGlyph {
+    // the index of the first character of the glyph, characters counted as by
+    // the text functions: every code point, also of the font tags
+    int charIndex;
+    // the pen position, in pixels from the start of the text
+    int x;
+    // to the pen position of the next glyph
+    int advance;
+    // the 8-bit coverage image, nullptr if there is none (a space, a missing
+    // glyph): width * height bytes, left from the pen position, top above the
+    // baseline
+    const uint8_t *pixels;
+    int width;
+    int height;
+    int left;
+    int top;
+    // the font of the glyph (font tags change it)
+    gui::font::Font font;
+};
+
+#if EEZ_OPTION_GUI_VECTOR_FONTS
+// The characters of the text at p in the vector font up to a font tag or the
+// end, shaped. Calls onChar for every character, before the glyph it is in,
+// and onGlyph for every glyph; i and x are moved past the run.
+template <typename OnChar, typename OnGlyph>
+static bool layoutVectorRun(const char *&p, int &i, int textLength, int &x, gui::font::Font &font, bool ligatures, OnChar &onChar, OnGlyph &onGlyph) {
+    const char *runStart = p;
+    int runFirstChar = i;
+
+    // the byte offsets of the characters in the run
+    uint32_t smallOffsets[64];
+    std::vector<uint32_t> largeOffsets;
+    uint32_t *charOffsets = smallOffsets;
+    int numChars = 0;
+
+    const char *q = p;
+    while (textLength == -1 || i + numChars < textLength) {
+        utf8_int32_t encoding;
+        const char *next = decodeUtf8(q, encoding);
+        if (!encoding || isFontTag(encoding)) {
+            break;
+        }
+        if (numChars == 64) {
+            largeOffsets.assign(smallOffsets, smallOffsets + 64);
+        }
+        if (numChars >= 64) {
+            largeOffsets.push_back((uint32_t)(q - runStart));
+            charOffsets = largeOffsets.data();
+        } else {
+            smallOffsets[numChars] = (uint32_t)(q - runStart);
+        }
+        numChars++;
+        q = next;
     }
 
-    int width = 0;
+    p = q;
+    i += numChars;
 
-    // textLength == -1 means zero terminated text
-    for (int i = 0; textLength == -1 || i < textLength; ++i) {
+    uint32_t numGlyphs;
+    auto glyphs = vector_font::shape(font.getVectorFontData(), runStart, (int)(q - runStart), ligatures, numGlyphs);
+
+    // the pen in 1/64 pixels, a glyph is at the rounded pen position
+    int64_t pen = (int64_t)x * 64;
+
+    // characters before this one are announced (the glyphs are in visual order,
+    // in left to right text the clusters grow)
+    int nextChar = 0;
+
+    for (uint32_t k = 0; k < numGlyphs; k++) {
+        auto &shapedGlyph = glyphs[k];
+
+        int charInRun = nextChar;
+        while (charInRun < numChars && charOffsets[charInRun] < shapedGlyph.cluster) {
+            charInRun++;
+        }
+
+        int glyphX = (int)((pen + 32) >> 6);
+        while (nextChar < numChars && charOffsets[nextChar] <= shapedGlyph.cluster) {
+            if (onChar(runFirstChar + nextChar, glyphX)) {
+                return true;
+            }
+            nextChar++;
+        }
+
+        int64_t penNext = pen + shapedGlyph.advance;
+
+        TextGlyph glyph;
+        glyph.charIndex = runFirstChar + (charInRun < numChars ? charInRun : numChars - 1);
+        glyph.x = glyphX;
+        glyph.advance = (int)((penNext + 32) >> 6) - glyphX;
+        glyph.font = font;
+
+        auto image = vector_font::getGlyphImage(font.getVectorFontData(), shapedGlyph.glyphIndex);
+        if (image) {
+            glyph.pixels = image->pixels;
+            glyph.width = image->width;
+            glyph.height = image->height;
+            glyph.left = image->left + (int)((shapedGlyph.xOffset + 32) >> 6);
+            glyph.top = image->top + (int)((shapedGlyph.yOffset + 32) >> 6);
+        } else {
+            glyph.pixels = nullptr;
+            glyph.width = 0;
+            glyph.height = 0;
+            glyph.left = 0;
+            glyph.top = 0;
+        }
+
+        if (onGlyph(glyph)) {
+            return true;
+        }
+
+        pen = penNext;
+    }
+
+    x = (int)((pen + 32) >> 6);
+
+    // the characters after the last glyph (no glyphs, right to left text)
+    while (nextChar < numChars) {
+        if (onChar(runFirstChar + nextChar, x)) {
+            return true;
+        }
+        nextChar++;
+    }
+
+    return false;
+}
+#endif
+
+// Lays out the text (textLength characters, -1: up to the NUL) in the font,
+// from the font of startFontIndex if it isn't 0. Calls onChar(charIndex, x)
+// for every character (the font tags too) before its glyph, and at the end with
+// the number of characters, and onGlyph(glyph) for every glyph (also a missing
+// glyph of a bitmap font, with advance 0). A callback that returns true stops
+// the layout. Without ligatures every glyph of a vector font is one character
+// (editable text). Any thread can call it.
+template <typename OnChar, typename OnGlyph>
+static void layoutText(const char *text, int textLength, gui::font::Font &defaultFont, int startFontIndex, bool ligatures, OnChar onChar, OnGlyph onGlyph) {
+#if EEZ_OPTION_GUI_VECTOR_FONTS
+    vector_font::Lock lock;
+#endif
+
+    gui::font::Font font = startFontIndex ? getFontByIndex(startFontIndex, defaultFont) : defaultFont;
+
+    int x = 0;
+    int i = 0;
+
+    while (textLength == -1 || i < textLength) {
         utf8_int32_t encoding;
-        text = decodeUtf8(text, encoding);
+        const char *next = decodeUtf8(text, encoding);
         if (!encoding) {
             break;
         }
-        if (handleFontTag(encoding, text, i, textLength, font)) {
+
+#if EEZ_OPTION_GUI_VECTOR_FONTS
+        if (font.isVector() && !isFontTag(encoding)) {
+            if (layoutVectorRun(text, i, textLength, x, font, ligatures, onChar, onGlyph)) {
+                return;
+            }
             continue;
         }
-        int glyph_width = measureGlyph(encoding);
-        if (max_width > 0 && width + glyph_width > max_width) {
-            return max_width;
+#endif
+
+        if (onChar(i, x)) {
+            return;
         }
-        width += glyph_width;
+
+        text = next;
+
+        if (handleFontTag(encoding, text, i, textLength, defaultFont, font)) {
+            ++i;
+            continue;
+        }
+
+        TextGlyph glyph;
+        glyph.charIndex = i;
+        glyph.x = x;
+        glyph.font = font;
+
+        auto glyphData = font.getGlyph(encoding);
+        if (glyphData) {
+            glyph.advance = glyphData->dx;
+            glyph.pixels = glyphData->pixels;
+            glyph.width = glyphData->width;
+            glyph.height = glyphData->height;
+            glyph.left = glyphData->x;
+            glyph.top = glyphData->y + glyphData->height;
+        } else {
+            glyph.advance = 0;
+            glyph.pixels = nullptr;
+            glyph.width = 0;
+            glyph.height = 0;
+            glyph.left = 0;
+            glyph.top = 0;
+        }
+
+        if (onGlyph(glyph)) {
+            return;
+        }
+
+        x += glyph.advance;
+        ++i;
     }
+
+    onChar(i, x);
+}
+
+int8_t measureGlyph(int32_t encoding, gui::font::Font &font) {
+    if (!font) {
+        return 0;
+    }
+
+    if (!font.isVector()) {
+        auto glyph = font.getGlyph(encoding);
+        if (!glyph) {
+            return 0;
+        }
+        return glyph->dx;
+    }
+
+    char text[5];
+    char *end = utf8catcodepoint(text, encoding, sizeof(text) - 1);
+    *(end ? end : text) = 0;
+    return (int8_t)measureStr(text, -1, font);
+}
+
+int measureStr(const char *text, int textLength, gui::font::Font &font, int max_width, int startFontIndex) {
+    int width = 0;
+
+    layoutText(text, textLength, font, startFontIndex, true,
+        [](int, int) { return false; },
+        [&](const TextGlyph &glyph) {
+            if (max_width > 0 && glyph.x + glyph.advance > max_width) {
+                width = max_width;
+                return true;
+            }
+            width = glyph.x + glyph.advance;
+            return false;
+        }
+    );
 
     return width;
 }
 
 void drawStr(const char *text, int textLength, int x, int y, int clip_x1, int clip_y1, int clip_x2, int clip_y2, gui::font::Font &font, int cursorPosition, int startFontIndex) {
-    g_font = font;
-    if (startFontIndex) {
-        setFontByIndex(startFontIndex, font);
-    }
-
     drawStrInit();
 
     int xCursor = x;
-
-    int i;
 
     // glyphs are clipped to the given clip rectangle and to the current clip rectangle
     int glyph_clip_x1 = clip_x1;
@@ -2693,29 +2891,21 @@ void drawStr(const char *text, int textLength, int x, int y, int clip_x1, int cl
         return;
     }
 
-    // textLength == -1 means zero terminated text
-    for (i = 0; textLength == -1 || i < textLength; ++i) {
-        utf8_int32_t encoding;
-        text = decodeUtf8(text, encoding);
-        if (!encoding) {
-            break;
-        }
+    // editable text (with a cursor) has no ligatures
+    layoutText(text, textLength, font, startFontIndex, cursorPosition == -1,
+        [&](int charIndex, int charX) {
+            if (charIndex == cursorPosition) {
+                xCursor = x + charX;
+            }
+            return false;
+        },
+        [&](const TextGlyph &glyph) {
+            if (!glyph.pixels) {
+                return false;
+            }
 
-        if (i == cursorPosition) {
-            xCursor = x;
-        }
-
-        if (handleFontTag(encoding, text, i, textLength, font)) {
-            continue;
-        }
-
-        auto x1 = x;
-        auto y1 = y;
-
-        auto glyph = g_font.getGlyph(encoding);
-        if (glyph) {
-            int x_glyph = x1 + glyph->x;
-            int y_glyph = y1 + g_font.getAscent() - (glyph->y + glyph->height);
+            int x_glyph = x + glyph.x + glyph.left;
+            int y_glyph = y + glyph.font.getAscent() - glyph.top;
 
             // draw glyph pixels
             int iStartByte = 0;
@@ -2725,42 +2915,38 @@ void drawStr(const char *text, int textLength, int x, int y, int clip_x1, int cl
                 x_glyph = glyph_clip_x1;
             }
 
-			if (iStartByte < glyph->width) {
-				int offset = 0;
-				int glyphHeight = glyph->height;
-				if (y_glyph < glyph_clip_y1) {
-					int dy_off = glyph_clip_y1 - y_glyph;
-					offset += dy_off * glyph->width;
-					glyphHeight -= dy_off;
-					y_glyph = glyph_clip_y1;
-				}
+            if (iStartByte < glyph.width) {
+                int offset = 0;
+                int glyphHeight = glyph.height;
+                if (y_glyph < glyph_clip_y1) {
+                    int dy_off = glyph_clip_y1 - y_glyph;
+                    offset += dy_off * glyph.width;
+                    glyphHeight -= dy_off;
+                    y_glyph = glyph_clip_y1;
+                }
 
-				int width;
-				if (x_glyph + (glyph->width - iStartByte) - 1 > glyph_clip_x2) {
-					width = glyph_clip_x2 - x_glyph + 1;
-				} else {
-					width = (glyph->width - iStartByte);
-				}
+                int width;
+                if (x_glyph + (glyph.width - iStartByte) - 1 > glyph_clip_x2) {
+                    width = glyph_clip_x2 - x_glyph + 1;
+                } else {
+                    width = (glyph.width - iStartByte);
+                }
 
-				int height;
-				if (y_glyph + glyphHeight - 1 > glyph_clip_y2) {
-					height = glyph_clip_y2 - y_glyph + 1;
-				} else {
-					height = glyphHeight;
-				}
+                int height;
+                if (y_glyph + glyphHeight - 1 > glyph_clip_y2) {
+                    height = glyph_clip_y2 - y_glyph + 1;
+                } else {
+                    height = glyphHeight;
+                }
 
-				if (width > 0 && height > 0) {
-					drawGlyph(glyph->pixels + offset + iStartByte, glyph->width - width, x_glyph, y_glyph, width, height);
-				}
-			}
+                if (width > 0 && height > 0) {
+                    drawGlyph(glyph.pixels + offset + iStartByte, glyph.width - width, x_glyph, y_glyph, width, height);
+                }
+            }
 
-			x += glyph->dx;
-		}
-    }
-
-    if (i == cursorPosition) {
-        xCursor = x;
-    }
+            return false;
+        }
+    );
 
     if (cursorPosition != -1 && xCursor - CURSOR_WIDTH / 2 >= clip_x1 && xCursor + CURSOR_WIDTH / 2 - 1 <= clip_x2) {
         auto d = MAX(((clip_y2 - clip_y1) - font.getHeight()) / 2, 0);
@@ -2771,62 +2957,38 @@ void drawStr(const char *text, int textLength, int x, int y, int clip_x1, int cl
 }
 
 int getCharIndexAtPosition(int xPos, const char *text, int textLength, int x, int y, int clip_x1, int clip_y1, int clip_x2,int clip_y2, gui::font::Font &font) {
-    g_font = font;
+    int result = 0;
 
-    int i;
-
-    // textLength == -1 means zero terminated text
-    for (i = 0; textLength == -1 || i < textLength; ++i) {
-        utf8_int32_t encoding;
-        text = decodeUtf8(text, encoding);
-        if (!encoding) {
-            break;
+    layoutText(text, textLength, font, 0, false,
+        [&](int charIndex, int) {
+            // the number of characters at the end
+            result = charIndex;
+            return false;
+        },
+        [&](const TextGlyph &glyph) {
+            if (xPos < x + glyph.x + glyph.advance / 2) {
+                result = glyph.charIndex;
+                return true;
+            }
+            return false;
         }
+    );
 
-        if (handleFontTag(encoding, text, i, textLength, font)) {
-            continue;
-        }
-
-        auto glyph = g_font.getGlyph(encoding);
-        auto dx = 0;
-        if (glyph) {
-            dx = glyph->dx;
-        }
-        if (xPos < x + dx / 2) {
-            return i;
-        }
-        x += dx;
-    }
-
-    return i;
+    return result;
 }
 
 int getCursorXPosition(int cursorPosition, const char *text, int textLength, int x, int y, int clip_x1, int clip_y1, int clip_x2,int clip_y2, gui::font::Font &font) {
-    g_font = font;
+    int result = x;
 
-    // textLength == -1 means zero terminated text
-    for (int i = 0; textLength == -1 || i < textLength; ++i) {
-        utf8_int32_t encoding;
-        text = decodeUtf8(text, encoding);
-        if (!encoding) {
-            break;
-        }
+    layoutText(text, textLength, font, 0, false,
+        [&](int charIndex, int charX) {
+            result = x + charX;
+            return charIndex == cursorPosition;
+        },
+        [](const TextGlyph &) { return false; }
+    );
 
-        if (i == cursorPosition) {
-            return x;
-        }
-
-        if (handleFontTag(encoding, text, i, textLength, font)) {
-            continue;
-        }
-
-        auto glyph = g_font.getGlyph(encoding);
-        if (glyph) {
-            x += glyph->dx;
-        }
-    }
-
-    return x;
+    return result;
 }
 
 #if EEZ_USE_SDL
