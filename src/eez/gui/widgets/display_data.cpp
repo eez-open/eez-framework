@@ -48,6 +48,18 @@ int findStartOfUnit(char *text, int i) {
     return i;
 }
 
+// A text with a number before the unit (e.g. the preview "12.451 V" Studio's
+// page editor shows) is split into integer, fraction and unit like a float.
+static bool isNumberText(const char *text) {
+    int k = findStartOfUnit((char *)text, 0);
+    for (int i = 0; i < k; i++) {
+        if (text[i] >= '0' && text[i] <= '9') {
+            return true;
+        }
+    }
+    return false;
+}
+
 static void trimText(const char *&text, int &length) {
     while (length > 0 && *text == ' ') {
         text++;
@@ -71,8 +83,12 @@ static void renderIntegerUnitAndFraction(DisplayDataWidgetState *widgetState, co
     const char *fraction = "";
     int fractionLength = 0;
 
-    // value that is not a float is displayed whole as the integer part
-    if (widgetState->data.getType() == VALUE_TYPE_FLOAT) {
+    // value that is not a float (or a text with a number) is displayed whole
+    // as the integer part
+    if (
+        widgetState->data.getType() == VALUE_TYPE_FLOAT ||
+        (widgetState->data.isString() && isNumberText(text))
+    ) {
         int i = findStartOfFraction(text);
         int k = findStartOfUnit(text, i);
 
@@ -167,7 +183,11 @@ void DisplayDataWidgetState::render() {
     int length = -1;
 
     if (widget->displayOption != DISPLAY_OPTION_ALL) {
-        if (data.getType() == VALUE_TYPE_FLOAT) {
+        // a text with a number is cut like the text of a float
+        if (
+            data.getType() == VALUE_TYPE_FLOAT ||
+            (data.isString() && isNumberText(text))
+        ) {
             if (widget->displayOption == DISPLAY_OPTION_INTEGER) {
                 int i = findStartOfFraction(text);
                 text[i] = 0;

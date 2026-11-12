@@ -756,6 +756,15 @@ void init() {
     syncBuffer();
 }
 
+// Studio's page editor (the editor mode of the Studio WASM runtime) shows its
+// own background where no widget draws, so the screen starts transparent
+// (followed by refreshScreen, which draws all the widgets again)
+void clearScreenTransparent() {
+    memset((void *)g_renderBuffer1, 0, getVideoBufferSize());
+    memset((void *)g_renderBuffer2, 0, getVideoBufferSize());
+    setFullDamage();
+}
+
 void turnOn() {
     if (g_displayState != ON && g_displayState != TURNING_ON) {
 		g_hooks.turnOnDisplayStart();

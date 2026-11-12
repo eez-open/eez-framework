@@ -45,6 +45,7 @@ void turnOff();
 bool isOn();
 
 void onThemeChanged();
+void clearScreenTransparent();
 void onLuminocityChanged();
 void updateBrightness();
 

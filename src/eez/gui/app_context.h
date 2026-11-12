@@ -158,6 +158,11 @@ protected:
     void updatePage(int i, WidgetCursor &widgetCursor);
     virtual void pageRenderCustom(int i, WidgetCursor &widgetCursor);
 
+    // false: the pages are drawn without a shadow and a backdrop, so what a
+    // transparent page doesn't draw stays transparent (the Studio page editor
+    // draws one page on a transparent screen)
+    virtual bool hasPageBackdrops() { return true; }
+
     void getPageRect(int pageId, const Page *page, int &x, int &y, int &w, int &h);
     bool isPageFullyCovered(int pageNavigationStackIndex);
 

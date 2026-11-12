@@ -394,8 +394,8 @@ void AppContext::updatePage(int i, WidgetCursor &widgetCursor) {
 		y = internalPage->y;
 		width = internalPage->width;
 		height = internalPage->height;
-		withShadow = true;
-		backdrop = g_hooks.activePageHasBackdrop() ? &rect : nullptr;
+		withShadow = hasPageBackdrops();
+		backdrop = hasPageBackdrops() && g_hooks.activePageHasBackdrop() ? &rect : nullptr;
 
         widgetCursor.w = width;
         widgetCursor.h = height;
@@ -431,7 +431,10 @@ void AppContext::updatePage(int i, WidgetCursor &widgetCursor) {
 
         bool transparent = isPageTransparent(m_pageNavigationStack[i].pageId);
 
-        if (transparent) {
+        if (!hasPageBackdrops()) {
+            withShadow = false;
+            backdrop = nullptr;
+        } else if (transparent) {
             // never with shadow, but always with backdrop (also when the page is full size)
             withShadow = false;
             backdrop = &rect;
