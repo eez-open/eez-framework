@@ -123,13 +123,7 @@ Value op_add(const Value& a1, const Value& b1) {
         return allocationFailed(res) ? Value::makeError() : res;
     }
 
-    auto a_valid = a.isString() || a.isDouble() || a.isFloat() || a.isInt64() || a.isInt32OrLess();
-    auto b_valid = b.isString() || b.isDouble() || b.isFloat() || b.isInt64() || b.isInt32OrLess();
-
-    if (!a_valid || !b_valid) {
-        return Value::makeError();
-    }
-
+    // a string is concatenated with the text of the other value, whatever its type
     if (a.isString() || b.isString()) {
         Value value1 = a.toString(0x84eafaa8);
         Value value2 = b.toString(0xd273cab6);
@@ -141,6 +135,13 @@ Value op_add(const Value& a1, const Value& b1) {
             return Value::makeError();
         }
         return res;
+    }
+
+    auto a_valid = a.isDouble() || a.isFloat() || a.isInt64() || a.isInt32OrLess();
+    auto b_valid = b.isDouble() || b.isFloat() || b.isInt64() || b.isInt32OrLess();
+
+    if (!a_valid || !b_valid) {
+        return Value::makeError();
     }
 
     if (a.isDouble() || b.isDouble()) {

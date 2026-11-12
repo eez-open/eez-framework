@@ -114,27 +114,12 @@ bool InputWidgetState::updateState() {
 	WIDGET_STATE(color,       flags.focused ? style->focusColor           : g_hooks.overrideStyleColor(widgetCursor, style));
 	WIDGET_STATE(activeColor, flags.focused ? style->focusBackgroundColor : g_hooks.overrideActiveStyleColor(widgetCursor, style));
 
-	// A string is compared where it is (no copy in every frame) and copied
-	// only when it is changed: the string of a VALUE_TYPE_STRING value can be
-	// in a buffer that is reused, the string of a string asset and of a
-	// string ref doesn't change.
+	// A string is compared where it is (no copy in every frame), WIDGET_STATE
+	// copies it only when it is changed
 	g_readStringInPlace = true;
 	Value newData = get(widgetCursor, widget->data);
 	g_readStringInPlace = false;
-	if (newData.isString()) {
-		const char *str = newData.getString();
-		const char *oldStr = data.isString() ? data.getString() : nullptr;
-		if (!hasPreviousState || !oldStr || strcmp(oldStr, str ? str : "") != 0) {
-			hasPreviousState = false;
-			if (newData.getType() == VALUE_TYPE_STRING || !str) {
-				data = Value::makeStringRef(str ? str : "", -1, 0xa3d4f1d4);
-			} else {
-				data = newData;
-			}
-		}
-	} else {
-		WIDGET_STATE(data, newData);
-	}
+	WIDGET_STATE(data, newData);
 
     WIDGET_STATE_END()
 }

@@ -40,6 +40,7 @@
       {
         "objID": "1cd9abd5-4d2e-5f55-b9df-e6dad2ff199a",
         "name": "g_int",
+        "tags": "base",
         "type": "integer",
         "native": false,
         "defaultValue": "5"
@@ -47,6 +48,7 @@
       {
         "objID": "e3137426-0ca7-5ef7-9139-0d8e81390446",
         "name": "g_double",
+        "tags": "base",
         "type": "double",
         "native": false,
         "defaultValue": "2.5"
@@ -54,6 +56,7 @@
       {
         "objID": "5c1e6315-3d79-5b59-8daa-86c79edaadf0",
         "name": "g_string",
+        "tags": "base",
         "type": "string",
         "native": false,
         "defaultValue": "\"text\""
@@ -61,6 +64,7 @@
       {
         "objID": "1bfab6e2-bcb2-5781-a184-59a0fe9e9678",
         "name": "g_bool",
+        "tags": "base",
         "type": "boolean",
         "native": false,
         "defaultValue": "true"
@@ -68,6 +72,7 @@
       {
         "objID": "0f8ec858-a63b-5672-971a-6f0bd26d5ce0",
         "name": "g_int_array",
+        "tags": "base",
         "type": "array:integer",
         "native": false,
         "defaultValue": "[10, 20, 30]"
@@ -75,24 +80,28 @@
       {
         "objID": "9633113d-baea-509c-8f2c-317ffa401e7e",
         "name": "keypad_text",
+        "tags": "base, keypad",
         "type": "string",
         "native": true
       },
       {
         "objID": "acc57500-6d20-5663-8a36-b1063a9353b2",
         "name": "keypad_edit_unit",
+        "tags": "base, keypad",
         "type": "string",
         "native": true
       },
       {
         "objID": "60c519df-57bd-505a-ba16-2e7ce495ba70",
         "name": "alert_message",
+        "tags": "base, popups",
         "type": "string",
         "native": true
       },
       {
         "objID": "ea11067e-5802-56c0-9dc1-1696ff5db2c7",
         "name": "expr_float",
+        "tags": "expressions",
         "type": "float",
         "native": false,
         "defaultValue": "2.5"
@@ -100,6 +109,7 @@
       {
         "objID": "8f2a6d14-1620-528b-a1f7-b698113186d2",
         "name": "expr_str_array",
+        "tags": "expressions",
         "type": "array:string",
         "native": false,
         "defaultValue": "[\"a\", \"b\", \"c\"]"
@@ -107,6 +117,7 @@
       {
         "objID": "a3d8199b-7b0a-59ed-9d36-137348dcf9be",
         "name": "expr_dbl_array",
+        "tags": "expressions",
         "type": "array:double",
         "native": false,
         "defaultValue": "[0.5, 1.5]"
@@ -114,6 +125,7 @@
       {
         "objID": "3e619977-09f6-52ff-b816-2b5a8708c30e",
         "name": "expr_empty_array",
+        "tags": "expressions",
         "type": "array:integer",
         "native": false,
         "defaultValue": "[]"
@@ -121,6 +133,7 @@
       {
         "objID": "69d787c0-69bc-59c6-b5ce-01672af5b609",
         "name": "expr_matrix",
+        "tags": "expressions",
         "type": "array:array:integer",
         "native": false,
         "defaultValue": "[[1, 2], [3, 4]]"
@@ -128,6 +141,7 @@
       {
         "objID": "679afe75-c513-55c7-830b-785cc59e8e01",
         "name": "expr_point",
+        "tags": "expressions",
         "type": "struct:expr_Point",
         "native": false,
         "defaultValue": "{x: 1, y: 2}"
@@ -135,6 +149,7 @@
       {
         "objID": "9290dbd3-cb0d-54c0-a3cc-f177f6532ed2",
         "name": "expr_rect",
+        "tags": "expressions",
         "type": "struct:expr_Rect",
         "native": false,
         "defaultValue": "{name: \"r\", p: {x: 3, y: 4}, tags: [\"t1\", \"t2\"], w: 1.5}"
@@ -142,6 +157,7 @@
       {
         "objID": "e0434623-ddfa-5bd2-b458-91f2abc94773",
         "name": "expr_points",
+        "tags": "expressions",
         "type": "array:struct:expr_Point",
         "native": false,
         "defaultValue": "[{x: 1, y: 2}, {x: 5, y: 6}]"
@@ -149,6 +165,7 @@
       {
         "objID": "6f753033-3270-5f27-b4c9-71f11b5f98bb",
         "name": "expr_mode",
+        "tags": "expressions",
         "type": "enum:expr_Mode",
         "native": false,
         "defaultValue": "expr_Mode.Auto"
@@ -156,54 +173,63 @@
       {
         "objID": "d1c4dac4-b553-5b2c-b655-4d0dc6062b4d",
         "name": "expr_nat_u32",
+        "tags": "expressions",
         "type": "integer",
         "native": true
       },
       {
         "objID": "95d840f0-eb23-55a7-ba0a-b38478a1ec9c",
         "name": "expr_nat_i64",
+        "tags": "expressions",
         "type": "integer",
         "native": true
       },
       {
         "objID": "915519e4-a72a-5fa2-9863-113f07ca292b",
         "name": "expr_nat_u8",
+        "tags": "expressions",
         "type": "integer",
         "native": true
       },
       {
         "objID": "f7d587dd-763f-5070-be6c-4bbd7c28f848",
         "name": "expr_nat_i8",
+        "tags": "expressions",
         "type": "integer",
         "native": true
       },
       {
         "objID": "98641ee0-1c73-5935-ba4d-6a986bb7ee63",
         "name": "expr_nat_i16",
+        "tags": "expressions",
         "type": "integer",
         "native": true
       },
       {
         "objID": "3e3ce998-903c-53f0-b5a4-9447cb13c212",
         "name": "expr_nat_volt",
+        "tags": "expressions",
         "type": "float",
         "native": true
       },
       {
         "objID": "f22e9511-1776-5e29-9eaf-c636213413b9",
         "name": "expr_nat_undef",
+        "tags": "expressions",
         "type": "integer",
         "native": true
       },
       {
         "objID": "5904e532-254a-5d54-90b7-12c338b3c0ca",
         "name": "expr_nat_dyn",
+        "tags": "expressions",
         "type": "array:integer",
         "native": true
       },
       {
         "objID": "2deac7a3-b384-52a1-a247-d98052a6e568",
         "name": "ext_layout",
+        "tags": "external",
         "type": "integer",
         "native": false,
         "defaultValue": "0"
@@ -211,6 +237,7 @@
       {
         "objID": "c2da5042-0040-5f10-8702-903477dd6f70",
         "name": "ext_uw_started",
+        "tags": "external, user-widget",
         "type": "integer",
         "native": false,
         "defaultValue": "0"
@@ -218,6 +245,7 @@
       {
         "objID": "3a5d3be6-a7f8-5e85-9ff7-292e638b17ea",
         "name": "flow_g_int",
+        "tags": "flow",
         "type": "integer",
         "native": false,
         "defaultValue": "0"
@@ -225,6 +253,7 @@
       {
         "objID": "9d12671a-c61e-5bde-a6d3-6eb05f8f5425",
         "name": "flow_g_arr",
+        "tags": "flow",
         "type": "array:integer",
         "native": false,
         "defaultValue": "[1, 2, 3]"
@@ -232,6 +261,7 @@
       {
         "objID": "6f73b4b4-c12d-5658-ace6-7169a3d3a053",
         "name": "flow_g_point",
+        "tags": "flow",
         "type": "struct:flow_point",
         "native": false,
         "defaultValue": "{x: 1, y: 2}"
@@ -239,6 +269,7 @@
       {
         "objID": "4b09754e-d5fd-509f-8a90-a8591f75a481",
         "name": "flow_g_watch",
+        "tags": "flow",
         "type": "integer",
         "native": false,
         "defaultValue": "0"
@@ -246,6 +277,7 @@
       {
         "objID": "76123ef3-07eb-5e6d-bad2-2dd829377114",
         "name": "flow_g_lock",
+        "tags": "flow",
         "type": "boolean",
         "native": false,
         "defaultValue": "false"
@@ -253,6 +285,7 @@
       {
         "objID": "caaf25d8-1196-5b35-a0ff-613dc0811b3e",
         "name": "flow_g_layout",
+        "tags": "flow",
         "type": "integer",
         "native": false,
         "defaultValue": "0"
@@ -260,6 +293,7 @@
       {
         "objID": "b0e6e035-5c77-59a3-9807-170351cd5355",
         "name": "flow_g_result",
+        "tags": "flow",
         "type": "integer",
         "native": false,
         "defaultValue": "0"
@@ -267,6 +301,7 @@
       {
         "objID": "b8ee0de1-4c7b-50c0-9872-1b2c5538dd08",
         "name": "flow_g_list",
+        "tags": "flow",
         "type": "any",
         "native": false,
         "defaultValue": "null"
@@ -274,6 +309,7 @@
       {
         "objID": "2dcb3ae4-401f-549c-a02d-f7f37804ec38",
         "name": "gui_list_items",
+        "tags": "gui",
         "type": "array:integer",
         "native": false,
         "defaultValue": "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]"
@@ -281,6 +317,7 @@
       {
         "objID": "375a9d36-cdd5-58a1-a57c-1517eeab53ae",
         "name": "gui_grid_items",
+        "tags": "gui",
         "type": "array:integer",
         "native": false,
         "defaultValue": "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]"
@@ -288,78 +325,91 @@
       {
         "objID": "5103d751-f2ad-5dd6-acbf-67900f502d30",
         "name": "gui_enabled",
+        "tags": "gui",
         "type": "boolean",
         "native": true
       },
       {
         "objID": "22bd2adb-ab3d-5cf7-bd11-c3907d2a00d4",
         "name": "gui_switch",
+        "tags": "gui",
         "type": "boolean",
         "native": true
       },
       {
         "objID": "3dfe805e-4b8e-5c40-83f7-c0b923cde882",
         "name": "gui_name",
+        "tags": "gui",
         "type": "string",
         "native": true
       },
       {
         "objID": "e7351680-c50a-5581-b22d-72fec1a0c37c",
         "name": "gui_overlay",
+        "tags": "gui",
         "type": "any",
         "native": true
       },
       {
         "objID": "a0d0e2ba-0bbb-5f92-b480-68a7e36555d8",
         "name": "gui_keypad_ok_enabled",
+        "tags": "gui, keypad",
         "type": "boolean",
         "native": true
       },
       {
         "objID": "dd629e33-14b7-50cb-9fbb-039c38432372",
         "name": "gui_keypad_option1_text",
+        "tags": "gui, keypad",
         "type": "string",
         "native": true
       },
       {
         "objID": "f77f252f-7625-5c4c-8dc7-57274555e707",
         "name": "render_text_a",
+        "tags": "render",
         "type": "string",
         "native": true
       },
       {
         "objID": "fea9d0ed-0421-5c18-a1ea-59a1c78e3557",
         "name": "render_text_b",
+        "tags": "render",
         "type": "string",
         "native": true
       },
       {
         "objID": "eaead134-eedd-560d-94b9-9049bd3d1bd1",
         "name": "render_text_c",
+        "tags": "render",
         "type": "string",
         "native": true
       },
       {
         "objID": "4f8713d7-d266-5588-9939-9f8630f6e1c7",
         "name": "render_text_d",
+        "tags": "render",
         "type": "string",
         "native": true
       },
       {
         "objID": "4365abc2-9c20-5dea-8cb8-d50a12031d85",
         "name": "render_text_e",
+        "tags": "render",
         "type": "string",
         "native": true
       },
       {
         "objID": "a9109f89-5600-5c3a-976a-a7abf6b08253",
         "name": "render_text_f",
+        "tags": "render",
         "type": "string",
         "native": true
       },
       {
         "objID": "ff2b1d19-8de9-5ee6-a9de-f2ec78be4d50",
         "name": "w_marker",
+        "tags": "widgets",
         "type": "string",
         "native": false,
         "defaultValue": "\"w_marker\""
@@ -367,6 +417,7 @@
       {
         "objID": "d5b8da8d-9f4a-5fee-889f-9218e0b3b44b",
         "name": "w_a",
+        "tags": "widgets",
         "type": "any",
         "native": false,
         "defaultValue": "0"
@@ -374,6 +425,7 @@
       {
         "objID": "af61d7e5-4f47-5ee0-b935-a015dc8309da",
         "name": "w_b",
+        "tags": "widgets",
         "type": "any",
         "native": false,
         "defaultValue": "0"
@@ -381,6 +433,7 @@
       {
         "objID": "6841926b-9b15-508c-92e8-07fc448942b5",
         "name": "w_c",
+        "tags": "widgets",
         "type": "any",
         "native": false,
         "defaultValue": "0"
@@ -388,6 +441,7 @@
       {
         "objID": "12abbb8a-e7bd-5dbf-ba47-4b79dd7abd9f",
         "name": "w_d",
+        "tags": "widgets",
         "type": "any",
         "native": false,
         "defaultValue": "0"
@@ -395,6 +449,7 @@
       {
         "objID": "2603d7ea-adc9-5ce4-87c8-52de47027b06",
         "name": "w_e",
+        "tags": "widgets",
         "type": "any",
         "native": false,
         "defaultValue": "0"
@@ -402,6 +457,7 @@
       {
         "objID": "e93193df-a7e6-5ecc-8023-59599673fa8c",
         "name": "w_int",
+        "tags": "widgets",
         "type": "integer",
         "native": false,
         "defaultValue": "0"
@@ -409,6 +465,7 @@
       {
         "objID": "224e756b-fb79-5f23-972e-2b39657d154c",
         "name": "w_int2",
+        "tags": "widgets",
         "type": "integer",
         "native": false,
         "defaultValue": "0"
@@ -416,6 +473,7 @@
       {
         "objID": "6f957701-1c6a-592a-8802-b2e0f695fc71",
         "name": "w_bool",
+        "tags": "widgets",
         "type": "boolean",
         "native": false,
         "defaultValue": "true"
@@ -423,6 +481,7 @@
       {
         "objID": "db873eba-611a-5018-9ce1-27d4caab2f7b",
         "name": "w_bool2",
+        "tags": "widgets",
         "type": "boolean",
         "native": false,
         "defaultValue": "true"
@@ -430,6 +489,7 @@
       {
         "objID": "8ca6f02d-992a-51b0-a897-32c71ff30e82",
         "name": "w_str",
+        "tags": "widgets",
         "type": "string",
         "native": false,
         "defaultValue": "\"\""
@@ -437,6 +497,7 @@
       {
         "objID": "4bb83977-df04-588f-a5d8-0e9bca9e65e1",
         "name": "w_double",
+        "tags": "widgets",
         "type": "double",
         "native": false,
         "defaultValue": "0"
@@ -444,6 +505,7 @@
       {
         "objID": "2b23201b-ba32-57be-95ad-b9ccf6df3844",
         "name": "w_sb",
+        "tags": "widgets",
         "type": "struct:$ScrollbarState",
         "native": false,
         "defaultValue": "{numItems: 100, itemsPerPage: 10, positionIncrement: 1, position: 0}"
@@ -451,6 +513,7 @@
       {
         "objID": "09d1db22-8be6-5934-94d1-38fda0bfdd32",
         "name": "w_lc_points",
+        "tags": "widgets",
         "type": "array:any",
         "native": false,
         "defaultValue": "[]"
@@ -458,6 +521,7 @@
       {
         "objID": "741c5d42-6060-5c75-8aac-c240ed65e4ba",
         "name": "w_strs",
+        "tags": "widgets",
         "type": "array:string",
         "native": false,
         "defaultValue": "[]"
@@ -465,60 +529,70 @@
       {
         "objID": "4934f32f-61a4-5177-aeae-039561bc64b1",
         "name": "w_ell",
+        "tags": "widgets",
         "type": "string",
         "native": true
       },
       {
         "objID": "03bdeb93-88bd-5b20-a0f2-1e872f8fc2f3",
         "name": "w_ref",
+        "tags": "widgets",
         "type": "string",
         "native": true
       },
       {
         "objID": "76b6e570-8c65-5eb6-ae86-1824867323fc",
         "name": "w_xscroll",
+        "tags": "widgets",
         "type": "string",
         "native": true
       },
       {
         "objID": "fa07db46-ab25-5c55-a97b-bcabb6d282dd",
         "name": "w_counter_a",
+        "tags": "widgets",
         "type": "any",
         "native": true
       },
       {
         "objID": "896aa3dd-7b0b-595d-a23e-d962f312bc78",
         "name": "w_counter_b",
+        "tags": "widgets",
         "type": "any",
         "native": true
       },
       {
         "objID": "eac4ca1b-9855-56b7-8ed8-a6ec878faccd",
         "name": "w_yt",
+        "tags": "widgets",
         "type": "any",
         "native": true
       },
       {
         "objID": "3270abce-cd14-5b1b-bcb8-04a53b5b07bc",
         "name": "w_canvas",
+        "tags": "widgets",
         "type": "any",
         "native": true
       },
       {
         "objID": "c6077930-a5e6-5a10-a677-04ec9e6aa992",
         "name": "w_rol",
+        "tags": "widgets",
         "type": "integer",
         "native": true
       },
       {
         "objID": "f7ef1c6d-9e43-5be7-a867-b97c8db38acb",
         "name": "w_probe",
+        "tags": "widgets, probe",
         "type": "any",
         "native": true
       },
       {
         "objID": "a36e17c8-d320-582d-9183-237aa9ddef4f",
         "name": "w_counter_arr",
+        "tags": "widgets",
         "type": "array:integer",
         "native": true
       }
@@ -527,6 +601,7 @@
       {
         "objID": "e05595e0-2371-514d-97ed-8ca1505ec14d",
         "name": "expr_Point",
+        "tags": "expressions",
         "fields": [
           {
             "objID": "8c04bd87-7458-5801-b79e-ef975a57443b",
@@ -543,6 +618,7 @@
       {
         "objID": "3584906f-3588-5bad-99fc-3063372194d3",
         "name": "expr_Rect",
+        "tags": "expressions",
         "fields": [
           {
             "objID": "6d3e9d84-9336-5016-a9a9-b0d6c117ad25",
@@ -569,6 +645,7 @@
       {
         "objID": "81a91707-a506-5658-a89a-516b717e34e8",
         "name": "flow_point",
+        "tags": "flow",
         "fields": [
           {
             "objID": "111a3ab2-fcba-595f-89d7-115d54650ee9",
@@ -585,6 +662,7 @@
       {
         "objID": "30f2a88d-db89-5c78-a25e-1327edb6fa7c",
         "name": "flow_item",
+        "tags": "flow",
         "fields": [
           {
             "objID": "cf106333-fdc4-5a21-8bb7-405d9d18de60",
@@ -603,6 +681,7 @@
       {
         "objID": "a485a42d-92cc-5a41-bc9d-cefef9064b83",
         "name": "expr_Mode",
+        "tags": "expressions",
         "members": [
           {
             "objID": "38e629f1-23a8-5063-985e-9398529381af",
@@ -632,6 +711,7 @@
     {
       "objID": "50db0e44-fb41-5c7d-ba5c-bd9dbeb8b385",
       "name": "drag_overlay",
+      "tags": "base",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -642,6 +722,7 @@
     {
       "objID": "40c9a059-cd74-5fd9-89e3-d7e565e12f58",
       "name": "edit",
+      "tags": "base",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -652,6 +733,7 @@
     {
       "objID": "e7999c64-a5aa-5355-8384-d4698722441b",
       "name": "scroll",
+      "tags": "base",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -662,6 +744,7 @@
     {
       "objID": "f7ca06a6-8e9f-5145-994c-9e7f6d5972bf",
       "name": "flow_native_props",
+      "tags": "flow, native",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -691,6 +774,7 @@
     {
       "objID": "12ae890e-7c69-5f39-8fe5-76326367b3c5",
       "name": "flow_native_async",
+      "tags": "flow, native",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -701,6 +785,7 @@
     {
       "objID": "10554fe4-0b6b-5831-9fe4-ac686149135c",
       "name": "flow_native_async_out",
+      "tags": "flow, native",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -721,6 +806,7 @@
     {
       "objID": "2ede6e7f-402c-56b3-a501-b5833ccdf570",
       "name": "flow_native_sync",
+      "tags": "flow, native",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -731,6 +817,7 @@
     {
       "objID": "88bc1774-7293-5c5e-b252-f48a4edb5aa3",
       "name": "flow_native_getprop",
+      "tags": "flow, native",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -741,6 +828,7 @@
     {
       "objID": "a34b991f-d713-515b-9654-919e02f3745e",
       "name": "flow_act_error",
+      "tags": "flow, errors",
       "implementationType": "flow",
       "components": [
         {
@@ -781,6 +869,7 @@
     {
       "objID": "d5d75b9a-24f9-5670-9fee-2ab56d7dc655",
       "name": "flow_act_eval_error",
+      "tags": "flow, errors",
       "implementationType": "flow",
       "components": [
         {
@@ -845,6 +934,7 @@
     {
       "objID": "a1b1e9fb-6aaf-5a19-84be-21ebe29c874f",
       "name": "flow_act_watch",
+      "tags": "flow",
       "implementationType": "flow",
       "components": [
         {
@@ -909,6 +999,7 @@
     {
       "objID": "82ca34cb-7878-5726-83af-fa694ea99cce",
       "name": "flow_act_custom_err",
+      "tags": "flow, errors",
       "implementationType": "flow",
       "components": [
         {
@@ -967,6 +1058,7 @@
     {
       "objID": "af6cb45d-0537-5ae0-9756-6f5e1b254823",
       "name": "flow_act_outer",
+      "tags": "flow",
       "implementationType": "flow",
       "components": [
         {
@@ -1045,6 +1137,7 @@
     {
       "objID": "04fd5b0b-68ff-5bdd-a805-69df29795471",
       "name": "flow_act_err_then",
+      "tags": "flow, errors",
       "implementationType": "flow",
       "components": [
         {
@@ -1103,6 +1196,7 @@
     {
       "objID": "f4a6631b-ea50-5b55-9b46-6291f2c5a435",
       "name": "flow_act_props",
+      "tags": "flow",
       "implementationType": "flow",
       "components": [
         {
@@ -1203,6 +1297,7 @@
     {
       "objID": "efacbde9-ba29-58a8-a9d0-ae4733303243",
       "name": "flow_act_io",
+      "tags": "flow",
       "implementationType": "flow",
       "components": [
         {
@@ -1270,6 +1365,7 @@
     {
       "objID": "8188094f-8bec-521b-b22d-caa5a9cc0c5e",
       "name": "flow_act_inner",
+      "tags": "flow",
       "implementationType": "flow",
       "components": [
         {
@@ -1327,6 +1423,7 @@
     {
       "objID": "ce0dcb2e-f4a5-5914-8ce0-84249bbe7209",
       "name": "flow_act_outer2",
+      "tags": "flow",
       "implementationType": "flow",
       "components": [
         {
@@ -1424,6 +1521,7 @@
     {
       "objID": "434fe635-f04e-5ffd-96dd-2e8577cd442e",
       "name": "flow_act_noend",
+      "tags": "flow",
       "implementationType": "flow",
       "components": [
         {
@@ -1464,6 +1562,7 @@
     {
       "objID": "4812c05d-d3a3-5f66-b139-41ef0ad82bca",
       "name": "flow_act_delay",
+      "tags": "flow",
       "implementationType": "flow",
       "components": [
         {
@@ -1539,6 +1638,7 @@
     {
       "objID": "36e829c7-aa07-5d6e-aa2b-13bc0e1c6f42",
       "name": "flow_act_click",
+      "tags": "flow",
       "implementationType": "flow",
       "components": [
         {
@@ -1615,6 +1715,7 @@
     {
       "objID": "d8934a01-20e7-55e6-b777-604315e1a0e1",
       "name": "flow_act_keypad",
+      "tags": "flow, keypad",
       "implementationType": "flow",
       "components": [
         {
@@ -1701,6 +1802,7 @@
     {
       "objID": "6096d925-2cc3-5de1-9a87-1f5e92785931",
       "name": "flow_act_keypad_bad",
+      "tags": "flow, keypad",
       "implementationType": "flow",
       "components": [
         {
@@ -1770,6 +1872,7 @@
     {
       "objID": "8631cce7-1b3f-500f-a5ab-7f8200b28547",
       "name": "flow_act_msgbox",
+      "tags": "flow, popups",
       "implementationType": "flow",
       "components": [
         {
@@ -1828,6 +1931,7 @@
     {
       "objID": "cb90a53d-66d3-5314-9a9e-429b78f123d5",
       "name": "flow_act_msgbox_bad",
+      "tags": "flow, popups",
       "implementationType": "flow",
       "components": [
         {
@@ -1867,6 +1971,7 @@
         {
           "objID": "1c2437a5-2305-596a-894c-ec7f39511a4e",
           "name": "bad",
+          "tags": "flow",
           "type": "any",
           "native": false,
           "defaultValue": "5"
@@ -1878,6 +1983,7 @@
     {
       "objID": "c74cb98c-8877-595c-98fd-1e1a835434eb",
       "name": "flow_act_flood",
+      "tags": "flow",
       "implementationType": "flow",
       "components": [
         {
@@ -4052,6 +4158,7 @@
     {
       "objID": "c3d06366-72e1-55c7-bce2-5ca9a8b59108",
       "name": "flow_act_two",
+      "tags": "flow",
       "implementationType": "flow",
       "components": [
         {
@@ -4085,6 +4192,7 @@
     {
       "objID": "8447d406-f19e-556a-8fda-4c26922f0d4d",
       "name": "flow_act_flood2",
+      "tags": "flow",
       "implementationType": "flow",
       "components": [
         {
@@ -6512,6 +6620,7 @@
     {
       "objID": "8a96e1ea-da37-5e3b-a981-3f286574f1b9",
       "name": "gui_click_a",
+      "tags": "gui",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6522,6 +6631,7 @@
     {
       "objID": "6d0221f4-9d9c-5aa4-9639-f3ac44290bb1",
       "name": "gui_click_b",
+      "tags": "gui",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6532,6 +6642,7 @@
     {
       "objID": "c9c5c4c9-4da9-5e8f-b08e-6ad1c67f9561",
       "name": "gui_click_c",
+      "tags": "gui",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6542,6 +6653,7 @@
     {
       "objID": "a69ed163-ef14-5b12-9957-e297ca928277",
       "name": "gui_click_d",
+      "tags": "gui",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6552,6 +6664,7 @@
     {
       "objID": "e11bde39-54a0-5610-868e-e2194500a9ec",
       "name": "gui_click_p",
+      "tags": "gui",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6562,6 +6675,7 @@
     {
       "objID": "d528bc86-3072-5975-8cc1-85dd415eccdd",
       "name": "gui_list_item",
+      "tags": "gui",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6572,6 +6686,7 @@
     {
       "objID": "74a757a9-59f0-5352-92c8-c60ef058527b",
       "name": "gui_grid_item",
+      "tags": "gui",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6582,6 +6697,7 @@
     {
       "objID": "59926a29-dffa-5928-84d2-7451ae54a4f4",
       "name": "gui_yes",
+      "tags": "gui",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6592,6 +6708,7 @@
     {
       "objID": "36be9a66-a3a0-52d6-8956-2153e2d348ce",
       "name": "gui_no",
+      "tags": "gui",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6602,6 +6719,7 @@
     {
       "objID": "097e3925-fedd-5ac4-8f34-a08b53879234",
       "name": "gui_cancel",
+      "tags": "gui",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6612,6 +6730,7 @@
     {
       "objID": "56ea113a-4210-5889-80ed-0745b12e6130",
       "name": "gui_keypad_key",
+      "tags": "gui, keypad",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6622,6 +6741,7 @@
     {
       "objID": "a5051665-f559-5a62-a938-7ac083e014d9",
       "name": "gui_keypad_space",
+      "tags": "gui, keypad",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6632,6 +6752,7 @@
     {
       "objID": "434ad963-663e-59d9-b60d-27ff5eb0819e",
       "name": "gui_keypad_back",
+      "tags": "gui, keypad",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6642,6 +6763,7 @@
     {
       "objID": "94bbe859-3490-5cde-878c-5b40669ddef2",
       "name": "gui_keypad_clear",
+      "tags": "gui, keypad",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6652,6 +6774,7 @@
     {
       "objID": "41d80ca9-4f2c-5c9f-a8cb-f6ca3edf360a",
       "name": "gui_keypad_ok",
+      "tags": "gui, keypad",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6662,6 +6785,7 @@
     {
       "objID": "59aa95b5-bf38-5109-ba68-e2a7b55e0dca",
       "name": "gui_keypad_cancel",
+      "tags": "gui, keypad",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6672,6 +6796,7 @@
     {
       "objID": "8432a772-7288-5281-8f19-0ebb55894f3f",
       "name": "gui_keypad_sign",
+      "tags": "gui, keypad",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6682,6 +6807,7 @@
     {
       "objID": "e384eb9a-9366-5a57-a51c-6b04618e6e3e",
       "name": "gui_keypad_unit",
+      "tags": "gui, keypad",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6692,6 +6818,7 @@
     {
       "objID": "578a65ae-4ce2-511b-a4a1-7b401cf57d21",
       "name": "gui_toggle_keypad_mode",
+      "tags": "gui, keypad",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6702,6 +6829,7 @@
     {
       "objID": "2673140c-2fe7-5a2d-b7bc-a4f7c17cc685",
       "name": "gui_keypad_option1",
+      "tags": "gui, keypad",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6712,6 +6840,7 @@
     {
       "objID": "050c2d0b-290c-55d9-a578-fca159e7bf2c",
       "name": "w_on_click",
+      "tags": "widgets",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6722,6 +6851,7 @@
     {
       "objID": "defed6b1-98bc-5954-a00e-e8fbe3fda348",
       "name": "w_on_click2",
+      "tags": "widgets",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -6734,6 +6864,7 @@
     {
       "objID": "a9b27cb5-e0b6-54b8-988c-e660428e2670",
       "name": "main",
+      "tags": "base",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -6771,6 +6902,7 @@
     {
       "objID": "bb815219-4beb-5d60-9726-900d6dc075ba",
       "name": "numeric_keypad",
+      "tags": "base, keypad",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -6797,6 +6929,7 @@
     {
       "objID": "88cc7276-b521-5393-a6df-96ab19e9ef19",
       "name": "async_operation_in_progress",
+      "tags": "base, popups",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -6823,6 +6956,7 @@
     {
       "objID": "b1b5e136-5aaa-542d-857f-e6e3c1c6b465",
       "name": "expr_active",
+      "tags": "expressions",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -6866,6 +7000,7 @@
         {
           "objID": "5a2f90c4-7ec3-50a2-bad9-d1d611cfaefa",
           "name": "active",
+          "tags": "expressions",
           "type": "boolean",
           "native": false,
           "defaultValue": "false"
@@ -6877,6 +7012,7 @@
     {
       "objID": "e62ad5d4-c464-5ad4-b149-9a1ed5009aa8",
       "name": "expr_bad_theme",
+      "tags": "expressions",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -6917,6 +7053,7 @@
     {
       "objID": "292b89e6-67a9-5961-a315-c363583d1678",
       "name": "expr_bad_language",
+      "tags": "expressions",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -6957,6 +7094,7 @@
     {
       "objID": "e18cb06a-ae92-5090-89bd-63f2336ffb68",
       "name": "expressions",
+      "tags": "expressions",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -22422,12 +22560,14 @@
         {
           "objID": "6cd4158f-837d-5c42-891a-7c86d61f3eff",
           "name": "label",
+          "tags": "expressions",
           "type": "any",
           "native": false
         },
         {
           "objID": "3284122d-2d98-5915-8cd0-d2f16ccb8164",
           "name": "result",
+          "tags": "expressions",
           "type": "any",
           "native": false
         }
@@ -22438,6 +22578,7 @@
     {
       "objID": "8ba27a78-3ed7-5f44-afe9-f6fd3951cae3",
       "name": "ext_host",
+      "tags": "external",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -22568,12 +22709,14 @@
         {
           "objID": "0a99443f-a19d-522f-a755-516901e6158f",
           "name": "probe_label",
+          "tags": "external, probe",
           "type": "any",
           "native": false
         },
         {
           "objID": "b1fe4c2d-7add-5a23-9c52-b01b770531a1",
           "name": "probe_result",
+          "tags": "external, probe",
           "type": "any",
           "native": false
         }
@@ -22584,6 +22727,7 @@
     {
       "objID": "c411c1b6-e5de-57bd-92fb-fbdb16239511",
       "name": "flow_vars",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -22839,6 +22983,7 @@
         {
           "objID": "0ede7e90-43b4-57cc-bb3c-cc84a3388851",
           "name": "label",
+          "tags": "flow",
           "type": "any",
           "native": false
         }
@@ -22849,6 +22994,7 @@
     {
       "objID": "0d4708e1-c427-51fa-b178-d9ee1adc3f6d",
       "name": "flow_seq",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -22939,6 +23085,7 @@
     {
       "objID": "8f87dcc1-b88a-53db-b5a8-2ed57d519a78",
       "name": "flow_fanout",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -23000,6 +23147,7 @@
     {
       "objID": "29ef82a2-9926-5477-a671-4c2e80e4ca58",
       "name": "flow_setvar",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -23079,6 +23227,7 @@
         {
           "objID": "b7f9d7bd-a528-529d-9e69-764089658319",
           "name": "loc",
+          "tags": "flow",
           "type": "integer",
           "native": false,
           "defaultValue": "0"
@@ -23090,6 +23239,7 @@
     {
       "objID": "0b26b02e-cf7c-5ca1-a9ba-e32d15d69502",
       "name": "flow_setvar_oob",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -23157,6 +23307,7 @@
     {
       "objID": "667301c6-b1ae-5187-9a54-f30aa4da0481",
       "name": "flow_eval_oob",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -23224,6 +23375,7 @@
     {
       "objID": "e889ebad-8bd5-5760-8c6c-3692bd849e95",
       "name": "flow_switch",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -23339,6 +23491,7 @@
         {
           "objID": "df4e8684-ebda-550a-a3ea-917d0a4c014b",
           "name": "x",
+          "tags": "flow",
           "type": "integer",
           "native": false,
           "defaultValue": "7"
@@ -23350,6 +23503,7 @@
     {
       "objID": "4e2a2072-39a7-58f9-b88c-7089a918745b",
       "name": "flow_switch_none",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -23439,6 +23593,7 @@
         {
           "objID": "4d527b62-7fc6-521d-a84f-9640de9f96e7",
           "name": "x",
+          "tags": "flow",
           "type": "integer",
           "native": false,
           "defaultValue": "1"
@@ -23450,6 +23605,7 @@
     {
       "objID": "15fc62a2-cf55-5746-a99b-fd23d8f7298f",
       "name": "flow_compare",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -23644,6 +23800,7 @@
     {
       "objID": "890f45ae-a9af-5a78-9461-b569048c9f0a",
       "name": "flow_istrue",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -23795,6 +23952,7 @@
     {
       "objID": "85c319af-6e1f-513a-befc-2334b0a25f8d",
       "name": "flow_loop",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -23882,6 +24040,7 @@
         {
           "objID": "8a153e87-5fa9-5004-bc4a-f9bc2d2575e8",
           "name": "i",
+          "tags": "flow",
           "type": "integer",
           "native": false,
           "defaultValue": "0"
@@ -23893,6 +24052,7 @@
     {
       "objID": "0260f787-3143-50f0-a0a9-f4fd9cc4ecb6",
       "name": "flow_loop_down",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -23980,6 +24140,7 @@
         {
           "objID": "f3af3d4b-9909-52d5-8acf-7cb66135b36e",
           "name": "i",
+          "tags": "flow",
           "type": "integer",
           "native": false,
           "defaultValue": "0"
@@ -23991,6 +24152,7 @@
     {
       "objID": "a70d1fed-0c3d-53b7-a21f-557be65e8945",
       "name": "flow_counter",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -24077,6 +24239,7 @@
     {
       "objID": "92961a81-2401-5be8-aced-e857639ee24f",
       "name": "flow_delay",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -24156,6 +24319,7 @@
     {
       "objID": "c861ada3-84b4-5614-b5fe-ae4a76c7a871",
       "name": "flow_delay_nan",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -24214,6 +24378,7 @@
         {
           "objID": "fc8c62ba-0acd-5e31-8718-9534721bf475",
           "name": "bad",
+          "tags": "flow",
           "type": "string",
           "native": false,
           "defaultValue": "\"abc\""
@@ -24225,6 +24390,7 @@
     {
       "objID": "dcb8f2a3-087e-5c0a-8ccb-23e5340f72e3",
       "name": "flow_delay_action",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -24290,6 +24456,7 @@
     {
       "objID": "a706c933-3f13-5ae0-b6d9-2064982fc29c",
       "name": "flow_watch",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -24357,6 +24524,7 @@
     {
       "objID": "2585ba18-e569-5918-8e68-0106f6a5fd8c",
       "name": "flow_watch_action",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -24404,6 +24572,7 @@
     {
       "objID": "27b3d571-576f-520b-b121-821bed38b88c",
       "name": "flow_custom_err",
+      "tags": "flow, errors",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -24485,6 +24654,7 @@
     {
       "objID": "ef85e35d-902e-56aa-ac9f-4f6331510889",
       "name": "flow_log",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -24564,6 +24734,7 @@
     {
       "objID": "cf18a59c-8d3c-5c26-8e4e-619f7080f635",
       "name": "flow_err_callaction_catch",
+      "tags": "flow, errors",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -24636,6 +24807,7 @@
     {
       "objID": "48111072-10c6-5beb-9fbc-914bd2bc9b4b",
       "name": "flow_err_callaction_eval",
+      "tags": "flow, errors",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -24708,6 +24880,7 @@
     {
       "objID": "ba622895-778a-57ce-9637-e8fdab6c9afb",
       "name": "flow_err_catch_page",
+      "tags": "flow, errors",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -24789,6 +24962,7 @@
     {
       "objID": "7645190c-e0a8-5f96-863f-f5f132db3f3d",
       "name": "flow_err_page",
+      "tags": "flow, errors",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -24866,6 +25040,7 @@
     {
       "objID": "42a8a571-fc8f-5801-a242-ba06438bfe51",
       "name": "flow_err_uncaught_action",
+      "tags": "flow, errors",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -24931,6 +25106,7 @@
     {
       "objID": "b5ced2e4-3caa-5487-bed7-d6ca6713b803",
       "name": "flow_catch_eval",
+      "tags": "flow, errors",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -25032,6 +25208,7 @@
     {
       "objID": "7ac3a864-e114-56fd-854a-02faeb23a58a",
       "name": "flow_eval_error_output",
+      "tags": "flow, errors",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -25124,6 +25301,7 @@
     {
       "objID": "34ddc51c-2af4-527f-9d43-0e466345fae6",
       "name": "flow_catch_twice",
+      "tags": "flow, errors",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -25267,6 +25445,7 @@
     {
       "objID": "cbfd46ee-867a-532e-9ffe-f8fc366fee48",
       "name": "flow_err_nested",
+      "tags": "flow, errors",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -25314,6 +25493,7 @@
     {
       "objID": "50027a3f-00e5-5d79-a4dc-4e57ae4d083c",
       "name": "flow_err_drop",
+      "tags": "flow, errors",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -25395,6 +25575,7 @@
     {
       "objID": "4e2fa4cb-3982-5a54-bad7-f66b896da13d",
       "name": "flow_err_nonstring",
+      "tags": "flow, errors",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -25435,6 +25616,7 @@
         {
           "objID": "f6a248a2-9c6b-5768-ab5b-a0784d0434e9",
           "name": "num",
+          "tags": "flow",
           "type": "any",
           "native": false,
           "defaultValue": "42"
@@ -25446,6 +25628,7 @@
     {
       "objID": "eefb5564-b7d9-5bc3-ba9a-301b4143cdd5",
       "name": "flow_label",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -25518,6 +25701,7 @@
     {
       "objID": "493ae271-6187-5717-a15f-704d13755fe2",
       "name": "flow_noop",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -25579,6 +25763,7 @@
     {
       "objID": "a688d830-054f-5d46-95a3-dadbda6642a7",
       "name": "flow_tas",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -25640,6 +25825,7 @@
     {
       "objID": "9e441fb9-2b70-51b0-a901-05eeefae7c57",
       "name": "flow_sort",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -25882,6 +26068,7 @@
         {
           "objID": "242780e0-acf8-5e2a-b039-355a5b2b2159",
           "name": "ints",
+          "tags": "flow",
           "type": "array:integer",
           "native": false,
           "defaultValue": "[3, 1, 2]"
@@ -25889,6 +26076,7 @@
         {
           "objID": "44cb773b-3dab-594d-ae8b-14f7c13edf68",
           "name": "big",
+          "tags": "flow",
           "type": "array:integer",
           "native": false,
           "defaultValue": "[16777217, 16777216]"
@@ -25896,6 +26084,7 @@
         {
           "objID": "45a2fa52-1d3d-55f8-ae76-3d132080232c",
           "name": "strs",
+          "tags": "flow",
           "type": "array:string",
           "native": false,
           "defaultValue": "[\"b\", \"a\", \"C\"]"
@@ -25903,6 +26092,7 @@
         {
           "objID": "4c1f8d2b-ff54-5807-95fc-0b3bb7157ee5",
           "name": "bad",
+          "tags": "flow",
           "type": "any",
           "native": false,
           "defaultValue": "5"
@@ -25914,6 +26104,7 @@
     {
       "objID": "adc4144e-537e-560e-8672-126e132f24ee",
       "name": "flow_sort_seq",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -25998,6 +26189,7 @@
         {
           "objID": "26c026a2-a777-528e-967a-208035666b0d",
           "name": "ints",
+          "tags": "flow",
           "type": "array:integer",
           "native": false,
           "defaultValue": "[2, 1]"
@@ -26009,6 +26201,7 @@
     {
       "objID": "570aa10c-6911-54e3-b91a-6c169b236943",
       "name": "flow_sort_catch",
+      "tags": "flow, errors",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -26100,6 +26293,7 @@
         {
           "objID": "b197b890-9857-565d-b315-4b2b88c604c8",
           "name": "ints",
+          "tags": "flow",
           "type": "array:integer",
           "native": false,
           "defaultValue": "[2, 1]"
@@ -26111,6 +26305,7 @@
     {
       "objID": "09000585-281e-592b-811a-fc521a397e84",
       "name": "flow_sort_struct",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -26179,6 +26374,7 @@
         {
           "objID": "c8b5aedd-e6bd-5c8f-a9ed-dfc1ee282003",
           "name": "items",
+          "tags": "flow",
           "type": "array:struct:flow_item",
           "native": false,
           "defaultValue": "[{name: \"x\", value: 3}, {name: \"y\", value: 1}, {name: \"z\", value: 2}]"
@@ -26190,6 +26386,7 @@
     {
       "objID": "25f044b3-0a72-5692-80cc-a7062e43d291",
       "name": "flow_sort_bad",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -26256,6 +26453,7 @@
         {
           "objID": "0fafa7e6-d137-58a1-883c-e1aa193344d1",
           "name": "bad",
+          "tags": "flow",
           "type": "any",
           "native": false,
           "defaultValue": "5"
@@ -26267,6 +26465,7 @@
     {
       "objID": "4f85f782-ce05-5d79-b2cf-55335704f410",
       "name": "flow_const",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -26376,6 +26575,7 @@
     {
       "objID": "da482993-5d38-54c1-8bfd-78a795168e9c",
       "name": "flow_call_props",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -26441,6 +26641,7 @@
         {
           "objID": "3248d618-f5b6-5660-b9ed-9354a70f1511",
           "name": "res",
+          "tags": "flow",
           "type": "integer",
           "native": false,
           "defaultValue": "0"
@@ -26452,6 +26653,7 @@
     {
       "objID": "8f7c85ed-9264-5e3a-9a5a-46e77fc2d3eb",
       "name": "flow_call_props_bad",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -26517,6 +26719,7 @@
         {
           "objID": "7ddd65c9-ce0d-577b-8cf1-f127746243b9",
           "name": "res",
+          "tags": "flow",
           "type": "integer",
           "native": false,
           "defaultValue": "0"
@@ -26528,6 +26731,7 @@
     {
       "objID": "34967879-37ff-5b3e-87d1-5f21fdb97219",
       "name": "flow_call_io",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -26617,6 +26821,7 @@
     {
       "objID": "984b2cb0-585c-51e7-b338-05e314b66fbc",
       "name": "flow_call_nested",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -26682,6 +26887,7 @@
     {
       "objID": "6ef8c8b7-b395-555a-9f3f-1711587d7f02",
       "name": "flow_call_noend",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -26747,6 +26953,7 @@
     {
       "objID": "2148eaa4-5ac1-5cf7-b21a-255d3a1c7776",
       "name": "flow_end_page",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -26789,6 +26996,7 @@
     {
       "objID": "7ea0082c-a7fe-5820-acb9-ab64458e134f",
       "name": "flow_native_call",
+      "tags": "flow, native",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -26854,6 +27062,7 @@
         {
           "objID": "53ff35f0-6715-5f93-9225-5ef323cf1720",
           "name": "r",
+          "tags": "flow",
           "type": "integer",
           "native": false,
           "defaultValue": "0"
@@ -26865,6 +27074,7 @@
     {
       "objID": "66b32b8d-3e82-56f1-94cc-83d7f18d6e0a",
       "name": "flow_native_async_call",
+      "tags": "flow, native",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -26930,6 +27140,7 @@
     {
       "objID": "02b4ef8b-3071-574b-9eed-be030779db3b",
       "name": "flow_native_async_out_call",
+      "tags": "flow, native",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -27009,6 +27220,7 @@
     {
       "objID": "c8ef819b-e0a9-5666-97c7-d9e1e9a93487",
       "name": "flow_native_sync_call",
+      "tags": "flow, native",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -27086,6 +27298,7 @@
     {
       "objID": "2ce9f0a0-4537-5f6f-9bea-6885dd67fcf5",
       "name": "flow_events",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -27159,6 +27372,7 @@
     {
       "objID": "fcd44973-b512-5f3a-9a57-7a54a18d7ec4",
       "name": "flow_keys",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -27227,6 +27441,7 @@
     {
       "objID": "f130e8c3-5a97-5b3a-98d8-460418e0fb52",
       "name": "flow_showpage",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -27288,6 +27503,7 @@
     {
       "objID": "c8bb9399-510f-52cc-92db-4f3dc30feda3",
       "name": "flow_target",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -27332,6 +27548,7 @@
     {
       "objID": "5d4ece63-888c-55dc-b517-f450ca716051",
       "name": "flow_keypad",
+      "tags": "flow, keypad",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -27422,6 +27639,7 @@
     {
       "objID": "e1d36354-c9c6-5176-9627-55a5c99dbc4f",
       "name": "flow_keypad_action",
+      "tags": "flow, keypad",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -27487,6 +27705,7 @@
     {
       "objID": "f18294d7-9518-572c-8aea-43a5d3dc1fca",
       "name": "flow_keypad_bad",
+      "tags": "flow, keypad",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -27534,6 +27753,7 @@
     {
       "objID": "7c429f69-3a07-5b14-a2a4-5f17725c0630",
       "name": "flow_keyboard",
+      "tags": "flow, keypad",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -27623,6 +27843,7 @@
     {
       "objID": "4895724f-3ba8-5c2e-98db-d95cb5bbc9f9",
       "name": "flow_msgbox_info",
+      "tags": "flow, popups",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -27685,6 +27906,7 @@
     {
       "objID": "12e6b193-b82a-55a5-97f4-940cd235f346",
       "name": "flow_msgbox_error",
+      "tags": "flow, errors, popups",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -27747,6 +27969,7 @@
     {
       "objID": "c11c725b-38b6-5782-a797-1feeecb4a026",
       "name": "flow_msgbox_question",
+      "tags": "flow, popups",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -27839,6 +28062,7 @@
     {
       "objID": "042d7d20-3ef8-5c92-831d-87bff64105d6",
       "name": "flow_msgbox_action",
+      "tags": "flow, popups",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -27904,6 +28128,7 @@
     {
       "objID": "199d122d-5cd9-57e4-af43-643c522d1bac",
       "name": "flow_msgbox_bad",
+      "tags": "flow, popups",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -27951,6 +28176,7 @@
     {
       "objID": "65b9d83c-89c2-5429-bca0-e88a46a1d487",
       "name": "flow_flood",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -27998,6 +28224,7 @@
     {
       "objID": "7bc35e08-811f-54cd-a8fa-32e00529deac",
       "name": "flow_flood_catch",
+      "tags": "flow, errors",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -28079,6 +28306,7 @@
     {
       "objID": "8a57bf02-76d9-5fe3-9ad7-ccce231e249f",
       "name": "flow_flood2",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -28126,6 +28354,7 @@
     {
       "objID": "4d7f7350-c69a-598c-9d6f-20904bd30a9a",
       "name": "flow_patch",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -28211,6 +28440,7 @@
     {
       "objID": "a08c8e57-b7a5-5963-b566-5e582d2fefea",
       "name": "flow_floatlist",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -28272,6 +28502,7 @@
     {
       "objID": "8135dccc-e0b8-5909-9c91-a594143542e0",
       "name": "flow_refs",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -28321,6 +28552,7 @@
     {
       "objID": "9bd38082-7cb6-5bee-b56a-e0f5c73a25db",
       "name": "flow_drift",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -28431,6 +28663,7 @@
     {
       "objID": "5fa050f7-1480-5fd4-b164-6bafe9df2653",
       "name": "flow_animate",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -28494,6 +28727,7 @@
     {
       "objID": "1a2531cb-71ad-53d4-9567-d716fcf0cdb7",
       "name": "flow_animate_neg",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -28557,6 +28791,7 @@
     {
       "objID": "1dee17ba-afbd-566d-8c4a-69318a142899",
       "name": "flow_linechart",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -28667,6 +28902,7 @@
     {
       "objID": "84c61f89-3bfe-5e59-9cfb-20dd0a427865",
       "name": "flow_button",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -28719,6 +28955,7 @@
     {
       "objID": "c543d510-1075-5e84-ae4e-bccd60c42b9a",
       "name": "flow_button_action",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -28753,6 +28990,7 @@
     {
       "objID": "852a28c9-6fc9-5a2b-84c8-067d30e5e58e",
       "name": "flow_dropdown",
+      "tags": "flow",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -28806,6 +29044,7 @@
     {
       "objID": "14d6e380-6eb3-5ddb-8b9c-94ebdd30f55b",
       "name": "flow_uw_host2",
+      "tags": "flow, user-widget",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -28856,6 +29095,7 @@
     {
       "objID": "f19a7a35-2db7-5969-8b59-8ecb3c007636",
       "name": "flow_uw_host_assign",
+      "tags": "flow, user-widget",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -28888,6 +29128,7 @@
     {
       "objID": "c506c752-1184-5027-8ff2-ac9c5ff8d941",
       "name": "flow_uw_host_in",
+      "tags": "flow, user-widget",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -28937,6 +29178,7 @@
     {
       "objID": "951eee26-18c4-5d8e-b708-837e1073a3a1",
       "name": "flow_uw_dyn",
+      "tags": "flow, user-widget",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -28967,6 +29209,7 @@
     {
       "objID": "4ffb9d95-d362-5680-921a-05d4d589156a",
       "name": "gui_page_a",
+      "tags": "gui",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -29057,6 +29300,7 @@
     {
       "objID": "728c0484-ed05-5469-bcf0-2b9d49969c61",
       "name": "gui_page_b",
+      "tags": "gui",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -29103,6 +29347,7 @@
     {
       "objID": "fc18f48e-f045-5f44-b193-ef80b8ad6787",
       "name": "gui_popup",
+      "tags": "gui, popups",
       "left": 200,
       "top": 120,
       "width": 400,
@@ -29139,6 +29384,7 @@
     {
       "objID": "9828c8a2-d066-551c-a16f-5e2e4be63750",
       "name": "gui_popup2",
+      "tags": "gui, popups",
       "left": 300,
       "top": 200,
       "width": 200,
@@ -29167,6 +29413,7 @@
     {
       "objID": "ad72ba6a-d287-5759-a49d-a9b3d4b92302",
       "name": "gui_dialog",
+      "tags": "gui, popups",
       "left": 250,
       "top": 150,
       "width": 300,
@@ -29194,6 +29441,7 @@
     {
       "objID": "d56814be-522a-5df2-8a81-b98528905271",
       "name": "gui_transparent",
+      "tags": "gui",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -29221,6 +29469,7 @@
     {
       "objID": "ffac67e1-b910-516b-ab08-c94e13ad7caa",
       "name": "gui_yes_no",
+      "tags": "gui, popups",
       "left": 150,
       "top": 100,
       "width": 500,
@@ -29308,6 +29557,7 @@
     {
       "objID": "c700d3b0-b4ec-5dfb-907b-231a176bd696",
       "name": "gui_keypad_num",
+      "tags": "gui, keypad",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -29695,6 +29945,7 @@
     {
       "objID": "350f7c23-ff12-593b-ad3d-f9181d4a309f",
       "name": "gui_keypad_text",
+      "tags": "gui, keypad",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -29926,6 +30177,7 @@
     {
       "objID": "2ce0dd82-81f4-5c3a-8de4-2f724572991a",
       "name": "gui_lists",
+      "tags": "gui",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -30027,6 +30279,7 @@
     {
       "objID": "64fda659-6127-5c3c-8920-c119ab65bacb",
       "name": "gui_overlay_page",
+      "tags": "gui",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -30076,6 +30329,7 @@
     {
       "objID": "e91df764-505a-5b02-b9dd-fbcdebdd17cb",
       "name": "render_text_align",
+      "tags": "render",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -30319,6 +30573,7 @@
     {
       "objID": "414041f5-76c4-59cc-81e5-827ee05b73bf",
       "name": "render_borders",
+      "tags": "render",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -30450,6 +30705,7 @@
     {
       "objID": "feea0f12-e265-537d-a4e9-e3395a9ea6a3",
       "name": "render_radius",
+      "tags": "render",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -30664,6 +30920,7 @@
     {
       "objID": "46cdb058-083e-50eb-bd6c-1904d0749ee5",
       "name": "render_opacity",
+      "tags": "render",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -30773,6 +31030,7 @@
     {
       "objID": "87f90be9-04a1-5eb3-9a12-dc8d8e517bfc",
       "name": "render_colors",
+      "tags": "render",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -31027,6 +31285,7 @@
     {
       "objID": "7ff9b2fc-83d1-5c04-b8db-8846faba1abf",
       "name": "render_fonts",
+      "tags": "render",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -31137,6 +31396,7 @@
     {
       "objID": "85769e12-075a-59ca-bd78-f7235b44df74",
       "name": "render_multiline",
+      "tags": "render",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -31249,6 +31509,7 @@
     {
       "objID": "27249b93-df4e-5b1c-bc05-e8fc7b8c6501",
       "name": "render_bitmaps",
+      "tags": "render",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -31395,6 +31656,7 @@
     {
       "objID": "b9b69b19-3454-5ba0-9ef3-f96d0e0b5dc2",
       "name": "render_blink",
+      "tags": "render",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -31445,6 +31707,7 @@
     {
       "objID": "8bf5dc01-0e8e-5f19-b4e9-d2a5f21ce807",
       "name": "render_dynamic",
+      "tags": "render",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -31569,6 +31832,7 @@
     {
       "objID": "4a7390f9-b9a3-510c-93e8-d85c0b66360b",
       "name": "render_popup1",
+      "tags": "render, popups",
       "left": 200,
       "top": 120,
       "width": 400,
@@ -31619,6 +31883,7 @@
     {
       "objID": "20a4de5b-e212-594c-9447-33e695b5a585",
       "name": "render_popup2",
+      "tags": "render, popups",
       "left": 300,
       "top": 60,
       "width": 300,
@@ -31646,6 +31911,7 @@
     {
       "objID": "bbd0def5-5171-50e7-87db-e9f57b8c924b",
       "name": "render_transparent",
+      "tags": "render",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -31673,6 +31939,7 @@
     {
       "objID": "b986cf69-d226-5647-a0c3-18a718271a63",
       "name": "render_stack1",
+      "tags": "render",
       "left": 20,
       "top": 300,
       "width": 110,
@@ -31700,6 +31967,7 @@
     {
       "objID": "b2a8cf25-2c9c-5901-92ca-08d7ae1ab220",
       "name": "render_stack2",
+      "tags": "render",
       "left": 145,
       "top": 300,
       "width": 110,
@@ -31727,6 +31995,7 @@
     {
       "objID": "15ec9437-80c8-5945-9e5e-eea9b2b1f9f2",
       "name": "render_stack3",
+      "tags": "render",
       "left": 270,
       "top": 300,
       "width": 110,
@@ -31754,6 +32023,7 @@
     {
       "objID": "8d5918d2-6538-57da-9550-9a7908e3cf5a",
       "name": "render_stack4",
+      "tags": "render",
       "left": 395,
       "top": 300,
       "width": 110,
@@ -31781,6 +32051,7 @@
     {
       "objID": "a9685cf3-f240-57bd-8a67-9a5ac2441cd7",
       "name": "render_stack5",
+      "tags": "render",
       "left": 520,
       "top": 300,
       "width": 110,
@@ -31808,6 +32079,7 @@
     {
       "objID": "18b56c87-f51f-5013-a26c-d426a8574f61",
       "name": "render_stack6",
+      "tags": "render",
       "left": 645,
       "top": 300,
       "width": 110,
@@ -31835,6 +32107,7 @@
     {
       "objID": "03c59aee-9f1a-5a14-8c2c-117dc3ad116f",
       "name": "w_text",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -31933,6 +32206,7 @@
     {
       "objID": "1ef67262-f73c-5fb8-b0cb-af9db267a643",
       "name": "w_mtext",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -31983,6 +32257,7 @@
     {
       "objID": "f546c3d0-1c04-523d-ab42-e1bef4210c7e",
       "name": "w_dd",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -32150,6 +32425,7 @@
     {
       "objID": "a1bfc7be-6441-5418-9dc9-ac06e6764b9a",
       "name": "w_rect",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -32238,6 +32514,7 @@
     {
       "objID": "268c388e-2ec9-568f-b543-97cbcfba153d",
       "name": "w_button",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -32314,6 +32591,7 @@
     {
       "objID": "c5933df9-c7bc-54b6-9ba4-e1d75fbc09b3",
       "name": "w_toggle",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -32345,6 +32623,7 @@
     {
       "objID": "9c815035-00fe-53a1-a888-5a8663fe5df6",
       "name": "w_bgroup",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -32375,6 +32654,7 @@
     {
       "objID": "ff438a6c-b60f-5f2b-9961-7b862d89897e",
       "name": "w_bar",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -32469,6 +32749,7 @@
     {
       "objID": "0b4ee9d1-b569-5a57-b9bf-a83285096341",
       "name": "w_yt",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -32501,6 +32782,7 @@
     {
       "objID": "059872e2-f236-5f62-a351-0aaaad079713",
       "name": "w_yt_list",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -32547,6 +32829,7 @@
     {
       "objID": "7f6c9b9b-6896-5b45-97e7-619534d9b18f",
       "name": "w_updown",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -32580,6 +32863,7 @@
     {
       "objID": "621a9785-b225-588d-9237-d9967524c119",
       "name": "w_lgraph",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -32619,6 +32903,7 @@
     {
       "objID": "91161e71-76fb-5d64-ad53-1157796fdbd1",
       "name": "w_progress",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -32663,6 +32948,7 @@
     {
       "objID": "50287023-dc8b-5474-aa14-74c800706414",
       "name": "w_sbar",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -32697,6 +32983,7 @@
     {
       "objID": "bb0b2cd8-2093-5d74-b75f-3552abcc3b8b",
       "name": "w_canvas",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -32723,6 +33010,7 @@
     {
       "objID": "6faca172-e5d8-51e4-a2ba-7b0259cd3d59",
       "name": "w_lchart",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -32831,6 +33119,7 @@
     {
       "objID": "f85d693d-92ec-5767-abe4-134afadf6167",
       "name": "w_lchart_small",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -32939,6 +33228,7 @@
     {
       "objID": "765a78fb-fe5c-552b-8f79-788326376b2a",
       "name": "w_lchart_legend",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -33131,6 +33421,7 @@
     {
       "objID": "d57671f8-aa43-59b4-86cb-39a712a38c2b",
       "name": "w_gauge",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -33173,6 +33464,7 @@
     {
       "objID": "ed0a42cb-5b06-596e-8cc7-c19f075cf732",
       "name": "w_input",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -33253,6 +33545,7 @@
     {
       "objID": "33466c9b-f42e-55f0-95df-febe54d8f54f",
       "name": "w_roller",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -33309,6 +33602,7 @@
     {
       "objID": "78defe1a-8130-5886-beaf-f21f297d506b",
       "name": "w_switch",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -33349,6 +33643,7 @@
     {
       "objID": "2b049d2c-5d67-5a5d-b835-151a6c5a2f50",
       "name": "w_ddl",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -33376,6 +33671,7 @@
     {
       "objID": "aefef795-887a-518b-822f-27ba164580d6",
       "name": "w_qr",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -33403,6 +33699,7 @@
     {
       "objID": "4f9e61e7-21e5-5bab-a7fe-1adc610fe4a0",
       "name": "w_check",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -33485,6 +33782,7 @@
     {
       "objID": "e7af929e-35d8-5637-8d48-2e009d948672",
       "name": "w_cont",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -33599,6 +33897,7 @@
     {
       "objID": "06f6671e-b9b5-5d5a-9608-05b889462064",
       "name": "w_cont_tl",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -33777,6 +34076,7 @@
     {
       "objID": "0cc27ede-b13f-5ed0-837c-ac5ead5ea09c",
       "name": "w_list",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -33866,6 +34166,7 @@
     {
       "objID": "6c03c4a0-f90b-5da5-a05e-dde2407682fd",
       "name": "w_list_count",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -33905,6 +34206,7 @@
     {
       "objID": "d10d47fd-983b-5247-9f38-24c59636bc1e",
       "name": "w_many",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -33943,6 +34245,7 @@
     {
       "objID": "47a612a0-4f24-57b4-9c5f-d872d9daadc8",
       "name": "w_select",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -34004,6 +34307,7 @@
     {
       "objID": "83a40c8b-f5e8-5bab-abd5-1e7c79d1e218",
       "name": "w_uw",
+      "tags": "widgets, user-widget",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -34090,6 +34394,7 @@
     {
       "objID": "a74f9d9a-fd0a-50f9-a043-25d68631a8f2",
       "name": "w_overlap",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -34128,6 +34433,7 @@
     {
       "objID": "a43a9907-d85c-5d3e-a75a-7fd7a7a88dca",
       "name": "w_timeline",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -34254,6 +34560,7 @@
     {
       "objID": "21f33eac-a685-5d21-be9d-a553ee67314b",
       "name": "w_badtype",
+      "tags": "widgets",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -34281,6 +34588,7 @@
     {
       "objID": "4967835c-e629-5cc4-8db6-b36277814826",
       "name": "ext_uw_main",
+      "tags": "external, user-widget",
       "left": 0,
       "top": 0,
       "width": 200,
@@ -34370,12 +34678,14 @@
         {
           "objID": "b7692043-7753-55c2-919c-6d7390a41a3d",
           "name": "probe_label",
+          "tags": "external, probe",
           "type": "any",
           "native": false
         },
         {
           "objID": "73d3c3cb-7b63-59b8-92b9-85687008ce3a",
           "name": "probe_result",
+          "tags": "external, probe",
           "type": "any",
           "native": false
         }
@@ -34387,6 +34697,7 @@
     {
       "objID": "757b5871-6ad3-5a0c-a936-80c91d4536d5",
       "name": "flow_uw_a",
+      "tags": "flow, user-widget",
       "left": 0,
       "top": 0,
       "width": 200,
@@ -34441,6 +34752,7 @@
     {
       "objID": "d0f83bd6-90a3-582d-9ea7-a48aee35ab4d",
       "name": "flow_uw_assign",
+      "tags": "flow, user-widget",
       "left": 0,
       "top": 0,
       "width": 200,
@@ -34501,6 +34813,7 @@
     {
       "objID": "f1ff470b-5091-5ac8-9764-76fca2d1069b",
       "name": "flow_uw_in",
+      "tags": "flow, user-widget",
       "left": 0,
       "top": 0,
       "width": 200,
@@ -34553,6 +34866,7 @@
     {
       "objID": "2f6f635c-093a-5356-b9fa-a9af23c45a32",
       "name": "flow_uw_l0",
+      "tags": "flow, user-widget",
       "left": 0,
       "top": 0,
       "width": 200,
@@ -34632,6 +34946,7 @@
     {
       "objID": "1e041ba0-3954-577d-b2f4-059ceb3f4a3b",
       "name": "flow_uw_l1",
+      "tags": "flow, user-widget",
       "left": 0,
       "top": 0,
       "width": 200,
@@ -34711,6 +35026,7 @@
     {
       "objID": "d4ec03d5-47b3-53a5-b53d-36aaeeca0404",
       "name": "flow_uw_l2",
+      "tags": "flow, user-widget",
       "left": 0,
       "top": 0,
       "width": 200,
@@ -34755,6 +35071,7 @@
     {
       "objID": "f6e8e936-99f7-5e3c-9fb2-ce6aa04dd908",
       "name": "flow_uw_l3",
+      "tags": "flow, user-widget",
       "left": 0,
       "top": 0,
       "width": 200,
@@ -34799,6 +35116,7 @@
     {
       "objID": "5baf4382-d21b-5d61-bd97-277840cd1492",
       "name": "flow_uw_l4",
+      "tags": "flow, user-widget",
       "left": 0,
       "top": 0,
       "width": 200,
@@ -34843,6 +35161,7 @@
     {
       "objID": "cce009dd-766b-5ee4-91a0-85379fdedbe3",
       "name": "flow_uw_l5",
+      "tags": "flow, user-widget",
       "left": 0,
       "top": 0,
       "width": 200,
@@ -34887,6 +35206,7 @@
     {
       "objID": "be952cbb-9f93-5c75-b8d8-c04f7f3048cf",
       "name": "flow_uw_l6",
+      "tags": "flow, user-widget",
       "left": 0,
       "top": 0,
       "width": 200,
@@ -34931,6 +35251,7 @@
     {
       "objID": "db335e60-36b3-57d3-95dc-05409b383e1a",
       "name": "flow_uw_l7",
+      "tags": "flow, user-widget",
       "left": 0,
       "top": 0,
       "width": 200,
@@ -34975,6 +35296,7 @@
     {
       "objID": "dc4dd3f8-d608-58b7-9566-5ffe43f184b2",
       "name": "flow_uw_l8",
+      "tags": "flow, user-widget",
       "left": 0,
       "top": 0,
       "width": 200,
@@ -35019,6 +35341,7 @@
     {
       "objID": "7adc19ef-fee8-5293-8d4d-5e89572e2e55",
       "name": "flow_uw_l9",
+      "tags": "flow, user-widget",
       "left": 0,
       "top": 0,
       "width": 200,
@@ -35063,6 +35386,7 @@
     {
       "objID": "8f32cd34-3dde-5ca2-b9d6-56efa8f9655e",
       "name": "w_uw_button",
+      "tags": "widgets, user-widget",
       "left": 0,
       "top": 0,
       "width": 150,
@@ -35101,6 +35425,7 @@
     {
       "objID": "935d934e-a980-5de3-bad4-9a713485c0c0",
       "name": "w_uw_text",
+      "tags": "widgets, user-widget",
       "left": 0,
       "top": 0,
       "width": 150,
@@ -35140,6 +35465,7 @@
     {
       "objID": "f2b2cad4-0f72-5c66-93c7-fa0a02266ec7",
       "name": "default",
+      "tags": "base",
       "alwaysBuild": true,
       "font": "RobotoCondensed",
       "color": "text",
@@ -35150,6 +35476,7 @@
         {
           "objID": "10050f04-8904-576f-a460-4715172ac0d7",
           "name": "text_left",
+          "tags": "base",
           "alwaysBuild": true,
           "alignHorizontal": "left",
           "childStyles": []
@@ -35157,6 +35484,7 @@
         {
           "objID": "ae7d7a89-1287-5dec-b21e-b38a33a7a143",
           "name": "accent_box",
+          "tags": "base",
           "alwaysBuild": true,
           "backgroundColor": "accent",
           "borderSize": "2",
@@ -35167,6 +35495,7 @@
         {
           "objID": "af62f98e-fec1-51ff-9b92-7a1569b9090e",
           "name": "info_alert",
+          "tags": "base, popups",
           "alwaysBuild": true,
           "backgroundColor": "accent",
           "borderSize": "2",
@@ -35177,6 +35506,7 @@
         {
           "objID": "1418368a-a487-5155-83af-22d4cf2019e2",
           "name": "error_alert",
+          "tags": "base, errors, popups",
           "alwaysBuild": true,
           "backgroundColor": "error",
           "borderSize": "2",
@@ -35187,6 +35517,7 @@
         {
           "objID": "b55cde20-50ab-585f-a1a1-5c27d33a65c0",
           "name": "error_alert_button",
+          "tags": "base, errors, popups",
           "alwaysBuild": true,
           "backgroundColor": "background",
           "borderSize": "1",
@@ -35197,6 +35528,7 @@
         {
           "objID": "b13970de-3dd9-58a7-985f-57087f4ab1e0",
           "name": "select_enum_item_popup_container",
+          "tags": "base, popups",
           "alwaysBuild": true,
           "borderSize": "1",
           "borderColor": "text",
@@ -35206,6 +35538,7 @@
         {
           "objID": "f96ef789-ae8f-5e4d-ab82-e0951099d596",
           "name": "select_enum_item_popup_container_s",
+          "tags": "base, popups",
           "alwaysBuild": true,
           "borderSize": "1",
           "borderColor": "text",
@@ -35215,6 +35548,7 @@
         {
           "objID": "f8461ddc-8e4f-5d38-8536-8856eebf8b64",
           "name": "select_enum_item_popup_item",
+          "tags": "base, popups",
           "alwaysBuild": true,
           "alignHorizontal": "left",
           "padding": "4",
@@ -35223,6 +35557,7 @@
         {
           "objID": "f1d8edb7-a913-5c7c-8f82-1aeb0ae052c3",
           "name": "select_enum_item_popup_item_s",
+          "tags": "base, popups",
           "alwaysBuild": true,
           "alignHorizontal": "left",
           "padding": "2",
@@ -35231,6 +35566,7 @@
         {
           "objID": "c1102316-885c-5a57-b0da-f94c747cd1f4",
           "name": "select_enum_item_popup_disabled_item",
+          "tags": "base, popups",
           "alwaysBuild": true,
           "alignHorizontal": "left",
           "color": "backdrop",
@@ -35240,6 +35576,7 @@
         {
           "objID": "9ef18d12-c8ef-550d-a17b-b5c82c6b2db7",
           "name": "select_enum_item_popup_disabled_item_s",
+          "tags": "base, popups",
           "alwaysBuild": true,
           "alignHorizontal": "left",
           "color": "backdrop",
@@ -35249,6 +35586,7 @@
         {
           "objID": "d87d2814-e008-599e-8f7d-80852b333909",
           "name": "menu_with_buttons_container",
+          "tags": "base, popups",
           "alwaysBuild": true,
           "borderSize": "1",
           "borderColor": "text",
@@ -35258,6 +35596,7 @@
         {
           "objID": "f6bf2bd8-38f4-5235-8a21-34de34eaa81b",
           "name": "menu_with_buttons_message",
+          "tags": "base, popups",
           "alwaysBuild": true,
           "padding": "4",
           "childStyles": []
@@ -35265,6 +35604,7 @@
         {
           "objID": "0cc90fd4-b3e7-568b-977b-4145543ae165",
           "name": "menu_with_buttons_button",
+          "tags": "base, popups",
           "alwaysBuild": true,
           "backgroundColor": "accent",
           "padding": "4",
@@ -35273,6 +35613,7 @@
         {
           "objID": "c8aa0689-d3f3-563f-8a45-5381711f6635",
           "name": "ext_m_box",
+          "tags": "external",
           "alwaysBuild": true,
           "id": 1,
           "backgroundColor": "accent",
@@ -35281,6 +35622,7 @@
         {
           "objID": "11b042b8-7b8d-5d50-8861-7638c7b6c588",
           "name": "ext_m_text",
+          "tags": "external",
           "alwaysBuild": true,
           "id": 2,
           "color": "bookmark",
@@ -35290,6 +35632,7 @@
         {
           "objID": "cccee5cd-4c97-53f0-96a8-33dcf2387b42",
           "name": "gui_button",
+          "tags": "gui",
           "alwaysBuild": true,
           "backgroundColor": "accent",
           "activeBackgroundColor": "error",
@@ -35300,6 +35643,7 @@
         {
           "objID": "3a34bda3-de28-551c-b28d-a82a6b923386",
           "name": "gui_button_disabled",
+          "tags": "gui",
           "alwaysBuild": true,
           "backgroundColor": "backdrop",
           "color": "background",
@@ -35308,6 +35652,7 @@
         {
           "objID": "f20a54ae-9577-5139-bae8-629fd2f4c431",
           "name": "gui_popup",
+          "tags": "gui, popups",
           "alwaysBuild": true,
           "backgroundColor": "backdrop",
           "borderSize": "2",
@@ -35317,6 +35662,7 @@
         {
           "objID": "79403d3d-5f4b-5a55-ad21-82669c827b5e",
           "name": "gui_transparent",
+          "tags": "gui",
           "alwaysBuild": true,
           "backgroundColor": "transparent",
           "childStyles": []
@@ -35324,6 +35670,7 @@
         {
           "objID": "6ba51b4d-f0be-5135-9e91-3f7dd505bf39",
           "name": "gui_keypad_text",
+          "tags": "gui, keypad",
           "alwaysBuild": true,
           "alignHorizontal": "left",
           "padding": "4",
@@ -35334,6 +35681,7 @@
         {
           "objID": "3623538a-9728-5213-a300-f81afd6dafc1",
           "name": "gui_key",
+          "tags": "gui",
           "alwaysBuild": true,
           "backgroundColor": "accent",
           "activeBackgroundColor": "error",
@@ -35344,6 +35692,7 @@
         {
           "objID": "12a8789d-97fe-52aa-b50d-98a47fbc05d8",
           "name": "gui_list",
+          "tags": "gui",
           "alwaysBuild": true,
           "color": "text",
           "childStyles": []
@@ -35351,6 +35700,7 @@
         {
           "objID": "a687c34b-5037-5c2a-bde6-5598a185ddac",
           "name": "gui_item",
+          "tags": "gui",
           "alwaysBuild": true,
           "borderSize": "1",
           "borderColor": "backdrop",
@@ -35359,6 +35709,7 @@
         {
           "objID": "d9e0e033-bd79-53ba-a40d-83546100e64f",
           "name": "render_cell",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_navy",
           "borderSize": "1",
@@ -35368,6 +35719,7 @@
             {
               "objID": "96b24549-a457-5e16-8ff1-497325d7c0d8",
               "name": "render_cell_lt",
+              "tags": "render",
               "alwaysBuild": true,
               "alignHorizontal": "left",
               "alignVertical": "top",
@@ -35376,6 +35728,7 @@
             {
               "objID": "9d25ff73-43c1-5790-807f-eb2860a6c677",
               "name": "render_cell_ct",
+              "tags": "render",
               "alwaysBuild": true,
               "alignVertical": "top",
               "childStyles": []
@@ -35383,6 +35736,7 @@
             {
               "objID": "7a7e9d6d-bd94-558d-ad28-72085efcf30c",
               "name": "render_cell_rt",
+              "tags": "render",
               "alwaysBuild": true,
               "alignHorizontal": "right",
               "alignVertical": "top",
@@ -35391,6 +35745,7 @@
             {
               "objID": "72e981fe-0396-575e-bee3-49e3606a7287",
               "name": "render_cell_lc",
+              "tags": "render",
               "alwaysBuild": true,
               "alignHorizontal": "left",
               "childStyles": []
@@ -35398,12 +35753,14 @@
             {
               "objID": "aea76fc7-efe2-5be2-b231-8ea4ebf2873f",
               "name": "render_cell_cc",
+              "tags": "render",
               "alwaysBuild": true,
               "childStyles": []
             },
             {
               "objID": "541eccb8-8d72-50c9-9b02-e490905ba9d7",
               "name": "render_cell_rc",
+              "tags": "render",
               "alwaysBuild": true,
               "alignHorizontal": "right",
               "childStyles": []
@@ -35411,6 +35768,7 @@
             {
               "objID": "c04cd189-e488-5ab7-89ab-2a97dec1b5f7",
               "name": "render_cell_lb",
+              "tags": "render",
               "alwaysBuild": true,
               "alignHorizontal": "left",
               "alignVertical": "bottom",
@@ -35419,6 +35777,7 @@
             {
               "objID": "5c069aef-1871-5824-9b4b-fef977c34529",
               "name": "render_cell_cb",
+              "tags": "render",
               "alwaysBuild": true,
               "alignVertical": "bottom",
               "childStyles": []
@@ -35426,6 +35785,7 @@
             {
               "objID": "851ed6db-b082-55b5-8d58-147e42103e88",
               "name": "render_cell_rb",
+              "tags": "render",
               "alwaysBuild": true,
               "alignHorizontal": "right",
               "alignVertical": "bottom",
@@ -35436,6 +35796,7 @@
         {
           "objID": "59b39cb7-b7db-5daa-9b0b-9a1d2d831fa7",
           "name": "render_pad",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_teal",
           "padding": "2 8 4 16",
@@ -35445,6 +35806,7 @@
             {
               "objID": "95041ad3-c314-5171-93f3-94a4d8396de9",
               "name": "render_pad_rb",
+              "tags": "render",
               "alwaysBuild": true,
               "alignHorizontal": "right",
               "alignVertical": "bottom",
@@ -35455,12 +35817,14 @@
         {
           "objID": "73892d4a-f617-5515-baa0-5a416e971e1f",
           "name": "render_clip",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_purple",
           "childStyles": [
             {
               "objID": "c540a730-d4b8-58de-a4d3-69c9173bd977",
               "name": "render_clip_r",
+              "tags": "render",
               "alwaysBuild": true,
               "alignHorizontal": "right",
               "childStyles": []
@@ -35470,6 +35834,7 @@
         {
           "objID": "ef1388e3-0106-5fc8-b4a3-872bd9f97949",
           "name": "render_text_transparent",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "transparent",
           "color": "render_yellow",
@@ -35478,6 +35843,7 @@
         {
           "objID": "4f2ad79c-1947-5ba4-9a27-209db4b0376e",
           "name": "render_text_red",
+          "tags": "render",
           "alwaysBuild": true,
           "color": "render_red",
           "childStyles": []
@@ -35485,6 +35851,7 @@
         {
           "objID": "304d6b66-ab28-593e-b5aa-f2f9cbae10d0",
           "name": "render_text_right",
+          "tags": "render",
           "alwaysBuild": true,
           "alignHorizontal": "right",
           "childStyles": []
@@ -35492,6 +35859,7 @@
         {
           "objID": "42fba912-d203-59ed-bb46-9e9000daaef8",
           "name": "render_green_bg",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_dark_green",
           "childStyles": []
@@ -35499,6 +35867,7 @@
         {
           "objID": "8834ed2d-2c5f-5b6e-8466-3b8609703354",
           "name": "render_purple_bg",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_purple",
           "childStyles": []
@@ -35506,6 +35875,7 @@
         {
           "objID": "e5016b10-19f4-544f-9e7a-b8dd1b49a5c1",
           "name": "render_border1",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_navy",
           "borderSize": "1",
@@ -35515,6 +35885,7 @@
         {
           "objID": "b2085d17-d90c-50a8-b719-f1a1ab24847a",
           "name": "render_border3",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_navy",
           "borderSize": "3",
@@ -35524,6 +35895,7 @@
         {
           "objID": "5fb3605c-da1b-5664-8d25-cd2bf8f5030b",
           "name": "render_border_uneven",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_navy",
           "borderSize": "1 4 2 8",
@@ -35533,6 +35905,7 @@
         {
           "objID": "7bd2c7ce-e4e1-540e-8eb4-0034a6157d6d",
           "name": "render_border_nobg",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "transparent",
           "borderSize": "2",
@@ -35542,6 +35915,7 @@
         {
           "objID": "0456e0ad-7d97-5e38-b81c-71cb93131408",
           "name": "render_border_tcolor",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_navy",
           "borderSize": "4",
@@ -35551,6 +35925,7 @@
         {
           "objID": "d2539df3-4b6d-5a1e-a620-eb5b51e6237f",
           "name": "render_r_border",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_blue",
           "borderSize": "2",
@@ -35561,6 +35936,7 @@
         {
           "objID": "6aaf4fb3-0466-51a2-9158-bb8b6762dc12",
           "name": "render_r_noborder",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_blue",
           "borderRadius": "8",
@@ -35569,6 +35945,7 @@
         {
           "objID": "778dc868-edb7-5090-ab95-e75d4691b7fa",
           "name": "render_r_ellipse",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_green",
           "borderSize": "1",
@@ -35580,6 +35957,7 @@
         {
           "objID": "edf5306d-5103-5469-b9be-e9f68ea68de8",
           "name": "render_r_huge",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_orange",
           "borderSize": "1",
@@ -35590,6 +35968,7 @@
         {
           "objID": "2bc6c1e8-d4b7-5bc3-9977-9d4f9fa92575",
           "name": "render_r_corners",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_red",
           "borderSize": "2",
@@ -35600,6 +35979,7 @@
         {
           "objID": "9793d243-58b8-5b11-bf92-e83f3fc848c4",
           "name": "render_r_br",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_red",
           "borderRadius": "0 0 20 0",
@@ -35608,6 +35988,7 @@
         {
           "objID": "a999939b-2b05-506f-a484-89444b6ed068",
           "name": "render_r_thick",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_navy",
           "borderSize": "6",
@@ -35618,6 +35999,7 @@
         {
           "objID": "a9fc60ab-0868-51ab-a279-219953cfbfe8",
           "name": "render_r_nofill",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "transparent",
           "borderSize": "2",
@@ -35628,6 +36010,7 @@
         {
           "objID": "ede4680a-1e88-5633-9ead-c7919b92053f",
           "name": "render_op_red128",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_red",
           "opacity": 128,
@@ -35636,6 +36019,7 @@
         {
           "objID": "5b1dd86d-ee56-5437-8b99-fd3a53b0898c",
           "name": "render_op_blue64",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_blue",
           "opacity": 64,
@@ -35644,6 +36028,7 @@
         {
           "objID": "43bdfc15-5ed5-564f-86c2-919b68420a96",
           "name": "render_op_text",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_navy",
           "color": "render_yellow",
@@ -35653,6 +36038,7 @@
         {
           "objID": "9945cc17-8e45-5c3d-a0c9-399c5b36ebbb",
           "name": "render_op_radius",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_green",
           "borderSize": "2",
@@ -35664,6 +36050,7 @@
         {
           "objID": "3d85ad1a-0049-5093-90e5-a4b5de34d34c",
           "name": "render_bg_green",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_green",
           "childStyles": []
@@ -35671,6 +36058,7 @@
         {
           "objID": "93817aea-8eef-5813-9973-4802b5553402",
           "name": "render_bg_blue",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_blue",
           "childStyles": []
@@ -35678,6 +36066,7 @@
         {
           "objID": "95b60981-cf75-5521-ba7b-64476008a661",
           "name": "render_blink",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_navy",
           "color": "text",
@@ -35689,6 +36078,7 @@
         {
           "objID": "35cee070-8776-5efc-99c9-1e65d053784b",
           "name": "render_blink_r",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_blue",
           "color": "text",
@@ -35701,6 +36091,7 @@
         {
           "objID": "9af74742-e4fc-529b-8f61-2c57704df175",
           "name": "render_dyn",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_navy",
           "childStyles": []
@@ -35708,6 +36099,7 @@
         {
           "objID": "ed2ee309-b6f0-5dd6-bb03-ea01d074b867",
           "name": "render_dyn_r_nb",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_blue",
           "borderRadius": "10",
@@ -35716,6 +36108,7 @@
         {
           "objID": "0f214eb2-3b56-5bc8-b88e-e117e3cbe8f9",
           "name": "render_dyn_r_b",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_blue",
           "borderSize": "1",
@@ -35726,6 +36119,7 @@
         {
           "objID": "2d0dbc5b-385d-5dc1-bf34-07e8a29f9d48",
           "name": "render_dyn_op",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_red",
           "opacity": 128,
@@ -35734,6 +36128,7 @@
         {
           "objID": "ee8c8c2a-4dd1-51dd-96d2-a170875bbc13",
           "name": "render_popup",
+          "tags": "render, popups",
           "alwaysBuild": true,
           "backgroundColor": "render_navy",
           "borderSize": "2",
@@ -35743,6 +36138,7 @@
         {
           "objID": "e35c051f-e461-5ef2-879a-10077327a896",
           "name": "render_popup2",
+          "tags": "render, popups",
           "alwaysBuild": true,
           "backgroundColor": "render_teal",
           "borderSize": "2",
@@ -35752,6 +36148,7 @@
         {
           "objID": "03eae5c2-1ab1-5197-8406-21029e0e2781",
           "name": "render_popup_box",
+          "tags": "render, popups",
           "alwaysBuild": true,
           "backgroundColor": "render_orange",
           "childStyles": []
@@ -35759,6 +36156,7 @@
         {
           "objID": "9ebe0140-2ab9-5777-9ae3-ad99aa653121",
           "name": "render_transparent_page",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "transparent",
           "childStyles": []
@@ -35766,6 +36164,7 @@
         {
           "objID": "bfcf3e2a-5d44-5dee-ae08-350b0fd1faca",
           "name": "render_ml",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_navy",
           "borderSize": "1",
@@ -35777,6 +36176,7 @@
             {
               "objID": "adace07e-2f8f-5c3e-816f-ac34677acd91",
               "name": "render_ml_center",
+              "tags": "render",
               "alwaysBuild": true,
               "alignHorizontal": "center",
               "alignVertical": "center",
@@ -35785,6 +36185,7 @@
             {
               "objID": "1a7b68eb-ee77-50ec-8f9d-657cfb722239",
               "name": "render_ml_right",
+              "tags": "render",
               "alwaysBuild": true,
               "alignHorizontal": "right",
               "alignVertical": "bottom",
@@ -35795,12 +36196,14 @@
         {
           "objID": "74c227e1-4ef7-5a66-92c3-bb7ac0f82c75",
           "name": "render_bmp",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_gray",
           "childStyles": [
             {
               "objID": "e02adcee-ab29-53ff-a0f3-b99567f00409",
               "name": "render_bmp_lt",
+              "tags": "render",
               "alwaysBuild": true,
               "alignHorizontal": "left",
               "alignVertical": "top",
@@ -35810,6 +36213,7 @@
             {
               "objID": "ea84cf32-71aa-5a16-b2e2-fde78a798db2",
               "name": "render_bmp_rb",
+              "tags": "render",
               "alwaysBuild": true,
               "alignHorizontal": "right",
               "alignVertical": "bottom",
@@ -35821,6 +36225,7 @@
         {
           "objID": "5e2ef2ed-785f-56dd-b409-6e52c77f10b6",
           "name": "render_bgimg16",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_navy",
           "backgroundImage": "render_bmp_big",
@@ -35829,6 +36234,7 @@
         {
           "objID": "097638f0-05f0-5240-bdd5-3422cbd23993",
           "name": "render_bgimg32",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_navy",
           "backgroundImage": "render_bmp32",
@@ -35837,6 +36243,7 @@
         {
           "objID": "733af147-e8ef-5a33-8ff6-f6a3e4929323",
           "name": "render_cb",
+          "tags": "render",
           "alwaysBuild": true,
           "backgroundColor": "render_navy",
           "color": "render_yellow",
@@ -35847,6 +36254,7 @@
         {
           "objID": "52f365d9-7450-5d37-a08a-f6b5dfd60fde",
           "name": "render_left_top",
+          "tags": "render",
           "alwaysBuild": true,
           "alignHorizontal": "left",
           "alignVertical": "top",
@@ -35855,6 +36263,7 @@
         {
           "objID": "67740019-1eac-5229-ae06-c71c511b76d7",
           "name": "w_txt",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_yellow",
           "backgroundColor": "w_gray",
@@ -35863,6 +36272,7 @@
         {
           "objID": "376b97f3-b473-5ae8-a056-0a6bb83572fe",
           "name": "w_txt_left",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_yellow",
           "backgroundColor": "w_gray",
@@ -35872,6 +36282,7 @@
         {
           "objID": "d1c6fc94-db58-530f-8933-6465166e0446",
           "name": "w_txt_alt",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_green",
           "backgroundColor": "w_blue",
@@ -35880,6 +36291,7 @@
         {
           "objID": "a3cd2e42-a5cd-5e34-a90e-c7a8770c2696",
           "name": "w_rounded",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_white",
           "backgroundColor": "w_red",
@@ -35889,6 +36301,7 @@
         {
           "objID": "ae7aca21-2ad1-506b-91ff-3a0cebbf1075",
           "name": "w_red_box",
+          "tags": "widgets",
           "alwaysBuild": true,
           "backgroundColor": "w_red",
           "childStyles": []
@@ -35896,6 +36309,7 @@
         {
           "objID": "11e78dd5-5702-593a-b4e3-448aa1dc1c31",
           "name": "w_green_box",
+          "tags": "widgets",
           "alwaysBuild": true,
           "backgroundColor": "w_green",
           "childStyles": []
@@ -35903,6 +36317,7 @@
         {
           "objID": "beeec602-7638-5c31-bb5c-9b47428d0e89",
           "name": "w_blue_box",
+          "tags": "widgets",
           "alwaysBuild": true,
           "backgroundColor": "w_blue",
           "childStyles": []
@@ -35910,6 +36325,7 @@
         {
           "objID": "c89bb303-35bc-5fe7-9dfe-a012ddfc8660",
           "name": "w_gray_box",
+          "tags": "widgets",
           "alwaysBuild": true,
           "backgroundColor": "w_gray",
           "childStyles": []
@@ -35917,6 +36333,7 @@
         {
           "objID": "a9e3dc92-9cfd-510b-ac95-0a935fccf55a",
           "name": "w_btn",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_white",
           "backgroundColor": "w_blue",
@@ -35927,6 +36344,7 @@
         {
           "objID": "853783a4-2541-5ab1-b4e7-07af9122ac1c",
           "name": "w_btn_dis",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_white",
           "backgroundColor": "w_gray",
@@ -35935,6 +36353,7 @@
         {
           "objID": "4dc0beb0-131d-568e-8843-135b83d60bf4",
           "name": "w_sel",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_white",
           "backgroundColor": "w_green",
@@ -35943,6 +36362,7 @@
         {
           "objID": "a3aeda53-66dd-5bfb-819f-445d0bb38895",
           "name": "w_bar",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_green",
           "backgroundColor": "w_blue",
@@ -35953,6 +36373,7 @@
         {
           "objID": "4d754609-f739-5d1d-a544-624ec867d8ed",
           "name": "w_bar_text",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_white",
           "backgroundColor": "w_blue",
@@ -35962,6 +36383,7 @@
         {
           "objID": "20bb8576-cb6f-5dd1-8186-a08197648f73",
           "name": "w_line1",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_red",
           "childStyles": []
@@ -35969,6 +36391,7 @@
         {
           "objID": "4be0ca7f-762c-56fd-b3bd-a2cf2d443f1e",
           "name": "w_line2",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_yellow",
           "childStyles": []
@@ -35976,6 +36399,7 @@
         {
           "objID": "6e753a55-8a4d-50a6-840d-5140b7af6485",
           "name": "w_ytg",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_white",
           "backgroundColor": "w_black",
@@ -35985,6 +36409,7 @@
         {
           "objID": "882ee25f-69ac-5f2c-8a6c-42a8e249f935",
           "name": "w_trace",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_red",
           "backgroundColor": "w_black",
@@ -35993,6 +36418,7 @@
         {
           "objID": "d82a0df4-7d1e-5100-9c5d-9ef2a8db0f4d",
           "name": "w_lg",
+          "tags": "widgets",
           "alwaysBuild": true,
           "backgroundColor": "w_black",
           "childStyles": []
@@ -36000,6 +36426,7 @@
         {
           "objID": "49b271bb-4f12-5cb9-8697-e1fa5b6bafc2",
           "name": "w_lg_cursor",
+          "tags": "widgets",
           "alwaysBuild": true,
           "backgroundColor": "w_gray",
           "childStyles": []
@@ -36007,6 +36434,7 @@
         {
           "objID": "09758c33-9cb5-57e2-9da9-0ed80209bde8",
           "name": "w_prog",
+          "tags": "widgets",
           "alwaysBuild": true,
           "backgroundColor": "w_blue",
           "activeBackgroundColor": "w_green",
@@ -36015,6 +36443,7 @@
         {
           "objID": "e1318d02-9cf6-507a-b88b-49bfb16576ab",
           "name": "w_track",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_gray",
           "backgroundColor": "w_gray",
@@ -36023,6 +36452,7 @@
         {
           "objID": "3206da3f-0375-5306-be29-0339ff454b8e",
           "name": "w_thumb",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_green",
           "backgroundColor": "w_green",
@@ -36031,6 +36461,7 @@
         {
           "objID": "e6aab05a-f792-5cc5-9d77-e6e6038a112a",
           "name": "w_switch",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_white",
           "backgroundColor": "w_gray",
@@ -36042,6 +36473,7 @@
         {
           "objID": "4bbf6d2c-4383-558c-bdb4-661cb0a5552c",
           "name": "w_slider",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_white",
           "backgroundColor": "w_gray",
@@ -36052,6 +36484,7 @@
         {
           "objID": "a702e1da-c942-5491-bbba-550d976fffcc",
           "name": "w_check",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_white",
           "backgroundColor": "w_black",
@@ -36061,6 +36494,7 @@
         {
           "objID": "48e98e30-6510-54ff-9d9a-f2b5320465a1",
           "name": "w_cont",
+          "tags": "widgets",
           "alwaysBuild": true,
           "backgroundColor": "w_gray",
           "childStyles": []
@@ -36068,6 +36502,7 @@
         {
           "objID": "fa9dfdcb-727e-5593-a5fc-770da955c1b4",
           "name": "w_list",
+          "tags": "widgets",
           "alwaysBuild": true,
           "backgroundColor": "w_blue",
           "childStyles": []
@@ -36075,6 +36510,7 @@
         {
           "objID": "7bc394fb-5025-5cb1-b007-026651f65ec5",
           "name": "w_item",
+          "tags": "widgets",
           "alwaysBuild": true,
           "backgroundColor": "w_green",
           "childStyles": []
@@ -36082,6 +36518,7 @@
         {
           "objID": "55d47eb2-3936-55b2-b1e1-c4b87cd14386",
           "name": "w_dim",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_gray",
           "backgroundColor": "w_black",
@@ -36090,6 +36527,7 @@
         {
           "objID": "b0209c78-d593-5b0f-8f4b-ba66c1fdca3f",
           "name": "w_gauge_bar",
+          "tags": "widgets",
           "alwaysBuild": true,
           "color": "w_green",
           "backgroundColor": "w_black",
@@ -36102,6 +36540,7 @@
     {
       "objID": "93bb176c-0535-4e6c-c753-cf9dd84b49e6",
       "name": "RobotoCondensed",
+      "tags": "base",
       "renderingEngine": "freetype",
       "source": {
         "objID": "fddffcfe-22fc-4847-e48b-a431f8351cc1",
@@ -38040,6 +38479,7 @@
     {
       "objID": "be26f69c-5b3b-4f30-9268-a94088fe8e0c",
       "name": "Icons_WaveformS",
+      "tags": "base",
       "description": "",
       "renderingEngine": "freetype",
       "source": {
@@ -38241,6 +38681,7 @@
     {
       "objID": "5c8fdfe2-1321-5309-bb12-8e384639f587",
       "name": "expr_dot",
+      "tags": "expressions",
       "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEUlEQVR4nGP4z8DwH4QZYAwAR8oH+WdZbrcAAAAASUVORK5CYII=",
       "bpp": 32,
       "alwaysBuild": true
@@ -38248,6 +38689,7 @@
     {
       "objID": "2084b6d9-6628-5077-b201-fd5ba84126a0",
       "name": "render_bmp16",
+      "tags": "render",
       "description": "",
       "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAQCAYAAAAMJL+VAAAAgUlEQVR42u3NoQ3FIBhF4V8ikYyARFYyAhKJZARkZSUjIJFIRkAikYyBaHL7BugboAknOfqjRYS36f4zrdfX/T5tYAMfAH6BMQbOOYQQkFJCKYXjOKC1hjEG1lo45+C9RwgB53niui7EGJFSQs4ZpRTUWtFaQ+8dYwzMOTewgS8AD1fOky6oJiQZAAAAAElFTkSuQmCC",
       "bpp": 16,
@@ -38256,6 +38698,7 @@
     {
       "objID": "e2f76ec8-b2b3-538a-b037-2748073ff416",
       "name": "render_bmp32",
+      "tags": "render",
       "description": "",
       "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAQCAYAAAAMJL+VAAAAbUlEQVR42u3PoQqAQAyA4T2A3W632+12u93uA9jtdrvdbrfb7fb5YxEsC4cM4Q6+MMb4OVEVxYkDOzasWDBjwogBPTq0aFCjQokCOTKkSCASAzHwh8DdeLxGDd37B8R4/gH7y2bCuncPhO4/DlzNsx1m+MhRbgAAAABJRU5ErkJggg==",
       "bpp": 32,
@@ -38264,6 +38707,7 @@
     {
       "objID": "64c2707e-a05c-5ac7-ab13-a0fc2ebc09ad",
       "name": "render_bmp_big",
+      "tags": "render",
       "description": "",
       "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAYAAAChS3wfAAAAjUlEQVR42u3XIRKAMAwEwDw9z8bBVICA8IHeiqjW3Ik2W0fXOU11j7Pb/UoOPxaQFP5TQFz4dR4d/i4gNvya6PB/BUR9jdHh3wUkLkWVHP4pIHkdLhZgARZgARZgARZgARZgARZgARZgARZgARZgARZgARZgARZgARZgARZgARZgARZgARZgARbY+o24AGysxYdA5y/aAAAAAElFTkSuQmCC",
       "bpp": 16,
@@ -38272,6 +38716,7 @@
     {
       "objID": "256cb591-857b-5351-bc70-1918c8222d54",
       "name": "w_bmp",
+      "tags": "widgets",
       "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAUCAYAAAD/Rn+7AAAALElEQVR4nO3OoREAMAgAsd9/YlxZAtWLiE9T71LNLUFBQUFBQUFBQUHBn4MLxqgkO6191sIAAAAASUVORK5CYII=",
       "bpp": 32,
       "alwaysBuild": true
@@ -38280,109 +38725,135 @@
   "colors": [
     {
       "objID": "f96c8334-5a15-5a47-ae0c-980439e0c2e3",
-      "name": "background"
+      "name": "background",
+      "tags": "base"
     },
     {
       "objID": "579c149d-c71a-5f2a-b915-70db0fa0473a",
-      "name": "text"
+      "name": "text",
+      "tags": "base"
     },
     {
       "objID": "ce6b9266-53ed-5d16-a0f3-f4d8b41aaf48",
-      "name": "accent"
+      "name": "accent",
+      "tags": "base"
     },
     {
       "objID": "b624e3ab-b984-5531-889d-0da16161bc94",
-      "name": "bookmark"
+      "name": "bookmark",
+      "tags": "base"
     },
     {
       "objID": "9c42b705-1e51-5e6b-b9b0-984ea9ab32c7",
-      "name": "backdrop"
+      "name": "backdrop",
+      "tags": "base"
     },
     {
       "objID": "8db05034-fee0-5a04-b05a-895823a50394",
-      "name": "error"
+      "name": "error",
+      "tags": "base, errors"
     },
     {
       "objID": "f7e3a240-bbab-5678-80be-f268258dc211",
-      "name": "render_navy"
+      "name": "render_navy",
+      "tags": "render"
     },
     {
       "objID": "eb46edbe-9769-5d45-adee-3db3dc8f4d07",
-      "name": "render_red"
+      "name": "render_red",
+      "tags": "render"
     },
     {
       "objID": "10d8bb10-3792-5b6b-b4e1-0a01e02a5084",
-      "name": "render_green"
+      "name": "render_green",
+      "tags": "render"
     },
     {
       "objID": "aa3a6e29-30b1-5c54-86cb-4ab9ef9248e2",
-      "name": "render_blue"
+      "name": "render_blue",
+      "tags": "render"
     },
     {
       "objID": "8b4a0736-084a-577f-b84c-e9fddb6e3943",
-      "name": "render_gray"
+      "name": "render_gray",
+      "tags": "render"
     },
     {
       "objID": "dd3c2039-45ae-5706-9223-9d7198ec0e1f",
-      "name": "render_yellow"
+      "name": "render_yellow",
+      "tags": "render"
     },
     {
       "objID": "ca2583df-a9ca-5560-a7ec-22e3f115b3b3",
-      "name": "render_orange"
+      "name": "render_orange",
+      "tags": "render"
     },
     {
       "objID": "f570d961-61a8-5fb2-8c8d-7b5427ec635c",
-      "name": "render_purple"
+      "name": "render_purple",
+      "tags": "render"
     },
     {
       "objID": "3d7a9cfc-59f3-55ea-bc4f-d5ff59177e2b",
-      "name": "render_teal"
+      "name": "render_teal",
+      "tags": "render"
     },
     {
       "objID": "51ebb54a-9448-5b15-a4d7-9b49e2e1ddac",
-      "name": "render_dark_green"
+      "name": "render_dark_green",
+      "tags": "render"
     },
     {
       "objID": "4980a8bb-795e-554a-b496-59bc656529c1",
-      "name": "w_red"
+      "name": "w_red",
+      "tags": "widgets"
     },
     {
       "objID": "6cbc6c2d-dd7c-522c-9144-bf4d3080cf38",
-      "name": "w_green"
+      "name": "w_green",
+      "tags": "widgets"
     },
     {
       "objID": "0efadf76-e784-5d7b-b46f-d5d000829d3e",
-      "name": "w_blue"
+      "name": "w_blue",
+      "tags": "widgets"
     },
     {
       "objID": "008453e2-5f6a-5bf0-8d89-fadacb7580af",
-      "name": "w_yellow"
+      "name": "w_yellow",
+      "tags": "widgets"
     },
     {
       "objID": "2f49264a-5766-591c-bd03-e15313c0fb20",
-      "name": "w_gray"
+      "name": "w_gray",
+      "tags": "widgets"
     },
     {
       "objID": "43d6ae5c-45ed-5860-8626-b9bd4b6adba4",
-      "name": "w_magenta"
+      "name": "w_magenta",
+      "tags": "widgets"
     },
     {
       "objID": "892e9854-0f87-5273-b437-4393d6bcc960",
-      "name": "w_cyan"
+      "name": "w_cyan",
+      "tags": "widgets"
     },
     {
       "objID": "cbe23617-5d45-5a1e-8e57-558cc8cafad3",
-      "name": "w_white"
+      "name": "w_white",
+      "tags": "widgets"
     },
     {
       "objID": "82360f63-ff3c-50f9-9e70-e4f8b30a13e7",
-      "name": "w_black"
+      "name": "w_black",
+      "tags": "widgets"
     }
   ],
   "themes": [
     {
       "objID": "eb9430da-291c-55c7-9545-083f9b492dd2",
       "name": "Default",
+      "tags": "base",
       "colors": [
         "#000000",
         "#ffffff",
@@ -38417,17 +38888,20 @@
     "languages": [
       {
         "objID": "97b4fa13-a76f-5f19-bd3f-2021e1ee181a",
-        "languageID": "en"
+        "languageID": "en",
+        "tags": "expressions"
       },
       {
         "objID": "ba2ca475-0124-575e-b2fe-636fb522a278",
-        "languageID": "de"
+        "languageID": "de",
+        "tags": "expressions"
       }
     ],
     "resources": [
       {
         "objID": "29723420-4181-505a-bef6-415ef389fc7b",
         "resourceID": "expr_hello",
+        "tags": "expressions",
         "translations": [
           {
             "objID": "1f4de6ab-bbbe-5a95-9164-cb7b5fd17839",
@@ -38444,6 +38918,7 @@
       {
         "objID": "1fb17bab-0b18-51a0-a8fc-ee8195243bc6",
         "resourceID": "expr_bye",
+        "tags": "expressions",
         "translations": [
           {
             "objID": "53611c4a-0ec3-5094-bc01-aaed3cfa4d3b",

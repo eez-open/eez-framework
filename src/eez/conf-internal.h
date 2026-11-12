@@ -48,10 +48,6 @@
     #define OPTION_KEYPAD 0
 #endif
 
-#ifndef CUSTOM_VALUE_TYPES
-    #define CUSTOM_VALUE_TYPES
-#endif
-
 #if EEZ_OPTION_GUI
     #ifdef __cplusplus
         #ifdef __has_include

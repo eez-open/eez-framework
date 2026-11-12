@@ -41,6 +41,7 @@
       {
         "objID": "b3e9f879-7d52-54ae-b0bc-a77fe80c78d4",
         "name": "mod_counter",
+        "tags": "external",
         "type": "integer",
         "native": false,
         "defaultValue": "0"
@@ -48,6 +49,7 @@
       {
         "objID": "ef3e27fd-cdd3-58c7-8d6a-7da6d4dc7751",
         "name": "mod_opened",
+        "tags": "external",
         "type": "integer",
         "native": false,
         "defaultValue": "0"
@@ -55,6 +57,7 @@
       {
         "objID": "ed0d051a-95b1-56b9-8159-709fe8ff4405",
         "name": "mod_main_layout",
+        "tags": "external",
         "type": "integer",
         "native": false,
         "defaultValue": "0"
@@ -62,6 +65,7 @@
       {
         "objID": "c7acfd4b-c320-59a3-9047-d2282e930676",
         "name": "mod_uw_started",
+        "tags": "external, user-widget",
         "type": "integer",
         "native": false,
         "defaultValue": "0"
@@ -69,6 +73,7 @@
       {
         "objID": "935bac82-b80d-59de-96f6-a5c2d8e6021c",
         "name": "mod_trigger",
+        "tags": "external",
         "type": "integer",
         "native": false,
         "defaultValue": "0"
@@ -76,6 +81,7 @@
       {
         "objID": "95690feb-2e76-5d36-909b-be8385dbb404",
         "name": "mod_watch_hits",
+        "tags": "external",
         "type": "integer",
         "native": false,
         "defaultValue": "0"
@@ -83,6 +89,7 @@
       {
         "objID": "b3c3dafb-8764-598f-ab3c-1c53a7c97227",
         "name": "mod_caught",
+        "tags": "external",
         "type": "string",
         "native": false,
         "defaultValue": "\"\""
@@ -95,6 +102,7 @@
     {
       "objID": "94a8b54e-4934-5839-89d2-1923517039be",
       "name": "mod_inc",
+      "tags": "external",
       "implementationType": "flow",
       "components": [
         {
@@ -137,6 +145,7 @@
     {
       "objID": "94b1d6d8-3137-543d-ab58-a152da47f3bd",
       "name": "mod_fail",
+      "tags": "external, errors",
       "implementationType": "flow",
       "components": [
         {
@@ -175,6 +184,7 @@
     {
       "objID": "7a6d81b0-a615-5617-96df-0a3144ded2c5",
       "name": "mod_host",
+      "tags": "external",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -262,12 +272,14 @@
         {
           "objID": "6ae1a41c-6d38-58e3-a4ba-e98851dc6135",
           "name": "probe_label",
+          "tags": "external, probe",
           "type": "any",
           "native": false
         },
         {
           "objID": "0ed179eb-a4f1-554f-b2fc-ee4bc41e17c8",
           "name": "probe_result",
+          "tags": "external, probe",
           "type": "any",
           "native": false
         }
@@ -278,6 +290,7 @@
     {
       "objID": "23305549-37e8-5aef-9537-baef98961b85",
       "name": "mod_main",
+      "tags": "external",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -570,6 +583,7 @@
         {
           "objID": "0809d74a-ba63-55c6-a6c3-5e177d3fed2a",
           "name": "mod_local",
+          "tags": "external",
           "type": "integer",
           "native": false,
           "defaultValue": "7"
@@ -577,12 +591,14 @@
         {
           "objID": "590ae21f-7fd2-5a59-8a0f-e1fd951eea28",
           "name": "probe_label",
+          "tags": "external, probe",
           "type": "any",
           "native": false
         },
         {
           "objID": "e4df7554-df3d-54d9-b90d-352fa77641dd",
           "name": "probe_result",
+          "tags": "external, probe",
           "type": "any",
           "native": false
         }
@@ -593,6 +609,7 @@
     {
       "objID": "a0a93610-b007-5934-aa51-fa5cd8f065a6",
       "name": "mod_catch",
+      "tags": "external, errors",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -665,6 +682,7 @@
     {
       "objID": "1b121161-e3b8-55da-8d28-5e3d7a259161",
       "name": "mod_end",
+      "tags": "external",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -704,6 +722,7 @@
     {
       "objID": "269bbcbb-f83f-5be7-a764-521960b2e8f9",
       "name": "mod_err_page",
+      "tags": "external, errors",
       "left": 0,
       "top": 0,
       "width": 800,
@@ -746,6 +765,7 @@
     {
       "objID": "da84a6ce-3f35-57e3-81fa-e445c8b1da2a",
       "name": "mod_uw",
+      "tags": "external, user-widget",
       "left": 0,
       "top": 0,
       "width": 200,
@@ -886,12 +906,14 @@
         {
           "objID": "cb6f61cb-6d83-5e3b-abcc-a1e541f731c1",
           "name": "probe_label",
+          "tags": "external, probe",
           "type": "any",
           "native": false
         },
         {
           "objID": "89038314-c67f-58c9-8e3b-63dc0d26e33b",
           "name": "probe_result",
+          "tags": "external, probe",
           "type": "any",
           "native": false
         }
@@ -905,6 +927,7 @@
     {
       "objID": "26bb0c6c-00c8-5752-8770-86dbf2af51f1",
       "name": "default",
+      "tags": "external",
       "alwaysBuild": true,
       "font": "mod_roboto",
       "color": "text",
@@ -915,6 +938,7 @@
         {
           "objID": "12b5fbe7-1703-5041-a422-d7d18ae7c549",
           "name": "mod_fill_box",
+          "tags": "external",
           "alwaysBuild": true,
           "backgroundColor": "mod_fill",
           "childStyles": []
@@ -922,6 +946,7 @@
         {
           "objID": "debe8b73-5012-5479-8b32-e95c0d9ab4f3",
           "name": "mod_line_box",
+          "tags": "external",
           "alwaysBuild": true,
           "backgroundColor": "mod_line",
           "childStyles": []
@@ -929,6 +954,7 @@
         {
           "objID": "6a4c6ef4-03fb-58d4-a27a-e1b27e054ed7",
           "name": "mod_custom_box",
+          "tags": "external",
           "alwaysBuild": true,
           "backgroundColor": "#8040c0",
           "childStyles": []
@@ -936,6 +962,7 @@
         {
           "objID": "7d3b4dce-f8db-5024-aad1-0894c8bff10f",
           "name": "mod_master_color_box",
+          "tags": "external",
           "alwaysBuild": true,
           "backgroundColor": "bookmark",
           "childStyles": []
@@ -943,6 +970,7 @@
         {
           "objID": "4b3e453a-eb62-521e-8c59-def53c8b5bf8",
           "name": "mod_icons_text",
+          "tags": "external",
           "alwaysBuild": true,
           "font": "mod_icons",
           "childStyles": []
@@ -950,6 +978,7 @@
         {
           "objID": "a5e4bda5-0fee-58fc-8f6e-43bf4b36685c",
           "name": "mod_uw_frame",
+          "tags": "external, user-widget",
           "alwaysBuild": true,
           "backgroundColor": "mod_line",
           "childStyles": []
@@ -961,6 +990,7 @@
     {
       "objID": "69b92cc5-a15c-5070-ad5d-45672d8143be",
       "name": "mod_roboto",
+      "tags": "external",
       "renderingEngine": "freetype",
       "source": {
         "objID": "dd322b7a-8915-575d-a62e-09f6f9e05c2a",
@@ -2899,6 +2929,7 @@
     {
       "objID": "8c8854c7-7a2a-5e38-bb78-5b56e2072cdb",
       "name": "mod_icons",
+      "tags": "external",
       "description": "",
       "renderingEngine": "freetype",
       "source": {
@@ -3100,6 +3131,7 @@
     {
       "objID": "03ec732d-cd14-5fa6-940a-fbd5ab7d7306",
       "name": "mod_bitmap",
+      "tags": "external",
       "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAFklEQVR4nGNoOOBAEmIY1TCqYfhqAABlhIAQ/mlRMAAAAABJRU5ErkJggg==",
       "bpp": 16,
       "alwaysBuild": true
@@ -3109,6 +3141,7 @@
     {
       "objID": "701e625f-b009-50ff-9ec5-2a9c959696d1",
       "name": "mod_fill",
+      "tags": "external",
       "themeValues": {
         "Default": "#40c080"
       }
@@ -3116,6 +3149,7 @@
     {
       "objID": "b05219d6-7cf3-5aa2-b7be-705e575c8648",
       "name": "mod_line",
+      "tags": "external",
       "themeValues": {
         "Default": "#c04000"
       }

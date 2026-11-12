@@ -2,6 +2,8 @@
  * eez-framework tests: Text and MultilineText widgets (pages w_text, w_mtext).
  */
 
+#include <string.h>
+
 #include "wtest.h"
 
 #include <eez/gui/widgets/text.h>
@@ -78,6 +80,28 @@ TEST("widgets/text: the same string in a new value is not drawn again") {
     // strings are compared by content
     set(V_A, str("abc"));
     CHECK_EQ(framesWithDrawing(3), 0);
+}
+
+TEST("widgets/text: a string changed in place in the same buffer is drawn again") {
+    // like a data function that returns its text in a static buffer: the
+    // state keeps a copy of the string, not the pointer to the buffer
+    static char buffer[16];
+    strcpy(buffer, "abc");
+    set(V_A, Value(buffer, VALUE_TYPE_STRING));
+    show(PAGE_ID_W_TEXT);
+    int before = count(RECT(T_DATA), YELLOW);
+    strcpy(buffer, "abcdefghij");
+    harness::frame();
+    CHECK(drawn());
+    CHECK(count(RECT(T_DATA), YELLOW) > before);
+    CHECK_EQ(framesWithDrawing(3), 0);
+    CHECK_EQ(diffWithFullRedraw(), 0);
+    auto longText = block(RECT(T_DATA));
+    strcpy(buffer, "xy");
+    harness::frame();
+    CHECK(drawn());
+    CHECK(diffBlock(longText, RECT(T_DATA)) > 0);
+    CHECK_EQ(diffWithFullRedraw(), 0);
 }
 
 TEST("widgets/text: integer data is drawn as its text") {
@@ -209,6 +233,20 @@ TEST("widgets/mtext: data change redraws, the same value does not") {
     harness::frame();
     CHECK(drawn());
     CHECK(textLines(RECT(M_DATA), YELLOW) > 1);
+    CHECK_EQ(diffWithFullRedraw(), 0);
+}
+
+TEST("widgets/mtext: a string changed in place in the same buffer is drawn again") {
+    static char buffer[64];
+    strcpy(buffer, "short");
+    set(V_A, Value(buffer, VALUE_TYPE_STRING));
+    show(PAGE_ID_W_MTEXT);
+    CHECK_EQ(textLines(RECT(M_DATA), YELLOW), 1);
+    strcpy(buffer, "a much longer text on more lines");
+    harness::frame();
+    CHECK(drawn());
+    CHECK(textLines(RECT(M_DATA), YELLOW) > 1);
+    CHECK_EQ(framesWithDrawing(3), 0);
     CHECK_EQ(diffWithFullRedraw(), 0);
 }
 

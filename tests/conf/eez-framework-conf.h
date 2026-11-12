@@ -1,9 +1,9 @@
 /*
  * eez-framework tests
  *
- * The configuration of the BB3+ (src/bb3/conf/eez-framework-conf.h), without its
- * custom value types, on the CM5 platform (Linux, SDL). The GUI loop runs on the
- * process main thread, so the tests drive it frame by frame (harness.h).
+ * The configuration of the BB3+ (src/bb3/conf/eez-framework-conf.h) on the CM5
+ * platform (Linux, SDL). The GUI loop runs on the process main thread, so the
+ * tests drive it frame by frame (harness.h).
  */
 
 #pragma once

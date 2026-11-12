@@ -8,6 +8,7 @@ the project: a part prefixes them with its area (flow_, gui_, ...).
 
 import json
 import os
+import re
 import uuid
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -24,6 +25,52 @@ def oid(*key):
 def load_font(name):
     with open(os.path.join(HERE, "fonts", name + ".json"), encoding="utf-8") as f:
         return json.load(f)
+
+
+################################################################################
+# tags: the "tags" property of the project items, used only for searching in
+# Studio ("tag:flow" finds the items of the flow part)
+
+# topic tags by the item name, after the area tag
+TOPICS = [
+    (r"err|catch|fail", "errors"),
+    (r"(^|_)uw(_|\d|$)|user_widget", "user-widget"),
+    (r"native", "native"),
+    (r"keypad|keyboard", "keypad"),
+    (r"msgbox|yes_no|popup|dialog|alert|menu_with_buttons|async_operation", "popups"),
+    (r"probe", "probe"),
+]
+
+
+def tags(name, area):
+    """The tags of an item: the area (base, flow, gui, ...) and its topics."""
+    result = [area]
+    for pattern, topic in TOPICS:
+        if re.search(pattern, name) and topic not in result:
+            result.append(topic)
+    return ", ".join(result)
+
+
+def set_tags(obj, value, anchor="name"):
+    """Puts obj["tags"] right after the anchor key, where Studio writes it."""
+    items = [(k, v) for k, v in obj.items() if k != "tags"]
+    obj.clear()
+    for k, v in items:
+        obj[k] = v
+        if k == anchor:
+            obj["tags"] = value
+    return obj
+
+
+def tag_items(items, area):
+    """Tags the items (with a name) of an area, their local variables and child
+    styles too. Returns items."""
+    for item in items:
+        set_tags(item, tags(item["name"], area))
+        for v in item.get("localVariables", []):
+            set_tags(v, tags(v["name"], area))
+        tag_items(item.get("childStyles", []), area)
+    return items
 
 
 ################################################################################

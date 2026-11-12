@@ -264,15 +264,34 @@ struct WidgetState {
         return !hasPreviousState; \
     }
 
+// The value that a widget state keeps. The string of a VALUE_TYPE_STRING value
+// is not owned by the value, a data function can return it in a buffer that it
+// reuses (a static buffer), so the state keeps a copy of it. Without the copy
+// the next string in the same buffer is equal to the kept one and the widget
+// is not drawn again.
+inline Value widgetStateValue(const Value &value) {
+	if (value.getType() == VALUE_TYPE_STRING && value.getString()) {
+		Value copy = Value::makeStringRef(value.getString(), -1, 0x5d7e4b1c);
+		// the borrowed string when the allocation failed
+		return copy.isString() ? copy : value;
+	}
+	return value;
+}
+
+template <typename T>
+inline T widgetStateValue(T value) {
+	return value;
+}
+
 #define WIDGET_STATE(A, B) \
 	if (hasPreviousState) { \
 		auto temp = B; \
 		if (A != temp) { \
 			hasPreviousState = false; \
-			A = temp; \
+			A = widgetStateValue(temp); \
 		} \
 	} else { \
-		A = B; \
+		A = widgetStateValue(B); \
 	}
 
 #define WIDGET_STATE_END() \

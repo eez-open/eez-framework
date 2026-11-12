@@ -23,6 +23,9 @@ others by file name. A part is a module that may define any of
     USER_WIDGETS  user widgets (pages with isUsedAsUserWidget)
     BITMAPS       bitmaps
     TEXTS         {"languages": [languageID], "resources": [(resourceID, {languageID: text})]}
+
+Every item gets tags (fwlib.tags): the area of its part (the part name, see
+PART_AREAS) and topics by its name.
 """
 
 import glob
@@ -39,7 +42,10 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, "parts"))
 
 from expression_cases import CASES, UNDEFINED, F  # noqa: E402
-from fwlib import DISPLAY_HEIGHT, DISPLAY_WIDTH, load_font, oid, style  # noqa: E402
+from fwlib import DISPLAY_HEIGHT, DISPLAY_WIDTH, load_font, oid, set_tags, style, tag_items, tags  # noqa: E402
+
+# the area (tag) of a part when it isn't the part name
+PART_AREAS = {"expr_extra": "expressions"}
 
 
 def load_parts():
@@ -48,11 +54,20 @@ def load_parts():
     return [importlib.import_module(name) for name in ["base"] + names]
 
 
+def area(part):
+    return PART_AREAS.get(part.__name__, part.__name__)
+
+
 def collect(parts, attribute):
     result = []
     for part in parts:
-        result.extend(getattr(part, attribute, []))
+        result.extend(tag_items(getattr(part, attribute, []), area(part)))
     return result
+
+
+def collect_colors(parts):
+    """(name, value, area) of the COLORS of the parts"""
+    return [(name, value, area(part)) for part in parts for name, value in getattr(part, "COLORS", [])]
 
 
 ################################################################################
@@ -120,34 +135,39 @@ namespace gui {
 
 def texts(parts):
     """The project texts from the TEXTS of the parts, None when no part has any."""
-    languages = []
+    languages = {}
     resources = []
     for part in parts:
         part_texts = getattr(part, "TEXTS", None)
         if part_texts:
-            languages.extend(language for language in part_texts["languages"] if language not in languages)
-            resources.extend(part_texts["resources"])
+            for language in part_texts["languages"]:
+                languages.setdefault(language, area(part))
+            resources.extend((resource_id, translations, area(part)) for resource_id, translations in part_texts["resources"])
     if not languages:
         return None
     return {
         "objID": oid("texts"),
-        "languages": [{"objID": oid("language", language), "languageID": language} for language in languages],
+        "languages": [
+            {"objID": oid("language", language), "languageID": language, "tags": tags(language, area_)}
+            for language, area_ in languages.items()
+        ],
         "resources": [
             {
                 "objID": oid("text", resource_id),
                 "resourceID": resource_id,
+                "tags": tags(resource_id, area_),
                 "translations": [
                     {"objID": oid("text", resource_id, language), "languageID": language, "text": text_}
                     for language, text_ in translations.items()
                 ],
             }
-            for resource_id, translations in resources
+            for resource_id, translations, area_ in resources
         ],
     }
 
 
 def project(parts):
-    colors = collect(parts, "COLORS")
+    colors = collect_colors(parts)
     result = {
         "objID": oid("project"),
         "settings": {
@@ -181,7 +201,7 @@ def project(parts):
         "userPages": collect(parts, "PAGES"),
         "userWidgets": collect(parts, "USER_WIDGETS"),
         "styles": [
-            style(
+            set_tags(style(
                 "default",
                 font="RobotoCondensed",
                 color="text",
@@ -189,12 +209,18 @@ def project(parts):
                 alignHorizontal="center",
                 alignVertical="center",
                 children=collect(parts, "STYLES"),
-            )
+            ), tags("default", "base"))
         ],
-        "fonts": [load_font("RobotoCondensed"), load_font("Icons_WaveformS")],
+        "fonts": tag_items([load_font("RobotoCondensed"), load_font("Icons_WaveformS")], "base"),
         "bitmaps": collect(parts, "BITMAPS"),
-        "colors": [{"objID": oid("color", name), "name": name} for name, _ in colors],
-        "themes": [{"objID": oid("theme", "Default"), "name": "Default", "colors": [value for _, value in colors]}],
+        "colors": [
+            {"objID": oid("color", name), "name": name, "tags": tags(name, area_)}
+            for name, _, area_ in colors
+        ],
+        "themes": [{
+            "objID": oid("theme", "Default"), "name": "Default", "tags": tags("Default", "base"),
+            "colors": [value for _, value, _ in colors],
+        }],
     }
     project_texts = texts(parts)
     if project_texts:

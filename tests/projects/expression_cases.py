@@ -136,9 +136,9 @@ CASES = [
     ('g_string + "!"', "string", "text!"),
     # the instructions of this case are reused by the Flow.translate test
     ('"expr_tr_a" + "expr_tr_b"', "string", "expr_tr_aexpr_tr_b"),
-    # the docs table: string + other type is an error (JS gives "null"; O10:
-    # null was converted to "" because of `!a_valid && !b_valid`)
-    ('"" + null', "error", None),
+    # string + other type is the string + the text of the value (JS gives
+    # "null"), like the BB3+ native variable slot_title in `${slot_title}: ...`
+    ('"" + null', "string", ""),
     # a double in a string is formatted with %g (6 significant digits)
     ('"x" + 1234567.5', "string", "x1234567.5", "C11"),
     ('"" + Math.PI', "string", "3.141592653589793", "C11"),

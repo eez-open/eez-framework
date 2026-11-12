@@ -18,7 +18,8 @@ assets. The tests (tests/flow/external) load them like the BB3+ loads module
 assets.
 
 Names: the project items start with mod_, the master items the project uses
-start with ext_ (parts/external.py).
+start with ext_ (parts/external.py). The tags of the project items (fwlib.tags)
+have the area "external", like the items of parts/external.py.
 """
 
 import copy
@@ -34,8 +35,11 @@ sys.path.insert(0, HERE)
 
 from fwlib import (  # noqa: E402
     DISPLAY_HEIGHT, DISPLAY_WIDTH, component, event_handler, flow_action, line, load_font, oid,
-    page, rectangle, style, text, variable, widget,
+    page, rectangle, style, tag_items, tags, text, variable, widget,
 )
+
+# the area tag of the project items
+AREA = "external"
 
 ################################################################################
 # build files
@@ -398,12 +402,12 @@ def project():
                 "destinationFolder": "generated",
             },
         },
-        "variables": {"globalVariables": GLOBALS, "structures": [], "enums": []},
-        "actions": ACTIONS,
-        "userPages": PAGES,
-        "userWidgets": USER_WIDGETS,
+        "variables": {"globalVariables": tag_items(GLOBALS, AREA), "structures": [], "enums": []},
+        "actions": tag_items(ACTIONS, AREA),
+        "userPages": tag_items(PAGES, AREA),
+        "userWidgets": tag_items(USER_WIDGETS, AREA),
         # new objIDs: the master project has a "default" style too
-        "styles": [rekey(style(
+        "styles": tag_items([rekey(style(
             "default",
             font="mod_roboto",
             color="text",
@@ -411,12 +415,12 @@ def project():
             alignHorizontal="center",
             alignVertical="center",
             children=STYLES,
-        ), ("ext", "style"))],
-        "fonts": [font("mod_roboto", "RobotoCondensed"), font("mod_icons", "Icons_WaveformS")],
-        "bitmaps": BITMAPS,
+        ), ("ext", "style"))], AREA),
+        "fonts": tag_items([font("mod_roboto", "RobotoCondensed"), font("mod_icons", "Icons_WaveformS")], AREA),
+        "bitmaps": tag_items(BITMAPS, AREA),
         # module colors: a value for each master theme (by name)
         "colors": [
-            {"objID": oid("ext", "color", name), "name": name, "themeValues": {"Default": value}}
+            {"objID": oid("ext", "color", name), "name": name, "tags": tags(name, AREA), "themeValues": {"Default": value}}
             for name, value in COLORS
         ],
         "themes": [],

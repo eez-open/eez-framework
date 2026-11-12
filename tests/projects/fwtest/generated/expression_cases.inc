@@ -60,7 +60,7 @@
 { "\"\" + expr_nat_i8", CASE_VALUE, VALUE_TYPE_STRING, 0, "-5", nullptr },
 { "g_string + \"!\"", CASE_VALUE, VALUE_TYPE_STRING, 0, "text!", nullptr },
 { "\"expr_tr_a\" + \"expr_tr_b\"", CASE_VALUE, VALUE_TYPE_STRING, 0, "expr_tr_aexpr_tr_b", nullptr },
-{ "\"\" + null", CASE_ERROR, VALUE_TYPE_ERROR, 0, nullptr, nullptr },
+{ "\"\" + null", CASE_VALUE, VALUE_TYPE_STRING, 0, "", nullptr },
 { "\"x\" + 1234567.5", CASE_VALUE, VALUE_TYPE_STRING, 0, "x1234567.5", "C11" },
 { "\"\" + Math.PI", CASE_VALUE, VALUE_TYPE_STRING, 0, "3.141592653589793", "C11" },
 { "\"\" + 0.000001", CASE_VALUE, VALUE_TYPE_STRING, 0, "0.000001", "C11" },

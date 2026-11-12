@@ -97,7 +97,9 @@ the baseline after looking at the new image.
 parts in `projects/parts/` (`base.py`: what the framework needs and the main page;
 `expressions.py`: the expression cases; one part per test area). Names of pages,
 actions, variables, styles and colors are global in the project, so a part
-prefixes them with its area (`flow_`, `gui_`, `w_`, `render_`).
+prefixes them with its area (`flow_`, `gui_`, `w_`, `render_`). Every item gets
+Studio tags (`fwlib.tags`): the area and topics found in its name (`errors`,
+`keypad`, `popups`, ...), so `tag:flow` in Studio's search finds the flow items.
 
 ```powershell
 pwsh tests/projects/build_projects.ps1

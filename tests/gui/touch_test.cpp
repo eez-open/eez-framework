@@ -454,7 +454,7 @@ TEST("gui/event: release on the button of a toast closed during the touch doesn'
     int y = toast->y + toast->height - 15;
     press(x, y);
     REQUIRE(getFoundWidgetAtDown().widget != nullptr);
-    // BB3+ tickToastDismissal: the module recovered, the toast is closed
+    // the toast is closed by code during the touch
     app()->popPage();
     harness::frame(2);
     releaseTouch();
