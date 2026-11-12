@@ -111,13 +111,15 @@ extern "C" DMA2D_HandleTypeDef hdma2d_eval;
 #define COLOR_TO_R(C) RGB565_COLOR_TO_R(C)
 #define COLOR_TO_G(C) RGB565_COLOR_TO_G(C)
 #define COLOR_TO_B(C) RGB565_COLOR_TO_B(C)
+#define COLOR_TO_A(C) 255
 #else
-// C: rrrrrggggggbbbbb
+// C: aaaaaaaabbbbbbbbggggggggrrrrrrrr
 #define RGB_TO_COLOR(R, G, B) (Color(((R) << 0) | ((G) << 8) | ((B) << 16) | (255 << 24)))
 
 #define COLOR_TO_R(C) (uint8_t((C) & 0xFF))
 #define COLOR_TO_G(C) (uint8_t(((C) >> 8) & 0xFF))
 #define COLOR_TO_B(C) (uint8_t(((C) >> 16) & 0xFF))
+#define COLOR_TO_A(C) (uint8_t(((C) >> 24) & 0xFF))
 #endif
 
 using namespace eez::gui;
@@ -426,9 +428,13 @@ static uint8_t g_colorCache[256][4];
 #define RGB_TO_HIGH_BYTE(R, G, B) (((R) & 248) | (G) >> 5)
 #define RGB_TO_LOW_BYTE(R, G, B) (((G) & 28) << 3 | (B) >> 3)
 
-static const uint16_t *g_themeColors;
+// the colors of the selected theme and the custom colors of the main assets:
+// 32-bit colors if g_colors32, RGB565 otherwise (see colorFromAssets)
+static const void *g_themeColors;
 static uint32_t g_themeColorsCount;
-static const uint16_t *g_colors;
+static const void *g_colors;
+static uint32_t g_colorsCount;
+static bool g_colors32;
 
 bool g_dirty;
 inline void clearDirty() { g_dirty = false; }
@@ -694,6 +700,17 @@ static inline uint32_t blendColor(uint32_t fgColor, uint32_t bgColor) {
     presult[3] = (uint8_t)alphaOut;
 
     return result;
+}
+
+// The opacity a color is drawn with: the current opacity (setOpacity) and the
+// alpha of the color (theme colors of assets with 32-bit colors can have one).
+// Every drawing operation takes the opacity of its color from here.
+static inline uint32_t getDrawOpacity(Color color) {
+    uint32_t alpha = COLOR_TO_A(color);
+    if (alpha == 255) {
+        return g_opacity;
+    }
+    return (g_opacity * alpha + 127) / 255;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2014,6 +2031,8 @@ void onThemeChanged() {
     g_themeColors = getThemeColors(selectedThemeIndex);
     g_themeColorsCount = getThemeColorsCount(selectedThemeIndex);
     g_colors = getColors();
+    g_colorsCount = g_mainAssets->colorsDefinition->colors.count;
+    g_colors32 = g_mainAssets->projectMinorVersion == 1;
 }
 
 void onLuminocityChanged() {
@@ -2152,8 +2171,32 @@ void adjustColor(Color &c) {
 #endif
 }
 
+// Color i of a color list of the assets. Assets with 32-bit colors (Studio's
+// "Color BPP" 32, projectMinorVersion 1) store R, G, B and alpha (R in the low
+// byte), the others RGB565.
+static Color colorFromAssets(const void *colors, uint32_t i, bool colors32) {
+    if (colors32) {
+        uint32_t color = ((const uint32_t *)colors)[i];
+#if DISPLAY_BPP == 16
+        return RGB_TO_COLOR(color & 0xFF, (color >> 8) & 0xFF, (color >> 16) & 0xFF);
+#else
+        return color;
+#endif
+    }
+
+    uint16_t color = ((const uint16_t *)colors)[i];
+#if DISPLAY_BPP == 16
+    return color;
+#else
+    return RGB_TO_COLOR(RGB565_COLOR_TO_R(color), RGB565_COLOR_TO_G(color), RGB565_COLOR_TO_B(color));
+#endif
+}
+
 Color getColorFromIndex(uint16_t colorIndex) {
-    uint16_t color;
+    if (colorIndex == TRANSPARENT_COLOR_INDEX) {
+        return 0;
+    }
+
     if ((int16_t)colorIndex < -1) {
         // color is from external (i.e. not main) assets data: first the
         // colors defined in the external assets, their values are in the
@@ -2163,7 +2206,7 @@ Color getColorFromIndex(uint16_t colorIndex) {
 
         uint32_t externalColorIndex = -((int16_t)colorIndex) - 2;
 
-        const uint16_t *colors = nullptr;
+        const void *colors = nullptr;
 
         auto &themes = assets->colorsDefinition->themes;
         if (themes.count > 0) {
@@ -2173,7 +2216,7 @@ Color getColorFromIndex(uint16_t colorIndex) {
             }
             auto &themeColors = themes[themeIndex]->colors;
             if (externalColorIndex < themeColors.count) {
-                colors = static_cast<uint16_t *>(themeColors.items);
+                colors = themeColors.items;
             } else {
                 externalColorIndex -= themeColors.count;
             }
@@ -2184,27 +2227,27 @@ Color getColorFromIndex(uint16_t colorIndex) {
             if (externalColorIndex >= customColors.count) {
                 return 0;
             }
-            colors = static_cast<uint16_t *>(customColors.items);
+            colors = customColors.items;
         }
 
-        if (assets->projectMinorVersion == 1) {
-            return ((const uint32_t *)colors)[externalColorIndex];
-        }
-        color = colors[externalColorIndex];
-    } else {
-        colorIndex = g_hooks.transformColor(colorIndex);
-
-        if (g_mainAssets->projectMinorVersion == 1) {
-            return colorIndex < g_themeColorsCount ? ((uint32_t *)g_themeColors)[colorIndex] : ((uint32_t *)g_colors)[colorIndex - g_themeColorsCount];    
-        }
-    	color = colorIndex < g_themeColorsCount ? g_themeColors[colorIndex] : g_colors[colorIndex - g_themeColorsCount];
+        return colorFromAssets(colors, externalColorIndex, assets->projectMinorVersion == 1);
     }
 
-#if DISPLAY_BPP == 16
-    return color;
-#else
-    return RGB_TO_COLOR(RGB565_COLOR_TO_R(color), RGB565_COLOR_TO_G(color), RGB565_COLOR_TO_B(color));
-#endif
+    colorIndex = g_hooks.transformColor(colorIndex);
+
+    if (colorIndex < g_themeColorsCount) {
+        return colorFromAssets(g_themeColors, colorIndex, g_colors32);
+    }
+
+    if (colorIndex - g_themeColorsCount < g_colorsCount) {
+        return colorFromAssets(g_colors, colorIndex - g_themeColorsCount, g_colors32);
+    }
+
+    return 0;
+}
+
+bool isColorOpaque(uint16_t colorIndex) {
+    return colorIndex != TRANSPARENT_COLOR_INDEX && COLOR_TO_A(getColorFromIndex(colorIndex)) == 255;
 }
 
 void getColorRGBAFromIndex(uint16_t colorIndex, ColorRGBA *colorRGBA) {
@@ -2212,7 +2255,7 @@ void getColorRGBAFromIndex(uint16_t colorIndex, ColorRGBA *colorRGBA) {
     colorRGBA->r = COLOR_TO_R(color);
     colorRGBA->g = COLOR_TO_G(color);
     colorRGBA->b = COLOR_TO_B(color);
-    colorRGBA->a = 255;
+    colorRGBA->a = COLOR_TO_A(color);
 }
 
 // get foreground color
@@ -2364,9 +2407,9 @@ struct RenderBufferTarget : raster::Target {
     }
 };
 
-// the color with the current opacity, as a color of raster.h
+// the color with the opacity it is drawn with, as a color of raster.h
 static uint32_t getRasterColor(Color color) {
-    return (uint32_t)COLOR_TO_R(color) | ((uint32_t)COLOR_TO_G(color) << 8) | ((uint32_t)COLOR_TO_B(color) << 16) | ((uint32_t)g_opacity << 24);
+    return (uint32_t)COLOR_TO_R(color) | ((uint32_t)COLOR_TO_G(color) << 8) | ((uint32_t)COLOR_TO_B(color) << 16) | (getDrawOpacity(color) << 24);
 }
 
 void fillRoundedRect(
@@ -3280,7 +3323,13 @@ void drawPixel(int x, int y) {
     }
 
 #if EEZ_USE_SDL
-    *(g_renderBuffer + y * (int)DISPLAY_WIDTH + x) = g_fc;
+    auto dest = g_renderBuffer + y * (int)DISPLAY_WIDTH + x;
+    uint32_t opacity = getDrawOpacity(g_fc);
+    if (opacity == 255) {
+        *dest = g_fc;
+    } else if (opacity != 0) {
+        *dest = blendColor((g_fc & 0x00FFFFFF) | (opacity << 24), *dest);
+    }
     addDamage(x, y, x, y);
     setDirty();
 #endif
@@ -3308,8 +3357,9 @@ void drawPixel(int x, int y, uint8_t opacity) {
 #if EEZ_USE_SDL
     auto dest = g_renderBuffer + y * (int)DISPLAY_WIDTH + x;
 
-    // draw g_fc with the given opacity over the (opaque) pixel
-    *dest = blendColor((g_fc & 0x00FFFFFF) | ((uint32_t)opacity << 24), *dest);
+    // draw g_fc with the given opacity (and its own) over the pixel
+    uint32_t alpha = (opacity * getDrawOpacity(g_fc) + 127) / 255;
+    *dest = blendColor((g_fc & 0x00FFFFFF) | (alpha << 24), *dest);
     addDamage(x, y, x, y);
     setDirty();
 #endif
@@ -3357,12 +3407,13 @@ void fillRect(int x1, int y1, int x2, int y2) {
 	uint32_t *dst = g_renderBuffer + y1 * (int)DISPLAY_WIDTH + x1;
     int width = x2 - x1 + 1;
     int height = y2 - y1 + 1;
-    if (g_opacity == 255) {
+    uint32_t opacity = getDrawOpacity(g_fc);
+    if (opacity == 255) {
         for (int y = 0; y < height; y++, dst += DISPLAY_WIDTH) {
             std::fill_n(dst, width, g_fc);
         }
-    } else if (g_opacity != 0) {
-        uint32_t fc = (g_fc & 0x00FFFFFF) | (g_opacity << 24);
+    } else if (opacity != 0) {
+        uint32_t fc = (g_fc & 0x00FFFFFF) | (opacity << 24);
         for (int y = 0; y < height; y++, dst += DISPLAY_WIDTH) {
             for (int x = 0; x < width; x++) {
                 dst[x] = blendColor(fc, dst[x]);
@@ -3691,7 +3742,7 @@ static void drawGlyph(const uint8_t *src, uint32_t srcLineOffset, int x_glyph, i
     // const gui::GlyphData &glyph, int x_glyph, int y_glyph, int width, int height, int offset, int iStartByte
 
     uint32_t color = g_fc & 0x00FFFFFF;
-    uint32_t opacity = g_opacity;
+    uint32_t opacity = getDrawOpacity(g_fc);
 
     uint32_t *dst = g_renderBuffer + y_glyph * (int)DISPLAY_WIDTH + x_glyph;
 

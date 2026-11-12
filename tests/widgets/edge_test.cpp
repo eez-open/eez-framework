@@ -89,7 +89,7 @@ TEST("widgets/lgraph: data that is not an array draws only the background") {
 TEST("widgets/qrcode: an empty string draws the smallest code") {
     set(V_A, str(""));
     show(PAGE_ID_W_QR);
-    CHECK(count(RECT(QR), WHITE) > 0);
+    CHECK(count(RECT(QR), TEXT) > 0);
 }
 
 TEST("widgets/list: data that is not an array shows no items") {

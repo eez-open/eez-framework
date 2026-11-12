@@ -76,7 +76,7 @@ BITMAPS = [
 
 ################################################################################
 
-# exact in RGB565, so a pixel is the color (but see D11 for 0xF8/0xFC)
+# the project has 32-bit colors, so a pixel is the color
 COLORS = [
     ("render_navy", "#000080"),
     ("render_red", "#f80000"),
@@ -88,6 +88,10 @@ COLORS = [
     ("render_purple", "#8000f8"),
     ("render_teal", "#008080"),
     ("render_dark_green", "#004000"),
+    # with alpha (render_alpha)
+    ("render_red_a128", "#ff000080"),
+    ("render_white_a64", "#ffffff40"),
+    ("render_blue_a0", "#0000ff00"),
 ]
 
 _CELL = dict(backgroundColor="render_navy", borderSize="1", borderColor="render_gray", padding="4")
@@ -175,6 +179,16 @@ STYLES = [
     ]),
     style("render_bgimg16", backgroundColor="render_navy", backgroundImage="render_bmp_big"),
     style("render_bgimg32", backgroundColor="render_navy", backgroundImage="render_bmp32"),
+
+    # colors with alpha (render_alpha)
+    style("render_a_bg", backgroundColor="render_red_a128"),
+    style("render_a_text", backgroundColor="transparent", color="render_white_a64"),
+    style("render_a_radius", backgroundColor="render_red_a128", borderSize="2", borderColor="render_white_a64",
+          borderRadius="10", color="text"),
+    style("render_a_op", backgroundColor="render_red_a128", opacity=128),
+    style("render_a_zero", backgroundColor="render_blue_a0"),
+    style("render_a_dyn", backgroundColor="render_red_a128", color="text"),
+    style("render_a_page", backgroundColor="render_red_a128"),
 
     # drawn directly by the tests (checkbox/radio, text measuring)
     style("render_cb", backgroundColor="render_navy", color="render_yellow", alignHorizontal="left", padding="4"),
@@ -380,6 +394,21 @@ def _dynamic_page():
     ])
 
 
+def _alpha_page():
+    # everything with alpha is on an opaque green container, so the color of a
+    # pixel is the color blended over green
+    return page("render_alpha", [
+        widget("ContainerWidget", ("render_a", "green"), 20, 20, 760, 300, "render_bg_green", widgets=[
+            rectangle(("render_a", "bg"), 20, 20, 160, 80, "render_a_bg"),
+            _box(("render_a", "text"), 200, 20, 160, 80, "render_a_text", "Alpha text"),
+            _box(("render_a", "radius"), 380, 20, 160, 80, "render_a_radius", "r10"),
+            rectangle(("render_a", "op"), 560, 20, 160, 80, "render_a_op"),
+            rectangle(("render_a", "zero"), 20, 120, 160, 80, "render_a_zero"),
+            _dyn(("render_a", "dyn"), 200, 120, 160, 80, "render_a_dyn", "render_text_a"),
+        ]),
+    ])
+
+
 def _popup_page(name, x, y, w, h, style_, widgets):
     return page(name, widgets, left=x, top=y, width=w, height=h, style=style_)
 
@@ -396,6 +425,11 @@ def _popup_pages():
         ]),
         _popup_page("render_transparent", 0, 0, 800, 480, "render_transparent_page", [
             _box(("render_tp", "box"), 300, 200, 200, 80, "render_popup_box", "transparent page"),
+        ]),
+        # a page with a background color with alpha is a transparent page (over
+        # the green container of render_alpha)
+        _popup_page("render_alpha_popup", 400, 200, 300, 100, "render_a_page", [
+            rectangle(("render_ap", "box"), 20, 20, 60, 40, "render_popup_box"),
         ]),
     ]
     # D5: small popups, none of them covers another one
@@ -417,4 +451,5 @@ PAGES = [
     _bitmaps_page(),
     _blink_page(),
     _dynamic_page(),
+    _alpha_page(),
 ] + _popup_pages()

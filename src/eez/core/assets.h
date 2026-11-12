@@ -338,14 +338,18 @@ struct Bitmap {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+// The theme colors and the custom colors are 32-bit colors (R in the low
+// byte, alpha in the high byte) in assets with 32-bit colors (Studio's "Color
+// BPP" 32, projectMinorVersion 1), and RGB565 (uint16_t) values in the other
+// assets. Read them with display::getColorFromIndex.
 struct Theme {
 	AssetsPtr<const char> name;
-	ListOfFundamentalType<uint16_t> colors;
+	ListOfFundamentalType<uint32_t> colors;
 };
 
 struct Colors {
 	ListOfAssetsPtr<Theme> themes;
-	ListOfFundamentalType<uint16_t> colors;
+	ListOfFundamentalType<uint32_t> colors;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -496,8 +500,9 @@ const int getBitmapIdByName(const char *bitmapName);
 int getThemesCount();
 const char *getThemeName(int i);
 uint32_t getThemeColorsCount(int themeIndex);
-const uint16_t *getThemeColors(int themeIndex);
-const uint16_t *getColors();
+// the colors as stored, 32-bit or RGB565 (see Theme)
+const void *getThemeColors(int themeIndex);
+const void *getColors();
 
 #if EEZ_OPTION_GUI
 const char *getActionName(const gui::WidgetCursor &widgetCursor, int16_t actionId);

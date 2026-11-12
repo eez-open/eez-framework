@@ -364,13 +364,14 @@ static bool isPageTransparent(int pageId) {
         return false;
     }
 
-    // style of the external page is from its assets
+    // style and colors of the external page are from its assets
     auto savedAssets = g_widgetCursor.assets;
     g_widgetCursor.assets = assets;
     auto style = getStyle(page->style);
+    bool transparent = !display::isColorOpaque(style->backgroundColor) || style->opacity != 255;
     g_widgetCursor.assets = savedAssets;
 
-    return style->backgroundColor == TRANSPARENT_COLOR_INDEX || style->opacity != 255;
+    return transparent;
 }
 
 void AppContext::updatePage(int i, WidgetCursor &widgetCursor) {

@@ -3,7 +3,7 @@
  *
  * The pages, styles and variables are in projects/parts/widgets.py (prefix w_).
  * Colors are 0xRRGGBB values of the presented frame (harness::pixel), the
- * project colors after the RGB565 round trip of the assets.
+ * project colors (the assets have 32-bit colors).
  */
 
 #pragma once
@@ -35,12 +35,14 @@ using eez::Value;
 
 // colors of the project (widgets.py COLORS and base.py)
 static const uint32_t BLACK = 0x000000;
-static const uint32_t WHITE = 0xF8FCF8;
+static const uint32_t WHITE = 0xF8FCF8;     // w_white #f8fcf8
 static const uint32_t RED = 0xF80000;
 static const uint32_t GREEN = 0x00FC00;
 static const uint32_t BLUE = 0x0000F8;
 static const uint32_t YELLOW = 0xF8FC00;
 static const uint32_t GRAY = 0x808080;
+// "text" (#ffffff), the color of the default style
+static const uint32_t TEXT = 0xFFFFFF;
 
 // color of the presented frame at x, y as 0xRRGGBB
 uint32_t rgb(int x, int y);

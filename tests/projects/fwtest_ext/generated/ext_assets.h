@@ -26,6 +26,7 @@ enum StylesEnum {
     STYLE_ID_MOD_FILL_BOX,
     STYLE_ID_MOD_LINE_BOX,
     STYLE_ID_MOD_CUSTOM_BOX,
+    STYLE_ID_MOD_ALPHA_BOX,
     STYLE_ID_MOD_MASTER_COLOR_BOX,
     STYLE_ID_MOD_ICONS_TEXT,
     STYLE_ID_MOD_UW_FRAME
@@ -52,6 +53,6 @@ enum FlowGlobalVariables {
     FLOW_GLOBAL_VARIABLE_MOD_CAUGHT = 6
 };
 
-extern const uint8_t assets[11561];
+extern const uint8_t assets[11579];
 
 } // namespace fwtest_ext

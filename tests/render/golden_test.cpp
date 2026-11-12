@@ -10,6 +10,9 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+
+#include <algorithm>
 
 #include <eez/conf-internal.h>
 #include <eez/gui/gui.h>
@@ -38,8 +41,23 @@ uint32_t px(int x, int y) {
 const int RENDER_PAGES[] = {
     PAGE_ID_RENDER_TEXT_ALIGN, PAGE_ID_RENDER_BORDERS, PAGE_ID_RENDER_RADIUS, PAGE_ID_RENDER_OPACITY,
     PAGE_ID_RENDER_COLORS, PAGE_ID_RENDER_FONTS, PAGE_ID_RENDER_MULTILINE, PAGE_ID_RENDER_BITMAPS,
-    PAGE_ID_RENDER_DYNAMIC,
+    PAGE_ID_RENDER_DYNAMIC, PAGE_ID_RENDER_ALPHA,
 };
+
+// the color c with alpha a over the opaque color below
+uint32_t over(uint32_t c, int a, uint32_t below) {
+    auto mix = [a](int s, int d) { return (uint32_t)((s * a + d * (255 - a) + 127) / 255); };
+    return rgb(mix(render::R(c), render::R(below)), mix(render::G(c), render::G(below)), mix(render::B(c), render::B(below)));
+}
+
+// the same color, each of R, G and B within 1 (rounding)
+bool nearColor(uint32_t a, uint32_t b) {
+    return abs(render::R(a) - render::R(b)) <= 1 && abs(render::G(a) - render::G(b)) <= 1 && abs(render::B(a) - render::B(b)) <= 1;
+}
+
+// render_alpha: the widgets are on a green container at (20, 20)
+const uint32_t ALPHA_GREEN = rgb(0, 0xFC, 0);
+const uint32_t ALPHA_RED = rgb(0xFF, 0, 0);
 
 } // namespace
 
@@ -223,4 +241,65 @@ TEST("render/golden: a background image is drawn from the top left of the widget
     // in a 200 x 80 box: navy right of and below the image
     CHECK_EQ(px(20 + 70, 130), rgb(0, 0, 0x80));
     CHECK_EQ(px(30, 120 + 60), rgb(0, 0, 0x80));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// colors with alpha (render_alpha)
+
+TEST("render/golden: colors with alpha") {
+    goldenPage("page_alpha", PAGE_ID_RENDER_ALPHA);
+}
+
+TEST("render/golden: a background color with alpha is blended over the container") {
+    render::showPage(PAGE_ID_RENDER_ALPHA);
+    // red with alpha 128: a rectangle and a rounded box with a border
+    CHECK(nearColor(px(100, 60), over(ALPHA_RED, 128, ALPHA_GREEN)));
+    CHECK(nearColor(px(420, 60), over(ALPHA_RED, 128, ALPHA_GREEN)));
+    // and the style opacity 128: alpha 64
+    CHECK(nearColor(px(640, 60), over(ALPHA_RED, 64, ALPHA_GREEN)));
+    // alpha 0: nothing
+    CHECK_EQ(px(100, 180), ALPHA_GREEN);
+}
+
+TEST("render/golden: a text color with alpha is blended over the background") {
+    // render_a_text: white with alpha 64, transparent background, in (220, 40, 160, 80)
+    render::showPage(PAGE_ID_RENDER_ALPHA);
+    int maxR = 0;
+    int minG = 255;
+    for (int y = 40; y < 120; y++) {
+        for (int x = 220; x < 380; x++) {
+            uint32_t c = px(x, y);
+            maxR = std::max(maxR, render::R(c));
+            minG = std::min(minG, render::G(c));
+        }
+    }
+    // the fully covered pixels of the glyphs are white with alpha 64 over green
+    CHECK(abs(maxR - render::R(over(rgb(255, 255, 255), 64, ALPHA_GREEN))) <= 1);
+    CHECK(minG >= render::G(ALPHA_GREEN));
+}
+
+TEST("render/golden: a widget with a background color with alpha doesn't darken when it changes") {
+    // the background with alpha is blended over the container every time, not
+    // over the last drawing of the widget
+    render::setText(0, "one");
+    render::showPage(PAGE_ID_RENDER_ALPHA);
+    uint32_t first = px(225, 145);
+    CHECK(nearColor(first, over(ALPHA_RED, 128, ALPHA_GREEN)));
+    const char *texts[] = { "two", "three", "four", "five" };
+    for (auto text : texts) {
+        render::setText(0, text);
+        harness::frame();
+    }
+    CHECK_EQ(px(225, 145), first);
+    CHECK_EQ(render::compareWithFullRedraw("alpha_dynamic"), 0);
+}
+
+TEST("render/golden: a page with a background color with alpha shows the page below") {
+    // render_alpha_popup (400, 200, 300, 100) over the green container
+    render::showPage(PAGE_ID_RENDER_ALPHA);
+    render::pushPage(PAGE_ID_RENDER_ALPHA_POPUP);
+    uint32_t c = px(600, 260);
+    CHECK(render::G(c) > 60);
+    CHECK(render::R(c) > 60);
+    CHECK_GOLDEN("compose_alpha_popup", render::captureFrame());
 }

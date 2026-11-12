@@ -336,12 +336,12 @@ void printFlowErrors() {
 ////////////////////////////////////////////////////////////////////////////////
 // colors
 
-uint16_t customColorIndex(Assets *assets, uint16_t rgb565) {
+uint16_t customColorIndex(Assets *assets, uint32_t color32) {
     auto colorsDefinition = static_cast<Colors *>(assets->colorsDefinition);
     uint32_t numModuleColors = colorsDefinition->themes.count > 0 ? colorsDefinition->themes[0]->colors.count : 0;
     auto &colors = colorsDefinition->colors;
     for (uint32_t i = 0; i < colors.count; i++) {
-        if (colors[i] == rgb565) {
+        if (colors[i] == color32) {
             return (uint16_t)(65534 - (numModuleColors + i));
         }
     }

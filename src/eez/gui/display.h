@@ -140,7 +140,15 @@ typedef uint16_t Color;
 typedef uint32_t Color;
 #endif
 
+// The color with its alpha (theme colors of assets with 32-bit colors can have
+// one; RGB565 colors have alpha 255). TRANSPARENT_COLOR_INDEX is 0, a fully
+// transparent color.
 Color getColorFromIndex(uint16_t colorIndex);
+
+// False for TRANSPARENT_COLOR_INDEX and for a color with alpha: what is below
+// a background in such a color must be drawn first, the color is blended over
+// it.
+bool isColorOpaque(uint16_t colorIndex);
 
 struct ColorRGBA {
 	uint8_t r, g, b, a;

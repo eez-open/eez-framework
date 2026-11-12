@@ -271,17 +271,16 @@ uint32_t getThemeColorsCount(int themeIndex) {
 	return theme->colors.count;
 }
 
-const uint16_t *getThemeColors(int themeIndex) {
+const void *getThemeColors(int themeIndex) {
     auto theme = getTheme(themeIndex);
     if (!theme) {
-        static uint16_t *g_themeColors = { 0 };
-	    return g_themeColors;
+	    return nullptr;
     }
-	return static_cast<uint16_t *>(theme->colors.items);
+	return theme->colors.items;
 }
 
-const uint16_t *getColors() {
-	return static_cast<uint16_t *>(g_mainAssets->colorsDefinition->colors.items);
+const void *getColors() {
+	return g_mainAssets->colorsDefinition->colors.items;
 }
 
 #if EEZ_OPTION_GUI

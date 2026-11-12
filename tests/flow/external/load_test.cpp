@@ -91,10 +91,10 @@ TEST("external/load: module colors have a value for each master theme") {
     auto &themes = assets->colorsDefinition->themes;
     REQUIRE((int)themes.count == (int)g_mainAssets->colorsDefinition->themes.count);
     CHECK_STR(static_cast<const char *>(themes[0]->name), "Default");
-    // mod_fill, mod_line
-    CHECK_EQ((int)themes[0]->colors.count, 2);
+    // mod_fill, mod_line, mod_fill_a128
+    CHECK_EQ((int)themes[0]->colors.count, 3);
     // the custom colors: #8040c0 of mod_custom_box and the default style colors
-    CHECK(ext::customColorIndex(assets, ext::MOD_CUSTOM_565) != 0);
+    CHECK(ext::customColorIndex(assets, ext::MOD_CUSTOM_COLOR32) != 0);
 }
 
 TEST("external/load: own items have negative indexes, master styles their ids") {
@@ -112,7 +112,7 @@ TEST("external/load: module colors are 65534 - k, the custom colors follow") {
     Assets *assets = ext::load();
     CHECK_EQ((int)assets->styles[fwtest_ext::STYLE_ID_MOD_FILL_BOX - 1]->backgroundColor, (int)ext::MOD_FILL_INDEX);
     CHECK_EQ((int)assets->styles[fwtest_ext::STYLE_ID_MOD_LINE_BOX - 1]->backgroundColor, (int)ext::MOD_LINE_INDEX);
-    uint16_t customIndex = ext::customColorIndex(assets, ext::MOD_CUSTOM_565);
+    uint16_t customIndex = ext::customColorIndex(assets, ext::MOD_CUSTOM_COLOR32);
     CHECK(customIndex != 0 && customIndex < ext::MOD_LINE_INDEX);
     CHECK_EQ((int)assets->styles[fwtest_ext::STYLE_ID_MOD_CUSTOM_BOX - 1]->backgroundColor, (int)customIndex);
     // a master color keeps its index

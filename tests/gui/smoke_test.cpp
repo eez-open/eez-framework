@@ -35,7 +35,7 @@ TEST("harness: frames advance the fake clock") {
 
 TEST("harness: the accent box is drawn") {
     // accent_box: 10,60 100x50, background "accent" #2060c0, border 2 px
-    // (RGB565 colors: #2060c0 is (32, 96, 192) exactly)
+    // (#2060c0 is (32, 96, 192))
     uint32_t inside = harness::pixel(60, 85);
     CHECK_EQ(inside & 0xFF, 0x20u);
     CHECK_EQ((inside >> 8) & 0xFF, 0x60u);

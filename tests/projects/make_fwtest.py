@@ -179,7 +179,7 @@ def project(parts):
                 "flowSupport": True,
                 "displayWidth": DISPLAY_WIDTH,
                 "displayHeight": DISPLAY_HEIGHT,
-                "colorBpp": "16",
+                "colorBpp": "32",
                 "bitmapColorFormat": "RGB",
             },
             "build": {

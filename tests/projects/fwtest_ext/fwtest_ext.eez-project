@@ -10,7 +10,7 @@
       "flowSupport": true,
       "displayWidth": 800,
       "displayHeight": 480,
-      "colorBpp": "16",
+      "colorBpp": "32",
       "bitmapColorFormat": "RGB"
     },
     "build": {
@@ -957,6 +957,14 @@
           "tags": "external",
           "alwaysBuild": true,
           "backgroundColor": "#8040c0",
+          "childStyles": []
+        },
+        {
+          "objID": "cde1c551-c8a5-5993-b379-54a57cfe0fca",
+          "name": "mod_alpha_box",
+          "tags": "external",
+          "alwaysBuild": true,
+          "backgroundColor": "mod_fill_a128",
           "childStyles": []
         },
         {
@@ -3152,6 +3160,14 @@
       "tags": "external",
       "themeValues": {
         "Default": "#c04000"
+      }
+    },
+    {
+      "objID": "e8f31027-cbb7-512c-8c75-c8edb7386651",
+      "name": "mod_fill_a128",
+      "tags": "external",
+      "themeValues": {
+        "Default": "#40c08080"
       }
     }
   ],

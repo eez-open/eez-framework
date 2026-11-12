@@ -131,9 +131,16 @@ TEST("external/draw: module colors 65534 - k resolve against the cursor assets")
 
 TEST("external/draw: a custom color of the external assets comes after the module colors") {
     Assets *assets = loadIntoCursor();
-    uint16_t customIndex = ext::customColorIndex(assets, ext::MOD_CUSTOM_565);
+    uint16_t customIndex = ext::customColorIndex(assets, ext::MOD_CUSTOM_COLOR32);
     REQUIRE(customIndex != 0);
     CHECK_EQ(colorRgb(customIndex), ext::MOD_CUSTOM);
+}
+
+TEST("external/draw: a module color with alpha keeps its alpha") {
+    loadIntoCursor();
+    CHECK_EQ(display::getColorFromIndex(ext::MOD_FILL_A128_INDEX), 0x8080C040u);
+    CHECK(!display::isColorOpaque(ext::MOD_FILL_A128_INDEX));
+    CHECK(display::isColorOpaque(ext::MOD_FILL_INDEX));
 }
 
 TEST("external/draw: an external color index past the module and custom colors is 0") {

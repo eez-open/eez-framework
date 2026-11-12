@@ -173,7 +173,7 @@ TEST("widgets/gauge: a narrow range at a large value is drawn") {
 TEST("widgets/qrcode: dark and light modules with a border") {
     set(V_A, str("hello"));
     show(PAGE_ID_W_QR);
-    CHECK(count(RECT(QR), WHITE) > 1000);
+    CHECK(count(RECT(QR), TEXT) > 1000);
     CHECK(count(RECT(QR), BLACK) > 1000);
     // the border (one module) is the background
     CHECK_EQ(countOther(QR[0], QR[1], QR[2], 5, BLACK), 0);

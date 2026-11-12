@@ -62,7 +62,7 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 		// with a border radius the corners (and their antialiased edge) don't cover
 		// what is below them, and the background image is not drawn
 		if (!hasBorderRadius) {
-			if (color != TRANSPARENT_COLOR_INDEX && style->opacity == 255) {
+			if (display::isColorOpaque(color) && style->opacity == 255) {
 				// non-transparent color
 				isTransparent = false;
 			} else if (style->backgroundImage) {
@@ -82,7 +82,7 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 				auto &backgroundStyle = widgetCursor.backgroundStyleStack[startStackPointer];
 
 				auto color = backgroundStyle.active ? backgroundStyle.style->activeBackgroundColor : backgroundStyle.style->backgroundColor;
-				if (color != TRANSPARENT_COLOR_INDEX && backgroundStyle.style->opacity == 255) {
+				if (display::isColorOpaque(color) && backgroundStyle.style->opacity == 255) {
 					// non-transparent color
 					break;
 				} else if (backgroundStyle.style->backgroundImage) {
@@ -103,7 +103,7 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 		if (widgetCursor.backgroundStyleStackPointer > 0) {
 			auto &backgroundStyle = widgetCursor.backgroundStyleStack[startStackPointer];
 			auto color = backgroundStyle.active ? backgroundStyle.style->activeBackgroundColor : backgroundStyle.style->backgroundColor;
-			if (color != TRANSPARENT_COLOR_INDEX && backgroundStyle.style->opacity == 255) {
+			if (display::isColorOpaque(color) && backgroundStyle.style->opacity == 255) {
 				hasOpaqueBackground = true;
 			} else if (backgroundStyle.style->backgroundImage) {
 				auto bitmap = getBitmap(backgroundStyle.style->backgroundImage);

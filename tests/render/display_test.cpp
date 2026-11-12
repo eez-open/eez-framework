@@ -62,24 +62,33 @@ uint8_t luminosityStepMin() {
     return DISPLAY_BACKGROUND_LUMINOSITY_STEP_MIN;
 }
 
+// the color c with alpha a over the opaque color below
+uint32_t over(uint32_t c, int a, uint32_t below) {
+    auto mix = [a](int s, int d) { return (uint32_t)((s * a + d * (255 - a) + 127) / 255); };
+    return rgb(mix(render::R(c), render::R(below)), mix(render::G(c), render::G(below)), mix(render::B(c), render::B(below)));
+}
+
+// the same color, each of R, G and B within 1 (rounding)
+bool nearColor(uint32_t a, uint32_t b) {
+    return abs(render::R(a) - render::R(b)) <= 1 && abs(render::G(a) - render::G(b)) <= 1 && abs(render::B(a) - render::B(b)) <= 1;
+}
+
 } // namespace
 
 ////////////////////////////////////////////////////////////////////////////////
 // colors
 
-TEST("render/display: theme color by index (RGB565 exact)") {
-    // accent #2060c0 and render_navy #000080 have no low bits, exact in RGB565
+TEST("render/display: theme color by index") {
     CHECK_EQ(display::getColorFromIndex(COLOR_ID_ACCENT), rgb(0x20, 0x60, 0xC0));
     CHECK_EQ(display::getColorFromIndex(COLOR_ID_RENDER_NAVY), rgb(0, 0, 0x80));
     CHECK_EQ(display::getColorFromIndex(COLOR_ID_BACKGROUND), rgb(0, 0, 0));
 }
 
 TEST("render/display: custom color (not a theme color) by index") {
-    // #336699 in RGB565: 0x33 & 0xF8, 0x66 & 0xFC, 0x99 & 0xF8
-    CHECK_EQ(display::getColorFromIndex(COLOR_ID_CUSTOM_336699), rgb(0x30, 0x64, 0x98));
+    CHECK_EQ(display::getColorFromIndex(COLOR_ID_CUSTOM_336699), rgb(0x33, 0x66, 0x99));
 }
 
-TEST("render/display: getColorRGBAFromIndex is the color with alpha 255") {
+TEST("render/display: getColorRGBAFromIndex of an opaque color has alpha 255") {
     display::ColorRGBA c;
     display::getColorRGBAFromIndex(COLOR_ID_ACCENT, &c);
     CHECK_EQ((int)c.r, 0x20);
@@ -114,8 +123,8 @@ TEST("render/display: color index of an external assets color with the main asse
     CHECK_EQ(display::getColorFromIndex(65534 - 1000), 0u);
 }
 
-TEST_BUG("render/display: white theme color is white (RGB565 expansion replicates the high bits)", "D11") {
-    // #ffffff is (248, 252, 248)
+TEST("render/display: white theme color is white") {
+    // 32-bit theme colors (with RGB565 theme colors #ffffff is (248, 252, 248), D11)
     CHECK_EQ(display::getColorFromIndex(COLOR_ID_TEXT), rgb(255, 255, 255));
 }
 
@@ -137,10 +146,111 @@ TEST_BUG("render/display: the background luminosity step changes the colors at 3
     CHECK(render::R(darker) < render::R(normal));
 }
 
-TEST_BUG("render/display: the transparent color index is a transparent color", "D7") {
-    // TRANSPARENT_COLOR_INDEX (0xFFFF) reads g_colors[65535 - themeCount], past the colors
+TEST("render/display: the transparent color index is a transparent color") {
+    // (D7: it read g_colors[65535 - themeCount], past the colors)
     uint32_t color = display::getColorFromIndex(TRANSPARENT_COLOR_INDEX);
     CHECK_EQ(color >> 24, 0u);
+}
+
+TEST("render/display: a color index past the custom colors is 0") {
+    CHECK_EQ(display::getColorFromIndex(COLOR_ID_CUSTOM_336699 + 1000), 0u);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// colors with alpha (32-bit theme colors)
+
+TEST("render/display: a theme color with alpha keeps its alpha") {
+    CHECK_EQ(display::getColorFromIndex(COLOR_ID_RENDER_RED_A128), 0x800000FFu);
+    CHECK_EQ(display::getColorFromIndex(COLOR_ID_RENDER_BLUE_A0), 0x00FF0000u);
+    display::ColorRGBA c;
+    display::getColorRGBAFromIndex(COLOR_ID_RENDER_WHITE_A64, &c);
+    CHECK_EQ((int)c.r, 255);
+    CHECK_EQ((int)c.g, 255);
+    CHECK_EQ((int)c.b, 255);
+    CHECK_EQ((int)c.a, 64);
+}
+
+TEST("render/display: only a color with alpha 255 is opaque") {
+    CHECK(display::isColorOpaque(COLOR_ID_TEXT));
+    CHECK(display::isColorOpaque(COLOR_ID_CUSTOM_336699));
+    CHECK(!display::isColorOpaque(COLOR_ID_RENDER_RED_A128));
+    CHECK(!display::isColorOpaque(COLOR_ID_RENDER_BLUE_A0));
+    CHECK(!display::isColorOpaque(TRANSPARENT_COLOR_INDEX));
+}
+
+TEST("render/display: fillRect blends a color with alpha over what is below") {
+    render::resetDrawState();
+    render::clearRect(100, 100, 109, 109, rgb(128, 128, 128));
+    display::setColor(COLOR_ID_RENDER_RED_A128);
+    display::fillRect(100, 100, 109, 109);
+    CHECK(nearColor(px(105, 105), over(rgb(255, 0, 0), 128, rgb(128, 128, 128))));
+    // filled again: blended over the result
+    display::fillRect(100, 100, 109, 109);
+    CHECK(nearColor(px(105, 105), over(rgb(255, 0, 0), 128, over(rgb(255, 0, 0), 128, rgb(128, 128, 128)))));
+}
+
+TEST("render/display: the alpha of the color and the opacity multiply") {
+    render::resetDrawState();
+    render::clearRect(100, 100, 109, 109, rgb(128, 128, 128));
+    display::setColor(COLOR_ID_RENDER_RED_A128);
+    auto savedOpacity = display::setOpacity(128);
+    display::fillRect(100, 100, 109, 109);
+    display::setOpacity(savedOpacity);
+    CHECK(nearColor(px(105, 105), over(rgb(255, 0, 0), 64, rgb(128, 128, 128))));
+}
+
+TEST("render/display: a color with alpha 0 draws nothing") {
+    render::resetDrawState();
+    render::clearRect(100, 100, 109, 109, rgb(128, 128, 128));
+    display::setColor(COLOR_ID_RENDER_BLUE_A0);
+    display::fillRect(100, 100, 109, 109);
+    display::drawPixel(100, 100);
+    CHECK_EQ(px(105, 105), rgb(128, 128, 128));
+    CHECK_EQ(px(100, 100), rgb(128, 128, 128));
+}
+
+TEST("render/display: drawPixel blends a color with alpha, also with a pixel opacity") {
+    render::resetDrawState();
+    render::clearRect(100, 100, 109, 109, rgb(128, 128, 128));
+    display::setColor(COLOR_ID_RENDER_RED_A128);
+    display::drawPixel(100, 100);
+    display::drawPixel(102, 100, 128);
+    CHECK(nearColor(px(100, 100), over(rgb(255, 0, 0), 128, rgb(128, 128, 128))));
+    CHECK(nearColor(px(102, 100), over(rgb(255, 0, 0), 64, rgb(128, 128, 128))));
+}
+
+TEST("render/display: drawPixel draws with the opacity") {
+    render::resetDrawState();
+    render::clearRect(100, 100, 109, 109, rgb(128, 128, 128));
+    display::setColor(COLOR_ID_RENDER_RED);
+    auto savedOpacity = display::setOpacity(128);
+    display::drawPixel(100, 100);
+    display::setOpacity(savedOpacity);
+    CHECK(nearColor(px(100, 100), over(rgb(0xF8, 0, 0), 128, rgb(128, 128, 128))));
+}
+
+TEST("render/display: a rounded rectangle filled with a color with alpha") {
+    render::resetDrawState();
+    render::clearRect(100, 100, 159, 159, rgb(128, 128, 128));
+    display::setBackColor(COLOR_ID_RENDER_RED_A128);
+    display::fillRoundedRect(100, 100, 159, 159, 0, 10, false, true);
+    CHECK(nearColor(px(130, 130), over(rgb(255, 0, 0), 128, rgb(128, 128, 128))));
+    // the corner outside of the radius is not drawn
+    CHECK_EQ(px(100, 100), rgb(128, 128, 128));
+}
+
+TEST("render/display: a path filled with a color with alpha") {
+    render::resetDrawState();
+    render::clearRect(100, 100, 159, 159, rgb(128, 128, 128));
+    display::setColor(COLOR_ID_RENDER_RED_A128);
+    display::Path path;
+    path.moveTo(100, 100);
+    path.lineTo(160, 100);
+    path.lineTo(160, 160);
+    path.lineTo(100, 160);
+    path.close();
+    display::fillPath(path);
+    CHECK(nearColor(px(130, 130), over(rgb(255, 0, 0), 128, rgb(128, 128, 128))));
 }
 
 // The lookups read the offset table past its end, so what a single id gives

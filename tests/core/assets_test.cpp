@@ -309,15 +309,18 @@ TEST("core/assets: themes") {
     CHECK(getColors() != nullptr);
 }
 
-TEST("core/assets: theme colors are RGB565") {
-    const uint16_t *colors = getThemeColors(0);
+TEST("core/assets: theme colors are 32-bit colors (R in the low byte, alpha in the high byte)") {
+    // the test projects have Color BPP 32
+    CHECK_EQ((int)g_mainAssets->projectMinorVersion, 1);
+    const uint32_t *colors = (const uint32_t *)getThemeColors(0);
     REQUIRE(colors != nullptr);
-    CHECK_EQ((int)colors[COLOR_ID_BACKGROUND], 0x0000);  // #000000
-    CHECK_EQ((int)colors[COLOR_ID_TEXT], 0xFFFF);        // #ffffff
-    CHECK_EQ((int)colors[COLOR_ID_ACCENT], 0x2318);      // #2060c0
-    CHECK_EQ((int)colors[COLOR_ID_BOOKMARK], 0xFFE0);    // #ffff00
-    CHECK_EQ((int)colors[COLOR_ID_BACKDROP], 0x2104);    // #202020
-    CHECK_EQ((int)colors[COLOR_ID_ERROR], 0xC000);       // #c00000
+    CHECK_EQ(colors[COLOR_ID_BACKGROUND], 0xFF000000u);       // #000000
+    CHECK_EQ(colors[COLOR_ID_TEXT], 0xFFFFFFFFu);             // #ffffff
+    CHECK_EQ(colors[COLOR_ID_ACCENT], 0xFFC06020u);           // #2060c0
+    CHECK_EQ(colors[COLOR_ID_BOOKMARK], 0xFF00FFFFu);         // #ffff00
+    CHECK_EQ(colors[COLOR_ID_BACKDROP], 0xFF202020u);         // #202020
+    CHECK_EQ(colors[COLOR_ID_ERROR], 0xFF0000C0u);            // #c00000
+    CHECK_EQ(colors[COLOR_ID_RENDER_RED_A128], 0x800000FFu);  // #ff000080
 }
 
 TEST("core/assets: getColorFromIndex of a theme color") {
@@ -328,9 +331,14 @@ TEST("core/assets: getColorFromIndex of a theme color") {
     CHECK_EQ((int)rgba.b, 0xC0);
     CHECK_EQ((int)rgba.a, 255);
     display::getColorRGBAFromIndex(COLOR_ID_TEXT, &rgba);
-    CHECK_EQ((int)rgba.r, 0xF8);
-    CHECK_EQ((int)rgba.g, 0xFC);
-    CHECK_EQ((int)rgba.b, 0xF8);
+    CHECK_EQ((int)rgba.r, 0xFF);
+    CHECK_EQ((int)rgba.g, 0xFF);
+    CHECK_EQ((int)rgba.b, 0xFF);
+    display::getColorRGBAFromIndex(COLOR_ID_RENDER_RED_A128, &rgba);
+    CHECK_EQ((int)rgba.r, 0xFF);
+    CHECK_EQ((int)rgba.g, 0);
+    CHECK_EQ((int)rgba.b, 0);
+    CHECK_EQ((int)rgba.a, 0x80);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

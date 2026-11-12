@@ -77,11 +77,13 @@ namespace fwtest_ext {
 """
 
 ################################################################################
-# colors: (name, value for the master theme "Default"), RGB565 exact values
+# colors: (name, value for the master theme "Default"), 32-bit colors
 
 COLORS = [
     ("mod_fill", "#40c080"),
     ("mod_line", "#c04000"),
+    # with alpha 128
+    ("mod_fill_a128", "#40c08080"),
 ]
 
 # a color that is not a project color: a custom color of the external assets
@@ -94,6 +96,7 @@ STYLES = [
     style("mod_fill_box", backgroundColor="mod_fill"),
     style("mod_line_box", backgroundColor="mod_line"),
     style("mod_custom_box", backgroundColor=CUSTOM_COLOR),
+    style("mod_alpha_box", backgroundColor="mod_fill_a128"),
     style("mod_master_color_box", backgroundColor="bookmark"),
     style("mod_icons_text", font="mod_icons"),
     # the style of the dynamic user widget of mod_host
@@ -389,7 +392,7 @@ def project():
                 "flowSupport": True,
                 "displayWidth": DISPLAY_WIDTH,
                 "displayHeight": DISPLAY_HEIGHT,
-                "colorBpp": "16",
+                "colorBpp": "32",
                 "bitmapColorFormat": "RGB",
             },
             "build": {

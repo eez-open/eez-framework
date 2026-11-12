@@ -134,7 +134,7 @@ int countOther(int x, int y, int w, int h, uint32_t color);
 // colors of fwtest (master) and fwtest_ext
 static const uint32_t BLACK = 0x000000;
 static const uint32_t ACCENT = 0xC06020;        // #2060c0
-static const uint32_t BOOKMARK = 0x00FCF8;      // #ffff00 in RGB565 (#f8fc00)
+static const uint32_t BOOKMARK = 0x00FFFF;      // #ffff00
 static const uint32_t MOD_FILL = 0x80C040;      // #40c080
 static const uint32_t MOD_LINE = 0x0040C0;      // #c04000
 static const uint32_t MOD_CUSTOM = 0xC04080;    // #8040c0
@@ -143,12 +143,13 @@ static const uint32_t MOD_BITMAP = 0x40C080;    // #80c040
 // the color indexes of fwtest_ext: module colors 65534 - k, then the custom colors
 static const uint16_t MOD_FILL_INDEX = 65534;
 static const uint16_t MOD_LINE_INDEX = 65533;
+static const uint16_t MOD_FILL_A128_INDEX = 65532;
 
-// RGB565 of the custom color #8040c0
-static const uint16_t MOD_CUSTOM_565 = 0x8218;
+// the custom color #8040c0 as stored in the assets (32-bit colors)
+static const uint32_t MOD_CUSTOM_COLOR32 = 0xFFC04080;
 
 // the color index of a custom color of the external assets (65534 - number of
 // module colors - index in the custom colors), 0 if it is not there
-uint16_t customColorIndex(Assets *assets, uint16_t rgb565);
+uint16_t customColorIndex(Assets *assets, uint32_t color32);
 
 } // namespace ext
