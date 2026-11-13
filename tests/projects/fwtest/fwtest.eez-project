@@ -37474,6 +37474,7 @@
           "alwaysBuild": true,
           "alignHorizontal": "left",
           "padding": "4",
+          "borderRadius": "6",
           "childStyles": []
         },
         {

@@ -678,6 +678,31 @@ TEST("gui/page: a disabled select item can't be selected, a tap on it closes the
     CHECK_EQ(activePageId(), (int)PAGE_ID_GUI_PAGE_A);
 }
 
+TEST("gui/page: a pressed select item keeps the popup background in its rounded corners") {
+    // the items have the radius 6: drawn again while pressed, what is below
+    // their corners is the popup background (black), not the white page below
+    // the popup
+    app()->showPage(PAGE_ID_GUI_PAGE_LIGHT);
+    harness::frame(2);
+    SelectFromEnumPage::pushSelectFromEnumPage(app(), g_items, 10, nullptr, onSet);
+    harness::frame(2);
+    harness::advance(400);
+    auto page = (InternalPage *)app()->getActivePage();
+    int x, y;
+    WidgetCursor item;
+    REQUIRE(findInternalWidget(page, [](const WidgetCursor &wc) {
+        return getWidgetAction(wc) == ACTION_ID_INTERNAL_SELECT_ENUM_ITEM && wc.widget->data == 0;
+    }, x, y, &item));
+    press(item.x + item.w / 2, item.y + item.h / 2);
+    int x2 = item.x + item.w - 1;
+    int y2 = item.y + item.h - 1;
+    CHECK_EQ(harness::pixel(item.x, item.y) & 0xFFFFFF, 0u);
+    CHECK_EQ(harness::pixel(x2, item.y) & 0xFFFFFF, 0u);
+    CHECK_EQ(harness::pixel(item.x, y2) & 0xFFFFFF, 0u);
+    CHECK_EQ(harness::pixel(x2, y2) & 0xFFFFFF, 0u);
+    releaseTouch();
+}
+
 TEST("gui/page: without onSet a tap on a select item closes the page") {
     showPageA();
     SelectFromEnumPage::pushSelectFromEnumPage(app(), g_items, 10, nullptr, nullptr);

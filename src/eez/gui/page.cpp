@@ -765,7 +765,7 @@ void SelectFromEnumPage::findPagePosition() {
 }
 
 void SelectFromEnumPage::updateInternalPage() {
-    const WidgetCursor &widgetCursor = g_widgetCursor;
+    WidgetCursor &widgetCursor = g_widgetCursor;
 
     if (widgetCursor.hasPreviousState && !dirty) {
 		return;
@@ -781,6 +781,12 @@ void SelectFromEnumPage::updateInternalPage() {
     int x2 = x + width - 1;
     int y2 = y + height - 1;
     drawBorderAndBackground(x1, y1, x2, y2, containerStyle, containerStyle->backgroundColor);
+
+    // the container is the background of the items (below their rounded
+    // corners when an item is drawn again, e.g. pressed)
+    if (g_findCallback == nullptr && !widgetCursor.refreshed) {
+        widgetCursor.pushBackground(x, y, containerStyle, false);
+    }
 
     // draw labels: the item with the current value is selected (its selected
     // state style, or drawn active without it), the touched item is pressed
@@ -812,6 +818,10 @@ void SelectFromEnumPage::updateInternalPage() {
                 active
             );
         }
+    }
+
+    if (g_findCallback == nullptr && !widgetCursor.refreshed) {
+        widgetCursor.popBackground();
     }
 
     dirty = false;

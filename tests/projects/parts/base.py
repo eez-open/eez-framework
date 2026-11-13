@@ -23,7 +23,9 @@ STYLES = [
     style("error_alert_button", backgroundColor="background", borderSize="1", borderColor="text", padding="4"),
     style("select_enum_item_popup_container", borderSize="1", borderColor="text", padding="4"),
     style("select_enum_item_popup_container_s", borderSize="1", borderColor="text", padding="2"),
-    style("select_enum_item_popup_item", alignHorizontal="left", padding="4"),
+    # rounded: a pressed item keeps the popup background in its corners
+    # (gui/popups_test.cpp)
+    style("select_enum_item_popup_item", alignHorizontal="left", padding="4", borderRadius="6"),
     style("select_enum_item_popup_item_s", alignHorizontal="left", padding="2"),
     style("select_enum_item_popup_disabled_item", alignHorizontal="left", color="backdrop", padding="4"),
     style("select_enum_item_popup_disabled_item_s", alignHorizontal="left", color="backdrop", padding="2"),
