@@ -38,6 +38,8 @@ namespace gui {
 
 ScrollLists g_findEnclosingScrollLists;
 
+int (*g_editorScrollPositionHook)(const WidgetCursor &widgetCursor) = nullptr;
+
 static int getTouchScrollPixelOffset(const WidgetCursor &widgetCursor, int startPosition);
 static int getTouchScrollLocalPosition(const WidgetCursor &widgetCursor, int startPosition);
 
@@ -62,6 +64,12 @@ bool ScrollableWidgetState::updateScrollState(const WidgetCursor &widgetCursor, 
         int lines = (count + itemsPerLine - 1) / itemsPerLine;
         maxPosition = lines > visibleLines ? lines - visibleLines : 0;
         newStartPosition = getTouchScrollLocalPosition(widgetCursor, startPosition);
+        if (g_editorScrollPositionHook) {
+            int line = g_editorScrollPositionHook(widgetCursor);
+            if (line >= 0) {
+                newStartPosition = line * itemsPerLine;
+            }
+        }
         if (newStartPosition > maxPosition * itemsPerLine) {
             newStartPosition = maxPosition * itemsPerLine;
         }

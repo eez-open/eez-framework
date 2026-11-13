@@ -6,6 +6,8 @@
 
 #include "gui_test.h"
 
+#include <eez/gui/scrolling.h>
+
 using namespace gui_test;
 
 static void showLists() {
@@ -305,6 +307,43 @@ TEST("gui/scrolling: the container doesn't scroll beyond the end of its content"
     drag(200, 290, 10);
     drag(200, 290, 10);
     settle();
+    // 600 px of content in 300 px: the last row at the bottom
+    CHECK_EQ(rowAt(200, 270), 9);
+    CHECK_EQ(rowAt(200, 5), 5);
+}
+
+// the position the editor sets for every scrollable widget (the hook is set
+// while the test runs)
+static int g_editorScrollPosition;
+
+static int editorScrollPosition(const WidgetCursor &) {
+    return g_editorScrollPosition;
+}
+
+struct EditorScrollHook {
+    explicit EditorScrollHook(int position) {
+        g_editorScrollPosition = position;
+        g_editorScrollPositionHook = editorScrollPosition;
+    }
+    ~EditorScrollHook() {
+        g_editorScrollPositionHook = nullptr;
+    }
+};
+
+TEST("gui/scrolling: the editor scrolls the container by pixels") {
+    showScroll();
+    EditorScrollHook hook(130);
+    harness::frame(2);
+    // row 2 from y = -10 to 49, row 3 from 50
+    CHECK_EQ(rowAt(200, 49), 2);
+    CHECK_EQ(rowAt(200, 50), 3);
+    CHECK_EQ(rowAt(200, 295), 7);
+}
+
+TEST("gui/scrolling: the editor doesn't scroll the container beyond the end of its content") {
+    showScroll();
+    EditorScrollHook hook(1000);
+    harness::frame(2);
     // 600 px of content in 300 px: the last row at the bottom
     CHECK_EQ(rowAt(200, 270), 9);
     CHECK_EQ(rowAt(200, 5), 5);

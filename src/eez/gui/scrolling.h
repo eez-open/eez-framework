@@ -116,6 +116,12 @@ extern ScrollLists g_findEnclosingScrollLists;
 
 bool isTouchScrollableList(const WidgetCursor &widgetCursor);
 
+// The Studio page editor scrolls a widget that keeps its position in its
+// state (a List, a Grid or a scrolling Container whose data has no position):
+// its position in lines (px for a Container), -1 for none. Clamped as a
+// position set by touch scrolling. Not set (nullptr) outside of the editor.
+extern int (*g_editorScrollPositionHook)(const WidgetCursor &widgetCursor);
+
 // Called on touch down with the scrollable lists under the finger (can be empty).
 // Returns true if the touch caught the list while it was still moving: the
 // touch then belongs to the list from the start.
