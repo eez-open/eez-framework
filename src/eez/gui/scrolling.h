@@ -55,8 +55,18 @@ struct ScrollableWidgetState : public WidgetState {
     int lineExtent;     // line size along the scroll direction in px (without gap)
     int itemsPerLine;   // 1 for the List
     int maxPosition;    // in lines
-    // scroll indicator drawn in the last frame (w == 0 if not drawn)
+    // Page dots instead of the scroll indicator, in this style (0: the
+    // indicator): one dot per scroll position in a row at the bottom of the
+    // widget, over the items. A dot is a box of the border and the padding of
+    // the style (as an empty box in CSS), the gap between the dots is the dot
+    // width and the row is one dot height above the bottom. The dot of the
+    // position is drawn in the selected state of the style (with the color and
+    // the background swapped if it has no selected state style).
+    int16_t pageDotsStyle = 0;
+    // scroll indicator (the row of the page dots) drawn in the last frame
+    // (w == 0 if not drawn) and the page dot of the position then
     Rect renderedScrollIndicator = {};
+    int renderedPageDot = -1;
     // render() was called in this frame
     bool rendered = false;
 
@@ -88,6 +98,7 @@ protected:
         display::ClipRect savedClipRect;
         Rect savedFindClipRect;
         Rect scrollIndicator;
+        int pageDot;
         bool drawScrollIndicator;
         bool savedDirty;
     };

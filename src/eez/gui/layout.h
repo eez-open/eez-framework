@@ -86,6 +86,10 @@ bool isRowOrColumn(const Widget *widget);
 // Returns the number of the laid out children and a hash of the result.
 int layoutChildren(const WidgetCursor &widgetCursor, LayoutChild *children, uint32_t &hash);
 
+// The size of the visible children of the row or column widgetCursor.widget
+// with the gaps, the padding and the border.
+void getLayoutContentSize(const WidgetCursor &widgetCursor, int &w, int &h);
+
 // The child of a row or column that is enumerated: its size is set by the
 // layout, the child doesn't change it (a Text widget with fit to content).
 extern const Widget *g_layoutPlacedWidget;

@@ -27,6 +27,9 @@ struct ListWidget : public Widget {
     AssetsPtr<Widget> itemWidget;
     uint8_t listType; // LIST_TYPE_VERTICAL or LIST_TYPE_HORIZONTAL
     uint8_t gap;
+    // a horizontal list shows page dots in this style instead of the scroll
+    // indicator (0: the indicator), see ScrollableWidgetState::pageDotsStyle
+    int16_t pageDotsStyle;
 };
 
 struct ListWidgetState : public ScrollableWidgetState {

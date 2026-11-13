@@ -52,6 +52,7 @@ bool ListWidgetState::updateState() {
     }
 
     isVertical = widget->listType == LIST_TYPE_VERTICAL;
+    pageDotsStyle = isVertical ? 0 : widget->pageDotsStyle;
     lineExtent = isVertical ? getItemHeight(widget, widgetCursor.h) : getItemWidth(widget, widgetCursor.w);
     pitch = lineExtent + widget->gap;
     itemsPerLine = 1;

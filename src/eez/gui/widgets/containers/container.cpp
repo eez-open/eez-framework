@@ -31,6 +31,31 @@
 namespace eez {
 namespace gui {
 
+// the scrolling of the container widgetCursor.widget (not of an overlay)
+static bool isScrollContainer(const ContainerWidget *widget, const Overlay *overlay) {
+	return !overlay && widget->scroll == CONTAINER_WIDGET_SCROLL_VERTICAL;
+}
+
+// The height of the content of the scrolling container widgetCursor.widget: of
+// a row or column its content size, else the bottom of the lowest child with
+// the padding and the border of the container under it.
+static int getScrollContentHeight(const WidgetCursor &widgetCursor) {
+	auto widget = (const ContainerWidget *)widgetCursor.widget;
+	if (isRowOrColumn(widget)) {
+		int w, h;
+		getLayoutContentSize(widgetCursor, w, h);
+		return h;
+	}
+	int bottom = 0;
+	auto &widgets = widget->widgets;
+	for (uint32_t index = 0; index < widgets.count; ++index) {
+		auto child = widgets[index];
+		bottom = MAX(bottom, child->y + child->height);
+	}
+	const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
+	return bottom + style->paddingBottom + style->borderSizeBottom;
+}
+
 bool ContainerWidgetState::updateState() {
     WIDGET_STATE_START_EVEN_IF_HIDDEN(ContainerWidget);
 
@@ -51,6 +76,18 @@ bool ContainerWidgetState::updateState() {
 		DATA_OPERATION_FUNCTION(containerWidget->overlay, DATA_OPERATION_UPDATE_OVERLAY_DATA, widgetCursor, widgetCursorValue);
 
 		WIDGET_STATE(overlayState, overlay->state);
+	}
+
+	if (isScrollContainer(widget, overlay)) {
+		// lines of 1 px (see ContainerWidgetState)
+		count = MAX(getScrollContentHeight(widgetCursor), (int)widgetCursor.h);
+		isVertical = true;
+		lineExtent = 1;
+		pitch = 1;
+		itemsPerLine = 1;
+		if (updateScrollState(widgetCursor, EEZ_DATA_ID_NONE, widgetCursor.h, hasPreviousState)) {
+			hasPreviousState = false;
+		}
 	}
 
 	WIDGET_STATE_END()
@@ -75,6 +112,8 @@ void ContainerWidgetState::render() {
 	);
 
 	repainted = true;
+
+	ScrollableWidgetState::render();
 }
 
 void ContainerWidgetState::enumChildren() {
@@ -93,9 +132,16 @@ void ContainerWidgetState::enumChildren() {
 	LayoutChild layout[LAYOUT_MAX_CHILDREN];
 	int layoutCount = 0;
 	bool rowOrColumn = !overlay && (widget->layout == CONTAINER_WIDGET_LAYOUT_HORIZONTAL || widget->layout == CONTAINER_WIDGET_LAYOUT_VERTICAL);
+	bool scroll = isScrollContainer(widget, overlay);
 	if (rowOrColumn) {
 		uint32_t hash;
+		// a scrolling row or column is laid out in the height of its content
+		auto savedH = widgetCursor.h;
+		if (scroll) {
+			widgetCursor.h = count;
+		}
 		layoutCount = layoutChildren(widgetCursor, layout, hash);
+		widgetCursor.h = savedH;
 		if (g_findCallback == nullptr && hash != layoutHash) {
 			layoutHash = hash;
 			if (!repainted && !widgetCursor.refreshed) {
@@ -128,11 +174,25 @@ void ContainerWidgetState::enumChildren() {
 		}
 	}
 
+	// a scrolling container: clipped to the container, found as a scroll list
+	// by the touch, drawn again when it is moved, the scroll indicator over the
+	// children (as a List, see ScrollableWidgetState)
+	EnumChildrenContext scrollContext;
+	if (scroll) {
+		beginEnumChildren(scrollContext);
+	}
+
 	// the children are inside of the rounded corners
 	ChildrenRoundedClip roundedClip;
 	roundedClip.begin(widgetCursor, overlay ? nullptr : stateStyle.style);
 
 	auto savedWidget = widgetCursor.widget;
+
+	// the children of a scrolling container are moved up by the scroll position
+	auto yBeforeScroll = widgetCursor.y;
+	if (scroll) {
+		widgetCursor.y -= startPosition + scrollContext.renderPixelOffset;
+	}
 
 	int xOffset = 0;
 	int yOffset = 0;
@@ -253,8 +313,13 @@ void ContainerWidgetState::enumChildren() {
 	}
 
 	widgetCursor.widget = savedWidget;
+	widgetCursor.y = yBeforeScroll;
 
 	roundedClip.end();
+
+	if (scroll) {
+		endEnumChildren(scrollContext);
+	}
 
 	if (g_findCallback == nullptr) {
 		if (overlay) {

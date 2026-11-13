@@ -275,3 +275,96 @@ TEST("render/layout: right to left mirrors a row") {
     CHECK_BOX(find(BLUE, 380, rowY(0), 400, 50), 625, rowY(0) + 5, 30, 40);
     g_isRTL = false;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// a value with a label, a unit and a quantity line (gui/draw.h drawValueParts,
+// the page layout_parts)
+
+namespace {
+
+const uint32_t WHITE = rgb(0xF8, 0xFC, 0xF8);
+
+void showParts() {
+    g_isRTL = false;
+    render::showPage(PAGE_ID_LAYOUT_PARTS);
+}
+
+// "LBL" above "12.345" and "mA": 4 + the widest line + 4
+int partsWidth() {
+    int label = measure(STYLE_ID_LAYOUT_PL, "LBL");
+    int line = measure(STYLE_ID_LAYOUT_PV, "12.345") + 6 + measure(STYLE_ID_LAYOUT_PU, "mA");
+    return 4 + (label > line ? label : line) + 4;
+}
+
+} // namespace
+
+TEST("render/layout: the label is above the value, the unit after the value on its baseline") {
+    showParts();
+    // the widget at (20, 20): the label line from y = 24 (26 + the padding 2),
+    // the value line from y = 52 (height 52, the baseline at 94)
+    Box label = find(GREEN, 20, 20, 360, 110);
+    Box value = find(WHITE, 20, 20, 360, 110);
+    Box unit = find(YELLOW, 20, 20, 360, 110);
+    CHECK(label.w > 0 && value.w > 0 && unit.w > 0);
+    CHECK(label.x >= 24 && label.x <= 27);
+    CHECK(label.y >= 24 && label.y + label.h <= 50);
+    CHECK(value.x >= 24 && value.x <= 28);
+    CHECK(value.y >= 52 && value.y + value.h <= 104);
+    // digits and "mA" end on the baseline
+    int valueBottom = value.y + value.h;
+    int unitBottom = unit.y + unit.h;
+    CHECK(valueBottom >= 93 && valueBottom <= 95);
+    CHECK(unitBottom >= valueBottom - 1 && unitBottom <= valueBottom + 1);
+    // the unit drawn 6 px after the advance of the value (its glyph starts
+    // after its left side bearing)
+    int unitX = 24 + measure(STYLE_ID_LAYOUT_PV, "12.345") + 6;
+    CHECK(unit.x >= unitX && unit.x <= unitX + 3);
+}
+
+TEST("render/layout: a value with a label is as big as its content and on the baseline in a row") {
+    showParts();
+    int small = measure(STYLE_ID_LAYOUT_TEXT_SMALL, "Ag");
+    CHECK_EQ(getTextBaseline(getStyle(STYLE_ID_LAYOUT_TEXT_SMALL), 26), 21);
+    // 4 + 28 (the label) + 52 (the value line) + 4 high, the baseline at
+    // 4 + 28 + 42 = 74: the text at 74 - 21 = 53
+    CHECK_BOX(find(BLUE, 20, 150, 420, 110), 25 + small + 10, 155, partsWidth(), 88);
+    CHECK_BOX(find(ORANGE, 20, 150, 420, 110), 25, 155 + 53, small, 26);
+}
+
+TEST("render/layout: an Input with a label and a quantity line, on the baseline in a row") {
+    showParts();
+    int small = measure(STYLE_ID_LAYOUT_TEXT_SMALL, "Ag");
+    int x = 25 + small + 10;
+    CHECK_BOX(find(BLUE, 20, 280, 420, 120), x, 285, 200, 100);
+    CHECK_BOX(find(ORANGE, 20, 280, 420, 120), 25, 285 + 53, small, 26);
+    // the line across the content box: under the label (28), the value line
+    // (52) and the padding 3 of the line style
+    CHECK_BOX(find(RED, x, 285, 200, 100), x + 4, 285 + 4 + 28 + 52 + 3, 192, 2);
+    Box label = find(GREEN, x, 285, 200, 100);
+    CHECK(label.w > 0 && label.y >= 289 && label.y + label.h <= 289 + 26);
+    Box value = find(WHITE, x, 285, 200, 100);
+    CHECK(value.w > 0 && value.y >= 289 + 28 && value.y + value.h <= 285 + 4 + 28 + 52);
+}
+
+TEST("render/layout: the page with the value parts is drawn as a full redraw") {
+    showParts();
+    CHECK_EQ(render::compareWithFullRedraw("layout_parts"), 0);
+}
+
+TEST("render/layout: right aligned values end at one x, the units are in the right padding") {
+    showParts();
+    // the widgets at x = 460, 300 wide, the right padding 40: the values end
+    // at 460 + 300 - 1 - 40 (the last pixel one before), the units 6 px after
+    Box v = find(WHITE, 460, 20, 300, 60);
+    Box ma = find(WHITE, 460, 90, 300, 60);
+    Box vUnit = find(YELLOW, 460, 20, 300, 60);
+    Box maUnit = find(YELLOW, 460, 90, 300, 60);
+    CHECK(v.w > 0 && ma.w > 0 && vUnit.w > 0 && maUnit.w > 0);
+    int vEnd = v.x + v.w;
+    int maEnd = ma.x + ma.w;
+    CHECK(vEnd >= 715 && vEnd <= 719);
+    CHECK(maEnd >= 715 && maEnd <= 719);
+    int unitX = 719 + 6;
+    CHECK(vUnit.x >= unitX && vUnit.x <= unitX + 3);
+    CHECK(maUnit.x >= unitX && maUnit.x <= unitX + 3);
+}

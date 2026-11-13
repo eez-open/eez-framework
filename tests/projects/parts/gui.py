@@ -14,6 +14,9 @@ STYLES = [
     style("gui_key", backgroundColor="accent", activeBackgroundColor="error", borderSize="1", borderColor="text"),
     style("gui_list", color="text"),
     style("gui_item", borderSize="1", borderColor="backdrop"),
+    # page dots: 8x8 white, the current one accent
+    style("gui_dot", backgroundColor="text", padding="4"),
+    style("gui_dot_selected", useStyle="gui_dot", state="selected", backgroundColor="accent"),
 ]
 
 GLOBALS = [
@@ -137,8 +140,9 @@ def _text_keypad():
     return page("gui_keypad_text", components)
 
 
-# a vertical list (20 items of 60 px in 300 px) and a grid (60 items, 4 in a
-# row, rows of 60 px in 300 px)
+# a vertical list (20 items of 60 px in 300 px), a grid (60 items, 4 in a
+# row, rows of 60 px in 300 px) and a horizontal list with page dots (20 items
+# of 100 px in 400 px)
 _LISTS = page("gui_lists", [
     widget(
         "ListWidget", "gui/lists/list", 0, 0, 400, 300, "gui_list",
@@ -156,6 +160,11 @@ _LISTS = page("gui_lists", [
             data='"" + $index', eventHandlers=[event_handler("gui/lists/grid_item", "CLICKED", "gui_grid_item")]
         ),
     ),
+    widget(
+        "ListWidget", "gui/lists/hlist", 0, 320, 400, 80, "gui_list",
+        data="gui_list_items", listType="horizontal", gap=0, pageDotsStyle={"useStyle": "gui_dot"},
+        itemWidget=widget("TextWidget", "gui/lists/hitem", 0, 0, 100, 80, "gui_item", data='"" + $index'),
+    ),
     _button("gui/lists/btn", 500, 400, 200, 60, "L1", "gui_click_a"),
 ])
 
@@ -171,4 +180,18 @@ _OVERLAY = page("gui_overlay_page", [
     ),
 ])
 
-PAGES = [_PAGE_A, _PAGE_B, _POPUP, _POPUP2, _DIALOG, _TRANSPARENT, _YES_NO, _numeric_keypad(), _text_keypad(), _LISTS, _OVERLAY]
+# a container that scrolls vertically: 10 rows of 60 px (static layout) in
+# 300 px at 0, 0, 400x300
+_SCROLL = page("gui_scroll", [
+    widget(
+        "ContainerWidget", "gui/scroll/container", 0, 0, 400, 300, "gui_list", layout="static", scroll="vertical",
+        widgets=[
+            widget("TextWidget", "gui/scroll/row_%d" % i, 0, 60 * i, 400, 60, "gui_item", data='"Row %d"' % i,
+                   eventHandlers=[event_handler("gui/scroll/row_%d" % i, "CLICKED", "gui_click_a")])
+            for i in range(10)
+        ],
+    ),
+])
+
+PAGES = [_PAGE_A, _PAGE_B, _POPUP, _POPUP2, _DIALOG, _TRANSPARENT, _YES_NO, _numeric_keypad(), _text_keypad(), _LISTS, _OVERLAY,
+         _SCROLL]

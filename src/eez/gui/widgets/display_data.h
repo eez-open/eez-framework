@@ -24,11 +24,19 @@ struct DisplayDataWidget : public Widget {
     // precision (the smallest step, in that unit), see getValueInUnit; 0 if not set
     int16_t displayUnit;
     int16_t precision;
+    // a text above the value (a flow expression, 0 if not set) in labelStyle
+    // (0: the widget style), see drawValueParts
+    int16_t label;
+    int16_t labelStyle;
+    // the style of the unit with DISPLAY_OPTION_VALUE_AND_UNIT (0: the widget
+    // style), see drawValueParts
+    int16_t unitStyle;
 };
 
 struct DisplayDataWidgetState : public WidgetState {
 	WidgetStateFlags flags;
 	Value data;
+    Value label;
     // style after overrideStyle
     int styleId;
     uint16_t color;
@@ -45,13 +53,19 @@ struct DisplayDataWidgetState : public WidgetState {
 
 private:
     void renderText(const DisplayDataWidget *widget, const Style *style, bool active);
+    void renderParts(const DisplayDataWidget *widget, const Style *style, bool active);
 };
 
 // The size of the text the DisplayData widget widgetCursor.widget shows (its
-// data now, also during the refresh rate) in the font of its style with the
-// padding and the borders. False for the integer, unit and fraction option
-// (two fonts), it keeps its own size.
+// data now, also during the refresh rate, with the label and the unit) with the
+// padding and the borders. False for the integer, unit and fraction option, it
+// keeps its own size.
 bool DisplayDataWidget_getContentSize(const WidgetCursor &widgetCursor, int &w, int &h);
+
+// The y of the baseline of the value the DisplayData widget widgetCursor.widget
+// shows in a box of the height h, from the top of the box; -1 if its style has
+// no font.
+int DisplayDataWidget_getBaseline(const WidgetCursor &widgetCursor, int h);
 
 int DISPLAY_DATA_getCharIndexAtPosition(int xPos, const WidgetCursor &widgetCursor);
 int DISPLAY_DATA_getCursorXPosition(int cursorPosition, const WidgetCursor &widgetCursor);

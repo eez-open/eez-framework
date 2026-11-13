@@ -5,7 +5,9 @@ row) or vertical (a column), see eez-framework gui/layout.h: the gap, the
 alignment on the main axis (justifyContent) and on the cross axis
 (alignItems, alignSelf of a child), growing children, a hidden child, sizes
 from the content (a Text, a row in a column), the baseline of texts in two
-fonts and the right-to-left mirroring.
+fonts and the right-to-left mirroring. The page layout_parts: a DisplayData and
+an Input with a label, a unit and a quantity line (eez-framework
+drawValueParts), alone and in rows on the baseline.
 
 The children are rectangles or texts with a background of their own color, so
 the test finds their boxes in the frame. The tests set the native variables
@@ -43,6 +45,18 @@ STYLES = [
           alignVertical="top", padding="0"),
     style("layout_text_big", backgroundColor="layout_yellow", color="layout_bg", alignHorizontal="left",
           alignVertical="top", padding="0", font="VRobotoBig"),
+    # a value with a label and a unit: the value in VRobotoBig (height 52,
+    # ascent 42) at the top left inside the padding 4, the label in VRoboto
+    # (height 26, ascent 21) with the bottom padding 2, the unit in VRoboto 6 px
+    # after the value, the quantity line a 2 px bottom border 3 px under it
+    style("layout_pv", backgroundColor="layout_blue", color="layout_white", alignHorizontal="left",
+          alignVertical="top", padding="4", font="VRobotoBig"),
+    style("layout_pl", color="layout_green", alignHorizontal="left", padding="0 0 2 0", font="VRoboto"),
+    style("layout_pu", color="layout_yellow", padding="0 0 0 6", font="VRoboto"),
+    style("layout_pline", borderSize="0 0 2 0", borderColor="layout_red", padding="0 0 3 0"),
+    # right aligned: the right padding 40 is the room for the unit
+    style("layout_pv_right", backgroundColor="layout_blue", color="layout_white", alignHorizontal="right",
+          alignVertical="top", padding="4 40 4 4", font="VRobotoBig"),
 ]
 
 GLOBALS = [
@@ -154,7 +168,39 @@ def _columns_page():
     ], style="layout_page")
 
 
+def _parts_dd(key, left, top, width, height, **props):
+    """"LBL" above "12.345" and "mA" (the value and unit option)"""
+    return widget("DisplayDataWidget", ("layout", key), left, top, width, height, "layout_pv",
+                  data='"12.345 mA"', displayOption=7, refreshRate="0", label='"LBL"',
+                  labelStyle={"useStyle": "layout_pl"}, unitStyle={"useStyle": "layout_pu"}, **props)
+
+
+def _parts_page():
+    return page("layout_parts", [
+        _parts_dd("parts_dd", 20, 20, 360, 110),
+        # as big as its content, the value on the baseline of the text
+        _row("row_parts_dd", 20, 150, 420, 110, [
+            text(("layout", "parts_text1"), 0, 0, 10, 10, "Ag", "layout_text_small", fitToContent="both"),
+            _parts_dd("parts_dd_fit", 0, 0, 10, 10, fitToContent="both"),
+        ], alignItems="baseline"),
+        # "SET" above "12.5 V" and the quantity line, on the baseline of the text
+        _row("row_parts_input", 20, 280, 420, 120, [
+            text(("layout", "parts_text2"), 0, 0, 10, 10, "Ag", "layout_text_small", fitToContent="both"),
+            widget("InputEmbeddedWidget", ("layout", "parts_input"), 0, 0, 200, 100, "layout_pv",
+                   data="12.5", inputType="number", min="0", max="100", precision="0.1", unit='"V"',
+                   info='""', defaultValue="0", label='"SET"', labelStyle={"useStyle": "layout_pl"},
+                   lineStyle={"useStyle": "layout_pline"}),
+        ], alignItems="baseline"),
+        # right aligned values with different units end at one x
+        widget("DisplayDataWidget", ("layout", "parts_right_v"), 460, 20, 300, 60, "layout_pv_right",
+               data='"12.000 V"', displayOption=7, refreshRate="0", unitStyle={"useStyle": "layout_pu"}),
+        widget("DisplayDataWidget", ("layout", "parts_right_ma"), 460, 90, 300, 60, "layout_pv_right",
+               data='"0.750 mA"', displayOption=7, refreshRate="0", unitStyle={"useStyle": "layout_pu"}),
+    ], style="layout_page")
+
+
 PAGES = [
     _rows_page(),
     _columns_page(),
+    _parts_page(),
 ]

@@ -27,7 +27,8 @@ STYLES = [
     style("select_enum_item_popup_item_s", alignHorizontal="left", padding="2"),
     style("select_enum_item_popup_disabled_item", alignHorizontal="left", color="backdrop", padding="4"),
     style("select_enum_item_popup_disabled_item_s", alignHorizontal="left", color="backdrop", padding="2"),
-    style("menu_with_buttons_container", borderSize="1", borderColor="text", padding="8"),
+    # rounded: its corners show the page below (gui/popups_test.cpp)
+    style("menu_with_buttons_container", borderSize="1", borderColor="text", padding="8", borderRadius="12"),
     style("menu_with_buttons_message", padding="4"),
     style("menu_with_buttons_button", backgroundColor="accent", padding="4"),
 ]

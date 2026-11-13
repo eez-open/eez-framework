@@ -250,15 +250,27 @@ ToastMessagePage *ToastMessagePage::create(AppContext *appContext, ToastType typ
 void ToastMessagePage::init(AppContext *appContext, ToastType type, const Value& message) {
     this->appContext = appContext;
     this->type = type;
-    this->messageValue = message;
+    // a string is copied: the buffer of the caller can be used again while
+    // the toast is shown (BB3+ compares the message later)
+    if (message.getType() == VALUE_TYPE_STRING) {
+        const char *str = message.getString();
+        this->messageValue = Value::makeStringRef(str ? str : "", -1, 0x5d0a7c21);
+    } else {
+        this->messageValue = message;
+    }
 
     lastActiveWidget = WidgetCursor();
 
     auto styleId = type == INFO_TOAST ? EEZ_STYLE_ID_INFO_ALERT : EEZ_STYLE_ID_ERROR_ALERT;
     auto style = getStyle(styleId);
-    auto actionStyle = getStyle(INFO_TOAST ? EEZ_STYLE_ID_INFO_ALERT_BUTTON : EEZ_STYLE_ID_ERROR_ALERT_BUTTON);
+    auto actionStyleId = type == INFO_TOAST ? EEZ_STYLE_ID_INFO_ALERT_BUTTON : EEZ_STYLE_ID_ERROR_ALERT_BUTTON;
+    auto actionStyle = getStyle(actionStyleId);
 
     font::Font font = styleGetFont(style);
+    font::Font actionFont = styleGetFont(actionStyle);
+    if (!actionFont) {
+        actionFont = font;
+    }
 
     char *line1 = nullptr;
     char *line2 = nullptr;
@@ -283,18 +295,30 @@ void ToastMessagePage::init(AppContext *appContext, ToastType type, const Value&
     int line1Width = display::measureStr(line1, -1, font, 0);
     int line2Width = line2 ? display::measureStr(line2, -1, font, 0) : 0;
     int line3Width = line3 ? display::measureStr(line3, -1, font, 0) : 0;
-    int actionLabelWidth = actionLabel ? (actionStyle->paddingLeft + display::measureStr(actionLabel, -1, font, 0) + actionStyle->paddingRight) : 0;
+    int actionLabelWidth = actionLabel ? (actionStyle->paddingLeft + display::measureStr(actionLabel, -1, actionFont, 0) + actionStyle->paddingRight) : 0;
     int textWidth = MAX(MAX(MAX(MAX(minTextWidth, line1Width), line2Width), line3Width), actionLabelWidth);
+
+    Rect rect;
+    appContext->getBoundingRect(rect);
+
+    // not wider than the display: longer lines (and the button) are cut
+    int insetWidth = style->borderSizeLeft + style->paddingLeft + style->paddingRight + style->borderSizeRight;
+    int maxTextWidth = MAX(rect.w - insetWidth, 0);
+    if (textWidth > maxTextWidth) {
+        textWidth = maxTextWidth;
+        line1Width = MIN(line1Width, textWidth);
+        line2Width = MIN(line2Width, textWidth);
+        line3Width = MIN(line3Width, textWidth);
+        actionLabelWidth = MIN(actionLabelWidth, textWidth);
+    }
 
     int textHeight = font.getHeight();
 
-    width = style->borderSizeLeft + style->paddingLeft +
-        textWidth +
-        style->paddingRight + style->borderSizeRight;
+    width = insetWidth + textWidth;
 
     int numLines = (line3 ? 3 : line2 ? 2 : 1);
 
-	auto actionLabelHeight = actionStyle->paddingTop + textHeight + actionStyle->paddingBottom;
+	auto actionLabelHeight = actionStyle->paddingTop + actionFont.getHeight() + actionStyle->paddingBottom;
 
     height = style->borderSizeTop + style->paddingTop +
         numLines * textHeight + (actionLabel ? (style->paddingTop + actionLabelHeight) : 0) +
@@ -311,15 +335,17 @@ void ToastMessagePage::init(AppContext *appContext, ToastType type, const Value&
 	containerRectangleWidget.width = width;
 	containerRectangleWidget.height = height;
 
-    int yText = style->paddingTop;
+    // the content box: inside the border and the padding
+    int xContent = style->borderSizeLeft + style->paddingLeft;
+    int yText = style->borderSizeTop + style->paddingTop;
 
-    line2Widget.type = WIDGET_TYPE_TEXT;
+    line1Widget.type = WIDGET_TYPE_TEXT;
     line1Widget.data = EEZ_DATA_ID_NONE;
     line1Widget.action = EEZ_ACTION_ID_NONE;
     line1Widget.style = styleId;
     line1Widget.text = line1;
     line1Widget.flags = 0;
-    line1Widget.x = style->paddingLeft + (textWidth - line1Width) / 2;
+    line1Widget.x = xContent + (textWidth - line1Width) / 2;
     line1Widget.y = yText;
     line1Widget.width = line1Width;
     line1Widget.height = textHeight;
@@ -333,7 +359,7 @@ void ToastMessagePage::init(AppContext *appContext, ToastType type, const Value&
         line2Widget.style = styleId;
         line2Widget.text = line2;
         line2Widget.flags = 0;
-        line2Widget.x = style->paddingLeft + (textWidth - line2Width) / 2;
+        line2Widget.x = xContent + (textWidth - line2Width) / 2;
         line2Widget.y = yText;
         line2Widget.width = line2Width;
         line2Widget.height = textHeight;
@@ -347,7 +373,7 @@ void ToastMessagePage::init(AppContext *appContext, ToastType type, const Value&
             line3Widget.style = styleId;
             line3Widget.text = line3;
             line3Widget.flags = 0;
-            line3Widget.x = style->paddingLeft + (textWidth - line3Width) / 2;
+            line3Widget.x = xContent + (textWidth - line3Width) / 2;
             line3Widget.y = yText;
             line3Widget.width = line3Width;
             line3Widget.height = textHeight;
@@ -364,20 +390,16 @@ void ToastMessagePage::init(AppContext *appContext, ToastType type, const Value&
     if (actionLabel) {
         actionWidget.type = WIDGET_TYPE_BUTTON;
         actionWidget.data = EEZ_DATA_ID_NONE;
-        actionWidget.style = INFO_TOAST ? EEZ_STYLE_ID_INFO_ALERT_BUTTON : EEZ_STYLE_ID_ERROR_ALERT_BUTTON;
+        actionWidget.style = actionStyleId;
         actionWidget.text = actionLabel;
-        actionWidget.x = style->paddingLeft + (textWidth - actionLabelWidth) / 2;
+        // the top padding of the toast between the text and the button
+        actionWidget.x = xContent + (textWidth - actionLabelWidth) / 2;
         actionWidget.y = style->paddingTop + yText;
         actionWidget.width = actionLabelWidth;
         actionWidget.height = actionLabelHeight;
-
-		yText += textHeight;
     } else {
         actionWidget.type = WIDGET_TYPE_NONE;
     }
-
-    Rect rect;
-    appContext->getBoundingRect(rect);
 
 	x = rect.x + (rect.w - width) / 2;
 	y = rect.y + (rect.h - height) / 2;
@@ -408,34 +430,24 @@ void ToastMessagePage::updateInternalPage() {
 	    widgetCursor.pushBackground(widgetCursor.x, widgetCursor.y, getStyle(containerRectangleWidget.style), false);
     }
 
-    TextWidgetState textWidgetState;
-    textWidgetState.flags.active = 0;
-	textWidgetState.flags.disabled = 0;
-	textWidgetState.flags.focused = 0;
-	textWidgetState.blinkOpacity = 255;
-
-    widgetCursor.widget = &line1Widget;
-    widgetCursor.x = x + line1Widget.x;
-    widgetCursor.y = y + line1Widget.y;
-    widgetCursor.w = line1Widget.width;
-    widgetCursor.h = line1Widget.height;
-    textWidgetState.render();
-
-    if (line2Widget.type == WIDGET_TYPE_TEXT) {
-        widgetCursor.widget = &line2Widget;
-        widgetCursor.x = x + line2Widget.x;
-        widgetCursor.y = y + line2Widget.y;
-        widgetCursor.w = line2Widget.width;
-        widgetCursor.h = line2Widget.height;
-        textWidgetState.render();
-
-        if (line3Widget.type == WIDGET_TYPE_TEXT) {
-            widgetCursor.widget = &line3Widget;
-            widgetCursor.x = x + line3Widget.x;
-            widgetCursor.y = y + line3Widget.y;
-            widgetCursor.w = line3Widget.width;
-            widgetCursor.h = line3Widget.height;
-            textWidgetState.render();
+    // the lines in the font and the color of the toast style, over its
+    // background (not in boxes of the style, its border and padding are around
+    // all lines)
+    const Style *style = getStyle(containerRectangleWidget.style);
+    font::Font font = styleGetFont(style);
+    if (font && style->color != TRANSPARENT_COLOR_INDEX) {
+        const TextWidget *lines[] = { &line1Widget, &line2Widget, &line3Widget };
+        display::setColor(style->color);
+        for (auto line : lines) {
+            if (line->type == WIDGET_TYPE_TEXT) {
+                int x1 = x + line->x;
+                int y1 = y + line->y;
+                display::drawStr(
+                    static_cast<const char *>(line->text), -1,
+                    x1, y1, x1, y1, x1 + line->width - 1, y1 + line->height - 1,
+                    font, -1
+                );
+            }
         }
     }
 
@@ -706,12 +718,15 @@ bool SelectFromEnumPage::calcSize() {
     Rect rect;
     appContext->getBoundingRect(rect);
 
-    width = containerStyle->paddingLeft + (numColumns == 2 ? itemWidth + containerStyle->paddingLeft + itemWidth : itemWidth) + containerStyle->paddingRight;
+    int insetWidth = containerStyle->borderSizeLeft + containerStyle->paddingLeft + containerStyle->paddingRight + containerStyle->borderSizeRight;
+    int insetHeight = containerStyle->borderSizeTop + containerStyle->paddingTop + containerStyle->paddingBottom + containerStyle->borderSizeBottom;
+
+    width = insetWidth + (numColumns == 2 ? itemWidth + containerStyle->paddingLeft + itemWidth : itemWidth);
     if (width > rect.w) {
         width = rect.w;
     }
 
-    height = containerStyle->paddingTop + (numColumns == 2 ? (numItems + 1) / 2 : numItems) * itemHeight + containerStyle->paddingBottom;
+    height = insetHeight + (numColumns == 2 ? (numItems + 1) / 2 : numItems) * itemHeight;
     if (height > rect.h) {
         if (numColumns == 1) {
             return false;
@@ -758,11 +773,15 @@ void SelectFromEnumPage::updateInternalPage() {
 	const Style *itemStyle = getStyle(smallFont ? EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_ITEM_S : EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_ITEM);
 	const Style *disabledItemStyle = getStyle(smallFont ? EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_DISABLED_ITEM_S : EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_DISABLED_ITEM);
 
-    // draw background
-    display::setColor(containerStyle->backgroundColor);
-    display::fillRect(x, y, x + width - 1, y + height - 1);
+    // the border and the background of the container style
+    int x1 = x;
+    int y1 = y;
+    int x2 = x + width - 1;
+    int y2 = y + height - 1;
+    drawBorderAndBackground(x1, y1, x2, y2, containerStyle, containerStyle->backgroundColor);
 
-    // draw labels
+    // draw labels: the item with the current value is selected (its selected
+    // state style, or drawn active without it), the touched item is pressed
     char text[64];
     for (int i = 0; getLabel(i, nullptr, 0); ++i) {
         int xItem, yItem;
@@ -770,20 +789,25 @@ void SelectFromEnumPage::updateInternalPage() {
 
         getLabel(i, text, sizeof(text));
         const Style *style = isDisabled(i) ? disabledItemStyle : itemStyle;
+        bool pressed = i == activeItemIndex;
+        bool selected = currentValue == getValue(i);
         if (showRadioButtonIcon) {
+            auto stateStyle = getWidgetStateStyle(style, pressed);
             drawCheckboxOrRadio(
                 xItem, yItem, itemWidth, itemHeight,
-                style,
-                true, currentValue == getValue(i),
+                stateStyle.style,
+                true, selected,
                 text,
-                i == activeItemIndex
+                stateStyle.active
             );
         } else {
+            auto stateStyle = getWidgetStateStyle(style, pressed, false, selected ? STYLE_STATE_FLAG(STYLE_STATE_SELECTED) : 0);
+            bool active = stateStyle.active || (selected && !styleHasStateStyle(style, STYLE_STATE_SELECTED));
             drawText(
                 text, -1,
                 xItem, yItem, itemWidth, itemHeight,
-                style,
-                i == activeItemIndex || currentValue == getValue(i)
+                stateStyle.style,
+                active
             );
         }
     }
@@ -828,12 +852,15 @@ void SelectFromEnumPage::doSelectEnumItem() {
 void SelectFromEnumPage::getItemPosition(int itemIndex, int &xItem, int &yItem) {
     const Style *containerStyle = getStyle(smallFont ? EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER_S : EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_CONTAINER);
 
+    // inside the border and the padding
+    int xContent = x + containerStyle->borderSizeLeft + containerStyle->paddingLeft;
+    int yContent = y + containerStyle->borderSizeTop + containerStyle->paddingTop;
     if (numColumns == 1 || itemIndex < (numItems + 1) / 2) {
-        xItem = x + containerStyle->paddingLeft;
-        yItem = y + containerStyle->paddingTop + itemIndex * itemHeight;
+        xItem = xContent;
+        yItem = yContent + itemIndex * itemHeight;
     } else {
-        xItem = x + containerStyle->paddingLeft + itemWidth + containerStyle->paddingLeft / 2;
-        yItem = y + containerStyle->paddingTop + (itemIndex - (numItems + 1) / 2) * itemHeight;
+        xItem = xContent + itemWidth + containerStyle->paddingLeft / 2;
+        yItem = yContent + (itemIndex - (numItems + 1) / 2) * itemHeight;
     }
 }
 

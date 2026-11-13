@@ -30290,6 +30290,35 @@
           }
         },
         {
+          "type": "ListWidget",
+          "objID": "9d4dada5-7b85-59b8-8daa-6195427517fc",
+          "left": 0,
+          "top": 320,
+          "width": 400,
+          "height": 80,
+          "style": {
+            "useStyle": "gui_list"
+          },
+          "data": "gui_list_items",
+          "listType": "horizontal",
+          "gap": 0,
+          "pageDotsStyle": {
+            "useStyle": "gui_dot"
+          },
+          "itemWidget": {
+            "type": "TextWidget",
+            "objID": "64185fd6-6dc4-50d8-ad9b-5190a62fd056",
+            "left": 0,
+            "top": 0,
+            "width": 100,
+            "height": 80,
+            "style": {
+              "useStyle": "gui_item"
+            },
+            "data": "\"\" + $index"
+          }
+        },
+        {
           "type": "ButtonWidget",
           "objID": "f48574e4-7a65-540e-a5b0-47e40e50b95a",
           "left": 500,
@@ -30356,6 +30385,236 @@
                 "useStyle": "gui_popup"
               },
               "text": "Drag"
+            }
+          ]
+        }
+      ],
+      "connectionLines": [],
+      "localVariables": [],
+      "userProperties": [],
+      "componentGroups": []
+    },
+    {
+      "objID": "90c4bcfb-3059-5d1f-a57e-4f53ffe5900d",
+      "name": "gui_scroll",
+      "tags": "gui",
+      "left": 0,
+      "top": 0,
+      "width": 800,
+      "height": 480,
+      "components": [
+        {
+          "type": "ContainerWidget",
+          "objID": "0ebab8c9-46bb-52e7-aab0-db2e6c8dcf78",
+          "left": 0,
+          "top": 0,
+          "width": 400,
+          "height": 300,
+          "style": {
+            "useStyle": "gui_list"
+          },
+          "layout": "static",
+          "scroll": "vertical",
+          "widgets": [
+            {
+              "type": "TextWidget",
+              "objID": "d6d8b090-9b97-5bdd-9d4d-ebda4d392eb8",
+              "left": 0,
+              "top": 0,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_item"
+              },
+              "data": "\"Row 0\"",
+              "eventHandlers": [
+                {
+                  "objID": "ab832a97-d292-5944-9147-f25b071805d0",
+                  "eventName": "CLICKED",
+                  "handlerType": "action",
+                  "action": "gui_click_a"
+                }
+              ]
+            },
+            {
+              "type": "TextWidget",
+              "objID": "ec0f9a87-ccf1-59f5-8f03-8e363caf19c3",
+              "left": 0,
+              "top": 60,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_item"
+              },
+              "data": "\"Row 1\"",
+              "eventHandlers": [
+                {
+                  "objID": "fca9cdf7-e4c1-5c7e-8ef3-f6d4021e8d5f",
+                  "eventName": "CLICKED",
+                  "handlerType": "action",
+                  "action": "gui_click_a"
+                }
+              ]
+            },
+            {
+              "type": "TextWidget",
+              "objID": "2411a058-02fb-5db4-a52f-29321d771c98",
+              "left": 0,
+              "top": 120,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_item"
+              },
+              "data": "\"Row 2\"",
+              "eventHandlers": [
+                {
+                  "objID": "43966a37-d252-5dbe-93c8-ac177d16d467",
+                  "eventName": "CLICKED",
+                  "handlerType": "action",
+                  "action": "gui_click_a"
+                }
+              ]
+            },
+            {
+              "type": "TextWidget",
+              "objID": "b550c404-261f-59f8-bf75-e57e0d80361f",
+              "left": 0,
+              "top": 180,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_item"
+              },
+              "data": "\"Row 3\"",
+              "eventHandlers": [
+                {
+                  "objID": "3a010891-425f-512f-8791-c0c6ee623e91",
+                  "eventName": "CLICKED",
+                  "handlerType": "action",
+                  "action": "gui_click_a"
+                }
+              ]
+            },
+            {
+              "type": "TextWidget",
+              "objID": "95ce710a-ad52-5037-8474-80ee999b6d06",
+              "left": 0,
+              "top": 240,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_item"
+              },
+              "data": "\"Row 4\"",
+              "eventHandlers": [
+                {
+                  "objID": "d979dd2f-c802-5758-88a0-629ec4d449e7",
+                  "eventName": "CLICKED",
+                  "handlerType": "action",
+                  "action": "gui_click_a"
+                }
+              ]
+            },
+            {
+              "type": "TextWidget",
+              "objID": "46712c3a-bc4d-557e-8193-672fbfe31953",
+              "left": 0,
+              "top": 300,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_item"
+              },
+              "data": "\"Row 5\"",
+              "eventHandlers": [
+                {
+                  "objID": "dc429bed-a011-59db-8b3a-e79f7200edb2",
+                  "eventName": "CLICKED",
+                  "handlerType": "action",
+                  "action": "gui_click_a"
+                }
+              ]
+            },
+            {
+              "type": "TextWidget",
+              "objID": "c05b6a8e-8d0b-5e4d-93ea-33d6c940d2af",
+              "left": 0,
+              "top": 360,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_item"
+              },
+              "data": "\"Row 6\"",
+              "eventHandlers": [
+                {
+                  "objID": "18930159-877e-5d13-8daf-d6b604561be1",
+                  "eventName": "CLICKED",
+                  "handlerType": "action",
+                  "action": "gui_click_a"
+                }
+              ]
+            },
+            {
+              "type": "TextWidget",
+              "objID": "d99a5663-2cda-5dcf-badd-a73e9cd8fd44",
+              "left": 0,
+              "top": 420,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_item"
+              },
+              "data": "\"Row 7\"",
+              "eventHandlers": [
+                {
+                  "objID": "a2270d3f-0534-586a-9cf8-f61bfe073867",
+                  "eventName": "CLICKED",
+                  "handlerType": "action",
+                  "action": "gui_click_a"
+                }
+              ]
+            },
+            {
+              "type": "TextWidget",
+              "objID": "2a24bdca-3abe-576b-b67d-555c4952faf0",
+              "left": 0,
+              "top": 480,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_item"
+              },
+              "data": "\"Row 8\"",
+              "eventHandlers": [
+                {
+                  "objID": "7859b4c5-80f5-575e-925e-a222b393c26b",
+                  "eventName": "CLICKED",
+                  "handlerType": "action",
+                  "action": "gui_click_a"
+                }
+              ]
+            },
+            {
+              "type": "TextWidget",
+              "objID": "77f6fa22-5486-584f-b1d5-68b2f5659da2",
+              "left": 0,
+              "top": 540,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_item"
+              },
+              "data": "\"Row 9\"",
+              "eventHandlers": [
+                {
+                  "objID": "a456370e-f403-5d25-9bf7-d0f365e8130e",
+                  "eventName": "CLICKED",
+                  "handlerType": "action",
+                  "action": "gui_click_a"
+                }
+              ]
             }
           ]
         }
@@ -31101,6 +31360,183 @@
           "justifyContent": "end",
           "alignItems": "center",
           "gap": 10
+        }
+      ],
+      "connectionLines": [],
+      "localVariables": [],
+      "userProperties": [],
+      "componentGroups": [],
+      "style": "layout_page"
+    },
+    {
+      "objID": "92a4e968-169d-5152-9d5d-eddc3a21e0aa",
+      "name": "layout_parts",
+      "tags": "layout",
+      "left": 0,
+      "top": 0,
+      "width": 800,
+      "height": 480,
+      "components": [
+        {
+          "type": "DisplayDataWidget",
+          "objID": "63aa03b6-9b00-590f-864b-7080f08c0d50",
+          "left": 20,
+          "top": 20,
+          "width": 360,
+          "height": 110,
+          "style": {
+            "useStyle": "layout_pv"
+          },
+          "data": "\"12.345 mA\"",
+          "displayOption": 7,
+          "refreshRate": "0",
+          "label": "\"LBL\"",
+          "labelStyle": {
+            "useStyle": "layout_pl"
+          },
+          "unitStyle": {
+            "useStyle": "layout_pu"
+          }
+        },
+        {
+          "type": "ContainerWidget",
+          "objID": "95c3dff4-29c3-5e38-9efa-dde4a5573b7b",
+          "left": 20,
+          "top": 150,
+          "width": 420,
+          "height": 110,
+          "style": {
+            "useStyle": "layout_box"
+          },
+          "layout": "horizontal",
+          "widgets": [
+            {
+              "type": "TextWidget",
+              "objID": "00f32be5-7db2-5c03-ab42-605d8c81e6e9",
+              "left": 0,
+              "top": 0,
+              "width": 10,
+              "height": 10,
+              "style": {
+                "useStyle": "layout_text_small"
+              },
+              "text": "Ag",
+              "fitToContent": "both"
+            },
+            {
+              "type": "DisplayDataWidget",
+              "objID": "27edfe97-9847-5da1-b0ae-d10311a2416f",
+              "left": 0,
+              "top": 0,
+              "width": 10,
+              "height": 10,
+              "style": {
+                "useStyle": "layout_pv"
+              },
+              "data": "\"12.345 mA\"",
+              "displayOption": 7,
+              "refreshRate": "0",
+              "label": "\"LBL\"",
+              "labelStyle": {
+                "useStyle": "layout_pl"
+              },
+              "unitStyle": {
+                "useStyle": "layout_pu"
+              },
+              "fitToContent": "both"
+            }
+          ],
+          "alignItems": "baseline",
+          "gap": 10
+        },
+        {
+          "type": "ContainerWidget",
+          "objID": "65ff3cd7-e1ac-53a9-b321-b8b415b734dd",
+          "left": 20,
+          "top": 280,
+          "width": 420,
+          "height": 120,
+          "style": {
+            "useStyle": "layout_box"
+          },
+          "layout": "horizontal",
+          "widgets": [
+            {
+              "type": "TextWidget",
+              "objID": "4f0ebea9-6392-5243-b4b5-bccfc68366e8",
+              "left": 0,
+              "top": 0,
+              "width": 10,
+              "height": 10,
+              "style": {
+                "useStyle": "layout_text_small"
+              },
+              "text": "Ag",
+              "fitToContent": "both"
+            },
+            {
+              "type": "InputEmbeddedWidget",
+              "objID": "4bc0e043-cd8a-51df-aa26-bbf598efbb42",
+              "left": 0,
+              "top": 0,
+              "width": 200,
+              "height": 100,
+              "style": {
+                "useStyle": "layout_pv"
+              },
+              "data": "12.5",
+              "inputType": "number",
+              "min": "0",
+              "max": "100",
+              "precision": "0.1",
+              "unit": "\"V\"",
+              "info": "\"\"",
+              "defaultValue": "0",
+              "label": "\"SET\"",
+              "labelStyle": {
+                "useStyle": "layout_pl"
+              },
+              "lineStyle": {
+                "useStyle": "layout_pline"
+              }
+            }
+          ],
+          "alignItems": "baseline",
+          "gap": 10
+        },
+        {
+          "type": "DisplayDataWidget",
+          "objID": "4e784187-4daa-597c-b43c-6a7017cf1c46",
+          "left": 460,
+          "top": 20,
+          "width": 300,
+          "height": 60,
+          "style": {
+            "useStyle": "layout_pv_right"
+          },
+          "data": "\"12.000 V\"",
+          "displayOption": 7,
+          "refreshRate": "0",
+          "unitStyle": {
+            "useStyle": "layout_pu"
+          }
+        },
+        {
+          "type": "DisplayDataWidget",
+          "objID": "3d903477-8407-5e85-a6a1-2457f1083abb",
+          "left": 460,
+          "top": 90,
+          "width": 300,
+          "height": 60,
+          "style": {
+            "useStyle": "layout_pv_right"
+          },
+          "data": "\"0.750 mA\"",
+          "displayOption": 7,
+          "refreshRate": "0",
+          "unitStyle": {
+            "useStyle": "layout_pu"
+          }
         }
       ],
       "connectionLines": [],
@@ -37026,6 +37462,7 @@
           "borderSize": "1",
           "borderColor": "text",
           "padding": "8",
+          "borderRadius": "12",
           "childStyles": []
         },
         {
@@ -37142,6 +37579,25 @@
           "childStyles": []
         },
         {
+          "objID": "80748231-d1cb-5ca6-b717-070a4e05d4c2",
+          "name": "gui_dot",
+          "tags": "gui",
+          "alwaysBuild": true,
+          "backgroundColor": "text",
+          "padding": "4",
+          "childStyles": []
+        },
+        {
+          "objID": "52cc37a5-bf60-5865-a22d-4d97ad6d5507",
+          "name": "gui_dot_selected",
+          "tags": "gui",
+          "alwaysBuild": true,
+          "useStyle": "gui_dot",
+          "state": "selected",
+          "backgroundColor": "accent",
+          "childStyles": []
+        },
+        {
           "objID": "82498e71-c348-5ba5-b926-58e55cfc52ac",
           "name": "layout_page",
           "tags": "layout",
@@ -37225,6 +37681,63 @@
           "alignHorizontal": "left",
           "alignVertical": "top",
           "padding": "0",
+          "font": "VRobotoBig",
+          "childStyles": []
+        },
+        {
+          "objID": "dd311c4c-d794-5eb5-9f1d-4541d4b4f270",
+          "name": "layout_pv",
+          "tags": "layout",
+          "alwaysBuild": true,
+          "backgroundColor": "layout_blue",
+          "color": "layout_white",
+          "alignHorizontal": "left",
+          "alignVertical": "top",
+          "padding": "4",
+          "font": "VRobotoBig",
+          "childStyles": []
+        },
+        {
+          "objID": "33bf4128-3ede-5a0f-a3c0-56f6c20d7660",
+          "name": "layout_pl",
+          "tags": "layout",
+          "alwaysBuild": true,
+          "color": "layout_green",
+          "alignHorizontal": "left",
+          "padding": "0 0 2 0",
+          "font": "VRoboto",
+          "childStyles": []
+        },
+        {
+          "objID": "d6dde550-7881-517e-b7b3-302e2396edcd",
+          "name": "layout_pu",
+          "tags": "layout",
+          "alwaysBuild": true,
+          "color": "layout_yellow",
+          "padding": "0 0 0 6",
+          "font": "VRoboto",
+          "childStyles": []
+        },
+        {
+          "objID": "f6d3b506-a33e-5f0f-aabb-c53260c7cc0c",
+          "name": "layout_pline",
+          "tags": "layout",
+          "alwaysBuild": true,
+          "borderSize": "0 0 2 0",
+          "borderColor": "layout_red",
+          "padding": "0 0 3 0",
+          "childStyles": []
+        },
+        {
+          "objID": "0d455823-ccf0-5b2c-b106-8edfd1126543",
+          "name": "layout_pv_right",
+          "tags": "layout",
+          "alwaysBuild": true,
+          "backgroundColor": "layout_blue",
+          "color": "layout_white",
+          "alignHorizontal": "right",
+          "alignVertical": "top",
+          "padding": "4 40 4 4",
           "font": "VRobotoBig",
           "childStyles": []
         },

@@ -168,7 +168,44 @@ bool InputWidgetState::updateState() {
 		WIDGET_STATE(shownData, getInputWidgetShownValue(widgetCursor, data));
 	}
 
+	if (widget->label) {
+		WIDGET_STATE(label, get(widgetCursor, widget->label));
+	}
+
     WIDGET_STATE_END()
+}
+
+// a label or a line: drawn by drawValueParts
+static bool usesValueParts(const InputWidget *widget) {
+	return widget->label || widget->lineStyle;
+}
+
+// The parts drawValueParts draws (usesValueParts): the label, the text of the
+// value and the line. labelText has room for MAX_TEXT_LEN + 1 characters.
+static void getValueParts(const InputWidget *widget, const char *text, const Value &label, char *labelText, ValueParts &parts) {
+	parts.value = text;
+	if (widget->label) {
+		label.toText(labelText, MAX_TEXT_LEN + 1);
+		parts.label = labelText;
+	}
+	parts.labelStyle = widget->labelStyle ? getStyle(widget->labelStyle) : nullptr;
+	parts.lineStyle = widget->lineStyle ? getStyle(widget->lineStyle) : nullptr;
+}
+
+int InputWidget_getBaseline(const WidgetCursor &widgetCursor, int h) {
+	auto widget = (const InputWidget *)widgetCursor.widget;
+	const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
+
+	if (usesValueParts(widget)) {
+		// the value doesn't move the baseline
+		char labelText[MAX_TEXT_LEN + 1];
+		Value label = widget->label ? get(widgetCursor, widget->label) : Value();
+		ValueParts parts;
+		getValueParts(widget, "", label, labelText, parts);
+		return getValuePartsBaseline(parts, style, h);
+	}
+
+	return getTextBaseline(style, h);
 }
 
 void InputWidgetState::render() {
@@ -205,14 +242,38 @@ void InputWidgetState::render() {
 		text[n] = 0;
 	}
 
-	drawText(
-		text, -1,
-		widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
-		style,
-		stateStyle.active, false,
-		&overrideColor, &overrideBackgroundColor,
-		true // useSmallerFontIfDoesNotFit
-	);
+	if (usesValueParts(widget)) {
+		char labelText[MAX_TEXT_LEN + 1];
+		ValueParts parts;
+		getValueParts(widget, text, label, labelText, parts);
+
+		// the label and the line in the states of the widget too
+		unsigned otherStates = getDisabledStateFlag(flags.disabled);
+		if (parts.labelStyle) {
+			parts.labelStyle = getWidgetStateStyle(parts.labelStyle, flags.active, flags.focused, otherStates).style;
+		}
+		if (parts.lineStyle) {
+			parts.lineStyle = getWidgetStateStyle(parts.lineStyle, flags.active, flags.focused, otherStates).style;
+		}
+
+		drawValueParts(
+			parts,
+			widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
+			style,
+			stateStyle.active,
+			&overrideColor, &overrideBackgroundColor,
+			true // useSmallerFontIfDoesNotFit
+		);
+	} else {
+		drawText(
+			text, -1,
+			widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
+			style,
+			stateStyle.active, false,
+			&overrideColor, &overrideBackgroundColor,
+			true // useSmallerFontIfDoesNotFit
+		);
+	}
 
 	if (flags.focused) {
 		drawFocusRing(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style);

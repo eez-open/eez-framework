@@ -30,7 +30,10 @@ enum {
     DISPLAY_OPTION_FRACTION_AND_UNIT = 3,
     DISPLAY_OPTION_UNIT = 4,
     DISPLAY_OPTION_INTEGER_AND_FRACTION = 5,
-    DISPLAY_OPTION_INTEGER_UNIT_AND_FRACTION = 6
+    DISPLAY_OPTION_INTEGER_UNIT_AND_FRACTION = 6,
+    // the number in the widget style and the unit in the unit style on its
+    // baseline (see drawValueParts)
+    DISPLAY_OPTION_VALUE_AND_UNIT = 7
 };
 
 // for the text of the value, font tags make the text longer than what is drawn
@@ -143,6 +146,11 @@ static Value getDisplayDataValue(const WidgetCursor &widgetCursor, const Display
     return getValueInUnit(data, unit, precision);
 }
 
+// a label or the unit in its own style: drawn by drawValueParts
+static bool usesValueParts(const DisplayDataWidget *widget) {
+    return widget->label || widget->displayOption == DISPLAY_OPTION_VALUE_AND_UNIT;
+}
+
 bool DisplayDataWidgetState::updateState() {
     WIDGET_STATE_START(DisplayDataWidget);
 
@@ -177,6 +185,10 @@ bool DisplayDataWidgetState::updateState() {
         dataRefreshLastTime = currentTime;
     }
 
+    if (widget->label) {
+        WIDGET_STATE(label, get(widgetCursor, widget->label));
+    }
+
     WIDGET_STATE(color, getColor(widgetCursor, widget->data, style));
     WIDGET_STATE(backgroundColor, getBackgroundColor(widgetCursor, widget->data, style));
 
@@ -199,6 +211,8 @@ void DisplayDataWidgetState::render() {
 
     if (widget->displayOption == DISPLAY_OPTION_INTEGER_UNIT_AND_FRACTION) {
         renderIntegerUnitAndFraction(this, widget, style, stateStyle.active);
+    } else if (usesValueParts(widget)) {
+        renderParts(widget, style, stateStyle.active);
     } else {
         renderText(widget, style, stateStyle.active);
     }
@@ -268,6 +282,82 @@ static void getDisplayText(const DisplayDataWidget *widget, const Value &data, c
     }
 }
 
+// The parts drawValueParts draws (usesValueParts): the label, the text of the
+// data cut as the display option says, the unit apart with the value and unit
+// option. text and labelText have room for TEXT_BUFFER_SIZE characters.
+static void getValueParts(const DisplayDataWidget *widget, const Value &data, const Value &label, char *text, char *labelText, ValueParts &parts) {
+    if (widget->displayOption == DISPLAY_OPTION_VALUE_AND_UNIT) {
+        data.toText(text, TEXT_BUFFER_SIZE);
+        const char *value = text;
+        int valueLength = (int)strlen(text);
+        // a value that is not a number has no unit
+        if (
+            data.getType() == VALUE_TYPE_FLOAT ||
+            (data.isString() && isNumberText(text))
+        ) {
+            int k = findStartOfUnit(text, 0);
+            const char *unit = text + k;
+            int unitLength = (int)strlen(unit);
+            trimText(unit, unitLength);
+            parts.unit = unit;
+            parts.unitLength = unitLength;
+            valueLength = k;
+        }
+        trimText(value, valueLength);
+        parts.value = value;
+        parts.valueLength = valueLength;
+    } else {
+        char *start;
+        int length;
+        getDisplayText(widget, data, text, start, length);
+        parts.value = start;
+        parts.valueLength = length;
+    }
+
+    if (widget->label) {
+        label.toText(labelText, TEXT_BUFFER_SIZE);
+        parts.label = labelText;
+    }
+
+    parts.labelStyle = widget->labelStyle ? getStyle(widget->labelStyle) : nullptr;
+    parts.unitStyle = widget->unitStyle ? getStyle(widget->unitStyle) : nullptr;
+}
+
+void DisplayDataWidgetState::renderParts(const DisplayDataWidget *widget, const Style *style, bool active) {
+    const WidgetCursor &widgetCursor = g_widgetCursor;
+
+    char text[TEXT_BUFFER_SIZE];
+    char labelText[TEXT_BUFFER_SIZE];
+    ValueParts parts;
+    getValueParts(widget, data, label, text, labelText, parts);
+
+    // the label and the unit in the states of the widget too
+    unsigned otherStates = getDisabledStateFlag(flags.disabled);
+    if (parts.labelStyle) {
+        parts.labelStyle = getWidgetStateStyle(parts.labelStyle, flags.active, flags.focused, otherStates).style;
+    }
+    if (parts.unitStyle) {
+        parts.unitStyle = getWidgetStateStyle(parts.unitStyle, flags.active, flags.focused, otherStates).style;
+    }
+
+    drawValueParts(
+        parts,
+        widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
+        style,
+        active,
+        &color, &backgroundColor,
+        data.getType() == VALUE_TYPE_FLOAT // useSmallerFontIfDoesNotFit
+    );
+}
+
+// the parts of the widget widgetCursor.widget (usesValueParts) with its data
+// and label now
+static void getCurrentValueParts(const WidgetCursor &widgetCursor, char *text, char *labelText, ValueParts &parts) {
+    auto widget = (const DisplayDataWidget *)widgetCursor.widget;
+    Value label = widget->label ? get(widgetCursor, widget->label) : Value();
+    getValueParts(widget, getDisplayDataValue(widgetCursor, widget), label, text, labelText, parts);
+}
+
 bool DisplayDataWidget_getContentSize(const WidgetCursor &widgetCursor, int &w, int &h) {
     auto widget = (const DisplayDataWidget *)widgetCursor.widget;
     if (widget->displayOption == DISPLAY_OPTION_INTEGER_UNIT_AND_FRACTION) {
@@ -275,6 +365,17 @@ bool DisplayDataWidget_getContentSize(const WidgetCursor &widgetCursor, int &w, 
     }
 
     const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
+
+    if (usesValueParts(widget)) {
+        char text[TEXT_BUFFER_SIZE];
+        char labelText[TEXT_BUFFER_SIZE];
+        ValueParts parts;
+        getCurrentValueParts(widgetCursor, text, labelText, parts);
+        if (measureValueParts(parts, style, w, h)) {
+            return true;
+        }
+    }
+
     font::Font font = styleGetFont(style);
 
     int textWidth = 0;
@@ -289,6 +390,21 @@ bool DisplayDataWidget_getContentSize(const WidgetCursor &widgetCursor, int &w, 
     w = style->borderSizeLeft + style->paddingLeft + textWidth + style->paddingRight + style->borderSizeRight;
     h = style->borderSizeTop + style->paddingTop + (font ? font.getHeight() : 0) + style->paddingBottom + style->borderSizeBottom;
     return true;
+}
+
+int DisplayDataWidget_getBaseline(const WidgetCursor &widgetCursor, int h) {
+    auto widget = (const DisplayDataWidget *)widgetCursor.widget;
+    const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
+
+    if (usesValueParts(widget) && widget->displayOption != DISPLAY_OPTION_INTEGER_UNIT_AND_FRACTION) {
+        char text[TEXT_BUFFER_SIZE];
+        char labelText[TEXT_BUFFER_SIZE];
+        ValueParts parts;
+        getCurrentValueParts(widgetCursor, text, labelText, parts);
+        return getValuePartsBaseline(parts, style, h);
+    }
+
+    return getTextBaseline(style, h);
 }
 
 void DisplayDataWidgetState::renderText(const DisplayDataWidget *widget, const Style *style, bool active) {

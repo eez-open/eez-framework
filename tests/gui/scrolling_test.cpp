@@ -207,3 +207,120 @@ TEST("gui/scrolling: the list scroll stops when the page is changed") {
     CHECK_EQ(g_actions.listItem, 0);
     CHECK(listTop() >= 0);
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// page dots of the horizontal list (0, 320, 400x80, 20 items of 100 px): 17
+// positions, 8x8 dots 8 px apart in a row of 264 px at x = 68, 16 px above the
+// bottom
+
+static const int DOTS_X = 68;
+static const int DOTS_Y = 320 + 80 - 16;
+
+// the pixels of the dot that are not of the color (0xBBGGRR)
+static int dotOther(int i, uint32_t color) {
+    int n = 0;
+    for (int y = DOTS_Y; y < DOTS_Y + 8; y++) {
+        for (int x = DOTS_X + 16 * i; x < DOTS_X + 16 * i + 8; x++) {
+            if ((harness::pixel(x, y) & 0xFFFFFF) != color) {
+                n++;
+            }
+        }
+    }
+    return n;
+}
+
+static const uint32_t PAGE_DOT = 0xFFFFFF;
+static const uint32_t PAGE_DOT_SELECTED = 0xC06020;
+
+static void dragX(int y, int x1, int x2) {
+    press(x1, y);
+    int steps = 6;
+    for (int i = 1; i <= steps; i++) {
+        moveTo(x1 + (x2 - x1) * i / steps, y);
+    }
+    harness::frame(10);
+    releaseTouch();
+}
+
+TEST("gui/scrolling: a horizontal list shows a page dot for every position, the current one selected") {
+    showLists();
+    CHECK_EQ(dotOther(0, PAGE_DOT_SELECTED), 0);
+    for (int i = 1; i < 17; i++) {
+        CHECK_EQ(dotOther(i, PAGE_DOT), 0);
+    }
+    // no dot after the last one
+    CHECK(dotOther(17, PAGE_DOT) > 0);
+}
+
+TEST("gui/scrolling: the page dot follows the position of the horizontal list") {
+    showLists();
+    dragX(350, 300, 100);
+    settle();
+    CHECK_EQ(dotOther(0, PAGE_DOT), 0);
+    CHECK_EQ(dotOther(2, PAGE_DOT_SELECTED), 0);
+    CHECK_EQ(dotOther(3, PAGE_DOT), 0);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// a container that scrolls vertically (gui_scroll page: 10 rows of 60 px in a
+// container 400x300 at 0, 0), scrolled by pixels
+
+static void showScroll() {
+    app()->showPage(PAGE_ID_GUI_SCROLL);
+    harness::frame(2);
+    harness::advance(400);
+}
+
+// the row under the point (its design y / 60), -1 if none
+static int rowAt(int x, int y) {
+    auto widgetCursor = findWidget(x, y, false);
+    if (!widgetCursor.widget || widgetCursor.widget->type != WIDGET_TYPE_TEXT) {
+        return -1;
+    }
+    return widgetCursor.widget->y / 60;
+}
+
+TEST("gui/scrolling: a container that scrolls vertically shows its first rows") {
+    showScroll();
+    CHECK_EQ(rowAt(200, 30), 0);
+    CHECK_EQ(rowAt(200, 270), 4);
+    // the rows below the container are not found
+    CHECK_EQ(rowAt(200, 330), -1);
+}
+
+TEST("gui/scrolling: dragging the container scrolls it by pixels") {
+    showScroll();
+    // 120 px, 100 px after the container took over the touch (the first
+    // step of 20 px), not moved to a row boundary
+    drag(200, 250, 130);
+    settle();
+    // row 1 from y = -40 to 19, row 2 from 20
+    CHECK_EQ(rowAt(200, 19), 1);
+    CHECK_EQ(rowAt(200, 20), 2);
+    CHECK_EQ(rowAt(200, 295), 6);
+}
+
+TEST("gui/scrolling: the container doesn't scroll beyond the end of its content") {
+    showScroll();
+    drag(200, 290, 10);
+    drag(200, 290, 10);
+    settle();
+    // 600 px of content in 300 px: the last row at the bottom
+    CHECK_EQ(rowAt(200, 270), 9);
+    CHECK_EQ(rowAt(200, 5), 5);
+}
+
+TEST("gui/scrolling: a tap on a row of the scrolled container is a tap of that row") {
+    showScroll();
+    drag(200, 250, 130);
+    settle();
+    int clicks = 0;
+    g_onAction = [&clicks](int actionId) {
+        if (actionId == ACTION_ID_GUI_CLICK_A) {
+            clicks++;
+        }
+    };
+    tap(200, 30);
+    CHECK_EQ(clicks, 1);
+    g_onAction = nullptr;
+}

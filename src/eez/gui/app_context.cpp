@@ -402,7 +402,30 @@ void AppContext::updatePage(int i, WidgetCursor &widgetCursor) {
         widgetCursor.h = height;
 
 		if (g_findCallback == nullptr) {
+			// what is below the page shows through its rounded corners (as
+			// for a transparent page, see drawBorderAndBackground): drawn
+			// under the whole page and the page drawn again when it changes
+			// and in a full redraw, the backgrounds of the widgets outside of
+			// the page are not used
+			auto savedHasPreviousState = widgetCursor.hasPreviousState;
+			auto savedRefreshed = widgetCursor.refreshed;
+			BackgroundStyle savedBackgroundStyleStack[BACKGROUND_STYLE_STACK_SIZE];
+			auto savedBackgroundStyleStackPointer = widgetCursor.backgroundStyleStackPointer;
+			memcpy(savedBackgroundStyleStack, widgetCursor.backgroundStyleStack, sizeof(savedBackgroundStyleStack));
+			widgetCursor.backgroundStyleStackPointer = 0;
+
+			bool backgroundChanged = display::setBufferBackgroundBelow(x, y, width, height, backdrop);
+			if (backgroundChanged || widgetCursor.refreshed) {
+				display::drawBufferBackground(x, y, x + width - 1, y + height - 1);
+				widgetCursor.refreshed = true;
+				widgetCursor.hasPreviousState = false;
+			}
 			internalPage->updateInternalPage();
+
+			widgetCursor.hasPreviousState = savedHasPreviousState;
+			widgetCursor.refreshed = savedRefreshed;
+			memcpy(widgetCursor.backgroundStyleStack, savedBackgroundStyleStack, sizeof(savedBackgroundStyleStack));
+			widgetCursor.backgroundStyleStackPointer = savedBackgroundStyleStackPointer;
 		}
 
 		enumNoneWidget();

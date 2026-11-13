@@ -31,6 +31,7 @@
 
 #include <eez/gui/gui.h>
 #include <eez/gui/scrolling.h>
+#include <eez/gui/widgets/containers/container.h>
 
 namespace eez {
 namespace gui {
@@ -134,6 +135,55 @@ static Rect getScrollIndicatorRect(bool isVertical, const Style *style, int x, i
     return rect;
 }
 
+// the size of a page dot: the border and the padding of the style
+static void getPageDotSize(const Style *style, int &w, int &h) {
+    w = style->borderSizeLeft + style->paddingLeft + style->paddingRight + style->borderSizeRight;
+    h = style->borderSizeTop + style->paddingTop + style->paddingBottom + style->borderSizeBottom;
+}
+
+// the row of the page dots (see ScrollableWidgetState::pageDotsStyle)
+static Rect getPageDotsRect(const Style *style, int x, int y, int w, int h, int maxPosition) {
+    Rect rect = {};
+
+    int dotW, dotH;
+    getPageDotSize(style, dotW, dotH);
+    if (maxPosition <= 0 || dotW <= 0 || dotH <= 0) {
+        return rect;
+    }
+
+    int numDots = maxPosition + 1;
+    rect.w = numDots * dotW + (numDots - 1) * dotW;
+    rect.h = dotH;
+    rect.x = x + (w - rect.w) / 2;
+    rect.y = y + h - 2 * dotH;
+    return rect;
+}
+
+// the dot of the scroll position (in pixels), the nearest position
+static int getPageDot(int scroll, int pitch, int maxPosition) {
+    int dot = pitch > 0 ? (scroll + pitch / 2) / pitch : 0;
+    return dot < 0 ? 0 : dot > maxPosition ? maxPosition : dot;
+}
+
+static void drawPageDots(const Style *style, const Rect &rect, int pageDot) {
+    int dotW, dotH;
+    getPageDotSize(style, dotW, dotH);
+
+    int i = 0;
+    for (int x = rect.x; x < rect.x + rect.w; x += 2 * dotW, i++) {
+        bool selected = i == pageDot;
+        auto stateStyle = getWidgetStateStyle(style, false, false, selected ? STYLE_STATE_FLAG(STYLE_STATE_SELECTED) : 0);
+        bool active = selected && !styleHasStateStyle(style, STYLE_STATE_SELECTED);
+
+        int x1 = x;
+        int y1 = rect.y;
+        int x2 = x + dotW - 1;
+        int y2 = rect.y + dotH - 1;
+        // over the items: the backgrounds below the list are not drawn first
+        drawBorderAndBackground(x1, y1, x2, y2, stateStyle.style, getStyleBackgroundColor(stateStyle.style, active), false, true);
+    }
+}
+
 void ScrollableWidgetState::beginEnumChildren(EnumChildrenContext &context) {
     WidgetCursor &widgetCursor = g_widgetCursor;
 
@@ -160,6 +210,7 @@ void ScrollableWidgetState::beginEnumChildren(EnumChildrenContext &context) {
     context.renderPixelOffset = 0;
     context.scrolling = false;
     context.scrollIndicator = Rect();
+    context.pageDot = -1;
     context.drawScrollIndicator = false;
     context.savedDirty = false;
 
@@ -171,12 +222,20 @@ void ScrollableWidgetState::beginEnumChildren(EnumChildrenContext &context) {
             context.renderPixelOffset = pixelOffset;
         }
 
-        if (touchScrollable && widgetCursor.appContext->isTouchScrollEnabled(widgetCursor)) {
+        int scroll = startPosition / itemsPerLine * pitch + context.renderPixelOffset;
+        if (pageDotsStyle) {
+            // also when the list is scrolled only by its data
+            if (touchScrollable) {
+                context.scrollIndicator = getPageDotsRect(getStyle(pageDotsStyle), savedX, savedY, savedW, savedH, maxPosition);
+                context.pageDot = getPageDot(scroll, pitch, maxPosition);
+            }
+        } else if (touchScrollable && widgetCursor.appContext->isTouchScrollEnabled(widgetCursor)) {
             context.scrollIndicator = getScrollIndicatorRect(isVertical, style, savedX, savedY, savedW, savedH,
-                pitch, maxPosition, startPosition / itemsPerLine * pitch + context.renderPixelOffset);
+                pitch, maxPosition, scroll);
         }
-        bool scrollIndicatorMoved = context.scrollIndicator != renderedScrollIndicator;
+        bool scrollIndicatorMoved = context.scrollIndicator != renderedScrollIndicator || context.pageDot != renderedPageDot;
         renderedScrollIndicator = context.scrollIndicator;
+        renderedPageDot = context.pageDot;
 
         if (context.scrolling || renderedPixelOffset != 0 || scrollIndicatorMoved) {
             // items (or scroll indicator) moved since the previous frame, redraw everything
@@ -250,8 +309,12 @@ void ScrollableWidgetState::endEnumChildren(EnumChildrenContext &context) {
     if (!g_findCallback) {
         auto &scrollIndicator = context.scrollIndicator;
         if (scrollIndicator.w > 0 && (context.drawScrollIndicator || display::isRenderBufferDirty())) {
-            display::setColor(style->color);
-            display::fillRect(scrollIndicator.x, scrollIndicator.y, scrollIndicator.x + scrollIndicator.w - 1, scrollIndicator.y + scrollIndicator.h - 1);
+            if (pageDotsStyle) {
+                drawPageDots(getStyle(pageDotsStyle), scrollIndicator, context.pageDot);
+            } else {
+                display::setColor(style->color);
+                display::fillRect(scrollIndicator.x, scrollIndicator.y, scrollIndicator.x + scrollIndicator.w - 1, scrollIndicator.y + scrollIndicator.h - 1);
+            }
         }
         if (context.savedDirty) {
             display::markRenderBufferDirty();
@@ -264,11 +327,15 @@ void ScrollableWidgetState::endEnumChildren(EnumChildrenContext &context) {
         if (isRepaintingOverlappingWidgets() && renderedScrollIndicator.w > 0) {
             // items are repainted, scroll indicator is drawn over them
             auto savedClipRect = display::intersectClipRect(context.savedX, context.savedY, context.savedW, context.savedH);
-            display::setColor(style->color);
-            display::fillRect(
-                renderedScrollIndicator.x, renderedScrollIndicator.y,
-                renderedScrollIndicator.x + renderedScrollIndicator.w - 1, renderedScrollIndicator.y + renderedScrollIndicator.h - 1
-            );
+            if (pageDotsStyle) {
+                drawPageDots(getStyle(pageDotsStyle), renderedScrollIndicator, renderedPageDot);
+            } else {
+                display::setColor(style->color);
+                display::fillRect(
+                    renderedScrollIndicator.x, renderedScrollIndicator.y,
+                    renderedScrollIndicator.x + renderedScrollIndicator.w - 1, renderedScrollIndicator.y + renderedScrollIndicator.h - 1
+                );
+            }
             display::restoreClipRect(savedClipRect);
         }
     }
@@ -644,7 +711,9 @@ static int getTouchScrollLocalPosition(const WidgetCursor &widgetCursor, int sta
 
 bool isTouchScrollableList(const WidgetCursor &widgetCursor) {
     auto type = widgetCursor.widget->type;
-    if ((type != WIDGET_TYPE_LIST && type != WIDGET_TYPE_GRID) || widgetCursor.currentState->type != type) {
+    bool isScrollContainer = type == WIDGET_TYPE_CONTAINER &&
+        ((const ContainerWidget *)widgetCursor.widget)->scroll == CONTAINER_WIDGET_SCROLL_VERTICAL;
+    if ((type != WIDGET_TYPE_LIST && type != WIDGET_TYPE_GRID && !isScrollContainer) || widgetCursor.currentState->type != type) {
         return false;
     }
     auto state = (ScrollableWidgetState *)widgetCursor.currentState;

@@ -149,15 +149,35 @@ static int getContentY(const Style *style, int y1, int y2, int height) {
     return y1 + ((y2 - y1 + 1) + style->paddingTop - style->paddingBottom - height) / 2;
 }
 
+// How much drawBorderAndBackground shrinks the box on each side: the border,
+// one more pixel with a border radius.
+static void getBorderInsets(const Style *style, int &left, int &top, int &right, int &bottom) {
+    bool hasBorder = style->borderSizeTop > 0 || style->borderSizeRight > 0 || style->borderSizeBottom > 0 || style->borderSizeLeft > 0;
+    if (!hasBorder) {
+        left = top = right = bottom = 0;
+        return;
+    }
+    bool hasBorderRadius =
+        style->borderRadiusTLX > 0 || style->borderRadiusTLY > 0 || style->borderRadiusTRX > 0 || style->borderRadiusTRY > 0 ||
+        style->borderRadiusBRX > 0 || style->borderRadiusBRY > 0 || style->borderRadiusBLX > 0 || style->borderRadiusBLY > 0;
+    int extra = hasBorderRadius ? 1 : 0;
+    left = style->borderSizeLeft + extra;
+    top = style->borderSizeTop + extra;
+    right = style->borderSizeRight + extra;
+    bottom = style->borderSizeBottom + extra;
+}
+
 int getTextBaseline(const Style *style, int h) {
     font::Font font = styleGetFont(style);
     if (!font) {
         return -1;
     }
-    // as drawText places the text in a box at y = 0
-    int y = getContentY(style, 0, h - 1, font.getHeight());
+    // as drawText places the text in a box at y = 0, inside of the border
+    int left, top, right, bottom;
+    getBorderInsets(style, left, top, right, bottom);
+    int y = getContentY(style, top, h - 1 - bottom, font.getHeight());
     if (y < 0) {
-        y = 0;
+        y = top;
     }
     return y + font.getAscent();
 }
@@ -262,7 +282,7 @@ static void drawBackgroundsBelow(int x1, int y1, int x2, int y2, bool ignoreLumi
     }
 }
 
-void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *style, uint16_t color, bool ignoreLuminocity) {
+void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *style, uint16_t color, bool ignoreLuminocity, bool insideWidget) {
     const WidgetCursor& widgetCursor = g_widgetCursor;
 
 	bool isTransparent = true;
@@ -296,7 +316,7 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 		hasShadow = styleHasShadow(style);
 	}
 
-	if (!widgetCursor.refreshed) {
+	if (!widgetCursor.refreshed && !insideWidget) {
 		if (hasShadow) {
 			// the shadow is drawn over the backgrounds below, around the box
 			int sx1 = x1;
@@ -666,6 +686,243 @@ void drawIntegerUnitAndFraction(
     display::drawStr(integer, integerLength, x_integer, y_integer, x1, y1, x2, y2, integerFont, -1);
     display::drawStr(unit, unitLength, x_column + unitOffset, y_unit, x1, y1, x2, y2, smallFont, -1);
     display::drawStr(fraction, fractionLength, x_column, y_fraction, x1, y1, x2, y2, smallFont, -1);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// The x of content of the given width in x1 .. x2 aligned as the style says,
+// as getContentX does, without the padding of the style.
+static int alignContentX(const Style *style, int x1, int x2, int width) {
+    if (styleIsHorzAlignLeft(style)) {
+        return x1;
+    }
+    if (styleIsHorzAlignRight(style)) {
+        return x2 - width;
+    }
+    int x = x1 + (x2 - x1 + 1 - width) / 2;
+    return x < x1 ? x1 : x;
+}
+
+// The sizes drawValueParts, measureValueParts and getValuePartsBaseline place
+// the parts with.
+struct ValuePartsGeometry {
+    font::Font labelFont;
+    font::Font valueFont;
+    font::Font unitFont;
+    // the padding of the label style, 0 without it
+    int labelPaddingLeft = 0;
+    int labelPaddingTop = 0;
+    int labelPaddingRight = 0;
+    int labelPaddingBottom = 0;
+    int labelWidth = 0;
+    // with the padding, 0 without a label
+    int labelHeight = 0;
+    int valueWidth = 0;
+    int unitGap = 0;
+    int unitWidth = 0;
+    // the border and the padding of the line style on each side of the value
+    // line, 0 without it
+    int lineInsetLeft = 0;
+    int lineInsetTop = 0;
+    int lineInsetRight = 0;
+    int lineInsetBottom = 0;
+    // the value line: from its top to the baseline, its height
+    int lineAscent = 0;
+    int lineHeight = 0;
+    // the label and the line box
+    int blockWidth = 0;
+    int blockHeight = 0;
+};
+
+static bool hasUnit(const ValueParts &parts) {
+    return parts.unit && parts.unitLength != 0 && *parts.unit;
+}
+
+// Right aligned value with a unit (and no line box): the value ends at the
+// right of the content box and the unit is in the right padding (the room for
+// the unit), so the values of a column of widgets end at one x whatever their
+// units are (as drawIntegerUnitAndFraction). The unit is moved left with the
+// value when it doesn't fit in the padding.
+static bool isUnitInRightPadding(const ValueParts &parts, const Style *style) {
+    return hasUnit(parts) && !parts.lineStyle && styleIsHorzAlignRight(style);
+}
+
+static bool getValuePartsGeometry(const ValueParts &parts, const Style *style, ValuePartsGeometry &g) {
+    g.valueFont = styleGetFont(style);
+    if (!g.valueFont) {
+        return false;
+    }
+
+    if (parts.label) {
+        g.labelFont = parts.labelStyle ? styleGetFont(parts.labelStyle) : g.valueFont;
+        if (!g.labelFont) {
+            g.labelFont = g.valueFont;
+        }
+        if (parts.labelStyle) {
+            g.labelPaddingLeft = parts.labelStyle->paddingLeft;
+            g.labelPaddingTop = parts.labelStyle->paddingTop;
+            g.labelPaddingRight = parts.labelStyle->paddingRight;
+            g.labelPaddingBottom = parts.labelStyle->paddingBottom;
+        }
+        g.labelWidth = display::measureStr(parts.label, -1, g.labelFont, 0);
+        g.labelHeight = g.labelPaddingTop + g.labelFont.getHeight() + g.labelPaddingBottom;
+    }
+
+    // the value and the unit on one baseline
+    if (parts.value) {
+        g.valueWidth = display::measureStr(parts.value, parts.valueLength, g.valueFont, 0);
+    }
+    g.lineAscent = g.valueFont.getAscent();
+    int lineDescent = g.valueFont.getHeight() - g.valueFont.getAscent();
+    if (hasUnit(parts)) {
+        g.unitFont = parts.unitStyle ? styleGetFont(parts.unitStyle) : g.valueFont;
+        if (!g.unitFont) {
+            g.unitFont = g.valueFont;
+        }
+        g.unitGap = parts.unitStyle ? parts.unitStyle->paddingLeft : display::measureStr(" ", 1, g.valueFont, 0);
+        g.unitWidth = display::measureStr(parts.unit, parts.unitLength, g.unitFont, 0);
+        g.lineAscent = MAX(g.lineAscent, g.unitFont.getAscent());
+        lineDescent = MAX(lineDescent, g.unitFont.getHeight() - g.unitFont.getAscent());
+    }
+    g.lineHeight = g.lineAscent + lineDescent;
+
+    if (parts.lineStyle) {
+        getBorderInsets(parts.lineStyle, g.lineInsetLeft, g.lineInsetTop, g.lineInsetRight, g.lineInsetBottom);
+        g.lineInsetLeft += parts.lineStyle->paddingLeft;
+        g.lineInsetTop += parts.lineStyle->paddingTop;
+        g.lineInsetRight += parts.lineStyle->paddingRight;
+        g.lineInsetBottom += parts.lineStyle->paddingBottom;
+    }
+
+    int labelBlockWidth = g.labelPaddingLeft + g.labelWidth + g.labelPaddingRight;
+    int lineBlockWidth = g.lineInsetLeft + g.valueWidth + g.unitGap + g.unitWidth + g.lineInsetRight;
+    if (isUnitInRightPadding(parts, style)) {
+        // only what doesn't fit in the right padding
+        lineBlockWidth = g.valueWidth + MAX(g.unitGap + g.unitWidth - style->paddingRight, 0);
+    }
+    g.blockWidth = MAX(labelBlockWidth, lineBlockWidth);
+    g.blockHeight = g.labelHeight + g.lineInsetTop + g.lineHeight + g.lineInsetBottom;
+
+    return true;
+}
+
+void drawValueParts(
+    const ValueParts &parts,
+    int x, int y, int w, int h,
+    const Style *style,
+    bool active,
+    uint16_t *overrideColor, uint16_t *overrideBackgroundColor,
+    bool useSmallerFontIfDoesNotFit
+) {
+    int x1 = x;
+    int y1 = y;
+    int x2 = x + w - 1;
+    int y2 = y + h - 1;
+
+    uint16_t color = overrideColor ? *overrideColor : style->color;
+    uint16_t backgroundColor = overrideBackgroundColor ? *overrideBackgroundColor : style->backgroundColor;
+    swapColorsIfActive(active, color, backgroundColor);
+
+    drawBorderAndBackground(x1, y1, x2, y2, style, backgroundColor);
+
+    ValuePartsGeometry g;
+    if (!getValuePartsGeometry(parts, style, g)) {
+        return;
+    }
+
+    // the content box (x1 .. x2 and y1 .. y2 are inside of the border now)
+    int contentX1 = x1 + style->paddingLeft;
+    int contentX2 = x2 - style->paddingRight;
+
+    int blockY = getContentY(style, y1, y2, g.blockHeight);
+    // box above the display (e.g. list item while touch scrolling) is not snapped
+    if (blockY < 0 && y1 >= 0) {
+        blockY = y1;
+    }
+
+    // while the widget is drawn active the label and the unit are in its
+    // (swapped) color too
+    if (parts.label) {
+        const Style *labelStyle = parts.labelStyle ? parts.labelStyle : style;
+        uint16_t labelColor = parts.labelStyle && !active ? parts.labelStyle->color : color;
+        if (labelColor != TRANSPARENT_COLOR_INDEX) {
+            int labelX = alignContentX(labelStyle, contentX1 + g.labelPaddingLeft, contentX2 - g.labelPaddingRight, g.labelWidth);
+            display::setColor(labelColor);
+            display::drawStr(parts.label, -1, labelX, blockY + g.labelPaddingTop, x1, y1, x2, y2, g.labelFont, -1);
+        }
+    }
+
+    int lineY1 = blockY + g.labelHeight;
+    if (parts.lineStyle) {
+        int boxX1 = contentX1;
+        int boxY1 = lineY1;
+        int boxX2 = contentX2;
+        int boxY2 = MIN(lineY1 + g.lineInsetTop + g.lineHeight + g.lineInsetBottom - 1, y2);
+        drawBorderAndBackground(boxX1, boxY1, boxX2, boxY2, parts.lineStyle, parts.lineStyle->backgroundColor, false, true);
+    }
+
+    int valueX1 = contentX1 + g.lineInsetLeft;
+    int valueX2 = contentX2 - g.lineInsetRight;
+    int baseline = lineY1 + g.lineInsetTop + g.lineAscent;
+
+    font::Font valueFont = g.valueFont;
+    int valueWidth = g.valueWidth;
+    if (useSmallerFontIfDoesNotFit && parts.value) {
+        while (valueWidth + g.unitGap + g.unitWidth > valueX2 - valueX1 + 1 && g_hooks.styleGetSmallerFont(valueFont)) {
+            valueWidth = display::measureStr(parts.value, parts.valueLength, valueFont, 0);
+        }
+    }
+
+    int lineWidth = valueWidth + g.unitGap + g.unitWidth;
+    int valueX;
+    if (isUnitInRightPadding(parts, style)) {
+        valueX = alignContentX(style, valueX1, valueX2, valueWidth);
+        if (valueX + lineWidth > x2) {
+            valueX = x2 - lineWidth;
+        }
+    } else {
+        valueX = alignContentX(style, valueX1, valueX2, lineWidth);
+    }
+
+    if (parts.value && color != TRANSPARENT_COLOR_INDEX) {
+        display::setColor(color);
+        display::drawStr(parts.value, parts.valueLength, valueX, baseline - valueFont.getAscent(), x1, y1, x2, y2, valueFont, -1);
+    }
+
+    if (hasUnit(parts)) {
+        uint16_t unitColor = parts.unitStyle && !active ? parts.unitStyle->color : color;
+        if (unitColor != TRANSPARENT_COLOR_INDEX) {
+            display::setColor(unitColor);
+            display::drawStr(parts.unit, parts.unitLength, valueX + valueWidth + g.unitGap, baseline - g.unitFont.getAscent(), x1, y1, x2, y2, g.unitFont, -1);
+        }
+    }
+}
+
+bool measureValueParts(const ValueParts &parts, const Style *style, int &w, int &h) {
+    ValuePartsGeometry g;
+    if (!getValuePartsGeometry(parts, style, g)) {
+        return false;
+    }
+    int left, top, right, bottom;
+    getBorderInsets(style, left, top, right, bottom);
+    w = left + style->paddingLeft + g.blockWidth + style->paddingRight + right;
+    h = top + style->paddingTop + g.blockHeight + style->paddingBottom + bottom;
+    return true;
+}
+
+int getValuePartsBaseline(const ValueParts &parts, const Style *style, int h) {
+    ValuePartsGeometry g;
+    if (!getValuePartsGeometry(parts, style, g)) {
+        return -1;
+    }
+    // as drawValueParts places the block in a box at y = 0
+    int left, top, right, bottom;
+    getBorderInsets(style, left, top, right, bottom);
+    int blockY = getContentY(style, top, h - 1 - bottom, g.blockHeight);
+    if (blockY < 0) {
+        blockY = top;
+    }
+    return blockY + g.labelHeight + g.lineInsetTop + g.lineAscent;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

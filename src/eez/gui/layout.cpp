@@ -25,6 +25,7 @@
 #include <eez/gui/widgets/containers/container.h>
 #include <eez/gui/widgets/text.h>
 #include <eez/gui/widgets/display_data.h>
+#include <eez/gui/widgets/input.h>
 
 namespace eez {
 namespace gui {
@@ -126,17 +127,20 @@ static void getRowOrColumnContentSize(WidgetCursor &cursor, int &w, int &h) {
     h = (row ? cross : main) + insetH;
 }
 
-// the y of the baseline of the first text line in the child box of the height
-// h, the bottom of the box for a child without text
+// the y of the baseline of the first text line (of the value of a widget with
+// a label) in the child box of the height h, the bottom of the box for a child
+// without text
 static int getChildBaseline(WidgetCursor &cursor, const Widget *child, int h) {
-    if (child->type == WIDGET_TYPE_TEXT || child->type == WIDGET_TYPE_DISPLAY_DATA) {
-        cursor.widget = child;
-        int baseline = getTextBaseline(getLayoutStyle(cursor), h);
-        if (baseline >= 0) {
-            return baseline;
-        }
+    int baseline = -1;
+    cursor.widget = child;
+    if (child->type == WIDGET_TYPE_TEXT) {
+        baseline = getTextBaseline(getLayoutStyle(cursor), h);
+    } else if (child->type == WIDGET_TYPE_DISPLAY_DATA) {
+        baseline = DisplayDataWidget_getBaseline(cursor, h);
+    } else if (child->type == WIDGET_TYPE_INPUT) {
+        baseline = InputWidget_getBaseline(cursor, h);
     }
-    return h;
+    return baseline >= 0 ? baseline : h;
 }
 
 static void hashValue(uint32_t &hash, int value) {
@@ -145,6 +149,11 @@ static void hashValue(uint32_t &hash, int value) {
         hash ^= (uint8_t)(value >> (8 * i));
         hash *= 16777619u;
     }
+}
+
+void getLayoutContentSize(const WidgetCursor &widgetCursor, int &w, int &h) {
+    WidgetCursor cursor = widgetCursor;
+    getRowOrColumnContentSize(cursor, w, h);
 }
 
 int layoutChildren(const WidgetCursor &widgetCursor, LayoutChild *children, uint32_t &hash) {

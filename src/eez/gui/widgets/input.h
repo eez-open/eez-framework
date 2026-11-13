@@ -27,7 +27,12 @@ struct InputWidget : public Widget {
 	// a number Input is shown in this unit (a string such as "mA", 0 if not
 	// set: in unit) with the decimals of its precision, see getValueInUnit
 	int16_t displayUnit;
-	int16_t reserved1;
+	// a text above the value (a flow expression, 0 if not set) in labelStyle
+	// (0: the widget style), and the box around the value line in lineStyle
+	// (0: none), e.g. the quantity line of a set field; see drawValueParts
+	int16_t label;
+	int16_t labelStyle;
+	int16_t lineStyle;
 };
 
 struct InputWidgetState : public WidgetState {
@@ -36,6 +41,7 @@ struct InputWidgetState : public WidgetState {
 	// a number: data as it is shown (getInputWidgetShownValue), it changes
 	// also with the display unit and the precision
 	Value shownData;
+	Value label;
 	// style after overrideStyle and the text color after the
 	// overrideStyleColor hook
 	int styleId;
@@ -72,6 +78,11 @@ Value getInputWidgetShownValue(const gui::WidgetCursor &widgetCursor, const Valu
 Value getInputWidgetInfo(const gui::WidgetCursor &widgetCursor);
 
 Value getInputWidgetData(const gui::WidgetCursor &widgetCursor, const Value &dataValue);
+
+// The y of the baseline of the value the Input widget widgetCursor.widget shows
+// in a box of the height h, from the top of the box; -1 if its style has no
+// font.
+int InputWidget_getBaseline(const WidgetCursor &widgetCursor, int h);
 
 } // namespace gui
 } // namespace eez

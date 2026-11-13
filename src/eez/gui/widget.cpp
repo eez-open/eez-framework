@@ -1121,8 +1121,10 @@ static void repaintOverlappingWidgetStep() {
     // refreshed (it is used in enumChildren right after render). When repainting,
     // enumChildren doesn't use it, so it must not stay set for the next frame.
     bool savedRepainted = false;
+    bool savedRendered = false;
     if (widgetState->type == WIDGET_TYPE_CONTAINER) {
         savedRepainted = ((ContainerWidgetState *)widgetState)->repainted;
+        savedRendered = ((ContainerWidgetState *)widgetState)->rendered;
     } else if (widgetState->type == WIDGET_TYPE_SELECT) {
         savedRepainted = ((SelectWidgetState *)widgetState)->repainted;
     } else if (widgetState->type == WIDGET_TYPE_USER_WIDGET) {
@@ -1137,6 +1139,7 @@ static void repaintOverlappingWidgetStep() {
 
     if (widgetState->type == WIDGET_TYPE_CONTAINER) {
         ((ContainerWidgetState *)widgetState)->repainted = savedRepainted;
+        ((ContainerWidgetState *)widgetState)->rendered = savedRendered;
     } else if (widgetState->type == WIDGET_TYPE_SELECT) {
         ((SelectWidgetState *)widgetState)->repainted = savedRepainted;
     } else if (widgetState->type == WIDGET_TYPE_USER_WIDGET) {

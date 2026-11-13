@@ -97,7 +97,11 @@ void expandRectWithStyleShadow(const Style *style, int &x1, int &y1, int &x2, in
 // box), with the radius of the top left corner of the style.
 void drawStyleShadow(const Style *style, int x1, int y1, int x2, int y2);
 
-void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *style, uint16_t color, bool ignoreLuminocity = false);
+// The border and the background of the style in the box, which is then
+// shrunk to the inside of the border. insideWidget: a box drawn over the
+// background of the current widget (e.g. a part of it), the backgrounds below
+// the widget are not drawn first.
+void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *style, uint16_t color, bool ignoreLuminocity = false, bool insideWidget = false);
 
 // active: the color and the background swapped (see swapColorsIfActive), also
 // overrideColor and overrideBackgroundColor
@@ -126,6 +130,53 @@ void drawIntegerUnitAndFraction(
     bool active,
     uint16_t *overrideColor, uint16_t *overrideBackgroundColor
 );
+// A value with a label above it and a unit after it (a readout or a set field,
+// see the DisplayData and Input widgets). A part that is not shown is null, a
+// style that is not set is null.
+struct ValueParts {
+    // a line above the value line in labelStyle: its font and color, its
+    // padding around the label and its horizontal alignment in the content box
+    // of the widget; the font, color and alignment of the widget style if
+    // labelStyle is not set
+    const char *label = nullptr;
+    const Style *labelStyle = nullptr;
+    const char *value = nullptr;
+    int valueLength = -1;
+    // after the value, on its baseline, in unitStyle: its font and color, its
+    // left padding is the gap after the value; the widget style and the width
+    // of a space if unitStyle is not set
+    const char *unit = nullptr;
+    int unitLength = 0;
+    const Style *unitStyle = nullptr;
+    // a box around the value line across the content box of the widget: its
+    // border (a bottom border is the quantity line of a set field), background
+    // and padding
+    const Style *lineStyle = nullptr;
+};
+// The parts in the box x, y, w, h with the border, background and padding of
+// the style. The label and the value line are one block placed by the vertical
+// alignment of the style, the value and the unit are placed by its horizontal
+// alignment. Right aligned (without a line box), the value ends at the right
+// of the content box and the unit is in the right padding, so the values of a
+// column of widgets end at one x whatever their units (the unit and the value
+// move left if the unit doesn't fit). active: as in drawText.
+// useSmallerFontIfDoesNotFit: a smaller font of the value (on the same
+// baseline) if the value and the unit don't fit.
+void drawValueParts(
+    const ValueParts &parts,
+    int x, int y, int w, int h,
+    const Style *style,
+    bool active,
+    uint16_t *overrideColor, uint16_t *overrideBackgroundColor,
+    bool useSmallerFontIfDoesNotFit = false
+);
+// The size of the parts as drawValueParts draws them, with the padding and the
+// border of the style; false if the style has no font.
+bool measureValueParts(const ValueParts &parts, const Style *style, int &w, int &h);
+// The y of the baseline of the value as drawValueParts draws it in a box of
+// the height h, from the top of the box; -1 if the style has no font.
+int getValuePartsBaseline(const ValueParts &parts, const Style *style, int h);
+
 int getCharIndexAtPosition(int xPos, const char *text, int textLength, int x, int y, int w, int h, const Style *style);
 int getCursorXPosition(int cursorPosition, const char *text, int textLength, int x, int y, int w, int h, const Style *style);
 

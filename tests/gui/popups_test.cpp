@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
+#include <vector>
 
 #include <eez/flow/flow_defs_v3.h>
 
@@ -251,6 +252,34 @@ TEST("gui/page: the toast shows a copy of the message") {
     CHECK_EQ(checksum(toast->x, toast->y, toast->width, toast->height), before);
 }
 
+// the pixels in the area that are not of the color (0xRRGGBB)
+static int countOtherColor(int x, int y, int w, int h, uint32_t color) {
+    int n = 0;
+    for (int yy = y; yy < y + h; yy++) {
+        for (int xx = x; xx < x + w; xx++) {
+            if ((harness::pixel(xx, yy) & 0xFFFFFF) != color) {
+                n++;
+            }
+        }
+    }
+    return n;
+}
+
+TEST("gui/page: the toast lines are inside the border and the padding of the toast style") {
+    // info_alert: border 2, padding 8; the lines are drawn in its font and
+    // color, not in boxes of the style (no border, background or padding per
+    // line)
+    app()->infoMessage("one\ntwo");
+    harness::frame(2);
+    auto toast = activeToast();
+    uint32_t accent = harness::pixel(toast->x + 2, toast->y + 2) & 0xFFFFFF;
+    // the padding above the lines and on their left
+    CHECK_EQ(countOtherColor(toast->x + 2, toast->y + 2, toast->width - 4, 8, accent), 0);
+    CHECK_EQ(countOtherColor(toast->x + 2, toast->y + 10, 8, toast->height - 12, accent), 0);
+    // the text is there
+    CHECK(countOtherColor(toast->x + 10, toast->y + 10, toast->width - 20, toast->height - 20, accent) > 0);
+}
+
 TEST("gui/page: the error toast button has the error button style") {
     app()->errorMessage("error");
     int x, y;
@@ -259,7 +288,7 @@ TEST("gui/page: the error toast button has the error button style") {
     CHECK_EQ((int)button.widget->style, (int)EEZ_STYLE_ID_ERROR_ALERT_BUTTON);
 }
 
-TEST_BUG("gui/page: the info toast button has the info button style", "G14") {
+TEST("gui/page: the info toast button has the info button style") {
     app()->infoMessage("info", []() {}, "Do");
     int x, y;
     WidgetCursor button;
@@ -267,7 +296,7 @@ TEST_BUG("gui/page: the info toast button has the info button style", "G14") {
     CHECK_EQ((int)button.widget->style, (int)EEZ_STYLE_ID_INFO_ALERT_BUTTON);
 }
 
-TEST_BUG("gui/page: a toast is not wider than the display", "G14") {
+TEST("gui/page: a toast is not wider than the display") {
     // e.g. DISP:WIND:ERR with a 128 character message
     std::string message(128, 'W');
     app()->errorMessage(message.c_str());
@@ -276,7 +305,7 @@ TEST_BUG("gui/page: a toast is not wider than the display", "G14") {
     CHECK(toast->x >= 0);
 }
 
-TEST_BUG("gui/page: the toast keeps its message when the caller's buffer is freed", "G14") {
+TEST("gui/page: the toast keeps its message when the caller's buffer is freed") {
     // BB3+ compares messageValue later (isTripCleared); DISP:WIND:ERR passes a
     // buffer of the SCPI thread
     char *buffer = (char *)malloc(32);
@@ -794,4 +823,62 @@ TEST("gui/app_context: yesNoDialog with a Value message") {
     harness::advance(400);
     tap(YES_X, YES_Y);
     CHECK_EQ(activePageId(), (int)PAGE_ID_GUI_PAGE_A);
+}
+
+TEST("gui/page: the select page is drawn with the border of its container style") {
+    // select_enum_item_popup_container: border 1 in the text color (white),
+    // padding 4, the background of the default style (black)
+    SelectFromEnumPage::pushSelectFromEnumPage(app(), g_items, 10, nullptr, onSet);
+    harness::frame(2);
+    harness::advance(400);
+    harness::frame(2);
+    auto page = (InternalPage *)app()->getActivePage();
+    int yMiddle = page->y + page->height / 2;
+    CHECK_EQ(harness::pixel(page->x, yMiddle) & 0xFFFFFF, 0xFFFFFFu);
+    CHECK_EQ(harness::pixel(page->x + page->width - 1, yMiddle) & 0xFFFFFF, 0xFFFFFFu);
+    CHECK_EQ(harness::pixel(page->x + 1, yMiddle) & 0xFFFFFF, 0u);
+    SelectFromEnumPage::popSelectFromEnumPage();
+}
+
+TEST("gui/page: the rounded corners of a menu show the page below, not an earlier popup") {
+    // menu_with_buttons_container has the radius 12: its corners are drawn
+    // from the page below (the buffer background of the internal page)
+    static const char *items[] = { "Yes", "No", nullptr };
+    showPageA();
+    showMenu(app(), "Question", MENU_TYPE_BUTTON, items, [](int) { app()->popPage(); });
+    harness::frame(3);
+    auto menu = (InternalPage *)app()->getActivePage();
+    int x = menu->x;
+    int y = menu->y;
+    int w = menu->width;
+    int h = menu->height;
+    std::vector<uint32_t> corners;
+    for (int dy = 0; dy < 4; dy++) {
+        for (int dx = 0; dx < 4; dx++) {
+            corners.push_back(harness::pixel(x + dx, y + dy));
+            corners.push_back(harness::pixel(x + w - 1 - dx, y + h - 1 - dy));
+        }
+    }
+    app()->popPage();
+    harness::frame(2);
+
+    // a wide error toast over the same place, closed, then the menu again
+    app()->errorMessage("A long message of an error toast that is wider than the menu");
+    harness::frame(3);
+    app()->popPage();
+    harness::frame(2);
+    showMenu(app(), "Question", MENU_TYPE_BUTTON, items, [](int) { app()->popPage(); });
+    harness::frame(3);
+    menu = (InternalPage *)app()->getActivePage();
+    REQUIRE(menu->x == x && menu->y == y && menu->width == w && menu->height == h);
+    int i = 0;
+    int different = 0;
+    for (int dy = 0; dy < 4; dy++) {
+        for (int dx = 0; dx < 4; dx++) {
+            different += harness::pixel(x + dx, y + dy) != corners[i++];
+            different += harness::pixel(x + w - 1 - dx, y + h - 1 - dy) != corners[i++];
+        }
+    }
+    CHECK_EQ(different, 0);
+    app()->popPage();
 }

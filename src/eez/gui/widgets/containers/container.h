@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <eez/gui/scrolling.h>
+
 namespace eez {
 namespace gui {
 
@@ -26,6 +28,11 @@ namespace gui {
 #define CONTAINER_WIDGET_LAYOUT_STATIC 0
 #define CONTAINER_WIDGET_LAYOUT_HORIZONTAL 1
 #define CONTAINER_WIDGET_LAYOUT_VERTICAL 2
+
+// the children taller than the container scroll vertically: touch drag, clipped
+// to the container, the scroll indicator of the List
+#define CONTAINER_WIDGET_SCROLL_NONE 0
+#define CONTAINER_WIDGET_SCROLL_VERTICAL 1
 
 struct ContainerWidget : public Widget {
 	ListOfAssetsPtr<Widget> widgets;
@@ -37,12 +44,15 @@ struct ContainerWidget : public Widget {
     // children and the space between them
     uint8_t justifyContent;
     uint8_t alignItems;
-    uint8_t reserved1;
+    uint8_t scroll; // CONTAINER_WIDGET_SCROLL_...
     int16_t gap;
     int16_t reserved2;
 };
 
-struct ContainerWidgetState : public WidgetState {
+// A container that scrolls (CONTAINER_WIDGET_SCROLL_VERTICAL) is scrolled as a
+// list of lines of 1 px: the scroll position (startPosition) is in pixels, the
+// content height is the number of lines (count).
+struct ContainerWidgetState : public ScrollableWidgetState {
 	WidgetStateFlags flags;
 	int styleId;
 	Overlay *overlay;
