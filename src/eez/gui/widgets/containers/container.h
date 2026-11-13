@@ -21,6 +21,8 @@
 namespace eez {
 namespace gui {
 
+// static: the children at their own position (pinned and resized with the
+// container); horizontal (a row) and vertical (a column): see gui/layout.h
 #define CONTAINER_WIDGET_LAYOUT_STATIC 0
 #define CONTAINER_WIDGET_LAYOUT_HORIZONTAL 1
 #define CONTAINER_WIDGET_LAYOUT_VERTICAL 2
@@ -29,8 +31,15 @@ struct ContainerWidget : public Widget {
 	ListOfAssetsPtr<Widget> widgets;
 	uint16_t flags;
 	int16_t overlay;
-    uint16_t layout;
-    uint16_t reserved1;
+    uint8_t layout; // CONTAINER_WIDGET_LAYOUT_...
+    // a row or column: the main axis (LAYOUT_JUSTIFY_...) and the cross axis
+    // (LAYOUT_ALIGN_..., LAYOUT_ALIGN_AUTO is the start) alignment of the
+    // children and the space between them
+    uint8_t justifyContent;
+    uint8_t alignItems;
+    uint8_t reserved1;
+    int16_t gap;
+    int16_t reserved2;
 };
 
 struct ContainerWidgetState : public WidgetState {
@@ -41,7 +50,9 @@ struct ContainerWidgetState : public WidgetState {
     int displayBufferIndex;
 	bool displayBufferSelected;
 	bool repainted;
-    int offsetPrevious;
+    // a row or column: the hash of the last layout, the container is drawn
+    // again with its children when the layout changes
+    uint32_t layoutHash = 0;
 
     bool updateState() override;
 	void render() override;

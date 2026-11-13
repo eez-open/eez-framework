@@ -84,6 +84,40 @@ void TextWidget_autoSize(TextWidget& widget) {
     widget.height = style->borderSizeTop + style->paddingTop + font.getHeight() + style->borderSizeBottom + style->paddingBottom;
 }
 
+// the width of the static text or of the data in the font
+static int measureTextContent(const char *text, bool hasData, const Value &data, font::Font &font) {
+    if (!font) {
+        return 0;
+    }
+    if (text && text[0]) {
+        return display::measureStr(text, -1, font, 0);
+    }
+    if (hasData) {
+        if (data.isString()) {
+            const char *str = data.getString();
+            return str ? display::measureStr(str, -1, font, 0) : 0;
+        }
+        char textBuffer[MAX_TEXT_LEN + 1];
+        data.toText(textBuffer, sizeof(textBuffer));
+        return display::measureStr(textBuffer, -1, font, 0);
+    }
+    return 0;
+}
+
+void TextWidget_getContentSize(const WidgetCursor &widgetCursor, int &w, int &h) {
+    auto widget = (const TextWidget *)widgetCursor.widget;
+    const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
+    font::Font font = styleGetFont(style);
+
+    const char *text = widget->text ? static_cast<const char *>(widget->text) : nullptr;
+    bool hasData = !(text && text[0]) && widget->data;
+    Value data = hasData ? get(widgetCursor, widget->data) : Value();
+
+    // must be kept in sync with TextWidgetState::updateState
+    w = style->borderSizeLeft + style->paddingLeft + measureTextContent(text, hasData, data, font) + style->paddingRight + style->borderSizeRight;
+    h = style->borderSizeTop + style->paddingTop + (font ? font.getHeight() : 0) + style->paddingBottom + style->borderSizeBottom;
+}
+
 bool TextWidgetState::updateState() {
     WIDGET_STATE_START_EVEN_IF_HIDDEN(TextWidget);
 
@@ -113,26 +147,12 @@ bool TextWidgetState::updateState() {
     if (widget->flags & (FIT_TO_CONTENT_WIDTH_FLAG | FIT_TO_CONTENT_HEIGHT_FLAG)) {
         font::Font font = styleGetFont(style);
 
-        // must be kept in sync with TextWidget_autoSize
+        // must be kept in sync with TextWidget_autoSize and TextWidget_getContentSize
         if (widget->flags & FIT_TO_CONTENT_WIDTH_FLAG) {
             // the width depends only on the text, the data and the style, so
             // it is measured only for a new state or after a change above
             if (!hasPreviousState) {
-                int textWidth = 0;
-                if (font) {
-                    if (text && text[0]) {
-                        textWidth = display::measureStr(text, -1, font, 0);
-                    } else if (widget->data) {
-                        if (data.isString()) {
-                            const char *str = data.getString();
-                            textWidth = str ? display::measureStr(str, -1, font, 0) : 0;
-                        } else {
-                            char textBuffer[MAX_TEXT_LEN + 1];
-                            data.toText(textBuffer, sizeof(textBuffer));
-                            textWidth = display::measureStr(textBuffer, -1, font, 0);
-                        }
-                    }
-                }
+                int textWidth = measureTextContent(text, !(text && text[0]) && widget->data, data, font);
                 fitW = (int16_t)(style->borderSizeLeft + style->paddingLeft + textWidth + style->paddingRight + style->borderSizeRight);
             }
         } else {
@@ -154,6 +174,10 @@ bool TextWidgetState::updateState() {
 
 void TextWidgetState::applyFitToContent() {
     auto widget = (const TextWidget *)g_widgetCursor.widget;
+    if (g_layoutPlacedWidget == widget) {
+        // the size is set by the row or column (see gui/layout.h)
+        return;
+    }
     if (widget->flags & FIT_TO_CONTENT_WIDTH_FLAG) {
         if (g_isRTL) {
             // keep the right edge, see doStaticLayout

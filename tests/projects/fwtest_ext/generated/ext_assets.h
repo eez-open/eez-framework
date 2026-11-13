@@ -53,6 +53,6 @@ enum FlowGlobalVariables {
     FLOW_GLOBAL_VARIABLE_MOD_CAUGHT = 6
 };
 
-extern const uint8_t assets[11557];
+extern const uint8_t assets[11569];
 
 } // namespace fwtest_ext

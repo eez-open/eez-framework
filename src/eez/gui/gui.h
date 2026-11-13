@@ -131,6 +131,7 @@ extern const int EEZ_FONT_ID_SHADOW;
 #include <eez/gui/overlay.h>
 #include <eez/gui/font.h>
 #include <eez/gui/draw.h>
+#include <eez/gui/layout.h>
 #include <eez/gui/touch.h>
 #include <eez/gui/page.h>
 #include <eez/gui/hooks.h>

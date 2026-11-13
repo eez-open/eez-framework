@@ -137,6 +137,19 @@ struct Settings {
 #define WIDGET_FLAG_FIX_WIDTH (1 << 4)
 #define WIDGET_FLAG_FIX_HEIGHT (1 << 5)
 
+// A child of a row or column (ContainerWidget with the layout horizontal or
+// vertical, see gui/layout.h): takes a share of the free space of the main axis.
+#define WIDGET_FLAG_GROW (1 << 6)
+// A child of a row or column: its alignment on the cross axis (LAYOUT_ALIGN_...),
+// LAYOUT_ALIGN_AUTO for the alignment of the container.
+#define WIDGET_FLAG_ALIGN_SELF_SHIFT 7
+#define WIDGET_FLAG_ALIGN_SELF_MASK (7 << WIDGET_FLAG_ALIGN_SELF_SHIFT)
+// A child of a row or column: the width and/or height from the content (Text and
+// DisplayData: the text; a row or column: its children). A Text widget also has
+// its own fit to content flags, used everywhere else (TextWidget::flags).
+#define WIDGET_FLAG_FIT_WIDTH (1 << 10)
+#define WIDGET_FLAG_FIT_HEIGHT (1 << 11)
+
 #define WIDGET_TIMELINE_PROPERTY_X (1 << 0)
 #define WIDGET_TIMELINE_PROPERTY_Y (1 << 1)
 #define WIDGET_TIMELINE_PROPERTY_WIDTH (1 << 2)

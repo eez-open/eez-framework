@@ -114,7 +114,7 @@ TEST_BUG("widgets/container: horizontal layout uses the animated width of a chil
     CHECK_EQ(countOther(CT_CHILD[0] + 100, CT_CHILD[1], 50, 50, GREEN), 0);
 }
 
-TEST_BUG("widgets/container: the rest of a grown horizontal container is cleared", "W19") {
+TEST("widgets/container: the rest of a grown horizontal container is cleared") {
     set(V_BOOL2, boolValue(true));
     timelineAtEnd(PAGE_ID_W_CONT_TL);
     show(PAGE_ID_W_CONT_TL);
@@ -123,7 +123,8 @@ TEST_BUG("widgets/container: the rest of a grown horizontal container is cleared
     set(V_BOOL2, boolValue(false));
     harness::frame();
     // green moved to the start; the place where it was is cleared up to the
-    // design width (300) only
+    // grown width (the container is drawn again when its layout changes, part
+    // of W19 fixed by the row layout, gui/layout.h)
     CHECK_EQ(countOther(CT_GROW[0], CT_GROW[1], 150, 50, GREEN), 0);
     CHECK_EQ(countOther(CT_GROW[0] + 150, CT_GROW[1], 250, 50, GRAY), 0);
 }

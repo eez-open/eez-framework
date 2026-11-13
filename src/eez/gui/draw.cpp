@@ -149,6 +149,19 @@ static int getContentY(const Style *style, int y1, int y2, int height) {
     return y1 + ((y2 - y1 + 1) + style->paddingTop - style->paddingBottom - height) / 2;
 }
 
+int getTextBaseline(const Style *style, int h) {
+    font::Font font = styleGetFont(style);
+    if (!font) {
+        return -1;
+    }
+    // as drawText places the text in a box at y = 0
+    int y = getContentY(style, 0, h - 1, font.getHeight());
+    if (y < 0) {
+        y = 0;
+    }
+    return y + font.getAscent();
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // Draws the backgrounds of the widgets below the current one (the background

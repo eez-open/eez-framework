@@ -110,6 +110,10 @@ void drawText(
     bool useSmallerFontIfDoesNotFit = false, int cursorPosition = -1, int xScroll = 0,
 	bool boolSkipBackground = false
 );
+// The y of the baseline of the text drawText draws in a box of the height h
+// (also of the integer part of drawIntegerUnitAndFraction), from the top of
+// the box; -1 if the style has no font.
+int getTextBaseline(const Style *style, int h);
 // Integer part with the style font, unit (top, above the first fraction digit) and fraction
 // (integer baseline) with unitAndFractionFont (style font if not set) in a column right of the
 // integer part.

@@ -87,6 +87,29 @@ void ContainerWidgetState::enumChildren() {
 
 	auto stateStyle = getWidgetStateStyle(getStyle(styleId), flags.active, false, getDisabledStateFlag(flags.disabled));
 
+	// A row or column is laid out before its children are enumerated. When the
+	// layout is not the same as the last time (children moved, appeared,
+	// changed size), the container is drawn again and so are its children.
+	LayoutChild layout[LAYOUT_MAX_CHILDREN];
+	int layoutCount = 0;
+	bool rowOrColumn = !overlay && (widget->layout == CONTAINER_WIDGET_LAYOUT_HORIZONTAL || widget->layout == CONTAINER_WIDGET_LAYOUT_VERTICAL);
+	if (rowOrColumn) {
+		uint32_t hash;
+		layoutCount = layoutChildren(widgetCursor, layout, hash);
+		if (g_findCallback == nullptr && hash != layoutHash) {
+			layoutHash = hash;
+			if (!repainted && !widgetCursor.refreshed) {
+				auto savedOpacity = display::setOpacity(widgetCursor.opacity);
+				drawRectangle(
+					widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
+					stateStyle.style, stateStyle.active
+				);
+				display::setOpacity(savedOpacity);
+				repainted = true;
+			}
+		}
+	}
+
 	bool savedRefreshed = false;
 
 	if (g_findCallback == nullptr) {
@@ -197,74 +220,35 @@ void ContainerWidgetState::enumChildren() {
             } else {
                 doStaticLayout(widgetCursor, widgets, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
             }
-        } else if (widget->layout == CONTAINER_WIDGET_LAYOUT_HORIZONTAL) {
+        } else if (rowOrColumn) {
             auto savedX = widgetCursor.x;
             auto savedY = widgetCursor.y;
+            auto savedLayoutPlacedWidget = g_layoutPlacedWidget;
 
-            int offset = 0;
             for (uint32_t index = 0; index < widgets.count; ++index) {
                 widgetCursor.widget = widgets[index];
 
-                widgetCursor.x = savedX + offset;
-                widgetCursor.y = savedY;
-                widgetCursor.w = widgetCursor.widget->width;
-                widgetCursor.h = widgetCursor.widget->height;
-
-                auto widgetState = widgetCursor.currentState;
-
-                if (g_isRTL) {
-                    widgetCursor.x = savedX + containerWidth - ((widgetCursor.x - savedX) + widgetCursor.w);
-                }
-
-                enumWidget();
-
-                if (!widgetCursor.widget->visible || widgetState->isVisible.toBool()) {
-                    offset += widgetCursor.w;
-                }
-            }
-
-            widgetCursor.x = savedX;
-            widgetCursor.y = savedY;
-
-            if (!repainted && !g_findCallback && offset != offsetPrevious) {
-                if (g_isRTL) {
-                    drawRectangle(widgetCursor.x, widgetCursor.y, widget->width - offset, widget->height, nullptr);
+                if ((int)index < layoutCount) {
+                    auto &child = layout[index];
+                    widgetCursor.x = savedX + child.x;
+                    widgetCursor.y = savedY + child.y;
+                    widgetCursor.w = child.w;
+                    widgetCursor.h = child.h;
                 } else {
-                    drawRectangle(widgetCursor.x + offset, widgetCursor.y, widget->width - offset, widget->height, nullptr);
+                    // after LAYOUT_MAX_CHILDREN: not shown
+                    widgetCursor.x = savedX;
+                    widgetCursor.y = savedY;
+                    widgetCursor.w = 0;
+                    widgetCursor.h = 0;
                 }
-            }
 
-            offsetPrevious = offset;
-        } else if (widget->layout == CONTAINER_WIDGET_LAYOUT_VERTICAL) {
-            auto savedX = widgetCursor.x;
-            auto savedY = widgetCursor.y;
-
-            int offset = 0;
-            for (uint32_t index = 0; index < widgets.count; ++index) {
-                widgetCursor.widget = widgets[index];
-
-                widgetCursor.x = savedX;
-                widgetCursor.y = savedY + offset;
-                widgetCursor.w = widgetCursor.widget->width;
-                widgetCursor.h = widgetCursor.widget->height;
-
-                auto widgetState = widgetCursor.currentState;
-
+                g_layoutPlacedWidget = widgetCursor.widget;
                 enumWidget();
-
-                if (!widgetCursor.widget->visible || widgetState->isVisible.toBool()) {
-                    offset += widgetCursor.h;
-                }
             }
 
+            g_layoutPlacedWidget = savedLayoutPlacedWidget;
             widgetCursor.x = savedX;
             widgetCursor.y = savedY;
-
-            if (!repainted && !g_findCallback && offset != offsetPrevious) {
-                drawRectangle(widgetCursor.x, widgetCursor.y + offset, widget->width, widget->height - offset, nullptr);
-            }
-
-            offsetPrevious = offset;
         }
 	}
 

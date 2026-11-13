@@ -131,18 +131,6 @@ int firstColumnNot(int x, int y, int w, int h, uint32_t color) {
     return -1;
 }
 
-// the last column with a pixel that is not the color, -1 if there is none
-int lastColumnNot(int x, int y, int w, int h, uint32_t color) {
-    for (int i = x + w - 1; i >= x; i--) {
-        for (int j = y; j < y + h; j++) {
-            if (px(i, j) != color) {
-                return i;
-            }
-        }
-    }
-    return -1;
-}
-
 int luminance(uint32_t c) {
     return render::R(c) + render::G(c) + render::B(c);
 }

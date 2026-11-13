@@ -49,5 +49,9 @@ struct TextWidgetState : public WidgetState {
 
 void TextWidget_autoSize(TextWidget& widget);
 
+// the size of the text of the Text widget widgetCursor.widget in the font of its
+// style with the padding and the borders (fit to content)
+void TextWidget_getContentSize(const WidgetCursor &widgetCursor, int &w, int &h);
+
 } // namespace gui
 } // namespace eez

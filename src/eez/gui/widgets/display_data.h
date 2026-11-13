@@ -43,6 +43,12 @@ private:
     void renderText(const DisplayDataWidget *widget, const Style *style, bool active);
 };
 
+// The size of the text the DisplayData widget widgetCursor.widget shows (its
+// data now, also during the refresh rate) in the font of its style with the
+// padding and the borders. False for the integer, unit and fraction option
+// (two fonts), it keeps its own size.
+bool DisplayDataWidget_getContentSize(const WidgetCursor &widgetCursor, int &w, int &h);
+
 int DISPLAY_DATA_getCharIndexAtPosition(int xPos, const WidgetCursor &widgetCursor);
 int DISPLAY_DATA_getCursorXPosition(int cursorPosition, const WidgetCursor &widgetCursor);
 

@@ -186,15 +186,14 @@ void DisplayDataWidgetState::render() {
     }
 }
 
-void DisplayDataWidgetState::renderText(const DisplayDataWidget *widget, const Style *style, bool active) {
-    const WidgetCursor &widgetCursor = g_widgetCursor;
+// The text of the data as the display option shows it: from start, length
+// characters (-1: to the end). text has room for TEXT_BUFFER_SIZE characters.
+static void getDisplayText(const DisplayDataWidget *widget, const Value &data, char *text, char *&start, int &length) {
+    data.toText(text, TEXT_BUFFER_SIZE);
 
-    char text[TEXT_BUFFER_SIZE];
-    data.toText(text, sizeof(text));
+    start = text;
 
-    char *start = text;
-
-    int length = -1;
+    length = -1;
 
     if (widget->displayOption != DISPLAY_OPTION_ALL) {
         // a text with a number is cut like the text of a float
@@ -216,7 +215,7 @@ void DisplayDataWidgetState::renderText(const DisplayDataWidget *widget, const S
                     text[k] = 0;
                 }
                 else {
-                    stringCopy(text, sizeof(text), ".0");
+                    stringCopy(text, TEXT_BUFFER_SIZE, ".0");
                 }
             } else if (widget->displayOption == DISPLAY_OPTION_UNIT) {
                 int i = findStartOfUnit(text, 0);
@@ -245,6 +244,38 @@ void DisplayDataWidgetState::renderText(const DisplayDataWidget *widget, const S
             }
         }
     }
+}
+
+bool DisplayDataWidget_getContentSize(const WidgetCursor &widgetCursor, int &w, int &h) {
+    auto widget = (const DisplayDataWidget *)widgetCursor.widget;
+    if (widget->displayOption == DISPLAY_OPTION_INTEGER_UNIT_AND_FRACTION) {
+        return false;
+    }
+
+    const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
+    font::Font font = styleGetFont(style);
+
+    int textWidth = 0;
+    if (font) {
+        char text[TEXT_BUFFER_SIZE];
+        char *start;
+        int length;
+        getDisplayText(widget, get(widgetCursor, widget->data), text, start, length);
+        textWidth = display::measureStr(start, length, font, 0);
+    }
+
+    w = style->borderSizeLeft + style->paddingLeft + textWidth + style->paddingRight + style->borderSizeRight;
+    h = style->borderSizeTop + style->paddingTop + (font ? font.getHeight() : 0) + style->paddingBottom + style->borderSizeBottom;
+    return true;
+}
+
+void DisplayDataWidgetState::renderText(const DisplayDataWidget *widget, const Style *style, bool active) {
+    const WidgetCursor &widgetCursor = g_widgetCursor;
+
+    char text[TEXT_BUFFER_SIZE];
+    char *start;
+    int length;
+    getDisplayText(widget, data, text, start, length);
 
     drawText(
         start, length,
