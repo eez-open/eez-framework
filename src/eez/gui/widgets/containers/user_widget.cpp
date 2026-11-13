@@ -60,6 +60,7 @@ bool UserWidgetWidgetState::updateState() {
     }
 
     WIDGET_STATE(flags.active, g_isActiveWidget);
+    WIDGET_STATE(flags.disabled, isWidgetActionDisabled(widgetCursor));
 
     auto savedFlowState = widgetCursor.flowState;
 
@@ -86,8 +87,8 @@ bool UserWidgetWidgetState::updateState() {
 void UserWidgetWidgetState::render() {
 	const WidgetCursor& widgetCursor = g_widgetCursor;
     auto widget = (const UserWidgetWidget *)widgetCursor.widget;
-    const Style* style = getStyle(widget->style);
-    drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style, flags.active);
+    auto stateStyle = getWidgetStateStyle(getStyle(widget->style), flags.active, false, getDisabledStateFlag(flags.disabled));
+    drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, stateStyle.style, stateStyle.active);
     // if (layout) {
     //     const Style* styleLayout = getStyle(layout->style);
     //     drawRectangle(widgetCursor.x, widgetCursor.y, (int)layout->w, (int)layout->h, styleLayout, flags.active);
@@ -102,6 +103,8 @@ void UserWidgetWidgetState::enumChildren() {
     widgetCursor.flowState = flowState;
 
 	auto widget = (const UserWidgetWidget *)widgetCursor.widget;
+
+	auto stateStyle = getWidgetStateStyle(getStyle(widget->style), flags.active, false, getDisabledStateFlag(flags.disabled));
 
 	bool savedRefreshed = false;
 
@@ -131,10 +134,13 @@ void UserWidgetWidgetState::enumChildren() {
             repainted = false;
             widgetCursor.refreshed = true;
         } else if (!widgetCursor.refreshed) {
-		    const Style* style = getStyle(widget->style);
-		    widgetCursor.pushBackground(widgetCursor.x, widgetCursor.y, style, flags.active);
+		    widgetCursor.pushBackground(widgetCursor.x, widgetCursor.y, stateStyle.style, stateStyle.active);
         }
 	}
+
+	// the children are inside of the rounded corners
+	ChildrenRoundedClip roundedClip;
+	roundedClip.begin(widgetCursor, stateStyle.style);
 
     if (layout) {
 		auto savedWidget = widgetCursor.widget;
@@ -150,7 +156,7 @@ void UserWidgetWidgetState::enumChildren() {
             doStaticLayoutWithOverlapping(
                 widgetCursor, widgets,
                 containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight,
-                getStyle(widget->style), flags.active
+                stateStyle.style, stateStyle.active
             );
         } else {
             doStaticLayout(widgetCursor, widgets, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
@@ -158,6 +164,8 @@ void UserWidgetWidgetState::enumChildren() {
 
 		widgetCursor.widget = savedWidget;
 	}
+
+	roundedClip.end();
 
     if (widget->context) {
         restoreContext(widgetCursor, widget->context, oldContext);

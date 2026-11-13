@@ -103,6 +103,11 @@ struct DamageProbe {
 void beginDamageProbe(DamageProbe &probe);
 void endDamageProbe(DamageProbe &probe);
 
+// The rectangle (inclusive) of the current buffer is drawn into directly (not
+// with the drawing functions): it is added to the damage, inside the clip
+// rectangle.
+void addDamageRect(int x1, int y1, int x2, int y2);
+
 VideoBuffer getBufferPointer();
 
 // What the last frame cost (for tests and tuning): the pixels composed from
@@ -149,6 +154,9 @@ Color getColorFromIndex(uint16_t colorIndex);
 // a background in such a color must be drawn first, the color is blended over
 // it.
 bool isColorOpaque(uint16_t colorIndex);
+
+// True for TRANSPARENT_COLOR_INDEX and for a color with alpha 0.
+bool isColorTransparent(uint16_t colorIndex);
 
 struct ColorRGBA {
 	uint8_t r, g, b, a;
@@ -224,6 +232,45 @@ void fillRoundedRect(
 	bool drawLine, bool fill,
 	int clip_x1 = -1, int clip_y1 = -1, int clip_x2 = -1, int clip_y2 = -1
 );
+
+// fillRoundedRect with a line of its own width on each side (see
+// raster::roundedRectSides)
+void fillRoundedRectSides(
+	int x1, int y1, int x2, int y2,
+	int lineWidthTop, int lineWidthRight, int lineWidthBottom, int lineWidthLeft,
+	int rtlx, int rtly, int rtrx, int rtry,
+	int rbrx, int rbry, int rblx, int rbly,
+	bool drawLine, bool fill
+);
+
+// Keeps the corners of a box with rounded corners: what is drawn between
+// beginRoundedClip and endRoundedClip outside of the rounded corners of the box
+// left, top, right, bottom (pixel edges, right and bottom exclusive) with the
+// radii (rtlx, rtly, rtrx, rtry, rbrx, rbry, rblx, rbly) is undone, the
+// antialiased edge in part. The pairs nest. Only on displays with a 32-bit
+// buffer, elsewhere it does nothing.
+//
+// The corners are blended with what is below the content of the box (its
+// background), so it must be known also when only the content is drawn again:
+// with backgroundIsFresh the box itself is just drawn and the corner pixels are
+// its background, they are kept for the next times (by the box and the owner,
+// e.g. its style), when the corner pixels are the last frame.
+struct RoundedClip {
+	float left, top, right, bottom;
+	float radii[8];
+	const void *owner;
+
+	// set by beginRoundedClip
+	int level; // -1: not active
+	void *buffer;
+	DamageProbe probe;
+};
+void beginRoundedClip(RoundedClip &clip, bool backgroundIsFresh);
+void endRoundedClip(RoundedClip &clip);
+
+// only the line of the rectangle with rounded corners, in the foreground color,
+// with any line width and radii (see raster::roundedRect)
+void strokeRoundedRect(int x1, int y1, int x2, int y2, float lineWidth, const float radii[8]);
 
 // only the line of the rectangle with rounded corners, in the foreground color
 void drawRoundedRect(

@@ -72,13 +72,9 @@ static int getCharBefore(const char *text, int begin, int end, utf8_int32_t &enc
     return start;
 }
 
-// text colors after the overrideStyleColor hooks, the focus colors when focused
-static uint16_t getTextColor(const WidgetCursor &widgetCursor, const Style *style, bool focused) {
-    return focused ? style->focusColor : g_hooks.overrideStyleColor(widgetCursor, style);
-}
-
-static uint16_t getTextActiveColor(const WidgetCursor &widgetCursor, const Style *style, bool focused) {
-    return focused ? style->focusBackgroundColor : g_hooks.overrideActiveStyleColor(widgetCursor, style);
+// the text color after the overrideStyleColor hook
+static uint16_t getTextColor(const WidgetCursor &widgetCursor, const Style *style) {
+    return g_hooks.overrideStyleColor(widgetCursor, style);
 }
 
 void TextWidget_autoSize(TextWidget& widget) {
@@ -98,15 +94,18 @@ bool TextWidgetState::updateState() {
     }
 
     WIDGET_STATE(styleId, overrideStyle(widgetCursor, widget->style));
-    const Style *style = getStyle(styleId);
 
     WIDGET_STATE(flags.active, g_isActiveWidget);
     WIDGET_STATE(flags.focused, isFocusWidget(widgetCursor));
+    WIDGET_STATE(flags.disabled, isWidgetActionDisabled(widgetCursor));
 
-    WIDGET_STATE(flags.blinking, g_isBlinkTime && styleIsBlink(style));
+    // the size (fit to content) is from the style, the same in all states
+    const Style *style = getStyle(styleId);
+    auto stateStyle = getWidgetStateStyle(style, flags.active, flags.focused, getDisabledStateFlag(flags.disabled));
 
-    WIDGET_STATE(color, getTextColor(widgetCursor, style, flags.focused));
-    WIDGET_STATE(activeColor, getTextActiveColor(widgetCursor, style, flags.focused));
+    WIDGET_STATE(blinkOpacity, styleIsBlink(stateStyle.style) ? g_blinkOpacity : 255);
+
+    WIDGET_STATE(color, getTextColor(widgetCursor, stateStyle.style));
 
     const char *text = widget->text ? static_cast<const char *>(widget->text) : nullptr;
 	WIDGET_STATE(data, !(text && text[0]) && widget->data ? get(widgetCursor, widget->data) : 0);
@@ -173,7 +172,8 @@ void TextWidgetState::render() {
     auto widget = (const TextWidget *)widgetCursor.widget;
     // resolved again, the same as in updateState: the internal pages
     // (page.cpp) render a TextWidgetState without calling updateState
-    const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
+    auto stateStyle = getWidgetStateStyle(getStyle(overrideStyle(widgetCursor, widget->style)), flags.active, flags.focused, getDisabledStateFlag(flags.disabled));
+    const Style *style = stateStyle.style;
     const char *text = widget->text ? static_cast<const char *>(widget->text) : nullptr;
 
     if (widget->flags & (FIT_TO_CONTENT_WIDTH_FLAG | FIT_TO_CONTENT_HEIGHT_FLAG)) {
@@ -201,10 +201,10 @@ void TextWidgetState::render() {
         renderedH = widgetCursor.h;
     }
 
-    uint16_t overrideColor                 = getTextColor(widgetCursor, style, flags.focused);
-    uint16_t overrideBackgroundColor       = flags.focused ? style->focusBackgroundColor : style->backgroundColor;
-    uint16_t overrideActiveColor           = getTextActiveColor(widgetCursor, style, flags.focused);
-    uint16_t overrideActiveBackgroundColor = flags.focused ? style->focusColor           : style->activeBackgroundColor;
+    BlinkOpacity blinkOpacityScope(blinkOpacity);
+
+    uint16_t overrideColor = getTextColor(widgetCursor, style);
+    uint16_t overrideBackgroundColor = style->backgroundColor;
 
     bool ignoreLuminosity = (widget->flags & IGNORE_LUMINOSITY_FLAG) != 0;
     if (text && text[0]) {
@@ -212,8 +212,8 @@ void TextWidgetState::render() {
             text, -1,
             widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
             style,
-            flags.active, flags.blinking, ignoreLuminosity,
-            &overrideColor, &overrideBackgroundColor, &overrideActiveColor, &overrideActiveBackgroundColor
+            stateStyle.active, ignoreLuminosity,
+            &overrideColor, &overrideBackgroundColor
         );
     } else if (widget->data) {
         if (data.isString()) {
@@ -229,8 +229,8 @@ void TextWidgetState::render() {
                         fullText, -1,
                         widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
                         style,
-                        flags.active, flags.blinking, ignoreLuminosity,
-                        &overrideColor, &overrideBackgroundColor, &overrideActiveColor, &overrideActiveBackgroundColor
+                        stateStyle.active, ignoreLuminosity,
+                        &overrideColor, &overrideBackgroundColor
                     );
                 } else {
                     // the start and the end of the text with "..." between:
@@ -277,8 +277,8 @@ void TextWidgetState::render() {
                         text, -1,
                         widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
                         style,
-                        flags.active, flags.blinking, ignoreLuminosity,
-                        &overrideColor, &overrideBackgroundColor, &overrideActiveColor, &overrideActiveBackgroundColor
+                        stateStyle.active, ignoreLuminosity,
+                        &overrideColor, &overrideBackgroundColor
                     );
                 }
 
@@ -288,8 +288,8 @@ void TextWidgetState::render() {
                     str ? str : "", -1,
                     widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
                     style,
-                    flags.active, flags.blinking, ignoreLuminosity,
-                    &overrideColor, &overrideBackgroundColor, &overrideActiveColor, &overrideActiveBackgroundColor
+                    stateStyle.active, ignoreLuminosity,
+                    &overrideColor, &overrideBackgroundColor
                 );
             }
         } else {
@@ -299,11 +299,15 @@ void TextWidgetState::render() {
                 text, -1,
                 widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
                 style,
-                flags.active, flags.blinking, ignoreLuminosity,
-                &overrideColor, &overrideBackgroundColor, &overrideActiveColor, &overrideActiveBackgroundColor,
+                stateStyle.active, ignoreLuminosity,
+                &overrideColor, &overrideBackgroundColor,
                 data.getType() == VALUE_TYPE_FLOAT
             );
         }
+    }
+
+    if (flags.focused) {
+        drawFocusRing(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style);
     }
 }
 

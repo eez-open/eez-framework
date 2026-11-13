@@ -24,10 +24,11 @@ bool MultilineTextWidgetState::updateState() {
     WIDGET_STATE_START(MultilineTextWidget);
 
     WIDGET_STATE(styleId, overrideStyle(widgetCursor, widget->style));
-    const Style *style = getStyle(styleId);
-
-    WIDGET_STATE(flags.blinking, g_isBlinkTime && styleIsBlink(style));
     WIDGET_STATE(flags.active, g_isActiveWidget);
+    WIDGET_STATE(flags.disabled, isWidgetActionDisabled(widgetCursor));
+
+    const Style *style = getWidgetStateStyle(getStyle(styleId), flags.active, false, getDisabledStateFlag(flags.disabled)).style;
+    WIDGET_STATE(blinkOpacity, styleIsBlink(style) ? g_blinkOpacity : 255);
     WIDGET_STATE(data, widget->data ? get(widgetCursor, widget->data) : 0);
 
     WIDGET_STATE_END()
@@ -37,28 +38,31 @@ void MultilineTextWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
 
     auto widget = (const MultilineTextWidget *)widgetCursor.widget;
-    const Style* style = getStyle(styleId);
+    auto stateStyle = getWidgetStateStyle(getStyle(styleId), flags.active, false, getDisabledStateFlag(flags.disabled));
+    const Style* style = stateStyle.style;
+
+    BlinkOpacity blinkOpacityScope(blinkOpacity);
 
     if (widget->data) {
         if (data.isString()) {
             drawMultilineText(data.getString(),
                 widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
                 style,
-                flags.active, flags.blinking,
+                stateStyle.active,
                 widget->firstLineIndent, widget->hangingIndent);
         } else {
             char text[64];
             data.toText(text, sizeof(text));
             drawMultilineText(text, widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
                 style,
-                flags.active, flags.blinking,
+                stateStyle.active,
                 widget->firstLineIndent, widget->hangingIndent);
         }
     } else if (widget->text) {
         drawMultilineText(
             static_cast<const char *>(widget->text),
             widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
-            style, flags.active, flags.blinking,
+            style, stateStyle.active,
             widget->firstLineIndent, widget->hangingIndent);
     }
 }

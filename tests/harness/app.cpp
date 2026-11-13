@@ -112,6 +112,11 @@ public:
         return f ? f(action) : AppContext::testExecuteActionOnTouchDown(action);
     }
 
+    bool isFocusWidget(const WidgetCursor &widgetCursor) override {
+        auto f = harness::g_appContextOverrides.isFocusWidget;
+        return f ? f(widgetCursor) : AppContext::isFocusWidget(widgetCursor);
+    }
+
 protected:
     bool canExecuteActionWhenTouchedOutsideOfActivePage(int pageId, int action) override {
         auto f = harness::g_appContextOverrides.canExecuteActionWhenTouchedOutsideOfActivePage;

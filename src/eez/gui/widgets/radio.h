@@ -15,9 +15,9 @@ namespace gui {
 
 // Checked if data is equal to value, the radio buttons of a group have the same
 // data and different values. A touch sets data to value and executes the
-// action, without data and action it can't be touched. While pressed it is
-// drawn with the active colors of the style (see drawCheckboxOrRadio for the
-// look).
+// action, without data and action it can't be touched. It is drawn in the
+// checked, pressed and disabled states of its style (see drawCheckboxOrRadio
+// for the look).
 struct RadioWidget : public Widget {
     int16_t value;
     int16_t text;

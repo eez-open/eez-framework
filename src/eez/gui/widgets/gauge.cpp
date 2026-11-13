@@ -108,14 +108,14 @@ void GaugeWidgetState::render() {
 
 	auto isActive = flags.active;
 
-	Color colorBorder = getColorFromIndex(isActive ? style->activeColor : style->color);
-	Color colorBar = getColorFromIndex(isActive ? barStyle->activeColor : barStyle->color);
+	Color colorBorder = getColorFromIndex(getStyleColor(style, isActive));
+	Color colorBar = getColorFromIndex(getStyleColor(barStyle, isActive));
 
 	auto xCenter = widgetCursor.w / 2;
 	auto yCenter = widgetCursor.h - 8;
 
 	// clear background
-	setColor(isActive ? style->activeBackgroundColor : style->backgroundColor);
+	setColor(getStyleBackgroundColor(style, isActive));
 	fillRect(widgetCursor.x, widgetCursor.y, widgetCursor.x + widgetCursor.w - 1, widgetCursor.y + widgetCursor.h - 1);
 
 	auto savedClipRect = intersectClipRect(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h);
@@ -182,7 +182,7 @@ void GaugeWidgetState::render() {
 		int y2 = floorf(yCenter - radBarOuter * asin);
 
 		float points[] = { x0 + x1, y0 + y1, x0 + x2, y0 + y2 };
-		setColorByValue(getColorFromIndex(isActive ? thresholdStyle->activeColor : thresholdStyle->color));
+		setColorByValue(getColorFromIndex(getStyleColor(thresholdStyle, isActive)));
 		drawPolyline(points, 2, THRESHOLD_LINE_WIDTH);
 	}
 
@@ -209,7 +209,7 @@ void GaugeWidgetState::render() {
 			int y2 = floorf(yCenter - (ticksRad + TICK_LINE_LENGTH) * asin);
 
 			float points[] = { x0 + x1, y0 + y1, x0 + x2, y0 + y2 };
-			setColorByValue(getColorFromIndex(isActive ? ticksStyle->activeColor : ticksStyle->color));
+			setColorByValue(getColorFromIndex(getStyleColor(ticksStyle, isActive)));
 			drawPolyline(points, 2, TICK_LINE_WIDTH);
 
 			char tickText[50];

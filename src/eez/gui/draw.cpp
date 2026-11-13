@@ -45,12 +45,217 @@ bool styleIsVertAlignBottom(const Style *style) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+const Style *getStateStyle(const Style *style, unsigned states, unsigned *appliedState) {
+    static const StyleState STATES_BY_PRIORITY[] = {
+        STYLE_STATE_DISABLED,
+        STYLE_STATE_PRESSED,
+        STYLE_STATE_CHECKED,
+        STYLE_STATE_SELECTED,
+        STYLE_STATE_FOCUSED
+    };
+
+    if (appliedState) {
+        *appliedState = 0;
+    }
+
+    if (style && states) {
+        for (auto state : STATES_BY_PRIORITY) {
+            if ((states & STYLE_STATE_FLAG(state)) && style->stateStyles[state] != 0) {
+                if (appliedState) {
+                    *appliedState = STYLE_STATE_FLAG(state);
+                }
+                return getStyle(style->stateStyles[state]);
+            }
+        }
+    }
+
+    return style;
+}
+
+WidgetStateStyle getWidgetStateStyle(const Style *style, bool pressed, bool focused, unsigned otherStates) {
+    unsigned states = otherStates;
+    if (pressed) {
+        states |= STYLE_STATE_FLAG(STYLE_STATE_PRESSED);
+    }
+    if (focused) {
+        states |= STYLE_STATE_FLAG(STYLE_STATE_FOCUSED);
+    }
+
+    WidgetStateStyle result;
+    result.style = getStateStyle(style, states);
+    result.active = pressed && !styleHasStateStyle(style, STYLE_STATE_PRESSED);
+    return result;
+}
+
+void swapColorsIfActive(bool active, uint16_t &color, uint16_t &backgroundColor) {
+    if (active && !display::isColorTransparent(backgroundColor)) {
+        auto temp = color;
+        color = backgroundColor;
+        backgroundColor = temp;
+    }
+}
+
+uint16_t getStyleColor(const Style *style, bool active) {
+    uint16_t color = style->color;
+    uint16_t backgroundColor = style->backgroundColor;
+    swapColorsIfActive(active, color, backgroundColor);
+    return color;
+}
+
+uint16_t getStyleBackgroundColor(const Style *style, bool active) {
+    uint16_t color = style->color;
+    uint16_t backgroundColor = style->backgroundColor;
+    swapColorsIfActive(active, color, backgroundColor);
+    return backgroundColor;
+}
+
+// the display opacity (e.g. of a blinking widget) multiplied by the opacity
+static uint8_t multiplyOpacity(uint8_t opacity) {
+    return (uint8_t)((display::getOpacity() * opacity + 127) / 255);
+}
+
+BlinkOpacity::BlinkOpacity(uint8_t blinkOpacity) {
+    savedOpacity = display::setOpacity(multiplyOpacity(blinkOpacity));
+}
+
+BlinkOpacity::~BlinkOpacity() {
+    display::setOpacity(savedOpacity);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// The x of a text (or other content) of the given width in the box x1 .. x2
+// aligned as the style says, inside the padding. Centered content that doesn't
+// fit starts at x1.
+static int getContentX(const Style *style, int x1, int x2, int width) {
+    if (styleIsHorzAlignLeft(style)) {
+        return x1 + style->paddingLeft;
+    }
+    if (styleIsHorzAlignRight(style)) {
+        return x2 - style->paddingRight - width;
+    }
+    int x = x1 + ((x2 - x1 + 1) + style->paddingLeft - style->paddingRight - width) / 2;
+    return x < x1 ? x1 : x;
+}
+
+// the y of the content of the given height in the box y1 .. y2, as getContentX
+static int getContentY(const Style *style, int y1, int y2, int height) {
+    if (styleIsVertAlignTop(style)) {
+        return y1 + style->paddingTop;
+    }
+    if (styleIsVertAlignBottom(style)) {
+        return y2 - style->paddingBottom - height;
+    }
+    return y1 + ((y2 - y1 + 1) + style->paddingTop - style->paddingBottom - height) / 2;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// Draws the backgrounds of the widgets below the current one (the background
+// style stack) in the rectangle: what is seen there if the current widget
+// doesn't cover it.
+static void drawBackgroundsBelow(int x1, int y1, int x2, int y2, bool ignoreLuminocity) {
+    const WidgetCursor& widgetCursor = g_widgetCursor;
+
+    if (x1 > x2 || y1 > y2) {
+        return;
+    }
+
+    size_t startStackPointer;
+    if (widgetCursor.backgroundStyleStackPointer > 0) {
+        for (startStackPointer = widgetCursor.backgroundStyleStackPointer - 1; startStackPointer > 0; startStackPointer--) {
+            auto &backgroundStyle = widgetCursor.backgroundStyleStack[startStackPointer];
+
+            auto color = getStyleBackgroundColor(backgroundStyle.style, backgroundStyle.active);
+            if (display::isColorOpaque(color) && backgroundStyle.style->opacity == 255) {
+                // non-transparent color
+                break;
+            } else if (backgroundStyle.style->backgroundImage) {
+                auto bitmap = getBitmap(backgroundStyle.style->backgroundImage);
+                if (bitmap) {
+                    if (bitmap->bpp != 32) {
+                        // non-transparent bitmap
+                        break;
+                    }
+                }
+            }
+        }
+    } else {
+        startStackPointer = 0;
+    }
+
+    bool hasOpaqueBackground = false;
+    if (widgetCursor.backgroundStyleStackPointer > 0) {
+        auto &backgroundStyle = widgetCursor.backgroundStyleStack[startStackPointer];
+        auto color = getStyleBackgroundColor(backgroundStyle.style, backgroundStyle.active);
+        if (display::isColorOpaque(color) && backgroundStyle.style->opacity == 255) {
+            hasOpaqueBackground = true;
+        } else if (backgroundStyle.style->backgroundImage) {
+            auto bitmap = getBitmap(backgroundStyle.style->backgroundImage);
+            hasOpaqueBackground = bitmap && bitmap->bpp != 32;
+        }
+    }
+    if (!hasOpaqueBackground) {
+        // e.g. page with transparent background, what is below the page is the background
+        display::drawBufferBackground(x1, y1, x2, y2);
+    }
+
+    for (size_t i = startStackPointer; i < widgetCursor.backgroundStyleStackPointer; i++) {
+        auto &backgroundStyle = widgetCursor.backgroundStyleStack[i];
+
+        auto color = getStyleBackgroundColor(backgroundStyle.style, backgroundStyle.active);
+        if (color != TRANSPARENT_COLOR_INDEX) {
+            display::setColor(color, ignoreLuminocity);
+            auto savedOpacity = display::setOpacity(backgroundStyle.style->opacity);
+            display::fillRect(x1, y1, x2, y2);
+            display::setOpacity(savedOpacity);
+        }
+
+        if (backgroundStyle.style->backgroundImage) {
+            auto bitmap = getBitmap(backgroundStyle.style->backgroundImage);
+            if (bitmap) {
+                int x = backgroundStyle.x;
+                int y = backgroundStyle.y;
+                int w = MIN(x2 - x1 + 1, x + bitmap->w - x1);
+                int h = MIN(y2 - y1 + 1, y + bitmap->h - y1);
+
+                if (w >= 0 && h > 0) {
+                    auto bytesPerPixel = bitmap->bpp  / 8;
+
+                    uint32_t offset = 0;
+
+                    if (x < x1) {
+                        offset += (x1 - x) * bytesPerPixel;
+                    }
+
+                    if (y < y1) {
+                        offset += (y1 - y) * bitmap->w * bytesPerPixel;
+                    }
+
+                    Image image;
+
+                    image.width = w;
+                    image.height = h;
+                    image.bpp = bitmap->bpp;
+                    image.lineOffset = bitmap->w - w;
+                    image.pixels = (uint8_t *)bitmap->pixels + offset;
+
+                    auto savedOpacity = display::setOpacity(backgroundStyle.style->opacity);
+                    display::drawBitmap(&image, x1, y1);
+                    display::setOpacity(savedOpacity);
+                }
+            }
+        }
+    }
+}
+
 void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *style, uint16_t color, bool ignoreLuminocity) {
     const WidgetCursor& widgetCursor = g_widgetCursor;
 
 	bool isTransparent = true;
 	bool hasBorder = false;
 	bool hasBorderRadius = false;
+	bool hasShadow = false;
 
 	if (style) {
 		hasBorder = style->borderSizeTop > 0 || style->borderSizeRight > 0 || style->borderSizeBottom > 0 || style->borderSizeLeft > 0;
@@ -60,8 +265,9 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 			style->borderRadiusBRX > 0 || style->borderRadiusBRY > 0 || style->borderRadiusBLX > 0 || style->borderRadiusBLY > 0;
 
 		// with a border radius the corners (and their antialiased edge) don't cover
-		// what is below them, and the background image is not drawn
-		if (!hasBorderRadius) {
+		// what is below them, and the background image is not drawn; neither
+		// does a widget drawn with a display opacity (e.g. blinking)
+		if (!hasBorderRadius && display::getOpacity() == 255) {
 			if (display::isColorOpaque(color) && style->opacity == 255) {
 				// non-transparent color
 				isTransparent = false;
@@ -73,101 +279,37 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 				}
 			}
 		}
+
+		hasShadow = styleHasShadow(style);
 	}
 
-	if (isTransparent && !widgetCursor.refreshed) {
-        size_t startStackPointer;
-		if (widgetCursor.backgroundStyleStackPointer > 0) {
-			for (startStackPointer = widgetCursor.backgroundStyleStackPointer - 1; startStackPointer > 0; startStackPointer--) {
-				auto &backgroundStyle = widgetCursor.backgroundStyleStack[startStackPointer];
-
-				auto color = backgroundStyle.active ? backgroundStyle.style->activeBackgroundColor : backgroundStyle.style->backgroundColor;
-				if (display::isColorOpaque(color) && backgroundStyle.style->opacity == 255) {
-					// non-transparent color
-					break;
-				} else if (backgroundStyle.style->backgroundImage) {
-					auto bitmap = getBitmap(backgroundStyle.style->backgroundImage);
-					if (bitmap) {
-						if (bitmap->bpp != 32) {
-							// non-transparent bitmap
-							break;
-						}
-					}
-				}
+	if (!widgetCursor.refreshed) {
+		if (hasShadow) {
+			// the shadow is drawn over the backgrounds below, around the box
+			int sx1 = x1;
+			int sy1 = y1;
+			int sx2 = x2;
+			int sy2 = y2;
+			expandRectWithStyleShadow(style, sx1, sy1, sx2, sy2);
+			if (isTransparent) {
+				drawBackgroundsBelow(sx1, sy1, sx2, sy2, ignoreLuminocity);
+			} else {
+				drawBackgroundsBelow(sx1, sy1, sx2, y1 - 1, ignoreLuminocity);
+				drawBackgroundsBelow(sx1, y2 + 1, sx2, sy2, ignoreLuminocity);
+				drawBackgroundsBelow(sx1, y1, x1 - 1, y2, ignoreLuminocity);
+				drawBackgroundsBelow(x2 + 1, y1, sx2, y2, ignoreLuminocity);
 			}
-		} else {
-			startStackPointer = 0;
-		}
-
-		bool hasOpaqueBackground = false;
-		if (widgetCursor.backgroundStyleStackPointer > 0) {
-			auto &backgroundStyle = widgetCursor.backgroundStyleStack[startStackPointer];
-			auto color = backgroundStyle.active ? backgroundStyle.style->activeBackgroundColor : backgroundStyle.style->backgroundColor;
-			if (display::isColorOpaque(color) && backgroundStyle.style->opacity == 255) {
-				hasOpaqueBackground = true;
-			} else if (backgroundStyle.style->backgroundImage) {
-				auto bitmap = getBitmap(backgroundStyle.style->backgroundImage);
-				hasOpaqueBackground = bitmap && bitmap->bpp != 32;
-			}
-		}
-		if (!hasOpaqueBackground) {
-			// e.g. page with transparent background, what is below the page is the background
-			display::drawBufferBackground(x1, y1, x2, y2);
-		}
-
-		for (size_t i = startStackPointer; i < widgetCursor.backgroundStyleStackPointer; i++) {
-			auto &backgroundStyle = widgetCursor.backgroundStyleStack[i];
-
-			auto color = backgroundStyle.active ? backgroundStyle.style->activeBackgroundColor : backgroundStyle.style->backgroundColor;
-			if (color != TRANSPARENT_COLOR_INDEX) {
-				display::setColor(color, ignoreLuminocity);
-				auto savedOpacity = display::setOpacity(backgroundStyle.style->opacity);
-                if (x2 >= x1 && y2 >= y1) {
-                    display::fillRect(x1, y1, x2, y2);
-                }
-				display::setOpacity(savedOpacity);
-			}
-
-			if (backgroundStyle.style->backgroundImage) {
-				auto bitmap = getBitmap(backgroundStyle.style->backgroundImage);
-				if (bitmap) {
-                    int x = backgroundStyle.x;
-                    int y = backgroundStyle.y;
-                    int w = MIN(x2 - x1 + 1, x + bitmap->w - x1);
-                    int h = MIN(y2 - y1 + 1, y + bitmap->h - y1);
-
-                    if (w >= 0 && h > 0) {
-                        auto bytesPerPixel = bitmap->bpp  / 8;
-
-                        uint32_t offset = 0;
-
-                        if (x < x1) {
-                            offset += (x1 - x) * bytesPerPixel;
-                        }
-
-                        if (y < y1) {
-                            offset += (y1 - y) * bitmap->w * bytesPerPixel;
-                        }
-
-                        Image image;
-
-                        image.width = w;
-                        image.height = h;
-                        image.bpp = bitmap->bpp;
-                        image.lineOffset = bitmap->w - w;
-                        image.pixels = (uint8_t *)bitmap->pixels + offset;
-
-                        auto savedOpacity = display::setOpacity(backgroundStyle.style->opacity);
-                        display::drawBitmap(&image, x1, y1);
-                        display::setOpacity(savedOpacity);
-                    }
-				}
-			}
+		} else if (isTransparent) {
+			drawBackgroundsBelow(x1, y1, x2, y2, ignoreLuminocity);
 		}
 	}
 
 	if (!style) {
 		return;
+	}
+
+	if (hasShadow) {
+		drawStyleShadow(style, x1, y1, x2, y2);
 	}
 
     if (hasBorder) {
@@ -178,6 +320,31 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
         if (hasBorderRadius) {
 			if (color != TRANSPARENT_COLOR_INDEX) {
 				display::setBackColor(color, ignoreLuminocity);
+			}
+
+			if (
+				style->borderSizeRight != style->borderSizeTop ||
+				style->borderSizeBottom != style->borderSizeTop ||
+				style->borderSizeLeft != style->borderSizeTop
+			) {
+				// a different width on some side
+				auto savedOpacity = display::setOpacity(multiplyOpacity(style->opacity));
+				display::fillRoundedRectSides(
+					x1, y1, x2, y2,
+					style->borderSizeTop, style->borderSizeRight, style->borderSizeBottom, style->borderSizeLeft,
+					style->borderRadiusTLX, style->borderRadiusTLY, style->borderRadiusTRX, style->borderRadiusTRY,
+					style->borderRadiusBRX, style->borderRadiusBRY, style->borderRadiusBLX, style->borderRadiusBLY,
+					style->borderColor != TRANSPARENT_COLOR_INDEX, color != TRANSPARENT_COLOR_INDEX
+				);
+				display::setOpacity(savedOpacity);
+
+				// as with the same width on every side
+				x1 += style->borderSizeLeft + 1;
+				y1 += style->borderSizeTop + 1;
+				x2 -= style->borderSizeRight + 1;
+				y2 -= style->borderSizeBottom + 1;
+
+				return;
 			}
 
             int lineWidth = style->borderSizeTop;
@@ -191,7 +358,7 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
                 lineWidth = style->borderSizeLeft;
             }
 
-            auto savedOpacity = display::setOpacity(style->opacity);
+            auto savedOpacity = display::setOpacity(multiplyOpacity(style->opacity));
             display::fillRoundedRect(
 				x1, y1, x2, y2,
 				lineWidth,
@@ -234,7 +401,7 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 		if (hasBorderRadius) {
 			if (color != TRANSPARENT_COLOR_INDEX) {
 				display::setBackColor(color, ignoreLuminocity);
-		        auto savedOpacity = display::setOpacity(style->opacity);
+		        auto savedOpacity = display::setOpacity(multiplyOpacity(style->opacity));
                 display::fillRoundedRect(
 					x1, y1, x2, y2,
 					0,
@@ -250,7 +417,7 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 
 	if (color != TRANSPARENT_COLOR_INDEX) {
 		display::setColor(color, ignoreLuminocity);
-		auto savedOpacity = display::setOpacity(style->opacity);
+		auto savedOpacity = display::setOpacity(multiplyOpacity(style->opacity));
         if (x2 >= x1 && y2 >= y1) {
 		    display::fillRect(x1, y1, x2, y2);
         }
@@ -271,20 +438,88 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 			image.lineOffset = bitmap->w - w;
             image.pixels = (uint8_t *)bitmap->pixels;
 
-            auto savedOpacity = display::setOpacity(style->opacity);
+            auto savedOpacity = display::setOpacity(multiplyOpacity(style->opacity));
             display::drawBitmap(&image, x1, y1);
             display::setOpacity(savedOpacity);
         }
     }
 }
 
+// Single-line text cut to fit a width, ending with an ellipsis (U+2026, or three
+// dots if the bitmap font doesn't have it).
+struct TextEllipsis {
+    bool isCut = false;
+    // the characters (as counted by the text functions) before the ellipsis
+    int numChars = 0;
+    // the x of the ellipsis from the start of the text
+    int ellipsisX = 0;
+    // the width of the cut text with the ellipsis
+    int width = 0;
+    const char *ellipsis = nullptr;
+
+    // number of code points in n bytes of UTF-8 text
+    static int countChars(const char *text, int n) {
+        int count = 0;
+        const char *end = text + n;
+        while (text < end) {
+            int32_t encoding;
+            text = display::decodeUtf8(text, encoding);
+            if (!encoding) {
+                break;
+            }
+            ++count;
+        }
+        return count;
+    }
+
+    void cut(const char *text, int textLength, font::Font &font, int maxWidth) {
+        isCut = true;
+
+        ellipsis = "\xE2\x80\xA6";
+        if (!font.isVector() && !font.getGlyph(0x2026)) {
+            ellipsis = "...";
+        }
+
+        // the letter spacing is also between the text and the ellipsis
+        int spacing = (font.letterSpacing + 32) >> 6;
+        int ellipsisWidth = display::measureStr(ellipsis, -1, font, 0);
+
+        // the longest start of the text (whole characters) that fits with the
+        // ellipsis
+        numChars = 0;
+        int prefixWidth = 0;
+        const char *p = text;
+        while (true) {
+            const char *next = display::skipChar(p);
+            int chars = countChars(text, (int)(next - text));
+            if (next == p || (textLength != -1 && chars > textLength)) {
+                break;
+            }
+            int32_t encoding;
+            display::decodeUtf8(p, encoding);
+            if (!encoding) {
+                break;
+            }
+            int w = display::measureStr(text, chars, font, 0);
+            if (w + spacing + ellipsisWidth > maxWidth) {
+                break;
+            }
+            numChars = chars;
+            prefixWidth = w;
+            p = next;
+        }
+
+        ellipsisX = numChars > 0 ? prefixWidth + spacing : 0;
+        width = ellipsisX + ellipsisWidth;
+    }
+};
+
 void drawText(
     const char *text, int textLength,
     int x, int y, int w, int h,
     const Style *style,
-    bool active, bool blink, bool ignoreLuminocity,
+    bool active, bool ignoreLuminocity,
     uint16_t *overrideColor, uint16_t *overrideBackgroundColor,
-    uint16_t *overrideActiveColor, uint16_t *overrideActiveBackgroundColor,
     bool useSmallerFontIfDoesNotFit, int cursorPosition, int xScroll,
 	bool boolSkipBackground
 ) {
@@ -293,39 +528,13 @@ void drawText(
     int x2 = x + w - 1;
     int y2 = y + h - 1;
 
+    uint16_t color = overrideColor ? *overrideColor : style->color;
+    uint16_t backgroundColor = overrideBackgroundColor ? *overrideBackgroundColor : style->backgroundColor;
+    swapColorsIfActive(active, color, backgroundColor);
+
 	if (!boolSkipBackground) {
-		uint16_t backgroundColor;
-		if (active || blink) {
-			if (overrideActiveBackgroundColor) {
-				backgroundColor = *overrideActiveBackgroundColor;
-			} else {
-				backgroundColor = style->activeBackgroundColor;
-			}
-		} else {
-			if (overrideBackgroundColor) {
-				backgroundColor = *overrideBackgroundColor;
-			} else {
-				backgroundColor = style->backgroundColor;
-			}
-		}
 		drawBorderAndBackground(x1, y1, x2, y2, style, backgroundColor, ignoreLuminocity);
 	}
-
-    uint16_t color;
-
-    if (active || blink) {
-        if (overrideActiveColor) {
-            color = *overrideActiveColor;
-        } else {
-            color = style->activeColor;
-        }
-    }  else {
-        if (overrideColor) {
-            color = *overrideColor;
-        } else {
-            color = style->color;
-        }
-    }
 
     if (color == TRANSPARENT_COLOR_INDEX) {
         return;
@@ -336,9 +545,13 @@ void drawText(
 		return;
 	}
 
+    // the text is cut and ends with an ellipsis if it doesn't fit (not while
+    // it is edited)
+    bool ellipsis = (style->flags & STYLE_FLAGS_ELLIPSIS) && cursorPosition == -1 && xScroll == 0;
+
     // text width is not needed for the left aligned text
     int width = 0;
-    if (useSmallerFontIfDoesNotFit || !styleIsHorzAlignLeft(style)) {
+    if (useSmallerFontIfDoesNotFit || ellipsis || !styleIsHorzAlignLeft(style)) {
         width = display::measureStr(text, textLength, font, 0);
         while (useSmallerFontIfDoesNotFit && width > x2 - x1 + 1 && g_hooks.styleGetSmallerFont(font)) {
             width = display::measureStr(text, textLength, font, 0);
@@ -346,26 +559,15 @@ void drawText(
     }
     int height = font.getHeight();
 
-    int x_offset;
-    if (styleIsHorzAlignLeft(style)) {
-        x_offset = x1 + style->paddingLeft;
-    } else if (styleIsHorzAlignRight(style)) {
-        x_offset = x2 - style->paddingRight - width;
-    } else {
-        x_offset = x1 + ((x2 - x1 + 1) - width) / 2;
-        if (x_offset < x1) {
-            x_offset = x1;
-        }
+    TextEllipsis textEllipsis;
+    if (ellipsis && width > (x2 - x1 + 1) - style->paddingLeft - style->paddingRight) {
+        textEllipsis.cut(text, textLength, font, (x2 - x1 + 1) - style->paddingLeft - style->paddingRight);
+        width = textEllipsis.width;
     }
 
-    int y_offset;
-    if (styleIsVertAlignTop(style)) {
-        y_offset = y1 + style->paddingTop;
-    } else if (styleIsVertAlignBottom(style)) {
-        y_offset = y2 - style->paddingBottom - height;
-    } else {
-        y_offset = y1 + ((y2 - y1 + 1) - height) / 2;
-    }
+    int x_offset = getContentX(style, x1, x2, width);
+
+    int y_offset = getContentY(style, y1, y2, height);
     // box above the display (e.g. list item while touch scrolling) is not snapped
     if (y_offset < 0 && y1 >= 0) {
         y_offset = y1;
@@ -373,7 +575,12 @@ void drawText(
 
     // draw text
     display::setColor(color, ignoreLuminocity);
-    display::drawStr(text, textLength, x_offset - xScroll, y_offset, x1, y1, x2, y2, font, cursorPosition);
+    if (textEllipsis.isCut) {
+        display::drawStr(text, textEllipsis.numChars, x_offset, y_offset, x1, y1, x2, y2, font, -1);
+        display::drawStr(textEllipsis.ellipsis, -1, x_offset + textEllipsis.ellipsisX, y_offset, x1, y1, x2, y2, font, -1);
+    } else {
+        display::drawStr(text, textLength, x_offset - xScroll, y_offset, x1, y1, x2, y2, font, cursorPosition);
+    }
 }
 
 // The integer part is aligned as text (for the right alignment the right padding is the room
@@ -388,29 +595,19 @@ void drawIntegerUnitAndFraction(
     const char *fraction, int fractionLength,
     int x, int y, int w, int h,
     const Style *style, font::Font unitAndFractionFont,
-    bool active, bool blink,
-    uint16_t *overrideColor, uint16_t *overrideBackgroundColor,
-    uint16_t *overrideActiveColor, uint16_t *overrideActiveBackgroundColor
+    bool active,
+    uint16_t *overrideColor, uint16_t *overrideBackgroundColor
 ) {
     int x1 = x;
     int y1 = y;
     int x2 = x + w - 1;
     int y2 = y + h - 1;
 
-    uint16_t backgroundColor;
-    if (active || blink) {
-        backgroundColor = overrideActiveBackgroundColor ? *overrideActiveBackgroundColor : style->activeBackgroundColor;
-    } else {
-        backgroundColor = overrideBackgroundColor ? *overrideBackgroundColor : style->backgroundColor;
-    }
-    drawBorderAndBackground(x1, y1, x2, y2, style, backgroundColor);
+    uint16_t color = overrideColor ? *overrideColor : style->color;
+    uint16_t backgroundColor = overrideBackgroundColor ? *overrideBackgroundColor : style->backgroundColor;
+    swapColorsIfActive(active, color, backgroundColor);
 
-    uint16_t color;
-    if (active || blink) {
-        color = overrideActiveColor ? *overrideActiveColor : style->activeColor;
-    } else {
-        color = overrideColor ? *overrideColor : style->color;
-    }
+    drawBorderAndBackground(x1, y1, x2, y2, style, backgroundColor);
 
     if (color == TRANSPARENT_COLOR_INDEX) {
         return;
@@ -439,21 +636,11 @@ void drawIntegerUnitAndFraction(
             x_integer = x2 - integerWidth - columnWidth;
         }
     } else {
-        x_integer = x1 + ((x2 - x1 + 1) - (integerWidth + columnWidth)) / 2;
-        if (x_integer < x1) {
-            x_integer = x1;
-        }
+        x_integer = getContentX(style, x1, x2, integerWidth + columnWidth);
     }
     int x_column = x_integer + integerWidth;
 
-    int y_integer;
-    if (styleIsVertAlignTop(style)) {
-        y_integer = y1 + style->paddingTop;
-    } else if (styleIsVertAlignBottom(style)) {
-        y_integer = y2 - style->paddingBottom - integerFont.getHeight();
-    } else {
-        y_integer = y1 + ((y2 - y1 + 1) - integerFont.getHeight()) / 2;
-    }
+    int y_integer = getContentY(style, y1, y2, integerFont.getHeight());
     // box above the display (e.g. list item while touch scrolling) is not snapped
     if (y_integer < 0 && y1 >= 0) {
         y_integer = y1;
@@ -486,26 +673,9 @@ int getCharIndexAtPosition(int xPos, const char *text, int textLength, int x, in
     int width = display::measureStr(text, textLength, font, 0);
     int height = font.getHeight();
 
-    int x_offset;
-    if (styleIsHorzAlignLeft(style)) {
-        x_offset = x1 + style->paddingLeft;
-    } else if (styleIsHorzAlignRight(style)) {
-        x_offset = x2 - style->paddingRight - width;
-    } else {
-        x_offset = x1 + ((x2 - x1 + 1) - width) / 2;
-        if (x_offset < x1) {
-            x_offset = x1;
-        }
-    }
+    int x_offset = getContentX(style, x1, x2, width);
 
-    int y_offset;
-    if (styleIsVertAlignTop(style)) {
-        y_offset = y1 + style->paddingTop;
-    } else if (styleIsVertAlignBottom(style)) {
-        y_offset = y2 - style->paddingBottom - height;
-    } else {
-        y_offset = y1 + ((y2 - y1 + 1) - height) / 2;
-    }
+    int y_offset = getContentY(style, y1, y2, height);
     // box above the display (e.g. list item while touch scrolling) is not snapped
     if (y_offset < 0 && y1 >= 0) {
         y_offset = y1;
@@ -530,26 +700,9 @@ int getCursorXPosition(int cursorPosition, const char *text, int textLength, int
     int width = display::measureStr(text, textLength, font, 0);
     int height = font.getHeight();
 
-    int x_offset;
-    if (styleIsHorzAlignLeft(style)) {
-        x_offset = x1 + style->paddingLeft;
-    } else if (styleIsHorzAlignRight(style)) {
-        x_offset = x2 - style->paddingRight - width;
-    } else {
-        x_offset = x1 + ((x2 - x1 + 1) - width) / 2;
-        if (x_offset < x1) {
-            x_offset = x1;
-        }
-    }
+    int x_offset = getContentX(style, x1, x2, width);
 
-    int y_offset;
-    if (styleIsVertAlignTop(style)) {
-        y_offset = y1 + style->paddingTop;
-    } else if (styleIsVertAlignBottom(style)) {
-        y_offset = y2 - style->paddingBottom - height;
-    } else {
-        y_offset = y1 + ((y2 - y1 + 1) - height) / 2;
-    }
+    int y_offset = getContentY(style, y1, y2, height);
     // box above the display (e.g. list item while touch scrolling) is not snapped
     if (y_offset < 0 && y1 >= 0) {
         y_offset = y1;
@@ -751,12 +904,13 @@ struct MultilineTextRender {
     bool initFont() {
         font = styleGetFont(style);
 
-        lineHeight = (int)(0.9 * font.getHeight());
+        lineHeight = style->lineHeight > 0 ? style->lineHeight : (int)(0.9 * font.getHeight());
         if (lineHeight <= 0) {
             return false;
         }
 
-        spaceWidth = display::measureGlyph(' ', font);
+        // the letter spacing is before and after the space
+        spaceWidth = display::measureGlyph(' ', font) + 2 * ((font.letterSpacing + 32) >> 6);
 
         return true;
     }
@@ -780,13 +934,13 @@ struct MultilineTextRender {
     }
 
     void render() {
-        drawBorderAndBackground(x1, y1, x2, y2, style, active ? style->activeBackgroundColor : style->backgroundColor);
+        drawBorderAndBackground(x1, y1, x2, y2, style, getStyleBackgroundColor(style, active));
 
         if (!initFont()) {
             return;
         }
 
-        uint16_t color = active ? style->activeColor : style->color;
+        uint16_t color = getStyleColor(style, active);
         if (color == TRANSPARENT_COLOR_INDEX) {
             return;
         }
@@ -833,7 +987,7 @@ struct MultilineTextRender {
     }
 };
 
-void drawMultilineText(const char *text, int x, int y, int w, int h, const Style *style, bool active, bool blinking, int firstLineIndent, int hangingIndent) {
+void drawMultilineText(const char *text, int x, int y, int w, int h, const Style *style, bool active, int firstLineIndent, int hangingIndent) {
     MultilineTextRender multilineTextRender;
 
     multilineTextRender.text = text;
@@ -842,7 +996,7 @@ void drawMultilineText(const char *text, int x, int y, int w, int h, const Style
     multilineTextRender.x2 = x + w - 1;
     multilineTextRender.y2 = y + h - 1;
     multilineTextRender.style = style;
-    multilineTextRender.active = active || blinking;
+    multilineTextRender.active = active;
     multilineTextRender.firstLineIndent = firstLineIndent;
     multilineTextRender.hangingIndent = hangingIndent;
 
@@ -904,15 +1058,9 @@ void drawBitmap(Image *image, int x, int y, int w, int h, const Style *style, bo
     // draw bitmap
     uint8_t savedOpacity = display::getOpacity();
 
-    if (active) {
-        display::setBackColor(style->activeBackgroundColor);
-        display::setColor(style->activeColor);
-        display::setOpacity(style->opacity);
-    } else {
-        display::setBackColor(style->backgroundColor);
-        display::setColor(style->color);
-        display::setOpacity(style->opacity);
-    }
+    display::setBackColor(getStyleBackgroundColor(style, active));
+    display::setColor(getStyleColor(style, active));
+    display::setOpacity(multiplyOpacity(style->opacity));
 
     display::drawBitmap(image, x_offset, y_offset);
 
@@ -931,9 +1079,9 @@ void drawRectangle(int x, int y, int w, int h, const Style *style, bool active, 
         uint16_t color;
         if (style) {
             if (invertColors) {
-                color = active ? style->activeBackgroundColor : style->backgroundColor;
+                color = getStyleBackgroundColor(style, active);
             } else {
-                color = active ? style->activeColor : style->color;
+                color = getStyleColor(style, active);
             }
         } else {
             color = TRANSPARENT_COLOR_INDEX;
@@ -998,11 +1146,9 @@ static ShadowParams g_shadowParams = {
     0, 0, 0,
     CONF_SHADOW_OPACITY
 };
-static uint32_t g_shadowParamsVersion;
 
 void setShadowParams(const ShadowParams &params) {
     g_shadowParams = params;
-    g_shadowParamsVersion++;
 }
 
 const ShadowParams &getShadowParams() {
@@ -1012,21 +1158,21 @@ const ShadowParams &getShadowParams() {
 #if EEZ_USE_SDL
 #define EEZ_SW_SHADOW 1
 
-static float shadowSigma() {
-    return g_shadowParams.blur > 1 ? g_shadowParams.blur / 2.0f : 0.5f;
+static float shadowSigma(const ShadowParams &params) {
+    return params.blur > 1 ? params.blur / 2.0f : 0.5f;
 }
 
 // how far the shadow reaches beyond the shadow box
-static int shadowReach() {
-    return (int)ceilf(3.0f * shadowSigma());
+static int shadowReach(const ShadowParams &params) {
+    return (int)ceilf(3.0f * shadowSigma(params));
 }
 
-static void getShadowExtents(int &left, int &top, int &right, int &bottom) {
-    int reach = shadowReach() + g_shadowParams.spread;
-    left = std::max(reach - g_shadowParams.offsetX, 0);
-    right = std::max(reach + g_shadowParams.offsetX, 0);
-    top = std::max(reach - g_shadowParams.offsetY, 0);
-    bottom = std::max(reach + g_shadowParams.offsetY, 0);
+static void getShadowExtents(const ShadowParams &params, int &left, int &top, int &right, int &bottom) {
+    int reach = shadowReach(params) + params.spread;
+    left = std::max(reach - params.offsetX, 0);
+    right = std::max(reach + params.offsetX, 0);
+    top = std::max(reach - params.offsetY, 0);
+    bottom = std::max(reach + params.offsetY, 0);
 }
 
 // fast erf approximation, max error ~5e-4
@@ -1067,36 +1213,40 @@ static float roundedBoxShadow(float x, float y, float halfW, float halfH, float 
     return value;
 }
 
-static void drawShadowSW(int x1, int y1, int x2, int y2) {
+// The shadow of the box x1, y1, x2, y2, only outside of it except in the
+// squares of its rounded corners (cornerRadius of the params), where the
+// rounded box drawn after the shadow covers it.
+static void drawShadowSW(const ShadowParams &params, int x1, int y1, int x2, int y2) {
     // shadow box
-    int bx1 = x1 - g_shadowParams.spread + g_shadowParams.offsetX;
-    int by1 = y1 - g_shadowParams.spread + g_shadowParams.offsetY;
-    int bw = x2 - x1 + 1 + 2 * g_shadowParams.spread;
-    int bh = y2 - y1 + 1 + 2 * g_shadowParams.spread;
+    int bx1 = x1 - params.spread + params.offsetX;
+    int by1 = y1 - params.spread + params.offsetY;
+    int bw = x2 - x1 + 1 + 2 * params.spread;
+    int bh = y2 - y1 + 1 + 2 * params.spread;
     if (bw <= 0 || bh <= 0) {
         return;
     }
 
-    int reach = shadowReach();
+    int reach = shadowReach(params);
     int mw = bw + 2 * reach;
     int mh = bh + 2 * reach;
 
-    // alpha mask depends only on box size and params, so cache it
+    // alpha mask depends only on box size, blur and corner radius, so cache it
     // (a few masks, there can be more windows with shadow on the screen)
     struct ShadowMask {
         std::vector<uint8_t> data;
         int w = -1;
         int h = -1;
-        uint32_t version = 0;
+        int blur = -1;
+        int cornerRadius = -1;
         uint32_t lastUsed = 0;
     };
-    static const int NUM_CACHED_MASKS = 4;
+    static const int NUM_CACHED_MASKS = 8;
     static ShadowMask masks[NUM_CACHED_MASKS];
     static uint32_t useCounter;
 
     ShadowMask *shadowMask = nullptr;
     for (int i = 0; i < NUM_CACHED_MASKS; i++) {
-        if (masks[i].w == bw && masks[i].h == bh && masks[i].version == g_shadowParamsVersion) {
+        if (masks[i].w == bw && masks[i].h == bh && masks[i].blur == params.blur && masks[i].cornerRadius == params.cornerRadius) {
             shadowMask = &masks[i];
             break;
         }
@@ -1113,14 +1263,15 @@ static void drawShadowSW(int x1, int y1, int x2, int y2) {
 
         shadowMask->w = bw;
         shadowMask->h = bh;
-        shadowMask->version = g_shadowParamsVersion;
+        shadowMask->blur = params.blur;
+        shadowMask->cornerRadius = params.cornerRadius;
         auto &mask = shadowMask->data;
         mask.resize(mw * mh);
 
-        float sigma = shadowSigma();
+        float sigma = shadowSigma(params);
         float halfW = bw / 2.0f;
         float halfH = bh / 2.0f;
-        float corner = std::min((float)std::max(g_shadowParams.cornerRadius, 0), std::min(halfW, halfH));
+        float corner = std::min((float)std::max(params.cornerRadius, 0), std::min(halfW, halfH));
 
         // deep inside the box (farther than corner + 3 sigma from the edges) the shadow is fully opaque
         int inner = reach + (int)ceilf(corner) + reach + 1;
@@ -1162,10 +1313,13 @@ static void drawShadowSW(int x1, int y1, int x2, int y2) {
     int sx2 = std::min(mx1 + mw, clipRect.x2 + 1);
     int sy2 = std::min(my1 + mh, clipRect.y2 + 1);
 
-    const int sr = g_shadowParams.r;
-    const int sg = g_shadowParams.g;
-    const int sb = g_shadowParams.b;
-    const int opacity = g_shadowParams.opacity;
+    const int sr = params.r;
+    const int sg = params.g;
+    const int sb = params.b;
+    const int opacity = params.opacity;
+
+    // the squares of the rounded corners inside of the box
+    int corner = std::min(std::max(params.cornerRadius, 0), std::min((x2 - x1 + 1) / 2, (y2 - y1 + 1) / 2));
 
     uint32_t *buffer = (uint32_t *)display::getBufferPointer();
 
@@ -1173,11 +1327,21 @@ static void drawShadowSW(int x1, int y1, int x2, int y2) {
         const uint8_t *maskRow = mask.data() + (y - my1) * mw;
         uint32_t *dstRow = buffer + y * displayWidth;
         bool insideRows = y >= y1 && y <= y2;
+        bool cornerRows = insideRows && (y < y1 + corner || y > y2 - corner);
         for (int x = sx1; x < sx2; x++) {
             // skip area covered by the window itself
             if (insideRows && x >= x1 && x <= x2) {
-                x = x2;
-                continue;
+                if (cornerRows && x < x1 + corner) {
+                    // left corner
+                } else if (cornerRows && x <= x2 - corner) {
+                    x = x2 - corner;
+                    continue;
+                } else if (cornerRows) {
+                    // right corner
+                } else {
+                    x = x2;
+                    continue;
+                }
             }
 
             int a = maskRow[x - mx1] * opacity;
@@ -1211,7 +1375,7 @@ void drawShadowGlyph(ShadowGlpyh shadowGlyph, int x, int y, int xClip = -1, int 
 
 void drawShadow(int x1, int y1, int x2, int y2) {
 #if defined(EEZ_SW_SHADOW)
-    drawShadowSW(x1, y1, x2, y2);
+    drawShadowSW(g_shadowParams, x1, y1, x2, y2);
 #else
 	display::setColor(64, 64, 64);
 
@@ -1243,7 +1407,7 @@ void drawShadow(int x1, int y1, int x2, int y2) {
 void expandRectWithShadow(int &x1, int &y1, int &x2, int &y2) {
 #if defined(EEZ_SW_SHADOW)
     int left, top, right, bottom;
-    getShadowExtents(left, top, right, bottom);
+    getShadowExtents(g_shadowParams, left, top, right, bottom);
     x1 -= left;
     y1 -= top;
     x2 += right;
@@ -1254,6 +1418,102 @@ void expandRectWithShadow(int &x1, int &y1, int &x2, int &y2) {
 	x2 += R;
 	y2 += B;
 #endif
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool styleHasShadow(const Style *style) {
+#if defined(EEZ_SW_SHADOW)
+    return style->shadowColor != TRANSPARENT_COLOR_INDEX &&
+        (style->shadowBlur > 0 || style->shadowSpread > 0 || style->shadowOffsetX != 0 || style->shadowOffsetY != 0);
+#else
+    return false;
+#endif
+}
+
+#if defined(EEZ_SW_SHADOW)
+static ShadowParams getStyleShadowParams(const Style *style) {
+    ShadowParams params;
+    params.offsetX = style->shadowOffsetX;
+    params.offsetY = style->shadowOffsetY;
+    params.blur = style->shadowBlur;
+    params.spread = style->shadowSpread;
+    params.cornerRadius = style->borderRadiusTLX;
+
+    display::ColorRGBA rgba;
+    display::getColorRGBAFromIndex(style->shadowColor, &rgba);
+    params.r = rgba.r;
+    params.g = rgba.g;
+    params.b = rgba.b;
+    params.opacity = (uint8_t)(rgba.a * display::getOpacity() / 255);
+
+    return params;
+}
+#endif
+
+void expandRectWithStyleShadow(const Style *style, int &x1, int &y1, int &x2, int &y2) {
+#if defined(EEZ_SW_SHADOW)
+    auto params = getStyleShadowParams(style);
+    int left, top, right, bottom;
+    getShadowExtents(params, left, top, right, bottom);
+    x1 -= left;
+    y1 -= top;
+    x2 += right;
+    y2 += bottom;
+#endif
+}
+
+void drawStyleShadow(const Style *style, int x1, int y1, int x2, int y2) {
+#if defined(EEZ_SW_SHADOW)
+    auto params = getStyleShadowParams(style);
+    if (params.opacity > 0) {
+        drawShadowSW(params, x1, y1, x2, y2);
+
+        // drawn directly into the buffer
+        int left, top, right, bottom;
+        getShadowExtents(params, left, top, right, bottom);
+        display::addDamageRect(x1 - left, y1 - top, x2 + right, y2 + bottom);
+    }
+#endif
+}
+
+void drawFocusRing(int x, int y, int w, int h, const Style *style) {
+    if (style->focusRingWidth == 0 || style->focusRingColor == TRANSPARENT_COLOR_INDEX) {
+        return;
+    }
+
+    int offset = style->focusRingOffset;
+    int x1 = x + offset;
+    int y1 = y + offset;
+    int x2 = x + w - 1 - offset;
+    int y2 = y + h - 1 - offset;
+    if (x2 < x1 || y2 < y1) {
+        return;
+    }
+
+    // The radii of the border are in the middle of its line (see
+    // drawBorderAndBackground), so the outer edge of the box is at the radius
+    // plus half the border width. The ring follows the box: its outer edge is
+    // that much smaller by the offset, its radii are in the middle of the ring.
+    int borderWidth = MAX(MAX(style->borderSizeTop, style->borderSizeRight), MAX(style->borderSizeBottom, style->borderSizeLeft));
+    if (style->borderColor == TRANSPARENT_COLOR_INDEX) {
+        borderWidth = 0;
+    }
+    float delta = (borderWidth - style->focusRingWidth) / 2.0f - offset;
+
+    const uint8_t *styleRadii[8] = {
+        &style->borderRadiusTLX, &style->borderRadiusTLY, &style->borderRadiusTRX, &style->borderRadiusTRY,
+        &style->borderRadiusBRX, &style->borderRadiusBRY, &style->borderRadiusBLX, &style->borderRadiusBLY
+    };
+    float radii[8];
+    for (int i = 0; i < 4; i++) {
+        bool rounded = *styleRadii[2 * i] > 0 && *styleRadii[2 * i + 1] > 0;
+        radii[2 * i] = rounded ? MAX(*styleRadii[2 * i] + delta, 0.0f) : 0;
+        radii[2 * i + 1] = rounded ? MAX(*styleRadii[2 * i + 1] + delta, 0.0f) : 0;
+    }
+
+    display::setColor(style->focusRingColor);
+    display::strokeRoundedRect(x1, y1, x2, y2, style->focusRingWidth, radii);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1350,14 +1610,14 @@ void drawCheckboxOrRadio(int x, int y, int w, int h, const Style *style, bool ra
     int x2 = x + w - 1;
     int y2 = y + h - 1;
 
-    drawBorderAndBackground(x1, y1, x2, y2, style, active ? style->activeBackgroundColor : style->backgroundColor);
+    drawBorderAndBackground(x1, y1, x2, y2, style, getStyleBackgroundColor(style, active));
 
     font::Font font = styleGetFont(style);
     if (!font) {
         return;
     }
 
-    uint16_t color = active ? style->activeColor : style->color;
+    uint16_t color = getStyleColor(style, active);
     if (color == TRANSPARENT_COLOR_INDEX) {
         return;
     }
@@ -1366,26 +1626,8 @@ void drawCheckboxOrRadio(int x, int y, int w, int h, const Style *style, bool ra
     int width = measureCheckboxOrRadio(style, label);
     int height = font.getHeight();
 
-    int xOffset;
-    if (styleIsHorzAlignLeft(style)) {
-        xOffset = x1 + style->paddingLeft;
-    } else if (styleIsHorzAlignRight(style)) {
-        xOffset = x2 - style->paddingRight - width;
-    } else {
-        xOffset = x1 + ((x2 - x1 + 1) - width) / 2;
-        if (xOffset < x1) {
-            xOffset = x1;
-        }
-    }
-
-    int yOffset;
-    if (styleIsVertAlignTop(style)) {
-        yOffset = y1 + style->paddingTop;
-    } else if (styleIsVertAlignBottom(style)) {
-        yOffset = y2 - style->paddingBottom - height;
-    } else {
-        yOffset = y1 + ((y2 - y1 + 1) - height) / 2;
-    }
+    int xOffset = getContentX(style, x1, x2, width);
+    int yOffset = getContentY(style, y1, y2, height);
 
     int boxSize = getCheckBoxSize(font);
     int bx1 = xOffset;

@@ -25,6 +25,7 @@ bool BitmapWidgetState::updateState() {
     WIDGET_STATE_START(BitmapWidget);
 
     WIDGET_STATE(flags.active, g_isActiveWidget);
+    WIDGET_STATE(flags.disabled, isWidgetActionDisabled(widgetCursor));
     WIDGET_STATE(data, widget->data ? getBitmapImage(widgetCursor, widget->data) : get(widgetCursor, widget->data));
 
     WIDGET_STATE_END()
@@ -34,7 +35,8 @@ void BitmapWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
 
     auto widget = (const BitmapWidget *)widgetCursor.widget;
-    const Style* style = getStyle(widget->style);
+    auto stateStyle = getWidgetStateStyle(getStyle(widget->style), flags.active, false, getDisabledStateFlag(flags.disabled));
+    const Style* style = stateStyle.style;
 
     const Bitmap *bitmap = nullptr;
 
@@ -42,7 +44,7 @@ void BitmapWidgetState::render() {
         if (data.getType() == VALUE_TYPE_POINTER) {
             auto image = (Image *)data.getVoidPointer();
             if (image) {
-                drawBitmap(image, widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style, flags.active);
+                drawBitmap(image, widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style, stateStyle.active);
             }
             return;
         } else {
@@ -61,7 +63,7 @@ void BitmapWidgetState::render() {
         image.lineOffset = 0;
         image.pixels = (uint8_t *)bitmap->pixels;
 
-        drawBitmap(&image, widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style, flags.active);
+        drawBitmap(&image, widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style, stateStyle.active);
     }
 }
 

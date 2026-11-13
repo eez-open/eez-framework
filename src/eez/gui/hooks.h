@@ -28,7 +28,6 @@ struct Hooks {
     bool (*isEventHandlingDisabled)();
     int (*overrideStyle)(const WidgetCursor &widgetCursor, int styleId);
     uint16_t (*overrideStyleColor)(const WidgetCursor &widgetCursor, const Style *style);
-    uint16_t (*overrideActiveStyleColor)(const WidgetCursor &widgetCursor, const Style *style);
     uint16_t (*transformColor)(uint16_t color);
     bool (*styleGetSmallerFont)(font::Font &font);
     uint8_t (*getDisplayBackgroundLuminosityStep)();

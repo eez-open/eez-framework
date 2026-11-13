@@ -95,10 +95,6 @@ static uint16_t overrideStyleColor(const WidgetCursor &widgetCursor, const Style
     return style->color;
 }
 
-static uint16_t overrideActiveStyleColor(const WidgetCursor &widgetCursor, const Style *style) {
-    return style->activeColor;
-}
-
 static uint16_t transformColor(uint16_t color) {
     return color;
 }
@@ -191,7 +187,6 @@ Hooks g_hooks = {
     isEventHandlingDisabled,
     nullptr,
     overrideStyleColor,
-    overrideActiveStyleColor,
     transformColor,
     styleGetSmallerFont,
     getDisplayBackgroundLuminosityStep,

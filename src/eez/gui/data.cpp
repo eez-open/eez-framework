@@ -238,24 +238,6 @@ uint16_t getBackgroundColor(const WidgetCursor &widgetCursor, int16_t id, const 
     return style->backgroundColor;
 }
 
-uint16_t getActiveColor(const WidgetCursor &widgetCursor, int16_t id, const Style *style) {
-    Value value((void *)style, VALUE_TYPE_POINTER);
-    DATA_OPERATION_FUNCTION(id, DATA_OPERATION_GET_ACTIVE_COLOR, widgetCursor, value);
-    if (value.getType() == VALUE_TYPE_UINT16) {
-        return value.getUInt16();
-    }
-    return style->activeColor;
-}
-
-uint16_t getActiveBackgroundColor(const WidgetCursor &widgetCursor, int16_t id, const Style *style) {
-    Value value((void *)style, VALUE_TYPE_POINTER);
-    DATA_OPERATION_FUNCTION(id, DATA_OPERATION_GET_ACTIVE_BACKGROUND_COLOR, widgetCursor, value);
-    if (value.getType() == VALUE_TYPE_UINT16) {
-        return value.getUInt16();
-    }
-    return style->activeBackgroundColor;
-}
-
 bool isBlinking(const WidgetCursor &widgetCursor, int16_t id) {
     if (id == EEZ_DATA_ID_NONE) {
         return false;

@@ -19,12 +19,12 @@ namespace gui {
 namespace font {
 
 Font::Font()
-	: fontData(0)
+	: fontData(0), letterSpacing(0)
 {
 }
 
 Font::Font(const FontData *fontData_)
-	: fontData(fontData_)
+	: fontData(fontData_), letterSpacing(0)
 {
 }
 

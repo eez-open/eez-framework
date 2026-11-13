@@ -401,6 +401,7 @@ void ToastMessagePage::updateInternalPage() {
     widgetCursor.h = containerRectangleWidget.height;
     RectangleWidgetState rectangleWidgetState;
     rectangleWidgetState.flags.active = 0;
+    rectangleWidgetState.flags.disabled = 0;
     rectangleWidgetState.render();
 
     if (g_findCallback == nullptr && !widgetCursor.refreshed) {
@@ -409,8 +410,9 @@ void ToastMessagePage::updateInternalPage() {
 
     TextWidgetState textWidgetState;
     textWidgetState.flags.active = 0;
-	textWidgetState.flags.blinking = 0;
+	textWidgetState.flags.disabled = 0;
 	textWidgetState.flags.focused = 0;
+	textWidgetState.blinkOpacity = 255;
 
     widgetCursor.widget = &line1Widget;
     widgetCursor.x = x + line1Widget.x;
@@ -441,9 +443,10 @@ void ToastMessagePage::updateInternalPage() {
         ButtonWidgetState buttonWidgetState;
 
 		buttonWidgetState.flags.active = g_activeWidget.widget == &actionWidget;
-		buttonWidgetState.flags.blinking = 0;
+		buttonWidgetState.flags.disabled = 0;
 		buttonWidgetState.flags.focused = 0;
 		buttonWidgetState.flags.enabled = 1;
+		buttonWidgetState.blinkOpacity = 255;
 		widgetCursor.widget = &actionWidget;
         widgetCursor.x = x + actionWidget.x;
         widgetCursor.y = y + actionWidget.y;
@@ -959,6 +962,7 @@ void MenuWithButtonsPage::updateInternalPage() {
     widgetCursor.h = m_containerRectangleWidget.height;
     RectangleWidgetState rectangleWidgetState;
     rectangleWidgetState.flags.active = 0;
+    rectangleWidgetState.flags.disabled = 0;
     rectangleWidgetState.render();
 
     if (g_findCallback == nullptr && !widgetCursor.refreshed) {
@@ -972,8 +976,9 @@ void MenuWithButtonsPage::updateInternalPage() {
     widgetCursor.h = m_messageTextWidget.height;
     TextWidgetState textWidgetState;
     textWidgetState.flags.active = 0;
-	textWidgetState.flags.blinking = 0;
+	textWidgetState.flags.disabled = 0;
 	textWidgetState.flags.focused = 0;
+	textWidgetState.blinkOpacity = 255;
     textWidgetState.render();
 
     for (size_t i = 0; i < m_numButtonTextWidgets; i++) {
@@ -985,8 +990,9 @@ void MenuWithButtonsPage::updateInternalPage() {
         widgetCursor.cursor = (Cursor)i;
 		TextWidgetState textWidgetState;
 		textWidgetState.flags.active = widgetCursor == g_activeWidget;
-		textWidgetState.flags.blinking = 0;
+		textWidgetState.flags.disabled = 0;
 		textWidgetState.flags.focused = 0;
+		textWidgetState.blinkOpacity = 255;
 		textWidgetState.render();
     }
 
@@ -1168,6 +1174,7 @@ void QuestionPage::updateInternalPage() {
     widgetCursor.h = m_containerRectangleWidget.height;
     RectangleWidgetState rectangleWidgetState;
     rectangleWidgetState.flags.active = 0;
+    rectangleWidgetState.flags.disabled = 0;
     rectangleWidgetState.render();
 
     if (g_findCallback == nullptr && !widgetCursor.refreshed) {
@@ -1181,8 +1188,9 @@ void QuestionPage::updateInternalPage() {
     widgetCursor.h = m_messageTextWidget.height;
     TextWidgetState textWidgetState;
     textWidgetState.flags.active = 0;
-	textWidgetState.flags.blinking = 0;
+	textWidgetState.flags.disabled = 0;
 	textWidgetState.flags.focused = 0;
+	textWidgetState.blinkOpacity = 255;
     textWidgetState.render();
 
     for (size_t i = 0; i < m_numButtonTextWidgets; i++) {
@@ -1194,8 +1202,9 @@ void QuestionPage::updateInternalPage() {
         widgetCursor.cursor = (Cursor)i;
 		TextWidgetState textWidgetState;
 		textWidgetState.flags.active = widgetCursor == g_activeWidget;
-		textWidgetState.flags.blinking = 0;
+		textWidgetState.flags.disabled = 0;
 		textWidgetState.flags.focused = 0;
+		textWidgetState.blinkOpacity = 255;
 		textWidgetState.render();
     }
 

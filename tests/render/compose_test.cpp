@@ -251,8 +251,10 @@ TEST("render/compose: a blinking text without radius equals a full redraw") {
         render::frameToBlink(false);
     }
     render::frameToBlink(true);
+    // the fade at the half: the background below is drawn again
+    harness::frame(12);
     // render_bl 1 at (20, 20, 200, 50)
-    CHECK_EQ(render::compareWithFullRedraw("blink", 20, 20, 200, 50), 0);
+    CHECK_EQ(render::compareWithFullRedraw("blink", 20, 20, 200, 50, true), 0);
 }
 
 TEST("render/compose: a changing rounded text without a border equals a full redraw") {
@@ -275,8 +277,9 @@ TEST("render/compose: a blinking rounded text without a border equals a full red
         render::frameToBlink(false);
     }
     render::frameToBlink(true);
+    harness::frame(12);
     // render_bl 2 (render_blink_r) at (240, 20, 200, 50)
-    CHECK_EQ(render::compareWithFullRedraw("blink_radius", 240, 20, 200, 50), 0);
+    CHECK_EQ(render::compareWithFullRedraw("blink_radius", 240, 20, 200, 50, true), 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

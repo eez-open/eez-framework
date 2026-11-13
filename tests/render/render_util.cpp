@@ -266,25 +266,35 @@ void pushPage(int pageId, int frames) {
 }
 
 void frameToBlink(bool on) {
-    for (int i = 0; i < 200; i++) {
-        uint32_t phase = harness::now() % 800;
-        if (on ? (phase >= 440 && phase <= 560) : (phase >= 40 && phase <= 160)) {
-            break;
-        }
-        harness::frame();
-    }
-    harness::frame(2);
+    // the blink opacity is 255 at the phase 0 and 0 at the phase 400 (of 800
+    // ms): a frame whose tick is at that phase, then a frame at the same time
+    // (a frame is drawn before its tick)
+    uint32_t target = on ? 0 : 400;
+    uint32_t phase = (harness::now() + harness::FRAME_MS) % 800;
+    harness::advance((target - phase + 800) % 800);
+    harness::frame();
+    harness::advance((uint32_t)0 - harness::FRAME_MS);
+    harness::frame();
 }
 
-int compareWithFullRedraw(const char *name, int x, int y, int w, int h) {
+int compareWithFullRedraw(const char *name, int x, int y, int w, int h, bool sameTime) {
     if (w <= 0 || h <= 0) {
         x = 0;
         y = 0;
         w = DISPLAY_WIDTH;
         h = DISPLAY_HEIGHT;
     }
+    if (sameTime) {
+        // a frame at the same time: the presented frame is drawn with what
+        // the tick computed for this time (a frame is drawn before its tick)
+        harness::advance((uint32_t)0 - harness::FRAME_MS);
+        harness::frame();
+    }
     Image32 incremental = captureRegion(x, y, w, h);
     refreshScreen();
+    if (sameTime) {
+        harness::advance((uint32_t)0 - harness::FRAME_MS);
+    }
     harness::frame();
     Image32 full = captureRegion(x, y, w, h);
     int differing = countDiff(incremental, full);

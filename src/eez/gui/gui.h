@@ -48,7 +48,8 @@ namespace gui {
 ////////////////////////////////////////////////////////////////////////////////
 
 extern WidgetCursor g_activeWidget;
-extern bool g_isBlinkTime;
+// the opacity of the blinking widgets now (see BlinkOpacity in draw.h)
+extern uint8_t g_blinkOpacity;
 extern uint8_t g_selectedThemeIndex;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -64,6 +65,10 @@ void refreshScreen();
 inline bool isPageInternal(int pageId) { return pageId > FIRST_INTERNAL_PAGE_ID; }
 
 int getWidgetAction(const WidgetCursor &widgetCursor);
+// true if the widget has an action that the app context doesn't allow now
+// (AppContext::isWidgetActionEnabled): the widget is drawn in the disabled
+// state
+bool isWidgetActionDisabled(const WidgetCursor &widgetCursor);
 
 void executeAction(const WidgetCursor &widgetCursor, int actionId, void *param = nullptr);
 void executeInternalAction(int actionId);

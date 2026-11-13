@@ -14,7 +14,6 @@ namespace eez {
 namespace gui {
 
 struct ButtonGroupWidget : public Widget {
-    int16_t selectedStyle;
     int16_t selectedButton;
 };
 

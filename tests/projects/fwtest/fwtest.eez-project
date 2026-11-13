@@ -407,6 +407,20 @@
         "native": true
       },
       {
+        "objID": "69b57217-190b-55a3-a508-2afebff6959d",
+        "name": "styles_visible",
+        "tags": "styles",
+        "type": "boolean",
+        "native": true
+      },
+      {
+        "objID": "b966129e-2d1b-5d72-be8d-85758265d3c7",
+        "name": "styles_text",
+        "tags": "styles",
+        "type": "string",
+        "native": true
+      },
+      {
         "objID": "ff2b1d19-8de9-5ee6-a9de-f2ec78be4d50",
         "name": "w_marker",
         "tags": "widgets",
@@ -6830,6 +6844,17 @@
       "objID": "2673140c-2fe7-5a2d-b7bc-a4f7c17cc685",
       "name": "gui_keypad_option1",
       "tags": "gui, keypad",
+      "implementationType": "native",
+      "components": [],
+      "connectionLines": [],
+      "localVariables": [],
+      "componentGroups": [],
+      "userProperties": []
+    },
+    {
+      "objID": "592606fc-ba50-5eca-b08c-36e0accb41ab",
+      "name": "styles_on_click",
+      "tags": "styles",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -32342,6 +32367,343 @@
       "style": "render_popup"
     },
     {
+      "objID": "7e77653a-9e6f-5bce-98f1-a6463bc21595",
+      "name": "styles_states",
+      "tags": "styles",
+      "left": 0,
+      "top": 0,
+      "width": 800,
+      "height": 480,
+      "components": [
+        {
+          "type": "ButtonWidget",
+          "objID": "eb9c4610-2c9f-5b17-955e-49dcb803918e",
+          "left": 20,
+          "top": 20,
+          "width": 160,
+          "height": 50,
+          "style": {
+            "useStyle": "styles_btn"
+          },
+          "data": "\"Button\"",
+          "eventHandlers": [
+            {
+              "objID": "dda08c29-6f9d-5d72-b05d-7353d95bf98b",
+              "eventName": "CLICKED",
+              "handlerType": "action",
+              "action": "styles_on_click"
+            }
+          ]
+        },
+        {
+          "type": "ButtonWidget",
+          "objID": "b7adf6d3-6eee-538f-86f5-f66c6c32eda0",
+          "left": 200,
+          "top": 20,
+          "width": 160,
+          "height": 50,
+          "style": {
+            "useStyle": "styles_btn"
+          },
+          "data": "\"Disabled\"",
+          "enabled": "false"
+        },
+        {
+          "type": "ToggleButtonWidget",
+          "objID": "a4a4142d-9298-5abc-9259-f359a2603833",
+          "left": 380,
+          "top": 20,
+          "width": 160,
+          "height": 50,
+          "style": {
+            "useStyle": "styles_btn"
+          },
+          "data": "1",
+          "text1": "OFF",
+          "text2": "ON"
+        },
+        {
+          "type": "ButtonGroupWidget",
+          "objID": "d88d5fff-3d0b-5b75-9ccb-e081ef2025a3",
+          "left": 560,
+          "top": 20,
+          "width": 220,
+          "height": 50,
+          "style": {
+            "useStyle": "styles_btn"
+          },
+          "data": "[\"A\", \"B\", \"C\"]",
+          "selectedButton": "1"
+        },
+        {
+          "type": "CheckboxWidget",
+          "objID": "c1ed21a5-7e6f-5d63-b645-ff3f2a8816b6",
+          "left": 20,
+          "top": 90,
+          "width": 160,
+          "height": 50,
+          "style": {
+            "useStyle": "styles_btn"
+          },
+          "data": "true",
+          "text": "\"Check\""
+        },
+        {
+          "type": "ButtonWidget",
+          "objID": "223fd04a-1fd8-5669-b517-92286c1230ce",
+          "left": 200,
+          "top": 90,
+          "width": 160,
+          "height": 50,
+          "style": {
+            "useStyle": "styles_btn_primary"
+          },
+          "data": "\"Primary\"",
+          "eventHandlers": [
+            {
+              "objID": "ba1f5556-d987-577d-b4e5-776305a9d962",
+              "eventName": "CLICKED",
+              "handlerType": "action",
+              "action": "styles_on_click"
+            }
+          ]
+        },
+        {
+          "type": "TextWidget",
+          "objID": "7e62c6ea-ea23-5d11-8a19-3148274e32fe",
+          "left": 380,
+          "top": 90,
+          "width": 160,
+          "height": 50,
+          "style": {
+            "useStyle": "styles_btn"
+          },
+          "text": "Focus"
+        },
+        {
+          "type": "ButtonWidget",
+          "objID": "f6315850-8399-56f1-8bec-5db486d7fcbf",
+          "left": 560,
+          "top": 90,
+          "width": 220,
+          "height": 50,
+          "style": {
+            "useStyle": "styles_plain"
+          },
+          "data": "\"Plain\"",
+          "eventHandlers": [
+            {
+              "objID": "7a6cc718-c9fd-5d18-872b-2ac11fc22a0e",
+              "eventName": "CLICKED",
+              "handlerType": "action",
+              "action": "styles_on_click"
+            }
+          ]
+        }
+      ],
+      "connectionLines": [],
+      "localVariables": [],
+      "userProperties": [],
+      "componentGroups": [],
+      "style": "styles_page"
+    },
+    {
+      "objID": "64762abd-7eaf-5849-997c-85cb4b4541b3",
+      "name": "styles_shapes",
+      "tags": "styles",
+      "left": 0,
+      "top": 0,
+      "width": 800,
+      "height": 480,
+      "components": [
+        {
+          "type": "ContainerWidget",
+          "objID": "08f1034c-61da-5b15-b75c-e009686f04ac",
+          "left": 40,
+          "top": 30,
+          "width": 200,
+          "height": 120,
+          "style": {
+            "useStyle": "styles_card"
+          },
+          "visible": "styles_visible",
+          "widgets": [
+            {
+              "type": "TextWidget",
+              "objID": "6b48a6c5-28f6-523d-a9bd-6af183523ea4",
+              "left": 20,
+              "top": 40,
+              "width": 160,
+              "height": 40,
+              "style": {
+                "useStyle": "styles_center"
+              },
+              "text": "Card"
+            }
+          ]
+        },
+        {
+          "type": "RectangleWidget",
+          "objID": "a92e3ba0-e3da-5152-8a01-5a6e57d2a323",
+          "left": 300,
+          "top": 30,
+          "width": 200,
+          "height": 120,
+          "style": {
+            "useStyle": "styles_sides"
+          }
+        },
+        {
+          "type": "RectangleWidget",
+          "objID": "efbb22cd-2d04-5adc-a287-50cc88b05e4d",
+          "left": 540,
+          "top": 30,
+          "width": 200,
+          "height": 120,
+          "style": {
+            "useStyle": "styles_sides_same"
+          }
+        },
+        {
+          "type": "ContainerWidget",
+          "objID": "d28c7113-b1f0-5039-8b89-ff0aba6a9623",
+          "left": 40,
+          "top": 200,
+          "width": 200,
+          "height": 120,
+          "style": {
+            "useStyle": "styles_rounded"
+          },
+          "widgets": [
+            {
+              "type": "RectangleWidget",
+              "objID": "0bdece77-2ec4-5f3b-ab6d-310945b78a6b",
+              "left": 0,
+              "top": 0,
+              "width": 200,
+              "height": 60,
+              "style": {
+                "useStyle": "styles_red_fill"
+              }
+            },
+            {
+              "type": "TextWidget",
+              "objID": "e441b711-3eda-5aff-bbd7-72477003bb18",
+              "left": 0,
+              "top": 60,
+              "width": 200,
+              "height": 60,
+              "style": {
+                "useStyle": "styles_red_fill"
+              },
+              "data": "styles_text"
+            }
+          ]
+        },
+        {
+          "type": "TextWidget",
+          "objID": "1a3cd65b-dcf6-591a-a939-c0d829963e35",
+          "left": 300,
+          "top": 200,
+          "width": 200,
+          "height": 40,
+          "style": {
+            "useStyle": "styles_center"
+          },
+          "text": "Center"
+        },
+        {
+          "type": "TextWidget",
+          "objID": "918df0fc-3b0a-5908-abd3-40b03f980ef5",
+          "left": 300,
+          "top": 260,
+          "width": 200,
+          "height": 40,
+          "style": {
+            "useStyle": "styles_center_pad"
+          },
+          "text": "Center"
+        },
+        {
+          "type": "TextWidget",
+          "objID": "e0c5f5ab-3446-5908-907f-ce48ef81b1cd",
+          "left": 540,
+          "top": 200,
+          "width": 240,
+          "height": 40,
+          "style": {
+            "useStyle": "styles_spacing"
+          },
+          "text": "Spacing"
+        },
+        {
+          "type": "MultilineTextWidget",
+          "objID": "d27313e2-fba5-52cd-b1f2-f26491c1e2f5",
+          "left": 540,
+          "top": 260,
+          "width": 240,
+          "height": 100,
+          "style": {
+            "useStyle": "styles_lines"
+          },
+          "text": "One two three four five six seven"
+        },
+        {
+          "type": "TextWidget",
+          "objID": "6fe0e9fd-02dc-5aa2-8b61-45a093dfb435",
+          "left": 40,
+          "top": 360,
+          "width": 160,
+          "height": 40,
+          "style": {
+            "useStyle": "styles_ellipsis"
+          },
+          "text": "A text that does not fit"
+        },
+        {
+          "type": "TextWidget",
+          "objID": "e5235c31-acc9-5ca1-a410-ef97f72f6594",
+          "left": 220,
+          "top": 360,
+          "width": 160,
+          "height": 40,
+          "style": {
+            "useStyle": "styles_ellipsis_v"
+          },
+          "text": "A text that does not fit"
+        },
+        {
+          "type": "TextWidget",
+          "objID": "69cceaee-b814-563d-98c8-f21372f6819d",
+          "left": 400,
+          "top": 360,
+          "width": 120,
+          "height": 40,
+          "style": {
+            "useStyle": "styles_ellipsis_center"
+          },
+          "text": "Fits"
+        },
+        {
+          "type": "TextWidget",
+          "objID": "efb5db95-f369-5514-9d47-aa4ffa14b09e",
+          "left": 540,
+          "top": 360,
+          "width": 40,
+          "height": 40,
+          "style": {
+            "useStyle": "styles_ellipsis"
+          },
+          "text": "Long"
+        }
+      ],
+      "connectionLines": [],
+      "localVariables": [],
+      "userProperties": [],
+      "componentGroups": [],
+      "style": "styles_page"
+    },
+    {
       "objID": "03c59aee-9f1a-5a14-8c2c-117dc3ad116f",
       "name": "w_text",
       "tags": "widgets",
@@ -36606,6 +36968,313 @@
           "childStyles": []
         },
         {
+          "objID": "704d1a7f-b63c-599c-9594-91ba047b8cc7",
+          "name": "styles_box",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "backgroundColor": "styles_bg",
+          "color": "styles_white",
+          "borderSize": "1",
+          "borderColor": "styles_gray",
+          "childStyles": []
+        },
+        {
+          "objID": "27f023a2-0493-51ec-b566-ac583416a490",
+          "name": "styles_btn",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "backgroundColor": "styles_blue",
+          "color": "styles_white",
+          "borderSize": "1",
+          "borderColor": "styles_gray",
+          "childStyles": []
+        },
+        {
+          "objID": "e86a0ff4-96d8-54ea-8921-4999ccaa609a",
+          "name": "styles_btn_pressed",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "state": "pressed",
+          "useStyle": "styles_btn",
+          "backgroundColor": "styles_red",
+          "childStyles": []
+        },
+        {
+          "objID": "213399b3-ce15-544f-a89c-b9bfddefa766",
+          "name": "styles_btn_disabled",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "state": "disabled",
+          "useStyle": "styles_btn",
+          "backgroundColor": "styles_gray",
+          "color": "styles_bg",
+          "childStyles": []
+        },
+        {
+          "objID": "bdd8287d-d6c2-59a5-ab7b-1165d046bc8f",
+          "name": "styles_btn_checked",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "state": "checked",
+          "useStyle": "styles_btn",
+          "backgroundColor": "styles_green",
+          "childStyles": []
+        },
+        {
+          "objID": "3f7f6742-3b84-593d-8fb2-eb9631c7a99e",
+          "name": "styles_btn_selected",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "state": "selected",
+          "useStyle": "styles_btn",
+          "backgroundColor": "styles_orange",
+          "childStyles": []
+        },
+        {
+          "objID": "9ed1763d-eb7a-5d23-9375-d0ca7a76e328",
+          "name": "styles_btn_focused",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "state": "focused",
+          "useStyle": "styles_btn",
+          "borderColor": "styles_yellow",
+          "focusRingWidth": 2,
+          "focusRingOffset": 3,
+          "focusRingColor": "styles_yellow",
+          "childStyles": []
+        },
+        {
+          "objID": "4c67654a-e1fd-58be-b275-a354cf90cb0f",
+          "name": "styles_btn_primary",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "backgroundColor": "styles_purple",
+          "color": "styles_white",
+          "borderSize": "1",
+          "borderColor": "styles_gray",
+          "childStyles": []
+        },
+        {
+          "objID": "6dddfec1-756a-539b-a2d7-2426ddd0ae28",
+          "name": "styles_btn_primary_pressed",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "state": "pressed",
+          "useStyle": "styles_btn_primary",
+          "backgroundColor": "styles_red",
+          "color": "styles_yellow",
+          "childStyles": []
+        },
+        {
+          "objID": "3afd73c1-04c5-533a-8f7a-c2a695e4df1d",
+          "name": "styles_btn_primary_disabled",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "state": "disabled",
+          "useStyle": "styles_btn_primary",
+          "backgroundColor": "styles_gray",
+          "color": "styles_bg",
+          "childStyles": []
+        },
+        {
+          "objID": "b8836198-b6e6-55b3-9065-bf8fdb7afe94",
+          "name": "styles_btn_primary_checked",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "state": "checked",
+          "useStyle": "styles_btn_primary",
+          "backgroundColor": "styles_green",
+          "childStyles": []
+        },
+        {
+          "objID": "eb19624c-a106-5399-8565-9ed6680c07c2",
+          "name": "styles_btn_primary_selected",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "state": "selected",
+          "useStyle": "styles_btn_primary",
+          "backgroundColor": "styles_orange",
+          "childStyles": []
+        },
+        {
+          "objID": "f502950e-afbf-5f08-a6ab-5ce7a06d49c2",
+          "name": "styles_btn_primary_focused",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "state": "focused",
+          "useStyle": "styles_btn_primary",
+          "borderColor": "styles_yellow",
+          "focusRingWidth": 2,
+          "focusRingOffset": 3,
+          "focusRingColor": "styles_yellow",
+          "childStyles": []
+        },
+        {
+          "objID": "7171d3c4-04b2-50ba-8e90-75607ac5909a",
+          "name": "styles_plain",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "backgroundColor": "styles_bg",
+          "color": "styles_white",
+          "borderSize": "1",
+          "borderColor": "styles_gray",
+          "childStyles": []
+        },
+        {
+          "objID": "d9901f01-8ff1-5a4d-aac8-345e16267c1c",
+          "name": "styles_plain_transparent",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "backgroundColor": "transparent",
+          "color": "styles_white",
+          "borderSize": "1",
+          "borderColor": "styles_gray",
+          "childStyles": []
+        },
+        {
+          "objID": "906d6d9f-0351-5f02-859c-aeaacbff1cea",
+          "name": "styles_page",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "backgroundColor": "styles_page_bg",
+          "childStyles": []
+        },
+        {
+          "objID": "a2569567-5061-55e1-8194-c95508be34ce",
+          "name": "styles_card",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "backgroundColor": "styles_bg",
+          "borderRadius": "12",
+          "shadowColor": "styles_shadow",
+          "shadowBlur": 8,
+          "shadowOffsetY": 4,
+          "shadowSpread": 0,
+          "childStyles": []
+        },
+        {
+          "objID": "0b11a474-5596-56a8-bfb3-0784062fc9a2",
+          "name": "styles_sides",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "backgroundColor": "styles_bg",
+          "borderSize": "1 4 2 8",
+          "borderColor": "styles_yellow",
+          "borderRadius": "12",
+          "childStyles": []
+        },
+        {
+          "objID": "49e89284-e636-5272-958e-3b705f0d4c08",
+          "name": "styles_sides_same",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "backgroundColor": "styles_bg",
+          "borderSize": "4",
+          "borderColor": "styles_yellow",
+          "borderRadius": "12",
+          "childStyles": []
+        },
+        {
+          "objID": "d15a5439-ad59-5a93-a868-62bbe9fe7cef",
+          "name": "styles_rounded",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "backgroundColor": "styles_bg",
+          "borderSize": "2",
+          "borderColor": "styles_white",
+          "borderRadius": "16",
+          "childStyles": []
+        },
+        {
+          "objID": "9554fb11-b5d3-59dd-96f1-a6135bf2630e",
+          "name": "styles_red_fill",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "backgroundColor": "styles_red",
+          "color": "styles_white",
+          "childStyles": []
+        },
+        {
+          "objID": "5c6fdf78-7918-5853-9466-18cb6a8a0e71",
+          "name": "styles_center",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "backgroundColor": "styles_bg",
+          "color": "styles_white",
+          "childStyles": []
+        },
+        {
+          "objID": "78a5a5ae-63cf-5b13-8d60-c7e0eb6c4ee0",
+          "name": "styles_center_pad",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "backgroundColor": "styles_bg",
+          "color": "styles_white",
+          "padding": "0 0 0 60",
+          "childStyles": []
+        },
+        {
+          "objID": "3b59dbb2-2ec6-51da-b451-224357a5dc44",
+          "name": "styles_spacing",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "backgroundColor": "styles_bg",
+          "color": "styles_white",
+          "alignHorizontal": "left",
+          "padding": "4",
+          "letterSpacing": 3,
+          "childStyles": []
+        },
+        {
+          "objID": "1e81e428-4e5b-5ac7-b364-a72763c343b5",
+          "name": "styles_lines",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "backgroundColor": "styles_bg",
+          "color": "styles_white",
+          "alignHorizontal": "left",
+          "alignVertical": "top",
+          "lineHeight": 30,
+          "childStyles": []
+        },
+        {
+          "objID": "75a413a6-b09c-5059-a86d-b148543a4df4",
+          "name": "styles_ellipsis",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "backgroundColor": "styles_bg",
+          "color": "styles_white",
+          "alignHorizontal": "left",
+          "padding": "4",
+          "ellipsis": true,
+          "childStyles": []
+        },
+        {
+          "objID": "78ed891d-baf9-567b-83aa-156ff13f10b7",
+          "name": "styles_ellipsis_v",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "backgroundColor": "styles_bg",
+          "color": "styles_white",
+          "alignHorizontal": "left",
+          "padding": "4",
+          "ellipsis": true,
+          "font": "VRoboto",
+          "childStyles": []
+        },
+        {
+          "objID": "47e18257-6627-5d61-8eab-68bb8cbd7de0",
+          "name": "styles_ellipsis_center",
+          "tags": "styles",
+          "alwaysBuild": true,
+          "backgroundColor": "styles_bg",
+          "color": "styles_white",
+          "alignHorizontal": "center",
+          "padding": "4",
+          "ellipsis": true,
+          "childStyles": []
+        },
+        {
           "objID": "67740019-1eac-5229-ae06-c71c511b76d7",
           "name": "w_txt",
           "tags": "widgets",
@@ -39208,6 +39877,61 @@
       "tags": "render"
     },
     {
+      "objID": "b824047f-6729-5a90-a1e8-b11a044f5b41",
+      "name": "styles_bg",
+      "tags": "styles"
+    },
+    {
+      "objID": "4044ca59-70e5-5b33-b6ec-d9aa58092e69",
+      "name": "styles_white",
+      "tags": "styles"
+    },
+    {
+      "objID": "c73345f4-707c-5635-ba73-a4054e1d7bc7",
+      "name": "styles_gray",
+      "tags": "styles"
+    },
+    {
+      "objID": "57a457bd-bd79-5d49-a064-c974feb057e5",
+      "name": "styles_red",
+      "tags": "styles"
+    },
+    {
+      "objID": "78806ea6-55b2-59d0-9699-4f23e805d652",
+      "name": "styles_green",
+      "tags": "styles"
+    },
+    {
+      "objID": "ca6ca636-bcc2-52a8-8a10-0a1c18fa95d1",
+      "name": "styles_blue",
+      "tags": "styles"
+    },
+    {
+      "objID": "51cb6eb3-3707-51c8-b380-e32ec30f6769",
+      "name": "styles_yellow",
+      "tags": "styles"
+    },
+    {
+      "objID": "294cb91b-3f3e-5004-8a42-5a2dfc5dd4d2",
+      "name": "styles_orange",
+      "tags": "styles"
+    },
+    {
+      "objID": "13833ca5-45eb-509b-8144-d73d9710458b",
+      "name": "styles_purple",
+      "tags": "styles"
+    },
+    {
+      "objID": "424be08f-6059-5f6f-aaf1-655c947f4fea",
+      "name": "styles_page_bg",
+      "tags": "styles"
+    },
+    {
+      "objID": "b1478aeb-8b2f-5923-b944-b1b0aefa7498",
+      "name": "styles_shadow",
+      "tags": "styles"
+    },
+    {
       "objID": "4980a8bb-795e-554a-b496-59bc656529c1",
       "name": "w_red",
       "tags": "widgets"
@@ -39278,6 +40002,17 @@
         "#ff000080",
         "#ffffff40",
         "#0000ff00",
+        "#202020",
+        "#f8fcf8",
+        "#808080",
+        "#f80000",
+        "#00fc00",
+        "#0000f8",
+        "#f8fc00",
+        "#f88000",
+        "#8000f8",
+        "#406080",
+        "#000000a0",
         "#f80000",
         "#00fc00",
         "#0000f8",

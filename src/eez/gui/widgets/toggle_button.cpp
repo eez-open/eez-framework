@@ -26,6 +26,7 @@ bool ToggleButtonWidgetState::updateState() {
 
     WIDGET_STATE(flags.active, g_isActiveWidget);
     WIDGET_STATE(flags.enabled, get(widgetCursor, widget->data).getInt() ? 1 : 0);
+    WIDGET_STATE(flags.disabled, isWidgetActionDisabled(widgetCursor));
 
     WIDGET_STATE_END()
 }
@@ -35,15 +36,21 @@ void ToggleButtonWidgetState::render() {
 
     auto widget = (const ToggleButtonWidget *)widgetCursor.widget;
     const Style* style = getStyle(widget->style);
-    const Style* checkedStyle = getStyle(widget->checkedStyle);
+
+    // checked (flags.enabled): the checked state of the style
+    auto stateStyle = getWidgetStateStyle(
+        style,
+        flags.active, false,
+        (flags.enabled ? STYLE_STATE_FLAG(STYLE_STATE_CHECKED) : 0) | getDisabledStateFlag(flags.disabled)
+    );
 
     auto &text = flags.enabled ? widget->text2 : widget->text1;
     drawText(
         text ? static_cast<const char *>(text) : "",
         -1,
         widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
-        flags.enabled ? checkedStyle : style,
-        flags.active
+        stateStyle.style,
+        stateStyle.active
     );
 }
 

@@ -979,6 +979,20 @@ std::vector<float> g_innerOutline;
 
 } // namespace
 
+// Draws the rounded rectangle x1, y1, x2, y2 from its boxes: with drawLine the
+// line is between outerBox and inner (useInner, else the whole outerBox) and the
+// fill inside inner; without the line the fill is outerBox. The bands at the
+// top and the bottom and the strips along the sides include the curves, the
+// line and the antialiased pixels; between them is a plain fill.
+static void drawRoundedBoxes(
+    Target &target,
+    int x1, int y1, int x2, int y2,
+    const RoundedBox &outerBox, const RoundedBox &inner, bool useInner,
+    bool drawLine, bool fill,
+    uint32_t lineColor, uint32_t fillColor,
+    int topBand, int bottomBand, int strip
+);
+
 void roundedRect(
     Target &target,
     int x1, int y1, int x2, int y2,
@@ -1027,9 +1041,125 @@ void roundedRect(
 
     bool useInner = drawLine && hasInner;
 
+    // Between the top and the bottom corners the sides are straight, there
+    // only the strips along the sides are drawn with the coverage and the
+    // rest is a plain fill (the bands and strips include the line and the
+    // antialiased pixels). In the bands only the corners get the coverage of
+    // each pixel, between them the rows are runs of one color (see Strips).
+    int lwPixels = (int)ceilf(lw);
+    int topBand = (int)ceilf(maxf(middle.ry[TOP_LEFT], middle.ry[TOP_RIGHT])) + lwPixels + 2;
+    int bottomBand = (int)ceilf(maxf(middle.ry[BOTTOM_LEFT], middle.ry[BOTTOM_RIGHT])) + lwPixels + 2;
+    int strip = lwPixels + 2;
+
+    drawRoundedBoxes(
+        target, x1, y1, x2, y2,
+        drawLine ? outer : middle, inner, useInner,
+        drawLine, fill, lineColor, fillColor,
+        topBand, bottomBand, strip
+    );
+}
+
+void roundedRectSides(
+    Target &target,
+    int x1, int y1, int x2, int y2,
+    const float lineWidths[4],
+    const float radii[8],
+    uint32_t lineColor, uint32_t fillColor
+) {
+    float wt = maxf(lineWidths[0], 0);
+    float wr = maxf(lineWidths[1], 0);
+    float wb = maxf(lineWidths[2], 0);
+    float wl = maxf(lineWidths[3], 0);
+
+    bool drawLine = (wt > 0 || wr > 0 || wb > 0 || wl > 0) && (lineColor >> 24);
+    bool fill = (fillColor >> 24) != 0;
+    if (!drawLine && !fill) {
+        return;
+    }
+
+    // the widths of the sides at the ends of each corner
+    float wx[4];
+    float wy[4];
+    wx[TOP_LEFT] = wl;
+    wy[TOP_LEFT] = wt;
+    wx[TOP_RIGHT] = wr;
+    wy[TOP_RIGHT] = wt;
+    wx[BOTTOM_RIGHT] = wr;
+    wy[BOTTOM_RIGHT] = wb;
+    wx[BOTTOM_LEFT] = wl;
+    wy[BOTTOM_LEFT] = wb;
+
+    float rx[4] = { radii[0], radii[2], radii[4], radii[6] };
+    float ry[4] = { radii[1], radii[3], radii[5], radii[7] };
+    static_assert(TOP_LEFT == 0 && TOP_RIGHT == 1 && BOTTOM_RIGHT == 2 && BOTTOM_LEFT == 3, "corner order");
+
+    // the middle of the line of each side, the radii are there
+    RoundedBox middle;
+    middle.left = x1 + wl / 2;
+    middle.top = y1 + wt / 2;
+    middle.right = x2 + 1 - wr / 2;
+    middle.bottom = y2 + 1 - wb / 2;
+    if (middle.right < middle.left) {
+        middle.left = middle.right = (x1 + x2 + 1) / 2.0f;
+    }
+    if (middle.bottom < middle.top) {
+        middle.top = middle.bottom = (y1 + y2 + 1) / 2.0f;
+    }
+    for (int i = 0; i < 4; i++) {
+        middle.rx[i] = maxf(rx[i], 0);
+        middle.ry[i] = maxf(ry[i], 0);
+    }
+    middle.limitRadii();
+
+    // the outer edge of the line: the radii half the side width larger, the
+    // inner edge: half the side width smaller
+    RoundedBox outer;
+    outer.left = (float)x1;
+    outer.top = (float)y1;
+    outer.right = (float)(x2 + 1);
+    outer.bottom = (float)(y2 + 1);
+
+    RoundedBox inner;
+    inner.left = x1 + wl;
+    inner.top = y1 + wt;
+    inner.right = x2 + 1 - wr;
+    inner.bottom = y2 + 1 - wb;
+
+    for (int i = 0; i < 4; i++) {
+        bool rounded = middle.rx[i] > 0 && middle.ry[i] > 0;
+        outer.rx[i] = rounded ? middle.rx[i] + wx[i] / 2 : 0;
+        outer.ry[i] = rounded ? middle.ry[i] + wy[i] / 2 : 0;
+        inner.rx[i] = rounded ? maxf(middle.rx[i] - wx[i] / 2, 0) : 0;
+        inner.ry[i] = rounded ? maxf(middle.ry[i] - wy[i] / 2, 0) : 0;
+    }
+    outer.limitRadii();
+    inner.limitRadii();
+
+    bool useInner = drawLine && !inner.isEmpty();
+
+    int topBand = (int)ceilf(maxf(maxf(outer.ry[TOP_LEFT], outer.ry[TOP_RIGHT]), wt)) + 2;
+    int bottomBand = (int)ceilf(maxf(maxf(outer.ry[BOTTOM_LEFT], outer.ry[BOTTOM_RIGHT]), wb)) + 2;
+    int strip = (int)ceilf(maxf(wl, wr)) + 2;
+
+    drawRoundedBoxes(
+        target, x1, y1, x2, y2,
+        drawLine ? outer : middle, inner, useInner,
+        drawLine, fill, lineColor, fillColor,
+        topBand, bottomBand, strip
+    );
+}
+
+static void drawRoundedBoxes(
+    Target &target,
+    int x1, int y1, int x2, int y2,
+    const RoundedBox &outerBox, const RoundedBox &inner, bool useInner,
+    bool drawLine, bool fill,
+    uint32_t lineColor, uint32_t fillColor,
+    int topBand, int bottomBand, int strip
+) {
     // the outlines are computed once, every part of the rectangle adds them
     // to its coverages (for each strip)
-    (drawLine ? outer : middle).getOutline(g_outerOutline);
+    outerBox.getOutline(g_outerOutline);
     if (useInner) {
         inner.getOutline(g_innerOutline);
     }
@@ -1117,15 +1247,6 @@ void roundedRect(
         }
     };
 
-    // Between the top and the bottom corners the sides are straight, there
-    // only the strips along the sides are drawn with the coverage and the
-    // rest is a plain fill (the bands and strips include the line and the
-    // antialiased pixels). In the bands only the corners get the coverage of
-    // each pixel, between them the rows are runs of one color (see Strips).
-    int lwPixels = (int)ceilf(lw);
-    int topBand = (int)ceilf(maxf(middle.ry[TOP_LEFT], middle.ry[TOP_RIGHT])) + lwPixels + 2;
-    int bottomBand = (int)ceilf(maxf(middle.ry[BOTTOM_LEFT], middle.ry[BOTTOM_RIGHT])) + lwPixels + 2;
-    int strip = lwPixels + 2;
     int w = x2 - x1 + 1;
     int h = y2 - y1 + 1;
 

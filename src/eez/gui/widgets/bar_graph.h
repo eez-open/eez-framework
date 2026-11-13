@@ -32,8 +32,8 @@ struct BarGraphWidgetState : public WidgetState {
     int styleId;
     uint16_t color;
     uint16_t backgroundColor;
-    uint16_t activeColor;
-    uint16_t activeBackgroundColor;
+    // g_blinkOpacity while the widget blinks, else 255 (see BlinkOpacity)
+    uint8_t blinkOpacity;
     Value line1Data;
     Value line2Data;
     Value textData;

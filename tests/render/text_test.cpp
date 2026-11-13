@@ -413,7 +413,7 @@ namespace {
 void drawValue(int x, int y, int w, int h, const Style *style, const char *integer, const char *unit, const char *fraction) {
     drawIntegerUnitAndFraction(
         integer, (int)strlen(integer), unit, (int)strlen(unit), fraction, (int)strlen(fraction),
-        x, y, w, h, style, font::Font(), false, false, nullptr, nullptr, nullptr, nullptr);
+        x, y, w, h, style, font::Font(), false, nullptr, nullptr);
 }
 
 } // namespace

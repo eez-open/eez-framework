@@ -113,7 +113,7 @@ public:
         }
 
         drawText("12.345", -1, FIELD_X, FIELD_Y, FIELD_W, FIELD_H, getStyle(STYLE_ID_RENDER_DYN),
-            false, false, false, nullptr, nullptr, nullptr, nullptr, false, cursorVisible ? 6 : -1);
+            false, false, nullptr, nullptr, false, cursorVisible ? 6 : -1);
     }
 
     WidgetCursor findWidgetInternalPage(int, int, bool) override {

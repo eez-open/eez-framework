@@ -14,22 +14,99 @@ namespace eez {
 namespace gui {
 
 inline font::Font styleGetFont(const Style *style) {
-    return font::Font(getFontData(style->font));
+    font::Font font(getFontData(style->font));
+    font.letterSpacing = style->letterSpacing;
+    return font;
 }
 
 inline bool styleIsBlink(const Style *style) {
     return style->flags & STYLE_FLAGS_BLINK;
 }
 
+// The style of the widget in its states (STYLE_STATE_FLAG bits): the state
+// style of the first active state in the order disabled, pressed, checked,
+// selected, focused that the style has, or the style itself. appliedState gets
+// the STYLE_STATE_FLAG of the used state style, 0 if none.
+const Style *getStateStyle(const Style *style, unsigned states, unsigned *appliedState = nullptr);
+
+// true if the style has a style for the state
+inline bool styleHasStateStyle(const Style *style, StyleState state) {
+    return style->stateStyles[state] != 0;
+}
+
+// How a widget is drawn in its states (see getStateStyle).
+struct WidgetStateStyle {
+    // the style of the widget in its states
+    const Style *style;
+    // pressed and the style has no style for the pressed state: drawn active,
+    // with the color and the background swapped (see swapColorsIfActive)
+    bool active;
+};
+
+// the style of a widget pressed and/or focused, and in the other states
+// (STYLE_STATE_FLAG bits). Focused without a style for the focused state is
+// drawn as not focused.
+WidgetStateStyle getWidgetStateStyle(const Style *style, bool pressed, bool focused = false, unsigned otherStates = 0);
+
+// the STYLE_STATE_FLAG of the disabled state, if the widget is disabled (see
+// isWidgetActionDisabled)
+inline unsigned getDisabledStateFlag(bool disabled) {
+    return disabled ? STYLE_STATE_FLAG(STYLE_STATE_DISABLED) : 0;
+}
+
+// A widget drawn active (pressed without a style for the pressed state, see
+// WidgetStateStyle::active) has its color and background color swapped. Over a
+// transparent background the colors stay: such a style needs a style for the
+// pressed state for a pressed look.
+void swapColorsIfActive(bool active, uint16_t &color, uint16_t &backgroundColor);
+// the color and the background color of the style, swapped if active
+uint16_t getStyleColor(const Style *style, bool active);
+uint16_t getStyleBackgroundColor(const Style *style, bool active);
+
+// A blinking widget (the blink property of its style or blinking data) fades
+// out and in, its opacity is g_blinkOpacity. Multiplies the display opacity by
+// blinkOpacity while the widget is drawn (from the constructor to the
+// destructor).
+struct BlinkOpacity {
+    uint8_t savedOpacity;
+    explicit BlinkOpacity(uint8_t blinkOpacity);
+    ~BlinkOpacity();
+};
+
+// The focus ring of the style (focusRingWidth, focusRingColor) inside the box
+// x, y, w, h, focusRingOffset px from its edge; its rounded corners follow the
+// outer edge of the box (the border radius and width of the style).
+void drawFocusRing(int x, int y, int w, int h, const Style *style);
+
+// Keeps what the children of a widget with rounded corners draw inside of its
+// border and its rounded corners (see display::RoundedClip): begin before the
+// children are enumerated, end after them.
+struct ChildrenRoundedClip {
+    display::RoundedClip clip;
+    display::ClipRect savedClipRect;
+
+    void begin(const WidgetCursor &widgetCursor, const Style *style);
+    void end();
+};
+
+// true if the style has a visible shadow
+bool styleHasShadow(const Style *style);
+// the box x1, y1, x2, y2 grown by the shadow of the style
+void expandRectWithStyleShadow(const Style *style, int &x1, int &y1, int &x2, int &y2);
+// The shadow of the style around the box x1, y1, x2, y2 (only outside of the
+// box), with the radius of the top left corner of the style.
+void drawStyleShadow(const Style *style, int x1, int y1, int x2, int y2);
+
 void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *style, uint16_t color, bool ignoreLuminocity = false);
 
+// active: the color and the background swapped (see swapColorsIfActive), also
+// overrideColor and overrideBackgroundColor
 void drawText(
     const char *text, int textLength,
     int x, int y, int w, int h,
     const Style *style,
-    bool active = false, bool blink = false, bool ignoreLuminocity = false,
+    bool active = false, bool ignoreLuminocity = false,
     uint16_t *overrideColor = nullptr, uint16_t *overrideBackgroundColor = nullptr,
-    uint16_t *overrideActiveColor = nullptr, uint16_t *overrideActiveBackgroundColor = nullptr,
     bool useSmallerFontIfDoesNotFit = false, int cursorPosition = -1, int xScroll = 0,
 	bool boolSkipBackground = false
 );
@@ -42,14 +119,13 @@ void drawIntegerUnitAndFraction(
     const char *fraction, int fractionLength,
     int x, int y, int w, int h,
     const Style *style, font::Font unitAndFractionFont,
-    bool active, bool blink,
-    uint16_t *overrideColor, uint16_t *overrideBackgroundColor,
-    uint16_t *overrideActiveColor, uint16_t *overrideActiveBackgroundColor
+    bool active,
+    uint16_t *overrideColor, uint16_t *overrideBackgroundColor
 );
 int getCharIndexAtPosition(int xPos, const char *text, int textLength, int x, int y, int w, int h, const Style *style);
 int getCursorXPosition(int cursorPosition, const char *text, int textLength, int x, int y, int w, int h, const Style *style);
 
-void drawMultilineText(const char *text, int x, int y, int w, int h, const Style *style, bool active, bool blinking, int firstLineIndent, int hangingIndent);
+void drawMultilineText(const char *text, int x, int y, int w, int h, const Style *style, bool active, int firstLineIndent, int hangingIndent);
 int measureMultilineText(const char *text, int x, int y, int w, int h, const Style *style, int firstLineIndent, int hangingIndent);
 
 void drawBitmap(Image *image, int x, int y, int w, int h, const Style *style, bool active);
@@ -79,7 +155,7 @@ void drawAntialiasedLine(int x1, int y1, int x2, int y2);
 // filled circle if checked) with the label right of it after a space. The box
 // is 3/4 of the style font height, as big as an icon glyph of the font. The box
 // and the label are aligned in the rectangle as a text in drawText and drawn
-// with the style color (active color if active) on the style background.
+// with the style color on the style background (swapped if active).
 void drawCheckboxOrRadio(int x, int y, int w, int h, const Style *style, bool radio, bool checked, const char *label, bool active = false);
 // width of the box and the label, without the padding
 int measureCheckboxOrRadio(const Style *style, const char *label);

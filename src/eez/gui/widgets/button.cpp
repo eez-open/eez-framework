@@ -30,9 +30,12 @@ bool ButtonWidgetState::updateState() {
     auto enabled = get(widgetCursor, widget->enabled);
     WIDGET_STATE(flags.enabled, enabled.getType() == VALUE_TYPE_UNDEFINED || enabled.getInt() ? 1 : 0);
 
-    WIDGET_STATE(styleId, overrideStyle(widgetCursor, flags.enabled ? widget->style : widget->disabledStyle));
-    const Style *style = getStyle(styleId);
-    WIDGET_STATE(flags.blinking, g_isBlinkTime && (isBlinking(widgetCursor, widget->data) || styleIsBlink(style)));
+    // disabled: the enabled data, also the action disabled by the app context
+    WIDGET_STATE(flags.disabled, isWidgetActionDisabled(widgetCursor));
+
+    WIDGET_STATE(styleId, overrideStyle(widgetCursor, widget->style));
+    const Style *style = getWidgetStateStyle(getStyle(styleId), flags.active, false, getDisabledStateFlag(!flags.enabled || flags.disabled)).style;
+    WIDGET_STATE(blinkOpacity, isBlinking(widgetCursor, widget->data) || styleIsBlink(style) ? g_blinkOpacity : 255);
 
     WIDGET_STATE(data, widget->data ? get(widgetCursor, widget->data) : 0);
 
@@ -45,18 +48,25 @@ void ButtonWidgetState::render() {
     auto widget = (const ButtonWidget *)widgetCursor.widget;
     // resolved again, the same as in updateState: the internal pages
     // (page.cpp) render a ButtonWidgetState without calling updateState
-    const Style *style = getStyle(overrideStyle(widgetCursor, flags.enabled ? widget->style : widget->disabledStyle));
+    auto stateStyle = getWidgetStateStyle(
+        getStyle(overrideStyle(widgetCursor, widget->style)),
+        flags.active, false, getDisabledStateFlag(!flags.enabled || flags.disabled)
+    );
+    const Style *style = stateStyle.style;
+    bool active = stateStyle.active;
+
+    BlinkOpacity blinkOpacityScope(blinkOpacity);
 
     if (widget->data) {
         if (data.isString()) {
-            drawText(data.getString(), -1, widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style, flags.active, flags.blinking);
+            drawText(data.getString(), -1, widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style, active);
         } else {
             char text[MAX_TEXT_LEN + 1];
             data.toText(text, sizeof(text));
-            drawText(text, -1, widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style, flags.active, flags.blinking);
+            drawText(text, -1, widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style, active);
         }
     } else if (widget->text) {
-        drawText(static_cast<const char *>(widget->text), -1, widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style, flags.active, flags.blinking);
+        drawText(static_cast<const char *>(widget->text), -1, widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style, active);
     }
 }
 

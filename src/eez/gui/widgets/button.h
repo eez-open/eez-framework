@@ -16,7 +16,6 @@ namespace gui {
 struct ButtonWidget : public Widget {
     AssetsPtr<const char> text;
     int16_t enabled;
-    int16_t disabledStyle;
 };
 
 struct ButtonWidgetState : public WidgetState {
@@ -24,6 +23,8 @@ struct ButtonWidgetState : public WidgetState {
 	Value data;
     // style after overrideStyle: a change of the hook result redraws the widget
     int styleId;
+    // g_blinkOpacity while the widget blinks, else 255 (see BlinkOpacity)
+    uint8_t blinkOpacity;
 
     bool updateState() override;
     void render() override;

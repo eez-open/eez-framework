@@ -15,8 +15,9 @@ namespace gui {
 
 // Checked if data is true. A touch toggles data and executes the action. Without
 // data it is never checked, without data and action it can't be touched (it
-// only shows a state, e.g. of a disabled item). While pressed it is drawn with
-// the active colors of the style (see drawCheckboxOrRadio for the look).
+// only shows a state, e.g. of a disabled item). It is drawn in the checked,
+// pressed and disabled states of its style (see drawCheckboxOrRadio for the
+// look).
 struct CheckboxWidget : public Widget {
     int16_t text;
 };

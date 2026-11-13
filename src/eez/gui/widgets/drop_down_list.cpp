@@ -34,14 +34,15 @@ bool DropDownListWidgetState::updateState() {
 void DropDownListWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
     auto widget = (const ButtonWidget *)widgetCursor.widget;
-    const Style *style = getStyle(widget->style);
+    auto stateStyle = getWidgetStateStyle(getStyle(widget->style), flags.active);
+    const Style *style = stateStyle.style;
 
     int x1 = widgetCursor.x;
     int y1 = widgetCursor.y;
     int x2 = widgetCursor.x + widgetCursor.w - 1;
     int y2 = widgetCursor.y + widgetCursor.h - 1;
 
-    drawBorderAndBackground(x1, y1, x2, y2, style, flags.active ? style->activeBackgroundColor : style->backgroundColor, false);
+    drawBorderAndBackground(x1, y1, x2, y2, style, getStyleBackgroundColor(style, stateStyle.active), false);
 
     double x = x1;
     double y = y1;
@@ -66,8 +67,7 @@ void DropDownListWidgetState::render() {
 		w - h + (2 * h) / 6,
 		h,
 		style,
-		flags.active, false, false,
-		nullptr, nullptr,
+		stateStyle.active, false,
 		nullptr, nullptr,
 		false, -1, 0,
 		true

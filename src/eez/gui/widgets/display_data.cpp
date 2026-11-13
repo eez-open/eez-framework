@@ -70,7 +70,7 @@ static void trimText(const char *&text, int &length) {
     }
 }
 
-static void renderIntegerUnitAndFraction(DisplayDataWidgetState *widgetState, const DisplayDataWidget *widget, const Style *style) {
+static void renderIntegerUnitAndFraction(DisplayDataWidgetState *widgetState, const DisplayDataWidget *widget, const Style *style, bool active) {
     const WidgetCursor &widgetCursor = g_widgetCursor;
 
     char text[TEXT_BUFFER_SIZE];
@@ -116,8 +116,8 @@ static void renderIntegerUnitAndFraction(DisplayDataWidgetState *widgetState, co
         fraction, fractionLength,
         widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
         style, font::Font(getFontData(widget->unitAndFractionFont)),
-        widgetState->flags.active, widgetState->flags.blinking,
-        &widgetState->color, &widgetState->backgroundColor, &widgetState->activeColor, &widgetState->activeBackgroundColor
+        active,
+        &widgetState->color, &widgetState->backgroundColor
     );
 }
 
@@ -125,11 +125,15 @@ bool DisplayDataWidgetState::updateState() {
     WIDGET_STATE_START(DisplayDataWidget);
 
     WIDGET_STATE(styleId, overrideStyle(widgetCursor, widget->style));
-    const Style *style = getStyle(styleId);
 
     WIDGET_STATE(flags.active, g_isActiveWidget);
     WIDGET_STATE(flags.focused, isFocusWidget(widgetCursor));
-    WIDGET_STATE(flags.blinking, g_isBlinkTime && (styleIsBlink(style) || isBlinking(widgetCursor, widget->data)));
+    WIDGET_STATE(flags.disabled, isWidgetActionDisabled(widgetCursor));
+
+    auto stateStyle = getWidgetStateStyle(getStyle(styleId), flags.active, flags.focused, getDisabledStateFlag(flags.disabled));
+    const Style *style = stateStyle.style;
+
+    WIDGET_STATE(blinkOpacity, styleIsBlink(style) || isBlinking(widgetCursor, widget->data) ? g_blinkOpacity : 255);
 
     uint32_t refreshRate;
     if (widgetCursor.flowState) {
@@ -151,10 +155,8 @@ bool DisplayDataWidgetState::updateState() {
         dataRefreshLastTime = currentTime;
     }
 
-    WIDGET_STATE(color,                 flags.focused ? style->focusColor           : getColor(widgetCursor, widget->data, style));
-    WIDGET_STATE(backgroundColor,       flags.focused ? style->focusBackgroundColor : getBackgroundColor(widgetCursor, widget->data, style));
-    WIDGET_STATE(activeColor,           flags.focused ? style->focusBackgroundColor : getActiveColor(widgetCursor, widget->data, style));
-    WIDGET_STATE(activeBackgroundColor, flags.focused ? style->focusColor           : getActiveBackgroundColor(widgetCursor, widget->data, style));
+    WIDGET_STATE(color, getColor(widgetCursor, widget->data, style));
+    WIDGET_STATE(backgroundColor, getBackgroundColor(widgetCursor, widget->data, style));
 
     bool cursorVisible = millis() % (2 * CONF_GUI_TEXT_CURSOR_BLINK_TIME_MS) < CONF_GUI_TEXT_CURSOR_BLINK_TIME_MS;
     WIDGET_STATE(cursorPosition, cursorVisible ? getTextCursorPosition(widgetCursor, widget->data) : -1);
@@ -168,12 +170,24 @@ void DisplayDataWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
 
     auto widget = (const DisplayDataWidget *)widgetCursor.widget;
-    const Style *style = getStyle(styleId);
+    auto stateStyle = getWidgetStateStyle(getStyle(styleId), flags.active, flags.focused, getDisabledStateFlag(flags.disabled));
+    const Style *style = stateStyle.style;
+
+    BlinkOpacity blinkOpacityScope(blinkOpacity);
 
     if (widget->displayOption == DISPLAY_OPTION_INTEGER_UNIT_AND_FRACTION) {
-        renderIntegerUnitAndFraction(this, widget, style);
-        return;
+        renderIntegerUnitAndFraction(this, widget, style, stateStyle.active);
+    } else {
+        renderText(widget, style, stateStyle.active);
     }
+
+    if (flags.focused) {
+        drawFocusRing(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style);
+    }
+}
+
+void DisplayDataWidgetState::renderText(const DisplayDataWidget *widget, const Style *style, bool active) {
+    const WidgetCursor &widgetCursor = g_widgetCursor;
 
     char text[TEXT_BUFFER_SIZE];
     data.toText(text, sizeof(text));
@@ -236,8 +250,8 @@ void DisplayDataWidgetState::render() {
         start, length,
         widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
         style,
-        flags.active, flags.blinking, false,
-        &color, &backgroundColor, &activeColor, &activeBackgroundColor,
+        active, false,
+        &color, &backgroundColor,
         data.getType() == VALUE_TYPE_FLOAT
 #if OPTION_KEYPAD
         || widget->data == EEZ_DATA_ID_KEYPAD_EDIT_UNIT

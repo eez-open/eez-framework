@@ -69,12 +69,10 @@ bool BarGraphWidgetState::updateState() {
     const Style* style = getStyle(styleId);
 
     WIDGET_STATE(flags.active, g_isActiveWidget);
-    WIDGET_STATE(flags.blinking, g_isBlinkTime && isBlinking(widgetCursor, widget->data));
+    WIDGET_STATE(blinkOpacity, isBlinking(widgetCursor, widget->data) ? g_blinkOpacity : 255);
     WIDGET_STATE(data, get(widgetCursor, widget->data));
     WIDGET_STATE(color, getColor(widgetCursor, widget->data, style));
     WIDGET_STATE(backgroundColor, getBackgroundColor(widgetCursor, widget->data, style));
-    WIDGET_STATE(activeColor, getActiveColor(widgetCursor, widget->data, style));
-    WIDGET_STATE(activeBackgroundColor, getActiveBackgroundColor(widgetCursor, widget->data, style));
     WIDGET_STATE(line1Data, get(widgetCursor, widget->line1Data));
     WIDGET_STATE(line2Data, get(widgetCursor, widget->line2Data));
 
@@ -159,14 +157,18 @@ void BarGraphWidgetState::render() {
         }
     }
 
+    BlinkOpacity blinkOpacityScope(blinkOpacity);
+
+    // pressed: the color and the background swapped
+    uint16_t fg = color;
+    uint16_t bg = backgroundColor;
+    swapColorsIfActive(flags.active, fg, bg);
+
     Style textStyle;
     memcpy(&textStyle, widget->textStyle ? getStyle(widget->textStyle) : style, sizeof(Style));
     if (style->color != color) {
-        textStyle.color = flags.active || flags.blinking ? activeColor : color;
+        textStyle.color = fg;
     }
-
-    uint16_t fg = flags.active || flags.blinking ? activeColor : color;
-    uint16_t bg = flags.active || flags.blinking ? activeBackgroundColor : backgroundColor;
 
     if (horizontal) {
         // calc text position
@@ -187,8 +189,8 @@ void BarGraphWidgetState::render() {
                     textStyle.backgroundColor = bg;
                     pText = pValue;
                 } else {
+                    textStyle.color = textStyle.backgroundColor;
                     textStyle.backgroundColor = fg;
-                    textStyle.color = textStyle.activeColor;
                     wText += padding;
                     pText = MAX(pValue - wText, 0);
                 }
@@ -299,8 +301,8 @@ void BarGraphWidgetState::render() {
                 textStyle.backgroundColor = bg;
                 pText = pValue;
             } else {
+                textStyle.color = textStyle.backgroundColor;
                 textStyle.backgroundColor = fg;
-                textStyle.color = textStyle.activeColor;
                 hText += padding;
                 pText = MAX(pValue - hText, 0);
             }

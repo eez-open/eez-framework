@@ -780,6 +780,13 @@ void init() {
 void clearScreenTransparent() {
     memset((void *)g_renderBuffer1, 0, getVideoBufferSize());
     memset((void *)g_renderBuffer2, 0, getVideoBufferSize());
+    // and the buffers of the pages: where a transparent page draws nothing
+    // (e.g. outside of rounded corners) they keep what was drawn before
+    for (int i = 0; i < MAX_RENDER_BUFFERS; i++) {
+        if (g_renderBuffers[i].bufferPointer) {
+            memset((void *)g_renderBuffers[i].bufferPointer, 0, getVideoBufferSize());
+        }
+    }
     setFullDamage();
 }
 
@@ -1458,6 +1465,13 @@ static inline bool clipToClipRect(int &x1, int &y1, int &x2, int &y2) {
     if (x2 > g_clipRect.x2) x2 = g_clipRect.x2;
     if (y2 > g_clipRect.y2) y2 = g_clipRect.y2;
     return x1 <= x2 && y1 <= y2;
+}
+
+void addDamageRect(int x1, int y1, int x2, int y2) {
+    if (clipToClipRect(x1, y1, x2, y2)) {
+        addDamage(x1, y1, x2, y2);
+        setDirty();
+    }
 }
 
 static void composeBackdrop(const Rect &backdrop) {
@@ -2251,6 +2265,10 @@ bool isColorOpaque(uint16_t colorIndex) {
     return colorIndex != TRANSPARENT_COLOR_INDEX && COLOR_TO_A(getColorFromIndex(colorIndex)) == 255;
 }
 
+bool isColorTransparent(uint16_t colorIndex) {
+    return colorIndex == TRANSPARENT_COLOR_INDEX || COLOR_TO_A(getColorFromIndex(colorIndex)) == 0;
+}
+
 void getColorRGBAFromIndex(uint16_t colorIndex, ColorRGBA *colorRGBA) {
     auto color = getColorFromIndex(colorIndex);
     colorRGBA->r = COLOR_TO_R(color);
@@ -2449,6 +2467,268 @@ void fillRoundedRect(
     int clip_x1, int clip_y1, int clip_x2, int clip_y2
 ) {
     fillRoundedRect(x1, y1, x2, y2, lineWidth, r, r, r, r, r, r, r, r, drawLine, fill, clip_x1, clip_y1, clip_x2, clip_y2);
+}
+
+void fillRoundedRectSides(
+	int x1, int y1, int x2, int y2,
+	int lineWidthTop, int lineWidthRight, int lineWidthBottom, int lineWidthLeft,
+	int rtlx, int rtly, int rtrx, int rtry,
+	int rbrx, int rbry, int rblx, int rbly,
+	bool drawLine, bool fill
+) {
+    RenderBufferTarget target;
+    if (target.isEmpty()) {
+        return;
+    }
+
+    float lineWidths[4] = {
+        (float)lineWidthTop, (float)lineWidthRight, (float)lineWidthBottom, (float)lineWidthLeft
+    };
+
+    float radii[8] = {
+        (float)rtlx, (float)rtly, (float)rtrx, (float)rtry,
+        (float)rbrx, (float)rbry, (float)rblx, (float)rbly
+    };
+
+    raster::roundedRectSides(
+        target,
+        x1, y1, x2, y2,
+        lineWidths,
+        radii,
+        drawLine ? getRasterColor(g_fc) : 0,
+        fill ? getRasterColor(g_bc) : 0
+    );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+#if EEZ_USE_SDL
+// the saved corner pixels of the active rounded clips, by level
+static std::vector<std::vector<uint32_t>> g_roundedClipPixels;
+static int g_roundedClipLevel;
+
+// the background corner pixels of the boxes drawn last (see RoundedClip)
+struct RoundedClipBackground {
+    float left, top, right, bottom;
+    float radii[8];
+    const void *owner;
+    std::vector<uint32_t> pixels;
+    uint32_t lastUsed;
+};
+static const size_t MAX_ROUNDED_CLIP_BACKGROUNDS = 64;
+static std::vector<RoundedClipBackground> g_roundedClipBackgrounds;
+static uint32_t g_roundedClipBackgroundsUse;
+
+static bool isSameRoundedClip(const RoundedClipBackground &background, const RoundedClip &clip) {
+    return background.left == clip.left && background.top == clip.top &&
+        background.right == clip.right && background.bottom == clip.bottom &&
+        memcmp(background.radii, clip.radii, sizeof(clip.radii)) == 0 &&
+        background.owner == clip.owner;
+}
+
+static RoundedClipBackground *findRoundedClipBackground(const RoundedClip &clip) {
+    for (auto &background : g_roundedClipBackgrounds) {
+        if (isSameRoundedClip(background, clip)) {
+            background.lastUsed = ++g_roundedClipBackgroundsUse;
+            return &background;
+        }
+    }
+    return nullptr;
+}
+
+static void keepRoundedClipBackground(const RoundedClip &clip, const std::vector<uint32_t> &pixels) {
+    auto background = findRoundedClipBackground(clip);
+    if (!background) {
+        if (g_roundedClipBackgrounds.size() < MAX_ROUNDED_CLIP_BACKGROUNDS) {
+            g_roundedClipBackgrounds.emplace_back();
+            background = &g_roundedClipBackgrounds.back();
+        } else {
+            // the least recently used one
+            background = &g_roundedClipBackgrounds[0];
+            for (auto &other : g_roundedClipBackgrounds) {
+                if (other.lastUsed < background->lastUsed) {
+                    background = &other;
+                }
+            }
+        }
+        background->left = clip.left;
+        background->top = clip.top;
+        background->right = clip.right;
+        background->bottom = clip.bottom;
+        memcpy(background->radii, clip.radii, sizeof(clip.radii));
+        background->owner = clip.owner;
+        background->lastUsed = ++g_roundedClipBackgroundsUse;
+    }
+    background->pixels = pixels;
+}
+
+// The rectangle of the pixels (inclusive) of corner i (top left, top right,
+// bottom right, bottom left) of the clip, inside the display; false if there is
+// none.
+static bool getRoundedClipCorner(const RoundedClip &clip, int i, int &x1, int &y1, int &x2, int &y2) {
+    float rx = clip.radii[2 * i];
+    float ry = clip.radii[2 * i + 1];
+    if (rx <= 0 || ry <= 0) {
+        return false;
+    }
+
+    bool left = i == 0 || i == 3;
+    bool top = i == 0 || i == 1;
+
+    x1 = left ? (int)floorf(clip.left) : (int)floorf(clip.right - rx);
+    x2 = left ? (int)ceilf(clip.left + rx) - 1 : (int)ceilf(clip.right) - 1;
+    y1 = top ? (int)floorf(clip.top) : (int)floorf(clip.bottom - ry);
+    y2 = top ? (int)ceilf(clip.top + ry) - 1 : (int)ceilf(clip.bottom) - 1;
+
+    x1 = MAX(x1, 0);
+    y1 = MAX(y1, 0);
+    x2 = MIN(x2, (int)DISPLAY_WIDTH - 1);
+    y2 = MIN(y2, (int)DISPLAY_HEIGHT - 1);
+
+    return x1 <= x2 && y1 <= y2;
+}
+
+// the part of the pixel x, y inside the rounded corner i of the clip (in the
+// corner rectangle)
+static float getRoundedClipCoverage(const RoundedClip &clip, int i, int x, int y) {
+    float rx = clip.radii[2 * i];
+    float ry = clip.radii[2 * i + 1];
+
+    bool left = i == 0 || i == 3;
+    bool top = i == 0 || i == 1;
+
+    float cx = left ? clip.left + rx : clip.right - rx;
+    float cy = top ? clip.top + ry : clip.bottom - ry;
+
+    float dx = x + 0.5f - cx;
+    float dy = y + 0.5f - cy;
+
+    if ((left ? dx >= 0 : dx <= 0) || (top ? dy >= 0 : dy <= 0)) {
+        // beside the curve, inside the box
+        return 1.0f;
+    }
+
+    // signed distance to the ellipse, approximated by its value over its gradient
+    float nx = dx / rx;
+    float ny = dy / ry;
+    float f = nx * nx + ny * ny - 1.0f;
+    float gx = nx / rx;
+    float gy = ny / ry;
+    float g = 2.0f * sqrtf(gx * gx + gy * gy);
+    float distance = g > 0 ? f / g : 0;
+
+    float coverage = 0.5f - distance;
+    return coverage < 0 ? 0 : coverage > 1.0f ? 1.0f : coverage;
+}
+#endif
+
+void beginRoundedClip(RoundedClip &clip, bool backgroundIsFresh) {
+#if EEZ_USE_SDL
+    clip.level = g_roundedClipLevel++;
+    clip.buffer = g_renderBuffer;
+
+    if ((int)g_roundedClipPixels.size() <= clip.level) {
+        g_roundedClipPixels.resize(clip.level + 1);
+    }
+    auto &pixels = g_roundedClipPixels[clip.level];
+    pixels.clear();
+
+    auto buffer = (uint32_t *)g_renderBuffer;
+    for (int i = 0; i < 4; i++) {
+        int x1, y1, x2, y2;
+        if (getRoundedClipCorner(clip, i, x1, y1, x2, y2)) {
+            for (int y = y1; y <= y2; y++) {
+                auto row = buffer + y * (int)DISPLAY_WIDTH;
+                pixels.insert(pixels.end(), row + x1, row + x2 + 1);
+            }
+        }
+    }
+
+    if (backgroundIsFresh) {
+        keepRoundedClipBackground(clip, pixels);
+    } else {
+        // the background of the box drawn last, the last frame if it isn't
+        // known
+        auto background = findRoundedClipBackground(clip);
+        if (background && background->pixels.size() == pixels.size()) {
+            pixels = background->pixels;
+        }
+    }
+
+    beginDamageProbe(clip.probe);
+#else
+    clip.level = -1;
+#endif
+}
+
+void endRoundedClip(RoundedClip &clip) {
+#if EEZ_USE_SDL
+    if (clip.level < 0) {
+        return;
+    }
+
+    endDamageProbe(clip.probe);
+    g_roundedClipLevel = clip.level;
+
+    if (clip.buffer != g_renderBuffer || clip.probe.isEmpty()) {
+        // drawn into another buffer or nothing drawn
+        return;
+    }
+
+    auto &pixels = g_roundedClipPixels[clip.level];
+    size_t k = 0;
+
+    auto buffer = (uint32_t *)g_renderBuffer;
+    for (int i = 0; i < 4; i++) {
+        int x1, y1, x2, y2;
+        if (!getRoundedClipCorner(clip, i, x1, y1, x2, y2)) {
+            continue;
+        }
+
+        bool drawn = x1 <= clip.probe.x2 && clip.probe.x1 <= x2 && y1 <= clip.probe.y2 && clip.probe.y1 <= y2;
+
+        for (int y = y1; y <= y2; y++) {
+            auto row = buffer + y * (int)DISPLAY_WIDTH;
+            for (int x = x1; x <= x2; x++, k++) {
+                if (!drawn) {
+                    continue;
+                }
+
+                uint32_t saved = pixels[k];
+                uint32_t current = row[x];
+                if (saved == current) {
+                    continue;
+                }
+
+                float coverage = getRoundedClipCoverage(clip, i, x, y);
+                if (coverage >= 1.0f) {
+                    continue;
+                }
+                if (coverage <= 0) {
+                    row[x] = saved;
+                    continue;
+                }
+
+                // what is drawn over the part of the pixel inside the corner
+                int a = (int)(coverage * 256.0f + 0.5f);
+                uint32_t result = 0;
+                for (int shift = 0; shift < 32; shift += 8) {
+                    int s = (saved >> shift) & 0xFF;
+                    int c = (current >> shift) & 0xFF;
+                    result |= (uint32_t)((s + (((c - s) * a) >> 8)) & 0xFF) << shift;
+                }
+                row[x] = result;
+            }
+        }
+    }
+#endif
+}
+
+void strokeRoundedRect(int x1, int y1, int x2, int y2, float lineWidth, const float radii[8]) {
+    RenderBufferTarget target;
+    if (!target.isEmpty()) {
+        raster::roundedRect(target, x1, y1, x2, y2, lineWidth, radii, getRasterColor(g_fc), 0);
+    }
 }
 
 void drawRoundedRect(
@@ -2654,12 +2934,29 @@ struct TextGlyph {
     gui::font::Font font;
 };
 
+// The letter spacing of laid out text: added before every glyph with an
+// advance, except the first one, so it is only between the characters.
+struct LetterSpacing {
+    int spacing; // 1/64 px
+    bool started;
+
+    // the pen (1/64 px) moved by the spacing before a glyph with this advance
+    void beforeGlyph(int64_t &pen, int advance) {
+        if (spacing != 0 && advance != 0) {
+            if (started) {
+                pen += spacing;
+            }
+            started = true;
+        }
+    }
+};
+
 #if EEZ_OPTION_GUI_VECTOR_FONTS
 // The characters of the text at p in the vector font up to a font tag or the
 // end, shaped. Calls onChar for every character, before the glyph it is in,
-// and onGlyph for every glyph; i and x are moved past the run.
+// and onGlyph for every glyph; i and the pen (1/64 px) are moved past the run.
 template <typename OnChar, typename OnGlyph>
-static bool layoutVectorRun(const char *&p, int &i, int textLength, int &x, gui::font::Font &font, bool ligatures, OnChar &onChar, OnGlyph &onGlyph) {
+static bool layoutVectorRun(const char *&p, int &i, int textLength, int64_t &pen, LetterSpacing &letterSpacing, gui::font::Font &font, bool ligatures, OnChar &onChar, OnGlyph &onGlyph) {
     const char *runStart = p;
     int runFirstChar = i;
 
@@ -2695,8 +2992,7 @@ static bool layoutVectorRun(const char *&p, int &i, int textLength, int &x, gui:
     uint32_t numGlyphs;
     auto glyphs = vector_font::shape(font.getVectorFontData(), runStart, (int)(q - runStart), ligatures, numGlyphs);
 
-    // the pen in 1/64 pixels, a glyph is at the rounded pen position
-    int64_t pen = (int64_t)x * 64;
+    // a glyph is at the rounded pen position
 
     // characters before this one are announced (the glyphs are in visual order,
     // in left to right text the clusters grow)
@@ -2709,6 +3005,8 @@ static bool layoutVectorRun(const char *&p, int &i, int textLength, int &x, gui:
         while (charInRun < numChars && charOffsets[charInRun] < shapedGlyph.cluster) {
             charInRun++;
         }
+
+        letterSpacing.beforeGlyph(pen, shapedGlyph.advance);
 
         int glyphX = (int)((pen + 32) >> 6);
         while (nextChar < numChars && charOffsets[nextChar] <= shapedGlyph.cluster) {
@@ -2748,7 +3046,9 @@ static bool layoutVectorRun(const char *&p, int &i, int textLength, int &x, gui:
         pen = penNext;
     }
 
-    x = (int)((pen + 32) >> 6);
+    // the run ends on a whole pixel
+    int x = (int)((pen + 32) >> 6);
+    pen = (int64_t)x * 64;
 
     // the characters after the last glyph (no glyphs, right to left text)
     while (nextChar < numChars) {
@@ -2768,7 +3068,8 @@ static bool layoutVectorRun(const char *&p, int &i, int textLength, int &x, gui:
 // the number of characters, and onGlyph(glyph) for every glyph (also a missing
 // glyph of a bitmap font, with advance 0). A callback that returns true stops
 // the layout. Without ligatures every glyph of a vector font is one character
-// (editable text). Any thread can call it.
+// (editable text). The letter spacing of the default font is between all the
+// characters. Any thread can call it.
 template <typename OnChar, typename OnGlyph>
 static void layoutText(const char *text, int textLength, gui::font::Font &defaultFont, int startFontIndex, bool ligatures, OnChar onChar, OnGlyph onGlyph) {
 #if EEZ_OPTION_GUI_VECTOR_FONTS
@@ -2777,7 +3078,10 @@ static void layoutText(const char *text, int textLength, gui::font::Font &defaul
 
     gui::font::Font font = startFontIndex ? getFontByIndex(startFontIndex, defaultFont) : defaultFont;
 
-    int x = 0;
+    // the pen in 1/64 px, a glyph is at the rounded pen position
+    int64_t pen = 0;
+    LetterSpacing letterSpacing = { defaultFont.letterSpacing, false };
+
     int i = 0;
 
     while (textLength == -1 || i < textLength) {
@@ -2789,22 +3093,32 @@ static void layoutText(const char *text, int textLength, gui::font::Font &defaul
 
 #if EEZ_OPTION_GUI_VECTOR_FONTS
         if (font.isVector() && !isFontTag(encoding)) {
-            if (layoutVectorRun(text, i, textLength, x, font, ligatures, onChar, onGlyph)) {
+            if (layoutVectorRun(text, i, textLength, pen, letterSpacing, font, ligatures, onChar, onGlyph)) {
                 return;
             }
             continue;
         }
 #endif
 
-        if (onChar(i, x)) {
-            return;
-        }
-
         text = next;
 
-        if (handleFontTag(encoding, text, i, textLength, defaultFont, font)) {
+        if (isFontTag(encoding)) {
+            if (onChar(i, (int)((pen + 32) >> 6))) {
+                return;
+            }
+            handleFontTag(encoding, text, i, textLength, defaultFont, font);
             ++i;
             continue;
+        }
+
+        auto glyphData = font.getGlyph(encoding);
+
+        letterSpacing.beforeGlyph(pen, glyphData ? glyphData->dx : 0);
+
+        int x = (int)((pen + 32) >> 6);
+
+        if (onChar(i, x)) {
+            return;
         }
 
         TextGlyph glyph;
@@ -2812,7 +3126,6 @@ static void layoutText(const char *text, int textLength, gui::font::Font &defaul
         glyph.x = x;
         glyph.font = font;
 
-        auto glyphData = font.getGlyph(encoding);
         if (glyphData) {
             glyph.advance = glyphData->dx;
             glyph.pixels = glyphData->pixels;
@@ -2833,11 +3146,11 @@ static void layoutText(const char *text, int textLength, gui::font::Font &defaul
             return;
         }
 
-        x += glyph.advance;
+        pen += (int64_t)glyph.advance * 64;
         ++i;
     }
 
-    onChar(i, x);
+    onChar(i, (int)((pen + 32) >> 6));
 }
 
 int8_t measureGlyph(int32_t encoding, gui::font::Font &font) {

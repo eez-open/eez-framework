@@ -52,13 +52,23 @@ TEST("gui/gui: the internal dialog close action pops the page") {
     CHECK_EQ(activePageId(), (int)PAGE_ID_MAIN);
 }
 
-TEST("gui/gui: the blink time is on in the second half of every 800 ms") {
-    // g_isBlinkTime: millis() % 800 > 400, updated by guiTick
+TEST("gui/gui: the blink opacity fades out and in in every 800 ms") {
+    // g_blinkOpacity: 255 -> 0 in the first 400 ms, 0 -> 255 in the next 400 ms,
+    // updated by guiTick
+    auto expected = []() {
+        uint32_t t = harness::now() % 800;
+        return (int)(t < 400 ? 255 - t * 255 / 400 : (t - 400) * 255 / 400);
+    };
     harness::advance(800 - harness::now() % 800 + 100);
     harness::frame(1);
-    CHECK(!g_isBlinkTime);
-    harness::frame(25);
-    CHECK(g_isBlinkTime);
+    CHECK_EQ((int)g_blinkOpacity, expected());
+    CHECK(g_blinkOpacity < 255 && g_blinkOpacity > 100);
+    harness::frame(17);
+    CHECK_EQ((int)g_blinkOpacity, expected());
+    CHECK(g_blinkOpacity < 100);
+    harness::frame(20);
+    CHECK_EQ((int)g_blinkOpacity, expected());
+    CHECK(g_blinkOpacity > 100);
 }
 
 TEST("gui/gui: an override style rule replaces the style") {

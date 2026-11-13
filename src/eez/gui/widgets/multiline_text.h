@@ -24,6 +24,8 @@ struct MultilineTextWidgetState : public WidgetState {
 	Value data;
     // style after overrideStyle
     int styleId;
+    // g_blinkOpacity while the widget blinks, else 255 (see BlinkOpacity)
+    uint8_t blinkOpacity;
 
     bool updateState() override;
     void render() override;

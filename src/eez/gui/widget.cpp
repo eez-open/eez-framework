@@ -202,6 +202,10 @@ void WidgetCursor::popBackground() {
         int y1 = g_widgetCursor.y; \
         int x2 = g_widgetCursor.x + g_widgetCursor.w - 1; \
         int y2 = g_widgetCursor.y + g_widgetCursor.h - 1; \
+        auto hiddenStyle = getStyle(widget->style); \
+        if (styleHasShadow(hiddenStyle)) { \
+            expandRectWithStyleShadow(hiddenStyle, x1, y1, x2, y2); \
+        } \
         drawBorderAndBackground(x1, y1, x2, y2, nullptr, TRANSPARENT_COLOR_INDEX); \
     } \
 
@@ -1082,6 +1086,20 @@ static bool isIntersecting(const Rect &rect, int x, int y, int w, int h) {
     return rect.x < x + w && x < rect.x + rect.w && rect.y < y + h && y < rect.y + rect.h;
 }
 
+// true if the widget at the widget cursor, with the shadow of its style, is in
+// the rectangle
+static bool isWidgetIntersecting(const Rect &rect, const WidgetCursor &widgetCursor) {
+    int x1 = widgetCursor.x;
+    int y1 = widgetCursor.y;
+    int x2 = widgetCursor.x + widgetCursor.w - 1;
+    int y2 = widgetCursor.y + widgetCursor.h - 1;
+    auto style = getStyle(widgetCursor.widget->style);
+    if (styleHasShadow(style)) {
+        expandRectWithStyleShadow(style, x1, y1, x2, y2);
+    }
+    return isIntersecting(rect, x1, y1, x2 - x1 + 1, y2 - y1 + 1);
+}
+
 static void repaintOverlappingWidgetStep() {
     WidgetCursor &widgetCursor = g_widgetCursor;
 
@@ -1161,7 +1179,7 @@ static void repaintOverlappingWidgets(
         setStaticLayoutChildPosition(widgetCursor, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
         applyContentSize(childState);
 
-        if (isIntersecting(rect, widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h)) {
+        if (isWidgetIntersecting(rect, widgetCursor)) {
             count++;
         }
 
@@ -1233,7 +1251,7 @@ static void repaintOverlappingWidgets(
 
         auto nextChildState = (WidgetState *)((uint8_t *)childState + childState->subtreeSize);
 
-        if (isIntersecting(rect, widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h)) {
+        if (isWidgetIntersecting(rect, widgetCursor)) {
             widgetCursor.currentState = childState;
             enumWidget();
         }
@@ -1254,6 +1272,91 @@ static void repaintOverlappingWidgets(
 
     display::restoreClipRect(savedClipRect);
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ChildrenRoundedClip::begin(const WidgetCursor &widgetCursor, const Style *style) {
+    clip.level = -1;
+
+    if (!style || (g_findCallback && !g_repaintingOverlappingWidgets)) {
+        // nothing is drawn
+        return;
+    }
+
+    float radii[8] = {
+        (float)style->borderRadiusTLX, (float)style->borderRadiusTLY,
+        (float)style->borderRadiusTRX, (float)style->borderRadiusTRY,
+        (float)style->borderRadiusBRX, (float)style->borderRadiusBRY,
+        (float)style->borderRadiusBLX, (float)style->borderRadiusBLY
+    };
+
+    bool rounded = false;
+    for (int i = 0; i < 4; i++) {
+        if (radii[2 * i] > 0 && radii[2 * i + 1] > 0) {
+            rounded = true;
+        } else {
+            radii[2 * i] = radii[2 * i + 1] = 0;
+        }
+    }
+    if (!rounded) {
+        return;
+    }
+
+    // the inside of the border (see drawBorderAndBackground): the radii are in
+    // the middle of the border line
+    int top = style->borderSizeTop;
+    int right = style->borderSizeRight;
+    int bottom = style->borderSizeBottom;
+    int left = style->borderSizeLeft;
+    if (style->borderColor == TRANSPARENT_COLOR_INDEX) {
+        top = right = bottom = left = 0;
+    }
+
+    clip.left = (float)(widgetCursor.x + left);
+    clip.top = (float)(widgetCursor.y + top);
+    clip.right = (float)(widgetCursor.x + widgetCursor.w - right);
+    clip.bottom = (float)(widgetCursor.y + widgetCursor.h - bottom);
+    if (clip.right <= clip.left || clip.bottom <= clip.top) {
+        return;
+    }
+
+    float widthX[4] = { (float)left, (float)right, (float)right, (float)left };
+    float widthY[4] = { (float)top, (float)top, (float)bottom, (float)bottom };
+    for (int i = 0; i < 4; i++) {
+        if (radii[2 * i] > 0) {
+            clip.radii[2 * i] = MAX(radii[2 * i] - widthX[i] / 2, 0.0f);
+            clip.radii[2 * i + 1] = MAX(radii[2 * i + 1] - widthY[i] / 2, 0.0f);
+        } else {
+            clip.radii[2 * i] = clip.radii[2 * i + 1] = 0;
+        }
+    }
+
+    // inside of the border
+    savedClipRect = display::intersectClipRect(
+        (int)clip.left, (int)clip.top,
+        (int)clip.right - (int)clip.left, (int)clip.bottom - (int)clip.top
+    );
+
+    // the widget is just drawn (not only a part of it, as when overlapping
+    // widgets are repainted): the corners are its background
+    clip.owner = style;
+    display::beginRoundedClip(clip, widgetCursor.refreshed && !g_repaintingOverlappingWidgets);
+
+    // also when nothing is saved (other displays)
+    clip.level = clip.level < 0 ? -2 : clip.level;
+}
+
+void ChildrenRoundedClip::end() {
+    if (clip.level == -1) {
+        return;
+    }
+    if (clip.level >= 0) {
+        display::endRoundedClip(clip);
+    }
+    display::restoreClipRect(savedClipRect);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 void doStaticLayoutWithOverlapping(
     WidgetCursor& widgetCursor,

@@ -202,7 +202,8 @@ struct WidgetCursor {
 struct WidgetStateFlags {
     unsigned active : 1;
     unsigned focused : 1;
-    unsigned blinking : 1;
+    // the action of the widget is disabled (isWidgetActionDisabled)
+    unsigned disabled : 1;
     unsigned enabled : 1;
 };
 

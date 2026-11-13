@@ -28,6 +28,7 @@ bool CheckboxWidgetState::updateState() {
 
     WIDGET_STATE(styleId, overrideStyle(widgetCursor, widget->style));
     WIDGET_STATE(flags.active, g_isActiveWidget);
+    WIDGET_STATE(flags.disabled, isWidgetActionDisabled(widgetCursor));
     WIDGET_STATE(data, widget->data ? get(widgetCursor, widget->data) : 0);
     WIDGET_STATE(text, widget->text ? get(widgetCursor, widget->text) : Value());
 
@@ -36,7 +37,8 @@ bool CheckboxWidgetState::updateState() {
 
 void CheckboxWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
-    const Style *style = getStyle(styleId);
+    bool checked = data.toBool();
+    auto stateStyle = getWidgetStateStyle(getStyle(styleId), flags.active, false, (checked ? STYLE_STATE_FLAG(STYLE_STATE_CHECKED) : 0) | getDisabledStateFlag(flags.disabled));
 
     char label[MAX_TEXT_LEN + 1];
     label[0] = 0;
@@ -46,11 +48,11 @@ void CheckboxWidgetState::render() {
 
     drawCheckboxOrRadio(
         widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
-        style,
+        stateStyle.style,
         false,
-        data.toBool(),
+        checked,
         label,
-        flags.active
+        stateStyle.active
     );
 }
 

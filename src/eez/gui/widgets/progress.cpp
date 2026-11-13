@@ -66,19 +66,25 @@ void ProgressWidgetState::render() {
         percentFrom = percentTo;
     }
 
+    // the filled part: the background of the checked state style, without a
+    // checked state style the color of the style
+    const Style *checkedStyle = getStateStyle(style, STYLE_STATE_FLAG(STYLE_STATE_CHECKED));
+    const Style *fillStyle = checkedStyle != style ? checkedStyle : style;
+    bool invertColors = checkedStyle != style;
+
     auto isHorizontal = widget->orientation == PROGRESS_WIDGET_ORIENTATION_HORIZONTAL;
     if (isHorizontal) {
         auto xFrom = percentFrom * widgetCursor.w / 100;
         auto xTo = percentTo * widgetCursor.w / 100;
         if (g_isRTL) {
-            drawRectangle(widgetCursor.x + widgetCursor.w - xTo, widgetCursor.y, xTo - xFrom, widgetCursor.h, style, true);
+            drawRectangle(widgetCursor.x + widgetCursor.w - xTo, widgetCursor.y, xTo - xFrom, widgetCursor.h, fillStyle, false, false, invertColors);
         } else {
-            drawRectangle(widgetCursor.x + xFrom, widgetCursor.y, xTo - xFrom, widgetCursor.h, style, true);
+            drawRectangle(widgetCursor.x + xFrom, widgetCursor.y, xTo - xFrom, widgetCursor.h, fillStyle, false, false, invertColors);
         }
     } else {
         auto yFrom = percentFrom * widgetCursor.h / 100;
         auto yTo = percentTo * widgetCursor.h / 100;
-        drawRectangle(widgetCursor.x, widgetCursor.y + widgetCursor.h - yTo, widgetCursor.w, yTo - yFrom, style, true);
+        drawRectangle(widgetCursor.x, widgetCursor.y + widgetCursor.h - yTo, widgetCursor.w, yTo - yFrom, fillStyle, false, false, invertColors);
     }
 }
 

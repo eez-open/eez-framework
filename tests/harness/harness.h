@@ -60,6 +60,7 @@ struct AppContextOverrides {
     bool (*isAutoRepeatAction)(int action);
     bool (*testExecuteActionOnTouchDown)(int action);
     bool (*canExecuteActionWhenTouchedOutsideOfActivePage)(int pageId, int action);
+    bool (*isFocusWidget)(const eez::gui::WidgetCursor &widgetCursor);
 };
 extern AppContextOverrides g_appContextOverrides;
 

@@ -21,6 +21,11 @@ namespace font {
 struct Font {
     const FontData *fontData;
 
+    // extra space between the characters of the text, in 1/64 px (the letter
+    // spacing of the style, see styleGetFont), also used in the fonts the
+    // font tags switch to
+    int letterSpacing;
+
     Font();
     Font(const FontData *fontData_);
 

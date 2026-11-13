@@ -29,8 +29,8 @@ struct DisplayDataWidgetState : public WidgetState {
     int styleId;
     uint16_t color;
     uint16_t backgroundColor;
-    uint16_t activeColor;
-    uint16_t activeBackgroundColor;
+    // g_blinkOpacity while the widget blinks, else 255 (see BlinkOpacity)
+    uint8_t blinkOpacity;
     uint32_t dataRefreshLastTime;
     int16_t cursorPosition;
     // in pixels
@@ -38,6 +38,9 @@ struct DisplayDataWidgetState : public WidgetState {
 
     bool updateState() override;
     void render() override;
+
+private:
+    void renderText(const DisplayDataWidget *widget, const Style *style, bool active);
 };
 
 int DISPLAY_DATA_getCharIndexAtPosition(int xPos, const WidgetCursor &widgetCursor);

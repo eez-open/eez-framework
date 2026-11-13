@@ -24,6 +24,7 @@ bool RectangleWidgetState::updateState() {
     WIDGET_STATE_START(Widget);
 
     WIDGET_STATE(flags.active, g_isActiveWidget);
+    WIDGET_STATE(flags.disabled, isWidgetActionDisabled(widgetCursor));
 
     WIDGET_STATE_END()
 }
@@ -32,11 +33,11 @@ void RectangleWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
 
     auto widget = (const RectangleWidget *)widgetCursor.widget;
-    const Style* style = getStyle(widget->style);
+    auto stateStyle = getWidgetStateStyle(getStyle(widget->style), flags.active, false, getDisabledStateFlag(flags.disabled));
     drawRectangle(
         widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
-        style,
-        flags.active,
+        stateStyle.style,
+        stateStyle.active,
         widget->flags.ignoreLuminosity,
         widget->flags.invertColors
     );

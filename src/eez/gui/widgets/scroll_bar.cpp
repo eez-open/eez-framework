@@ -145,10 +145,9 @@ void ScrollBarWidgetState::render() {
 
         auto action = getWidgetAction(widgetCursor);
         if (flags.focused && action == EEZ_ACTION_ID_SCROLL) {
+            // the focus ring of the focused state style
             const Style *style = getStyle(widgetCursor.widget->style);
-            display::setColor(style->focusColor);
-            display::drawRect(widgetCursor.x, widgetCursor.y, widgetCursor.x + widgetCursor.w - 1, widgetCursor.y + widgetCursor.h - 1);
-            display::drawRect(widgetCursor.x + 1, widgetCursor.y + 1, widgetCursor.x + widgetCursor.w - 2, widgetCursor.y + widgetCursor.h - 2);
+            drawFocusRing(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, getStateStyle(style, STYLE_STATE_FLAG(STYLE_STATE_FOCUSED)));
         }
     } else {
         // scroll bar is hidden

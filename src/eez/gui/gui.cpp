@@ -37,8 +37,7 @@
 namespace eez {
 namespace gui {
 
-bool g_isBlinkTime;
-static bool g_wasBlinkTime;
+uint8_t g_blinkOpacity = 255;
 
 uint8_t g_selectedThemeIndex = EEZ_THEME_ID_DEFAULT;
 
@@ -74,8 +73,13 @@ void guiTick() {
     processPostponedTouchEvents();
     processPostedTouchEvents();
 
-    g_wasBlinkTime = g_isBlinkTime;
-    g_isBlinkTime = (millis() % (2 * CONF_GUI_BLINK_TIME)) > CONF_GUI_BLINK_TIME;
+    // fades out and in: 255 -> 0 in CONF_GUI_BLINK_TIME ms, then 0 -> 255
+    uint32_t blinkTime = millis() % (2 * CONF_GUI_BLINK_TIME);
+    g_blinkOpacity = (uint8_t)(
+        blinkTime < CONF_GUI_BLINK_TIME ?
+            255 - blinkTime * 255 / CONF_GUI_BLINK_TIME :
+            (blinkTime - CONF_GUI_BLINK_TIME) * 255 / CONF_GUI_BLINK_TIME
+    );
 
     // before the flow tick: what the application does there (e.g. stops some
     // flows, queues flow actions) is done by the one flow tick of this frame
@@ -87,6 +91,10 @@ void guiTick() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+bool isWidgetActionDisabled(const WidgetCursor &widgetCursor) {
+    return getWidgetAction(widgetCursor) != EEZ_ACTION_ID_NONE && !widgetCursor.appContext->isWidgetActionEnabled(widgetCursor);
+}
 
 bool isInternalAction(int actionId) {
     return actionId > FIRST_INTERNAL_ACTION_ID;

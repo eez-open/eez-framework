@@ -72,15 +72,17 @@ void pushPage(int pageId, int frames = 3);
 // native variables render_text_a .. render_text_f (index 0 .. 5)
 void setText(int index, const char *text);
 
-// Runs frames until the blink state is on (or off), in the middle of its
-// phase, so a few more frames keep it.
+// Runs frames until the blinking widgets are faded in (on: the blink opacity
+// is 255) or out (off: 0), see g_blinkOpacity.
 void frameToBlink(bool on);
 
 // The presented frame compared with a full redraw of the same state
 // (refreshScreen + frame), in the rectangle (the whole frame if w <= 0).
 // Returns the number of differing pixels; on a mismatch the images are
-// written with writeMismatch("redraw_" + name).
-int compareWithFullRedraw(const char *name, int x = 0, int y = 0, int w = 0, int h = 0);
+// written with writeMismatch("redraw_" + name). sameTime: the full redraw at
+// the time of the presented frame (the clock goes back one frame), for what
+// changes in every frame (e.g. the blink opacity).
+int compareWithFullRedraw(const char *name, int x = 0, int y = 0, int w = 0, int h = 0, bool sameTime = false);
 
 // For direct drawing: full clip rectangle, opacity 255, a fresh widget cursor
 // (refreshed, main assets), so the draw functions don't use the background

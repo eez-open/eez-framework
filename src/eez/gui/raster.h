@@ -113,6 +113,19 @@ void roundedRect(
     uint32_t lineColor, uint32_t fillColor
 );
 
+// roundedRect with a line of its own width on each side (lineWidths: top,
+// right, bottom, left). The radii are at the middle of the line: the outer edge
+// of a corner has the radius plus half the width of the side at that end, the
+// inner edge the radius minus half of it. With the same width on every side it
+// is the same rectangle as roundedRect draws.
+void roundedRectSides(
+    Target &target,
+    int x1, int y1, int x2, int y2,
+    const float lineWidths[4],
+    const float radii[8],
+    uint32_t lineColor, uint32_t fillColor
+);
+
 } // namespace raster
 } // namespace gui
 } // namespace eez

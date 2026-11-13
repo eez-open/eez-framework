@@ -249,18 +249,29 @@ struct PageAsset : public Widget {
 #define STYLE_FLAGS_VERT_ALIGN_CENTER (2 << 3)
 
 #define STYLE_FLAGS_BLINK (1 << 6)
+// single-line text that doesn't fit is cut and ends with an ellipsis
+#define STYLE_FLAGS_ELLIPSIS (1 << 7)
+
+// The states of a widget that can have their own style (Style::stateStyles).
+// When more of them are active, the style of the first one in the order
+// disabled, pressed, checked, selected, focused that has a style is used (see
+// getStateStyle).
+enum StyleState {
+    STYLE_STATE_PRESSED,
+    STYLE_STATE_FOCUSED,
+    STYLE_STATE_DISABLED,
+    STYLE_STATE_SELECTED,
+    STYLE_STATE_CHECKED,
+    STYLE_STATE_COUNT
+};
+
+#define STYLE_STATE_FLAG(state) (1 << (state))
 
 struct Style {
     uint16_t flags; // STYLE_FLAGS_...
 
     uint16_t backgroundColor;
     uint16_t color;
-
-    uint16_t activeBackgroundColor;
-    uint16_t activeColor;
-
-    uint16_t focusBackgroundColor;
-    uint16_t focusColor;
 
     uint8_t borderSizeTop;
     uint8_t borderSizeRight;
@@ -288,6 +299,32 @@ struct Style {
     uint8_t paddingLeft;
 
 	int16_t backgroundImage;
+
+    // Styles of the widget states (StyleState), 0 if the state has no style:
+    // style ids as Widget::style (positive in the main assets, negative in the
+    // external assets). Studio writes the style with the state properties over
+    // this style (and these are 0 in a state style).
+    int16_t stateStyles[STYLE_STATE_COUNT];
+
+    // extra space between the characters of the text, in 1/64 px
+    int16_t letterSpacing;
+    // distance between the lines of multiline text in px, 0: 90 % of the
+    // font height
+    uint16_t lineHeight;
+
+    // the ring drawn when the widget has the focus, inside the widget box at
+    // focusRingOffset px from its edge (following the border radius)
+    uint16_t focusRingColor;
+    uint8_t focusRingWidth; // 0: no focus ring
+    uint8_t focusRingOffset;
+
+    // shadow of the widget (CSS box-shadow), drawn outside of the widget box,
+    // inside of its parent; only on displays with a 32-bit buffer
+    uint16_t shadowColor;
+    int8_t shadowOffsetX;
+    int8_t shadowOffsetY;
+    uint8_t shadowBlur;
+    int8_t shadowSpread;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

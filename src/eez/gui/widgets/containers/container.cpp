@@ -41,6 +41,7 @@ bool ContainerWidgetState::updateState() {
 
 	WIDGET_STATE(styleId, overrideStyle(widgetCursor, widget->style));
 	WIDGET_STATE(flags.active, g_isActiveWidget);
+	WIDGET_STATE(flags.disabled, isWidgetActionDisabled(widgetCursor));
 
 	overlay = getOverlay(widgetCursor);
 	if (overlay) {
@@ -67,9 +68,10 @@ void ContainerWidgetState::render() {
 		displayBufferIndex = display::beginBufferRendering();
 	}
 
+	auto stateStyle = getWidgetStateStyle(getStyle(styleId), flags.active, false, getDisabledStateFlag(flags.disabled));
 	drawRectangle(
 		widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
-		getStyle(styleId), flags.active
+		stateStyle.style, stateStyle.active
 	);
 
 	repainted = true;
@@ -82,6 +84,8 @@ void ContainerWidgetState::enumChildren() {
 
     WidgetCursor &widgetCursor = g_widgetCursor;
 	auto widget = (const ContainerWidget *)widgetCursor.widget;
+
+	auto stateStyle = getWidgetStateStyle(getStyle(styleId), flags.active, false, getDisabledStateFlag(flags.disabled));
 
 	bool savedRefreshed = false;
 
@@ -97,10 +101,13 @@ void ContainerWidgetState::enumChildren() {
 			repainted = false;
 			widgetCursor.refreshed = true;
 		} else if (!widgetCursor.refreshed) {
-			const Style* style = getStyle(styleId);
-			widgetCursor.pushBackground(widgetCursor.x, widgetCursor.y, style, flags.active);
+			widgetCursor.pushBackground(widgetCursor.x, widgetCursor.y, stateStyle.style, stateStyle.active);
 		}
 	}
+
+	// the children are inside of the rounded corners
+	ChildrenRoundedClip roundedClip;
+	roundedClip.begin(widgetCursor, overlay ? nullptr : stateStyle.style);
 
 	auto savedWidget = widgetCursor.widget;
 
@@ -185,7 +192,7 @@ void ContainerWidgetState::enumChildren() {
                 doStaticLayoutWithOverlapping(
                     widgetCursor, widgets,
                     containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight,
-                    getStyle(styleId), flags.active
+                    stateStyle.style, stateStyle.active
                 );
             } else {
                 doStaticLayout(widgetCursor, widgets, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
@@ -262,6 +269,8 @@ void ContainerWidgetState::enumChildren() {
 	}
 
 	widgetCursor.widget = savedWidget;
+
+	roundedClip.end();
 
 	if (g_findCallback == nullptr) {
 		if (overlay) {

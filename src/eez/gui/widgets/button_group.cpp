@@ -121,7 +121,8 @@ void ButtonGroupWidgetState::render() {
     auto widget = (const ButtonGroupWidget *)widgetCursor.widget;
 
     const Style* style = getStyle(widget->style);
-    const Style* selectedStyle = getStyle(widget->selectedStyle);
+    // the selected button: the selected state of the style
+    const Style* selectedStyle = getStateStyle(style, STYLE_STATE_FLAG(STYLE_STATE_SELECTED));
 
     if (widgetCursor.flowState) {
         // the labels are an array, other data draws no buttons

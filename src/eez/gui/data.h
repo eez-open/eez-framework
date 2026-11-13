@@ -89,8 +89,6 @@ enum DataOperationEnum {
     DATA_OPERATION_GET_TEXT_REFRESH_RATE,
     DATA_OPERATION_GET_COLOR,
     DATA_OPERATION_GET_BACKGROUND_COLOR,
-    DATA_OPERATION_GET_ACTIVE_COLOR,
-    DATA_OPERATION_GET_ACTIVE_BACKGROUND_COLOR,
     DATA_OPERATION_IS_BLINKING,
     DATA_OPERATION_IS_VALID_VALUE,
     DATA_OPERATION_SET,
@@ -162,8 +160,6 @@ uint32_t getTextRefreshRate(const WidgetCursor &widgetCursor, int16_t id);
 
 uint16_t getColor(const WidgetCursor &widgetCursor, int16_t id, const Style *style);
 uint16_t getBackgroundColor(const WidgetCursor &widgetCursor, int16_t id, const Style *style);
-uint16_t getActiveColor(const WidgetCursor &widgetCursor, int16_t id, const Style *style);
-uint16_t getActiveBackgroundColor(const WidgetCursor &widgetCursor, int16_t id, const Style *style);
 
 bool isBlinking(const WidgetCursor &widgetCursor, int16_t id);
 Value getEditValue(const WidgetCursor &widgetCursor, int16_t id);

@@ -106,13 +106,16 @@ bool InputWidgetState::updateState() {
     WIDGET_STATE_START(InputWidget);
 
 	WIDGET_STATE(styleId, overrideStyle(widgetCursor, widget->style));
-	const Style *style = getStyle(styleId);
 
 	WIDGET_STATE(flags.active, g_isActiveWidget);
 	WIDGET_STATE(flags.focused, isFocusWidget(widgetCursor));
-	WIDGET_STATE(flags.blinking, g_isBlinkTime && styleIsBlink(style));
-	WIDGET_STATE(color,       flags.focused ? style->focusColor           : g_hooks.overrideStyleColor(widgetCursor, style));
-	WIDGET_STATE(activeColor, flags.focused ? style->focusBackgroundColor : g_hooks.overrideActiveStyleColor(widgetCursor, style));
+	WIDGET_STATE(flags.disabled, isWidgetActionDisabled(widgetCursor));
+
+	auto stateStyle = getWidgetStateStyle(getStyle(styleId), flags.active, flags.focused, getDisabledStateFlag(flags.disabled));
+	const Style *style = stateStyle.style;
+
+	WIDGET_STATE(blinkOpacity, styleIsBlink(style) ? g_blinkOpacity : 255);
+	WIDGET_STATE(color, g_hooks.overrideStyleColor(widgetCursor, style));
 
 	// A string is compared where it is (no copy in every frame), WIDGET_STATE
 	// copies it only when it is changed
@@ -129,12 +132,13 @@ void InputWidgetState::render() {
 
 	auto widget = (const InputWidget*)widgetCursor.widget;
 
-	const Style *style = getStyle(styleId);
+	auto stateStyle = getWidgetStateStyle(getStyle(styleId), flags.active, flags.focused, getDisabledStateFlag(flags.disabled));
+	const Style *style = stateStyle.style;
 
-	uint16_t overrideColor                 = color;
-	uint16_t overrideBackgroundColor       = flags.focused ? style->focusBackgroundColor : style->backgroundColor;
-	uint16_t overrideActiveColor           = activeColor;
-	uint16_t overrideActiveBackgroundColor = flags.focused ? style->focusColor           : style->activeBackgroundColor;
+	BlinkOpacity blinkOpacityScope(blinkOpacity);
+
+	uint16_t overrideColor = color;
+	uint16_t overrideBackgroundColor = style->backgroundColor;
 
 	char text[MAX_TEXT_LEN + 1];
 	data.toText(text, sizeof(text));
@@ -157,10 +161,14 @@ void InputWidgetState::render() {
 		text, -1,
 		widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
 		style,
-		flags.active, flags.blinking, false,
-		&overrideColor, &overrideBackgroundColor, &overrideActiveColor, &overrideActiveBackgroundColor,
+		stateStyle.active, false,
+		&overrideColor, &overrideBackgroundColor,
 		true // useSmallerFontIfDoesNotFit
 	);
+
+	if (flags.focused) {
+		drawFocusRing(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style);
+	}
 }
 
 } // namespace gui

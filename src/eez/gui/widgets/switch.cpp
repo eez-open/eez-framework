@@ -87,7 +87,9 @@ void SwitchWidgetState::render() {
         pos, y, x + w - 1, y + h - 1
 	);
 
-	display::setBackColor(style->activeBackgroundColor);
+	// the on part: the background of the checked state style (without a
+	// checked state style the same as the off part, the knob shows the state)
+	display::setBackColor(getStateStyle(style, STYLE_STATE_FLAG(STYLE_STATE_CHECKED))->backgroundColor);
 	display::fillRoundedRect(
 		x, y, x + w - 1, y + h - 1,
 		style->borderSizeLeft, h, true, true,

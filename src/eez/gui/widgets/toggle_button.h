@@ -16,7 +16,6 @@ namespace gui {
 struct ToggleButtonWidget : public Widget {
     AssetsPtr<const char> text1;
 	AssetsPtr<const char> text2;
-    int16_t checkedStyle;
 };
 
 struct ToggleButtonWidgetState : public WidgetState {
