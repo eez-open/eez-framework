@@ -75,13 +75,47 @@ TEST("gui/event: two taps on two buttons execute both actions") {
     CHECK_EQ(g_actions.clickB, 1);
 }
 
-TEST("gui/event: release outside of the pressed button still executes its action") {
-    // pinned: the widget found at touch down gets the touch up wherever it is
+TEST("gui/event: release outside of the pressed button executes no action") {
+    // press cancel (CONF_GUI_PRESS_CANCEL_MARGIN)
     showPageA();
     press(A_BTN1_X, A_BTN1_Y);
     moveTo(A_EMPTY_X, A_EMPTY_Y);
     releaseTouch();
+    CHECK_EQ(g_actions.clickA, 0);
+}
+
+TEST("gui/event: a button whose press the finger left and came back to executes its action") {
+    showPageA();
+    press(A_BTN1_X, A_BTN1_Y);
+    moveTo(A_EMPTY_X, A_EMPTY_Y);
+    moveTo(A_BTN1_X + 20, A_BTN1_Y + 10);
+    releaseTouch();
     CHECK_EQ(g_actions.clickA, 1);
+}
+
+TEST("gui/event: a release just outside of the button, within the margin, executes its action") {
+    // the button is 20, 20, 200x60: 10 px below it
+    showPageA();
+    press(A_BTN1_X, A_BTN1_Y);
+    moveTo(A_BTN1_X, 20 + 60 + 10);
+    releaseTouch();
+    CHECK_EQ(g_actions.clickA, 1);
+}
+
+TEST("gui/event: a button isn't drawn pressed while the finger is outside of it") {
+    showPageA();
+    press(A_BTN1_X, A_BTN1_Y);
+    harness::frame();
+    CHECK(g_activeWidget.widget != nullptr);
+    moveTo(A_EMPTY_X, A_EMPTY_Y);
+    harness::frame();
+    CHECK(g_activeWidget.widget == nullptr);
+    moveTo(A_BTN1_X, A_BTN1_Y);
+    harness::frame();
+    CHECK(g_activeWidget.widget != nullptr);
+    moveTo(A_EMPTY_X, A_EMPTY_Y);
+    releaseTouch();
+    CHECK_EQ(g_actions.clickA, 0);
 }
 
 TEST("gui/event: a disabled button executes no action") {

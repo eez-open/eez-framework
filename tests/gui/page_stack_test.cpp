@@ -2,6 +2,8 @@
  * eez-framework tests: gui/app_context.cpp, the page stack.
  */
 
+#include <vector>
+
 #include "gui_test.h"
 
 using namespace gui_test;
@@ -301,4 +303,45 @@ TEST_BUG("gui/app_context: a page whose assets are gone is not rendered", "G16")
     app()->pushPage(-1);
     harness::frame(2);
     CHECK_EQ(activePageId(), -1);
+}
+
+// the 4x4 pixels in the corners of the box
+static std::vector<uint32_t> cornerPixels(int x, int y, int w, int h) {
+    std::vector<uint32_t> pixels;
+    for (int dy = 0; dy < 4; dy++) {
+        for (int dx = 0; dx < 4; dx++) {
+            pixels.push_back(harness::pixel(x + dx, y + dy));
+            pixels.push_back(harness::pixel(x + w - 1 - dx, y + dy));
+            pixels.push_back(harness::pixel(x + dx, y + h - 1 - dy));
+            pixels.push_back(harness::pixel(x + w - 1 - dx, y + h - 1 - dy));
+        }
+    }
+    return pixels;
+}
+
+TEST("gui/app_context: the rounded corners of a page show the page below, not an earlier popup") {
+    // gui_rounded_popup (300, 200, 200x80, radius 16) and gui_popup2 (the
+    // same place, square corners)
+    app()->showPage(PAGE_ID_GUI_PAGE_A);
+    harness::frame(2);
+    app()->pushPage(PAGE_ID_GUI_ROUNDED_POPUP);
+    harness::frame(3);
+    auto corners = cornerPixels(300, 200, 200, 80);
+    app()->popPage();
+    harness::frame(2);
+
+    app()->pushPage(PAGE_ID_GUI_POPUP2);
+    harness::frame(3);
+    app()->popPage();
+    harness::frame(2);
+
+    app()->pushPage(PAGE_ID_GUI_ROUNDED_POPUP);
+    harness::frame(3);
+    auto again = cornerPixels(300, 200, 200, 80);
+    int different = 0;
+    for (size_t i = 0; i < corners.size(); i++) {
+        different += corners[i] != again[i];
+    }
+    CHECK_EQ(different, 0);
+    app()->popPage();
 }

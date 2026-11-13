@@ -51,6 +51,13 @@
 #define CONF_GUI_IGNORE_TOUCH_AFTER_PAGE_CHANGE_RADIUS 50
 #endif
 
+// Press cancel: a pressed widget doesn't get its action when the finger is
+// lifted farther than this from its touch detection rectangle; it isn't drawn
+// pressed while the finger is out there.
+#ifndef CONF_GUI_PRESS_CANCEL_MARGIN
+#define CONF_GUI_PRESS_CANCEL_MARGIN 16
+#endif
+
 namespace eez {
 namespace gui {
 
@@ -60,6 +67,10 @@ WidgetCursor g_activeWidget;
 bool g_isLongTouch;
 
 static WidgetCursor g_foundWidgetAtDown;
+// the touch detection rectangle of g_foundWidgetAtDown (w == 0: not known)
+// and whether the finger is in it (with CONF_GUI_PRESS_CANCEL_MARGIN)
+static Rect g_pressRect;
+static bool g_pressInside;
 
 static bool g_touchActionExecuted;
 static bool g_touchActionExecutedAtDown;
@@ -289,6 +300,8 @@ static void processTouchEvent(EventType type, Event &touchEvent) {
 
     if (type == EVENT_TYPE_TOUCH_DOWN) {
         g_foundWidgetAtDown = findWidget(touchEvent.x, touchEvent.y);
+        g_pressRect = getFoundWidgetTouchRect();
+        g_pressInside = true;
 
         g_touchIgnored = isAccidentalTouchDown(touchEvent);
         if (g_touchIgnored) {
@@ -427,12 +440,41 @@ static void onPageTouch(const WidgetCursor &foundWidget, Event &touchEvent) {
 	}
 }
 
+// the touch point is in the touch detection rectangle of the widget found at
+// touch down, with the press cancel margin
+static bool isInsidePressRect(const Event &touchEvent) {
+    if (g_pressRect.w == 0) {
+        return true;
+    }
+    return
+        touchEvent.x >= g_pressRect.x - CONF_GUI_PRESS_CANCEL_MARGIN &&
+        touchEvent.x < g_pressRect.x + g_pressRect.w + CONF_GUI_PRESS_CANCEL_MARGIN &&
+        touchEvent.y >= g_pressRect.y - CONF_GUI_PRESS_CANCEL_MARGIN &&
+        touchEvent.y < g_pressRect.y + g_pressRect.h + CONF_GUI_PRESS_CANCEL_MARGIN;
+}
+
 static void onWidgetDefaultTouch(const WidgetCursor &widgetCursor, Event &touchEvent) {
     if (!widgetCursor.widget) {
         return;
     }
 
     auto action = getWidgetAction(widgetCursor);
+
+    // press cancel: outside, the widget isn't pressed and gets no action
+    // (an action executed at touch down stays executed)
+    if (
+        action != EEZ_ACTION_ID_DRAG_OVERLAY &&
+        (touchEvent.type == EVENT_TYPE_TOUCH_MOVE || touchEvent.type == EVENT_TYPE_TOUCH_UP)
+    ) {
+        bool inside = isInsidePressRect(touchEvent);
+        if (inside != g_pressInside) {
+            g_pressInside = inside;
+            bool shownPressed = !g_touchActionExecutedAtDown || widgetCursor.appContext->isAutoRepeatAction(action);
+            if (touchEvent.type == EVENT_TYPE_TOUCH_MOVE && shownPressed) {
+                g_activeWidget = inside ? widgetCursor : WidgetCursor();
+            }
+        }
+    }
 
     if (touchEvent.type == EVENT_TYPE_TOUCH_DOWN) {
         g_touchActionExecuted = false;
@@ -455,11 +497,14 @@ static void onWidgetDefaultTouch(const WidgetCursor &widgetCursor, Event &touchE
             dragOverlay(touchEvent);
         }
     } else if (touchEvent.type == EVENT_TYPE_AUTO_REPEAT) {
-        if (widgetCursor.appContext->isWidgetActionEnabled(widgetCursor) && widgetCursor.appContext->isAutoRepeatAction(action)) {
+        if (g_pressInside && widgetCursor.appContext->isWidgetActionEnabled(widgetCursor) && widgetCursor.appContext->isAutoRepeatAction(action)) {
             g_touchActionExecuted = true;
             executeAction(widgetCursor, action);
         }
     } else if (touchEvent.type == EVENT_TYPE_LONG_TOUCH) {
+        if (!g_pressInside) {
+            return;
+        }
         g_touchActionExecuted = true;
         int action = widgetCursor.appContext->getLongTouchActionHook(widgetCursor);
         if (action != EEZ_ACTION_ID_NONE) {
@@ -468,7 +513,7 @@ static void onWidgetDefaultTouch(const WidgetCursor &widgetCursor, Event &touchE
             g_isLongTouch = false;
         }
     } else if (touchEvent.type == EVENT_TYPE_TOUCH_UP) {
-        if (!g_touchActionExecutedAtDown) {
+        if (!g_touchActionExecutedAtDown && g_pressInside) {
             if (!g_touchActionExecuted) {
                 if (action == EEZ_ACTION_ID_DRAG_OVERLAY) {
                     dragOverlay(touchEvent);

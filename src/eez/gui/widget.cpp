@@ -502,12 +502,35 @@ static bool g_found;
 static WidgetCursor g_foundWidget;
 static int g_distanceToFoundWidget;
 static ScrollLists g_foundWidgetScrollLists;
+static Rect g_foundWidgetTouchRect;
 Rect g_findClipRect;
 
 int g_xOverlayOffset = 0;
 int g_yOverlayOffset = 0;
 
 static AppContext *g_popPageAppContext;
+
+#ifndef MIN_TOUCH_DETECTION_SIZE
+#define MIN_TOUCH_DETECTION_SIZE 50
+#endif
+
+// the rectangle enlarged to at least MIN_TOUCH_DETECTION_SIZE, around its center
+static Rect getTouchDetectionRect(int x, int y, int w, int h) {
+    if (w < MIN_TOUCH_DETECTION_SIZE) {
+        x = x - (MIN_TOUCH_DETECTION_SIZE - w) / 2;
+        w = MIN_TOUCH_DETECTION_SIZE;
+    }
+    if (h < MIN_TOUCH_DETECTION_SIZE) {
+        y = y - (MIN_TOUCH_DETECTION_SIZE - h) / 2;
+        h = MIN_TOUCH_DETECTION_SIZE;
+    }
+    Rect rect;
+    rect.x = (int16_t)x;
+    rect.y = (int16_t)y;
+    rect.w = (int16_t)w;
+    rect.h = (int16_t)h;
+    return rect;
+}
 
 // x, y, w and h are set to the touch detection rectangle of the current widget
 static bool isFindPointInsideWidget(Overlay *overlay, int &x, int &y, int &w, int &h) {
@@ -524,10 +547,6 @@ static bool isFindPointInsideWidget(Overlay *overlay, int &x, int &y, int &w, in
 		g_xOverlayOffset = 0;
 		g_yOverlayOffset = 0;
 	}
-
-#ifndef MIN_TOUCH_DETECTION_SIZE
-#define MIN_TOUCH_DETECTION_SIZE 50
-#endif
 
     w = overlay ? overlay->width : widgetCursor.w;
     if (w < MIN_TOUCH_DETECTION_SIZE) {
@@ -568,6 +587,7 @@ static void findWidgetStep() {
 		if (foundWidget) {
 			g_foundWidget = foundWidget;
 			g_foundWidgetScrollLists.count = 0;
+			g_foundWidgetTouchRect = getTouchDetectionRect(foundWidget.x, foundWidget.y, foundWidget.w, foundWidget.h);
 			g_found = true;
 			return;
         }
@@ -619,6 +639,7 @@ static void findWidgetStep() {
             g_foundWidget = widgetCursor;
             g_distanceToFoundWidget = INT_MAX;
             g_foundWidgetScrollLists.count = 0;
+            g_foundWidgetTouchRect = getTouchDetectionRect(x, y, w, h);
         } else {
             if (
 				!g_foundWidget ||
@@ -629,6 +650,7 @@ static void findWidgetStep() {
 			) {
                 g_foundWidget = widgetCursor;
                 g_distanceToFoundWidget = distance;
+                g_foundWidgetTouchRect = getTouchDetectionRect(x, y, w, h);
                 g_foundWidgetScrollLists = g_findEnclosingScrollLists;
                 if (isScrollList && g_foundWidgetScrollLists.count < MAX_NESTED_SCROLL_LISTS) {
                     g_foundWidgetScrollLists.lists[g_foundWidgetScrollLists.count++] = widgetCursor;
@@ -650,6 +672,7 @@ WidgetCursor findWidget(int16_t x, int16_t y, bool clicked) {
 	g_found = false;
     g_foundWidget = 0;
     g_foundWidgetScrollLists.count = 0;
+    g_foundWidgetTouchRect = Rect();
     g_findEnclosingScrollLists.count = 0;
     g_findClipRect = Rect();
     g_clicked = clicked;
@@ -734,6 +757,10 @@ bool isOutsideActivePageWidgets(AppContext *appContext, int16_t x, int16_t y) {
 
 const ScrollLists &getFoundWidgetScrollLists() {
     return g_foundWidgetScrollLists;
+}
+
+const Rect &getFoundWidgetTouchRect() {
+    return g_foundWidgetTouchRect;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

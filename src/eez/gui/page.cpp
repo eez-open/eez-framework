@@ -488,6 +488,8 @@ WidgetCursor ToastMessagePage::findWidgetInternalPage(int x, int y, bool clicked
 			widgetCursor.widget = &actionWidget;
             widgetCursor.x = xActionWidget;
             widgetCursor.y = yActionWidget;
+            widgetCursor.w = actionWidget.width;
+            widgetCursor.h = actionWidget.height;
             return widgetCursor;
         }
     }
@@ -832,7 +834,11 @@ WidgetCursor SelectFromEnumPage::findWidgetInternalPage(int x, int y, bool click
 
         		widget.action = ACTION_ID_INTERNAL_SELECT_ENUM_ITEM;
         		widget.data = (uint16_t)i;
-        		return WidgetCursor(g_mainAssets, appContext, &widget, x, y, widgetCursor.currentState, widgetCursor.refreshed, widgetCursor.hasPreviousState);
+        		// the box of the item (its touch detection rectangle)
+        		WidgetCursor found(g_mainAssets, appContext, &widget, xItem, yItem, widgetCursor.currentState, widgetCursor.refreshed, widgetCursor.hasPreviousState);
+        		found.w = itemWidth;
+        		found.h = itemHeight;
+        		return found;
         	}
         }
     }

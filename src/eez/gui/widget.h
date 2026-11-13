@@ -336,6 +336,10 @@ struct ScrollLists {
 
 // scrollable Lists that are (or enclose) the widget returned by the last findWidget call
 const ScrollLists &getFoundWidgetScrollLists();
+// the touch detection rectangle (the widget enlarged to at least
+// MIN_TOUCH_DETECTION_SIZE) of the widget returned by the last findWidget
+// call, w == 0 if there is none
+const Rect &getFoundWidgetTouchRect();
 // findWidget ignores the widgets outside of this rectangle (w == 0 means no clipping)
 extern Rect g_findClipRect;
 

@@ -343,7 +343,7 @@ void AppContext::onPageTouch(const WidgetCursor &foundWidget, Event &touchEvent)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// page with transparent background shows what is below it
+// page with transparent background (or rounded corners) shows what is below it
 static bool isPageTransparent(int pageId) {
     if (isPageInternal(pageId)) {
         return false;
@@ -368,7 +368,10 @@ static bool isPageTransparent(int pageId) {
     auto savedAssets = g_widgetCursor.assets;
     g_widgetCursor.assets = assets;
     auto style = getStyle(page->style);
-    bool transparent = !display::isColorOpaque(style->backgroundColor) || style->opacity != 255;
+    bool hasBorderRadius =
+        style->borderRadiusTLX > 0 || style->borderRadiusTLY > 0 || style->borderRadiusTRX > 0 || style->borderRadiusTRY > 0 ||
+        style->borderRadiusBRX > 0 || style->borderRadiusBRY > 0 || style->borderRadiusBLX > 0 || style->borderRadiusBLY > 0;
+    bool transparent = !display::isColorOpaque(style->backgroundColor) || style->opacity != 255 || hasBorderRadius;
     g_widgetCursor.assets = savedAssets;
 
     return transparent;

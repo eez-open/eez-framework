@@ -30625,6 +30625,34 @@
       "componentGroups": []
     },
     {
+      "objID": "5fbe3a42-78af-5c6b-95f0-a2f985436365",
+      "name": "gui_rounded_popup",
+      "tags": "gui, popups",
+      "left": 300,
+      "top": 200,
+      "width": 200,
+      "height": 80,
+      "components": [
+        {
+          "type": "TextWidget",
+          "objID": "e9dce9df-2ec9-5963-8d8a-9704d5dd31c5",
+          "left": 50,
+          "top": 20,
+          "width": 100,
+          "height": 40,
+          "style": {
+            "useStyle": "gui_rounded"
+          },
+          "text": "Round"
+        }
+      ],
+      "connectionLines": [],
+      "localVariables": [],
+      "userProperties": [],
+      "componentGroups": [],
+      "style": "gui_rounded"
+    },
+    {
       "objID": "b457650c-dd43-5862-906b-403fa6d63936",
       "name": "layout_rows",
       "tags": "layout",
@@ -37529,6 +37557,17 @@
           "backgroundColor": "backdrop",
           "borderSize": "2",
           "borderColor": "text",
+          "childStyles": []
+        },
+        {
+          "objID": "3e9d5b87-6579-58ed-8747-b43b9bfc80fe",
+          "name": "gui_rounded",
+          "tags": "gui",
+          "alwaysBuild": true,
+          "backgroundColor": "backdrop",
+          "borderSize": "2",
+          "borderColor": "text",
+          "borderRadius": "16",
           "childStyles": []
         },
         {

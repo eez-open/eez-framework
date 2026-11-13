@@ -9,6 +9,8 @@ STYLES = [
     style("gui_button", backgroundColor="accent", activeBackgroundColor="error", borderSize="1", borderColor="text"),
     style("gui_button_disabled", backgroundColor="backdrop", color="background"),
     style("gui_popup", backgroundColor="backdrop", borderSize="2", borderColor="text"),
+    # rounded: its corners show the page below (gui/page_stack_test.cpp)
+    style("gui_rounded", backgroundColor="backdrop", borderSize="2", borderColor="text", borderRadius="16"),
     style("gui_transparent", backgroundColor="transparent"),
     style("gui_keypad_text", alignHorizontal="left", padding="4", borderSize="1", borderColor="text"),
     style("gui_key", backgroundColor="accent", activeBackgroundColor="error", borderSize="1", borderColor="text"),
@@ -193,5 +195,10 @@ _SCROLL = page("gui_scroll", [
     ),
 ])
 
+# a popup with rounded corners where gui_popup2 is
+_ROUNDED = page("gui_rounded_popup", [
+    text("gui/rounded/title", 50, 20, 100, 40, "Round", "gui_rounded"),
+], left=300, top=200, width=200, height=80, style="gui_rounded")
+
 PAGES = [_PAGE_A, _PAGE_B, _POPUP, _POPUP2, _DIALOG, _TRANSPARENT, _YES_NO, _numeric_keypad(), _text_keypad(), _LISTS, _OVERLAY,
-         _SCROLL]
+         _SCROLL, _ROUNDED]
