@@ -983,4 +983,21 @@ struct ArrayOfString {
     }
 };
 
+////////////////////////////////////////////////////////////////////////////////
+// A quantity shown with a fixed unit and number of decimals
+
+// The number of decimals of a precision (the smallest step of a quantity):
+// 0.005 -> 3, 0.0005 -> 4, 0.5 -> 1, 5 -> 0, at most 7; 0 for a precision <= 0.
+int getPrecisionDecimals(double precision);
+
+// The number value shown in the unit with the decimals of the precision (in the
+// unit), never scaled to another unit (FLOAT_OPTIONS_FIXED_DECIMALS): "12.000 V"
+// for 12 V with the precision 0.005. The value is converted from its own unit
+// (a value without a unit is a number in the unit); with UNIT_NONE, or a unit
+// of another quantity, the value keeps its unit. Without a precision (<= 0) the
+// decimals of the value (a module field with a resolution) are used, converted
+// to the unit; a value without them, and a value that is not a number, is
+// returned as it is.
+Value getValueInUnit(const Value &value, Unit unit, double precision);
+
 } // namespace eez

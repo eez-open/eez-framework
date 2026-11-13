@@ -28,6 +28,9 @@ const int IN_TEXT[] = { 10, 10, 200, 40 };
 const int IN_PW[] = { 10, 60, 200, 40 };
 const int IN_NUM[] = { 10, 110, 200, 40 };
 const int IN_PW2[] = { 10, 160, 200, 40 };
+// w_e in A shown in mA with the precision 0.0005 A, a reference text (w_str)
+const int IN_SHOWN[] = { 10, 210, 200, 40 };
+const int IN_REF[] = { 250, 210, 200, 40 };
 
 // w_roller: items 26 px high, the selected one in the middle (y + 87 .. y + 113)
 const int RO_NAT[] = { 10, 10, 120, 200 };
@@ -203,6 +206,21 @@ TEST("widgets/input: number input shows the value") {
     set(V_C, Value(2.5f, VALUE_TYPE_FLOAT));
     harness::frame();
     CHECK(diffBlock(two, RECT(IN_NUM)) > 0);
+}
+
+TEST("widgets/input: a number is shown in the display unit with the decimals of the precision") {
+    inputs("", "", intValue(0), "");
+    set(V_E, Value(0.75f, UNIT_AMPER));
+    show(PAGE_ID_W_INPUT);
+    // 0.0005 A is 0.5 mA: one decimal
+    set(V_STR, str("750.0 mA"));
+    harness::frame(2);
+    CHECK_EQ(diffBlocks(IN_SHOWN[0], IN_SHOWN[1], IN_REF[0], IN_REF[1], IN_REF[2], IN_REF[3]), 0);
+
+    set(V_E, Value(0.0125f, UNIT_AMPER));
+    set(V_STR, str("12.5 mA"));
+    harness::frame(2);
+    CHECK_EQ(diffBlocks(IN_SHOWN[0], IN_SHOWN[1], IN_REF[0], IN_REF[1], IN_REF[2], IN_REF[3]), 0);
 }
 
 TEST("widgets/input: text input with a number shows the number") {

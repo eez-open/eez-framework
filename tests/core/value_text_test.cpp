@@ -315,3 +315,50 @@ TEST_BUG("core/value: type name of a pointer to a value pointer", "C11") {
     Value outer(&inner);
     CHECK_STR(typeName(outer), "int32");
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// A quantity with a fixed unit and number of decimals (getValueInUnit)
+
+TEST("core/value: the decimals of a precision") {
+    CHECK_EQ(getPrecisionDecimals(0.005), 3);
+    CHECK_EQ(getPrecisionDecimals(0.0005), 4);
+    CHECK_EQ(getPrecisionDecimals(0.000005f), 6);
+    CHECK_EQ(getPrecisionDecimals(0.5), 1);
+    CHECK_EQ(getPrecisionDecimals(0.25), 2);
+    CHECK_EQ(getPrecisionDecimals(5), 0);
+    CHECK_EQ(getPrecisionDecimals(10), 0);
+    CHECK_EQ(getPrecisionDecimals(0.01f), 2);
+    CHECK_EQ(getPrecisionDecimals(1e-9), 7);
+    CHECK_EQ(getPrecisionDecimals(0), 0);
+    CHECK_EQ(getPrecisionDecimals(-1), 0);
+}
+
+TEST("core/value: a value in a unit with the decimals of a precision is not scaled") {
+    // without: scaled to mA, one decimal
+    CHECK_EQ(text(Value(0.75f, UNIT_AMPER)), "750.0 mA");
+    CHECK_EQ(text(getValueInUnit(Value(0.75f, UNIT_AMPER), UNIT_AMPER, 0.0005)), "0.7500 A");
+    CHECK_EQ(text(getValueInUnit(Value(12.0f, UNIT_VOLT), UNIT_NONE, 0.005)), "12.000 V");
+    // converted to the unit, the precision in that unit
+    CHECK_EQ(text(getValueInUnit(Value(0.012345f, UNIT_AMPER), UNIT_MILLI_AMPER, 0.005)), "12.345 mA");
+    CHECK_EQ(text(getValueInUnit(Value(750.0f, UNIT_MILLI_AMPER), UNIT_AMPER, 0.0005)), "0.7500 A");
+    // a number without a unit is in the unit
+    CHECK_EQ(text(getValueInUnit(Value(3.0f, VALUE_TYPE_FLOAT), UNIT_VOLT, 0.01)), "3.00 V");
+    // a unit of another quantity: the value keeps its unit
+    CHECK_EQ(text(getValueInUnit(Value(2.0f, UNIT_VOLT), UNIT_AMPER, 0.1)), "2.0 V");
+    // a double stays a double
+    Value d = getValueInUnit(doubleWithUnit(1.5, UNIT_VOLT), UNIT_MILLI_VOLT, 1);
+    CHECK(d.isDouble());
+    CHECK_EQ(text(d), "1500 mV");
+}
+
+TEST("core/value: without a precision the decimals of the value are used, converted to the unit") {
+    // a module field value with a resolution of 0.0005 A
+    Value field(0.75f, UNIT_AMPER, FLOAT_OPTIONS_SET_NUM_FIXED_DECIMALS(4));
+    CHECK_EQ(text(field), "0.7500 A");
+    CHECK_EQ(text(getValueInUnit(field, UNIT_NONE, 0)), "0.7500 A");
+    CHECK_EQ(text(getValueInUnit(field, UNIT_MILLI_AMPER, 0)), "750.0 mA");
+    CHECK_EQ(text(getValueInUnit(field, UNIT_MICRO_AMPER, 0)), "750000 uA");
+    // a value without decimals and a value that is not a number are as they are
+    CHECK_EQ(text(getValueInUnit(Value(0.75f, UNIT_AMPER), UNIT_MILLI_AMPER, 0)), "750.0 mA");
+    CHECK_EQ(text(getValueInUnit(Value(5), UNIT_VOLT, 0.01)), "5");
+}

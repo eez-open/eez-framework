@@ -1916,4 +1916,73 @@ void setVar(int16_t id, const Value& value) {
 
 #endif // defined(EEZ_OPTION_GUI)
 
+////////////////////////////////////////////////////////////////////////////////
+
+static const int MAX_FIXED_DECIMALS = 7;
+
+int getPrecisionDecimals(double precision) {
+    if (!(precision > 0)) {
+        return 0;
+    }
+    double scaled = precision;
+    for (int decimals = 0; decimals < MAX_FIXED_DECIMALS; decimals++) {
+        // a whole number, not 0 (with the error of a float precision)
+        double whole = round(scaled);
+        if (whole != 0 && fabs(scaled - whole) <= 1e-4 * scaled) {
+            return decimals;
+        }
+        scaled *= 10;
+    }
+    return MAX_FIXED_DECIMALS;
+}
+
+static bool hasUnit(Unit unit) {
+    return unit != UNIT_NONE && unit != UNIT_UNKNOWN;
+}
+
+Value getValueInUnit(const Value &value, Unit unit, double precision) {
+    if (!value.isFloat() && !value.isDouble()) {
+        return value;
+    }
+
+    Unit valueUnit = value.getUnit();
+    if (!hasUnit(unit) || (hasUnit(valueUnit) && getBaseUnit(valueUnit) != getBaseUnit(unit))) {
+        unit = valueUnit;
+    }
+
+    // in the unit
+    double number = value.toDouble();
+    double factor = 1.0;
+    if (hasUnit(valueUnit) && hasUnit(unit) && valueUnit != unit) {
+        factor = (double)getUnitFactor(valueUnit) / (double)getUnitFactor(unit);
+        number *= factor;
+    }
+
+    int decimals;
+    if (precision > 0) {
+        decimals = getPrecisionDecimals(precision);
+    } else if (value.getOptions() & FLOAT_OPTIONS_FIXED_DECIMALS) {
+        // the decimals of the value, in the unit: 4 decimals in A are 1 in mA
+        // (the number is 1000 times larger)
+        decimals = FLOAT_OPTIONS_GET_NUM_FIXED_DECIMALS(value.getOptions()) - (int)round(log10(factor));
+        if (decimals < 0) {
+            decimals = 0;
+        } else if (decimals > MAX_FIXED_DECIMALS) {
+            decimals = MAX_FIXED_DECIMALS;
+        }
+    } else {
+        return value;
+    }
+
+    Value result;
+    if (value.isDouble()) {
+        result = Value(number, VALUE_TYPE_DOUBLE);
+        result.unit = (uint8_t)unit;
+        result.options = FLOAT_OPTIONS_SET_NUM_FIXED_DECIMALS(decimals);
+    } else {
+        result = Value((float)number, unit, FLOAT_OPTIONS_SET_NUM_FIXED_DECIMALS(decimals));
+    }
+    return result;
+}
+
 } // namespace eez

@@ -73,6 +73,40 @@ Value getInputWidgetPrecision(const gui::WidgetCursor &widgetCursor) {
 	return getInputWidgetNumberParam(widgetCursor, ((const InputWidget*)widgetCursor.widget)->precision);
 }
 
+Unit getInputWidgetDisplayUnit(const gui::WidgetCursor &widgetCursor) {
+	auto widget = (const InputWidget*)widgetCursor.widget;
+	if (widget->displayUnit) {
+		auto unitValue = get(widgetCursor, widget->displayUnit);
+		if (unitValue.isString()) {
+			Unit unit = getUnitFromName(unitValue.getString());
+			if (unit != UNIT_UNKNOWN) {
+				return unit;
+			}
+		}
+	}
+	return getInputWidgetUnit(widgetCursor);
+}
+
+static bool hasUnit(Unit unit) {
+	return unit != UNIT_NONE && unit != UNIT_UNKNOWN;
+}
+
+Value getInputWidgetShownValue(const gui::WidgetCursor &widgetCursor, const Value &data) {
+	Unit unit = getInputWidgetDisplayUnit(widgetCursor);
+
+	// the unit getValueInUnit shows the data in
+	Unit dataUnit = data.getUnit();
+	Unit shownUnit = hasUnit(unit) && (!hasUnit(dataUnit) || getBaseUnit(dataUnit) == getBaseUnit(unit)) ? unit : dataUnit;
+
+	// the precision (in the base unit) in that unit
+	double precision = getInputWidgetPrecision(widgetCursor).toDouble();
+	if (precision > 0 && hasUnit(shownUnit)) {
+		precision /= getUnitFactor(shownUnit);
+	}
+
+	return getValueInUnit(data, unit, precision);
+}
+
 Value getInputWidgetInfo(const gui::WidgetCursor &widgetCursor) {
 	return get(widgetCursor, ((const InputWidget*)widgetCursor.widget)->info);
 }
@@ -88,7 +122,13 @@ Value getInputWidgetData(const gui::WidgetCursor &widgetCursor, const Value &dat
 		auto unit = getInputWidgetUnit(widgetCursor);
 		float factor = getUnitFactor(unit);
 		auto baseUnit = getBaseUnit(unit);
-    	return Value(dataValue.toFloat() * factor, baseUnit);
+		// the decimals of the data (a module field with a resolution) are kept
+		// when the number isn't converted
+		uint16_t options = 0;
+		if (factor == 1.0f && (dataValue.isFloat() || dataValue.isDouble())) {
+			options = dataValue.getOptions() & (FLOAT_OPTIONS_FIXED_DECIMALS | FLOAT_OPTIONS_SET_NUM_FIXED_DECIMALS(7));
+		}
+    	return Value(dataValue.toFloat() * factor, baseUnit, options);
 	} else if (dataValue.isString()) {
 		if (g_readStringInPlace) {
 			return dataValue;
@@ -124,6 +164,10 @@ bool InputWidgetState::updateState() {
 	g_readStringInPlace = false;
 	WIDGET_STATE(data, newData);
 
+	if (widget->flags & INPUT_WIDGET_TYPE_NUMBER) {
+		WIDGET_STATE(shownData, getInputWidgetShownValue(widgetCursor, data));
+	}
+
     WIDGET_STATE_END()
 }
 
@@ -141,7 +185,11 @@ void InputWidgetState::render() {
 	uint16_t overrideBackgroundColor = style->backgroundColor;
 
 	char text[MAX_TEXT_LEN + 1];
-	data.toText(text, sizeof(text));
+	if (widget->flags & INPUT_WIDGET_TYPE_NUMBER) {
+		shownData.toText(text, sizeof(text));
+	} else {
+		data.toText(text, sizeof(text));
+	}
 
 	if ((widget->flags & INPUT_WIDGET_TYPE_TEXT) && (widget->flags & INPUT_WIDGET_PASSWORD_FLAG)) {
 		// one * for each character (UTF-8 continuation bytes are skipped)

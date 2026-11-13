@@ -33772,6 +33772,52 @@
           "displayOption": 6,
           "refreshRate": "0",
           "unitAndFractionFont": "RobotoCondensed"
+        },
+        {
+          "type": "DisplayDataWidget",
+          "objID": "6d0c3456-982a-54b2-b2a9-7a59fbb118a6",
+          "left": 500,
+          "top": 210,
+          "width": 200,
+          "height": 40,
+          "style": {
+            "useStyle": "w_txt"
+          },
+          "data": "w_e",
+          "displayOption": 0,
+          "refreshRate": "0",
+          "displayUnit": "\"mA\"",
+          "precision": "0.005"
+        },
+        {
+          "type": "DisplayDataWidget",
+          "objID": "64959997-d12c-5bd8-99ed-b2df1ccfd5c7",
+          "left": 500,
+          "top": 260,
+          "width": 200,
+          "height": 40,
+          "style": {
+            "useStyle": "w_txt"
+          },
+          "data": "w_e",
+          "displayOption": 0,
+          "refreshRate": "0",
+          "precision": "0.0005"
+        },
+        {
+          "type": "DisplayDataWidget",
+          "objID": "f51229b7-2c6b-5d01-b593-97cbfc3be520",
+          "left": 500,
+          "top": 310,
+          "width": 200,
+          "height": 40,
+          "style": {
+            "useStyle": "w_txt"
+          },
+          "data": "w_e",
+          "displayOption": 5,
+          "refreshRate": "0",
+          "precision": "0.0005"
         }
       ],
       "connectionLines": [],
@@ -34892,6 +34938,38 @@
           "password": true,
           "min": "0",
           "max": "100"
+        },
+        {
+          "type": "InputEmbeddedWidget",
+          "objID": "49fc7bb7-3291-57b5-aef2-33c921b3f2a8",
+          "left": 10,
+          "top": 210,
+          "width": 200,
+          "height": 40,
+          "style": {
+            "useStyle": "w_txt"
+          },
+          "data": "w_e",
+          "inputType": "number",
+          "min": "0",
+          "max": "10",
+          "precision": "0.0005",
+          "unit": "\"A\"",
+          "displayUnit": "\"mA\"",
+          "info": "\"\"",
+          "defaultValue": "0"
+        },
+        {
+          "type": "TextWidget",
+          "objID": "3003165f-9943-5827-8588-321e3827e529",
+          "left": 250,
+          "top": 210,
+          "width": 200,
+          "height": 40,
+          "style": {
+            "useStyle": "w_txt"
+          },
+          "data": "w_str"
         }
       ],
       "connectionLines": [],

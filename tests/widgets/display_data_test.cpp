@@ -28,6 +28,11 @@ const int DD_ROUNDED[] = { 500, 10, 200, 40 };
 const int DD_XSCROLL[] = { 500, 60, 200, 40 };
 const int DD_REFRESH[] = { 500, 110, 200, 40 };
 const int DD_IUF[] = { 500, 160, 250, 40 };
+// w_e in mA with the precision 0.005, with the precision 0.0005, integer and
+// fraction with the precision 0.0005
+const int DD_FIXED_MA[] = { 500, 210, 200, 40 };
+const int DD_FIXED_A[] = { 500, 260, 200, 40 };
+const int DD_FIXED_INTFRAC[] = { 500, 310, 200, 40 };
 
 #define RECT(R) R[0], R[1], R[2], R[3]
 
@@ -36,6 +41,13 @@ int diffWithRef(int option, const char *text) {
     g_native.ref = text;
     harness::frame(2);
     return diffBlocks(DD_OPTION[option][0], DD_OPTION[option][1], DD_REF[0], DD_REF[1], DD_REF[2], DD_REF[3]);
+}
+
+// the widget in the rectangle shows the same pixels as the reference text
+int diffRectWithRef(const int *rect, const char *text) {
+    g_native.ref = text;
+    harness::frame(2);
+    return diffBlocks(rect[0], rect[1], DD_REF[0], DD_REF[1], DD_REF[2], DD_REF[3]);
 }
 
 } // namespace
@@ -187,4 +199,26 @@ TEST("widgets/dd: integer, unit and fraction option draws the parts of a float")
     CHECK(drawn());
     CHECK(count(RECT(DD_IUF), YELLOW) > 0);
     CHECK_EQ(diffWithFullRedraw(), 0);
+}
+
+TEST("widgets/dd: display unit and precision fix the unit and the number of decimals") {
+    set(V_E, Value(0.012345f, UNIT_AMPER));
+    show(PAGE_ID_W_DD);
+    CHECK_EQ(diffRectWithRef(DD_FIXED_MA, "12.345 mA"), 0);
+    CHECK_EQ(diffRectWithRef(DD_FIXED_A, "0.0123 A"), 0);
+    CHECK_EQ(diffRectWithRef(DD_FIXED_INTFRAC, "0.0123"), 0);
+
+    // another value: the same unit and number of decimals
+    set(V_E, Value(0.75f, UNIT_AMPER));
+    CHECK_EQ(diffRectWithRef(DD_FIXED_MA, "750.000 mA"), 0);
+    CHECK_EQ(diffRectWithRef(DD_FIXED_A, "0.7500 A"), 0);
+    CHECK_EQ(diffRectWithRef(DD_FIXED_INTFRAC, "0.7500"), 0);
+}
+
+TEST("widgets/dd: a value with its own decimals (a module field resolution) shows them") {
+    set(V_A, Value(0.75f, UNIT_AMPER, FLOAT_OPTIONS_SET_NUM_FIXED_DECIMALS(4)));
+    show(PAGE_ID_W_DD);
+    CHECK_EQ(diffWithRef(0, "0.7500 A"), 0);
+    CHECK_EQ(diffWithRef(5, "0.7500"), 0);
+    CHECK_EQ(diffWithRef(4, "A"), 0);
 }

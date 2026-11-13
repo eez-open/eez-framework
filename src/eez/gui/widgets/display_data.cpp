@@ -121,6 +121,28 @@ static void renderIntegerUnitAndFraction(DisplayDataWidgetState *widgetState, co
     );
 }
 
+// The data as the widget shows it: a number in the unit with the decimals of
+// the precision of the widget (getValueInUnit), when the widget has them. A
+// value with its own decimals (a module field with a resolution) shows them.
+static Value getDisplayDataValue(const WidgetCursor &widgetCursor, const DisplayDataWidget *widget) {
+    Value data = get(widgetCursor, widget->data);
+    if (!widget->displayUnit && !widget->precision) {
+        return data;
+    }
+
+    Unit unit = UNIT_NONE;
+    if (widget->displayUnit) {
+        Value unitValue = get(widgetCursor, widget->displayUnit);
+        if (unitValue.isString()) {
+            unit = getUnitFromName(unitValue.getString());
+        }
+    }
+
+    double precision = widget->precision ? get(widgetCursor, widget->precision).toDouble() : 0;
+
+    return getValueInUnit(data, unit, precision);
+}
+
 bool DisplayDataWidgetState::updateState() {
     WIDGET_STATE_START(DisplayDataWidget);
 
@@ -143,7 +165,7 @@ bool DisplayDataWidgetState::updateState() {
     }
 
     bool refreshData = true;
-    auto newData = get(widgetCursor, widget->data);
+    auto newData = getDisplayDataValue(widgetCursor, widget);
     auto currentTime = millis();
     if (hasPreviousState && data != newData) {
         if (refreshRate != 0 && currentTime - dataRefreshLastTime < refreshRate) {
@@ -260,7 +282,7 @@ bool DisplayDataWidget_getContentSize(const WidgetCursor &widgetCursor, int &w, 
         char text[TEXT_BUFFER_SIZE];
         char *start;
         int length;
-        getDisplayText(widget, get(widgetCursor, widget->data), text, start, length);
+        getDisplayText(widget, getDisplayDataValue(widgetCursor, widget), text, start, length);
         textWidth = display::measureStr(start, length, font, 0);
     }
 
@@ -299,7 +321,7 @@ int DISPLAY_DATA_getCharIndexAtPosition(int xPos, const WidgetCursor &widgetCurs
 	const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
 
     char text[TEXT_BUFFER_SIZE];
-    Value data = get(widgetCursor, widget->data);
+    Value data = getDisplayDataValue(widgetCursor, widget);
     data.toText(text, sizeof(text));
 
     char *start = text;
@@ -349,7 +371,7 @@ int DISPLAY_DATA_getCursorXPosition(int cursorPosition, const WidgetCursor &widg
 	const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
 
     char text[TEXT_BUFFER_SIZE];
-    Value data = get(widgetCursor, widget->data);
+    Value data = getDisplayDataValue(widgetCursor, widget);
     data.toText(text, sizeof(text));
 
     char *start = text;

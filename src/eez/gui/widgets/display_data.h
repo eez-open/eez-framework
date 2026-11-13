@@ -20,6 +20,10 @@ struct DisplayDataWidget : public Widget {
     uint8_t displayOption;
     uint8_t reserved1;
     int16_t unitAndFractionFont; // only for DISPLAY_OPTION_INTEGER_UNIT_AND_FRACTION
+    // a number shown in a unit (a string such as "mA") with the decimals of a
+    // precision (the smallest step, in that unit), see getValueInUnit; 0 if not set
+    int16_t displayUnit;
+    int16_t precision;
 };
 
 struct DisplayDataWidgetState : public WidgetState {

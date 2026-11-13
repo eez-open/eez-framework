@@ -207,6 +207,15 @@ PAGES.append(_page("w_dd", [
     _w("DisplayDataWidget", "dd/refresh", 500, 110, 200, 40, "w_txt", data="w_c", displayOption=0, refreshRate="1000"),
     _w("DisplayDataWidget", "dd/iuf", 500, 160, 250, 40, "w_txt", data="w_d", displayOption=6, refreshRate="0",
        unitAndFractionFont="RobotoCondensed"),
+    # a fixed unit and number of decimals (roadmap item 6): in mA with the
+    # precision 0.005 mA, in the unit of the value with 0.0005, the integer and
+    # fraction option with 0.0005
+    _w("DisplayDataWidget", "dd/fixed_ma", 500, 210, 200, 40, "w_txt", data="w_e", displayOption=0, refreshRate="0",
+       displayUnit='"mA"', precision="0.005"),
+    _w("DisplayDataWidget", "dd/fixed_a", 500, 260, 200, 40, "w_txt", data="w_e", displayOption=0, refreshRate="0",
+       precision="0.0005"),
+    _w("DisplayDataWidget", "dd/fixed_intfrac", 500, 310, 200, 40, "w_txt", data="w_e", displayOption=5,
+       refreshRate="0", precision="0.0005"),
 ]))
 
 # Rectangle, Bitmap, visibility
@@ -364,6 +373,12 @@ PAGES.append(_page("w_input", [
        min="0", max="100", precision="0.01", unit='"V"', info='""', defaultValue="0"),
     _w("InputEmbeddedWidget", "input/password2", 10, 160, 200, 40, "w_txt", data="w_d", inputType="text",
        password=True, min="0", max="100"),
+    # a number in A shown in mA with the decimals of the precision (0.0005 A
+    # is 0.5 mA: 1 decimal), next to a reference text (a flow string: reading
+    # it doesn't allocate, see the allocation test of the page)
+    _w("InputEmbeddedWidget", "input/shown", 10, 210, 200, 40, "w_txt", data="w_e", inputType="number",
+       min="0", max="10", precision="0.0005", unit='"A"', displayUnit='"mA"', info='""', defaultValue="0"),
+    _w("TextWidget", "input/ref", 250, 210, 200, 40, "w_txt", data="w_str"),
 ]))
 
 # Roller: native data (counted writes) and flow data

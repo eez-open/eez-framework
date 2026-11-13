@@ -24,11 +24,18 @@ struct InputWidget : public Widget {
 	uint16_t componentIndex;
 	int16_t info;
 	int16_t defaultValue;
+	// a number Input is shown in this unit (a string such as "mA", 0 if not
+	// set: in unit) with the decimals of its precision, see getValueInUnit
+	int16_t displayUnit;
+	int16_t reserved1;
 };
 
 struct InputWidgetState : public WidgetState {
 	WidgetStateFlags flags;
 	Value data;
+	// a number: data as it is shown (getInputWidgetShownValue), it changes
+	// also with the display unit and the precision
+	Value shownData;
 	// style after overrideStyle and the text color after the
 	// overrideStyleColor hook
 	int styleId;
@@ -54,6 +61,13 @@ Value getInputWidgetDefaultValue(const gui::WidgetCursor &widgetCursor);
 Value getInputWidgetPrecision(const gui::WidgetCursor &widgetCursor);
 
 Unit getInputWidgetUnit(const gui::WidgetCursor &widgetCursor);
+
+// the display unit, or the unit when it is not set
+Unit getInputWidgetDisplayUnit(const gui::WidgetCursor &widgetCursor);
+
+// The number data (in the base unit, see getInputWidgetData) as the Input shows
+// it: in the display unit with the decimals of the precision (getValueInUnit).
+Value getInputWidgetShownValue(const gui::WidgetCursor &widgetCursor, const Value &data);
 
 Value getInputWidgetInfo(const gui::WidgetCursor &widgetCursor);
 
