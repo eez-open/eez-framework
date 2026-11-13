@@ -905,11 +905,16 @@ TEST("gui/page: the shadow of a popup shows in its rounded corners") {
         }
         return d;
     };
-    // the bottom right corner (the shadow is offset 3 right and 6 down)
-    uint32_t corner = harness::pixel(x + w - 1, y + h - 1);
-    uint32_t right = harness::pixel(x + w, y + h - 1);
-    uint32_t below = harness::pixel(x + w - 1, y + h);
-    CHECK(distance(corner, right) <= 8);
-    CHECK(distance(corner, below) <= 8);
+    // the bottom right corner (the shadow is offset 3 right and 6 down): the
+    // pixels outside of the radius along the right side and along the bottom,
+    // farther in than the corner radius of the shadow box (3)
+    int x2 = x + w - 1;
+    int y2 = y + h - 1;
+    for (int d = 0; d <= 4; d++) {
+        // along the right side, d px up from the bottom, next to the shadow on the right
+        CHECK(distance(harness::pixel(x2, y2 - d), harness::pixel(x2 + 1, y2 - d)) <= 8);
+        // along the bottom, d px left from the right, next to the shadow below
+        CHECK(distance(harness::pixel(x2 - d, y2), harness::pixel(x2 - d, y2 + 1)) <= 8);
+    }
     app()->popPage();
 }

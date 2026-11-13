@@ -1497,7 +1497,7 @@ static float roundedBoxShadow(float x, float y, float halfW, float halfH, float 
 // The shadow of the box x1, y1, x2, y2, only outside of it except in the
 // squares of its rounded corners (cornerRadius of the params), where the
 // rounded box drawn after the shadow covers it.
-static void drawShadowSW(const ShadowParams &params, int x1, int y1, int x2, int y2) {
+static void drawShadowSW(const ShadowParams &params, int x1, int y1, int x2, int y2, bool underBox = false) {
     // shadow box
     int bx1 = x1 - params.spread + params.offsetX;
     int by1 = y1 - params.spread + params.offsetY;
@@ -1607,10 +1607,10 @@ static void drawShadowSW(const ShadowParams &params, int x1, int y1, int x2, int
     for (int y = sy1; y < sy2; y++) {
         const uint8_t *maskRow = mask.data() + (y - my1) * mw;
         uint32_t *dstRow = buffer + y * displayWidth;
-        bool insideRows = y >= y1 && y <= y2;
+        bool insideRows = !underBox && y >= y1 && y <= y2;
         bool cornerRows = insideRows && (y < y1 + corner || y > y2 - corner);
         for (int x = sx1; x < sx2; x++) {
-            // skip area covered by the window itself
+            // skip area covered by the window itself (all drawn underBox)
             if (insideRows && x >= x1 && x <= x2) {
                 if (cornerRows && x < x1 + corner) {
                     // left corner
@@ -1654,9 +1654,9 @@ void drawShadowGlyph(ShadowGlpyh shadowGlyph, int x, int y, int xClip = -1, int 
 	display::drawStr(&glyph, 1, x, y, x, y, xClip, yClip, font, -1);
 }
 
-void drawShadow(int x1, int y1, int x2, int y2) {
+void drawShadow(int x1, int y1, int x2, int y2, bool underBox) {
 #if defined(EEZ_SW_SHADOW)
-    drawShadowSW(g_shadowParams, x1, y1, x2, y2);
+    drawShadowSW(g_shadowParams, x1, y1, x2, y2, underBox);
 #else
 	display::setColor(64, 64, 64);
 

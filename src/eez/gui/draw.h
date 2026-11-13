@@ -196,7 +196,11 @@ struct ShadowParams {
 void setShadowParams(const ShadowParams &params);
 const ShadowParams &getShadowParams();
 
-void drawShadow(int x1, int y1, int x2, int y2);
+// The shadow around the box x1, y1, x2, y2: outside of the box and in the
+// squares of the shadow corner radius inside its corners. underBox: also below
+// the whole box (the background of a page with rounded corners: the shadow
+// shows outside of its corners).
+void drawShadow(int x1, int y1, int x2, int y2, bool underBox = false);
 void expandRectWithShadow(int &x1, int &y1, int &x2, int &y2);
 
 void drawLine(int x1, int y1, int x2, int y2);

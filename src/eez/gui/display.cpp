@@ -1613,10 +1613,10 @@ static void composeBufferBackground(const RenderBuffer &renderBuffer) {
         composeBackdrop(*renderBuffer.backdrop);
     }
 
-    // own shadow too: drawShadow also draws into the corners of the box, below
-    // the rounded corners of the page
+    // own shadow too, also below the page: it shows outside of the rounded
+    // corners of the page
     if (renderBuffer.withShadow) {
-        drawShadow(renderBuffer.x, renderBuffer.y, renderBuffer.x + renderBuffer.width - 1, renderBuffer.y + renderBuffer.height - 1);
+        drawShadow(renderBuffer.x, renderBuffer.y, renderBuffer.x + renderBuffer.width - 1, renderBuffer.y + renderBuffer.height - 1, true);
     }
 
     setOpacity(savedOpacity);
