@@ -30653,6 +30653,21 @@
       "style": "gui_rounded"
     },
     {
+      "objID": "12893073-a675-5be7-ad1c-456c5069a256",
+      "name": "gui_page_light",
+      "tags": "gui",
+      "left": 0,
+      "top": 0,
+      "width": 800,
+      "height": 480,
+      "components": [],
+      "connectionLines": [],
+      "localVariables": [],
+      "userProperties": [],
+      "componentGroups": [],
+      "style": "gui_light"
+    },
+    {
       "objID": "b457650c-dd43-5862-906b-403fa6d63936",
       "name": "layout_rows",
       "tags": "layout",
@@ -37584,6 +37599,14 @@
           "tags": "gui",
           "alwaysBuild": true,
           "backgroundColor": "transparent",
+          "childStyles": []
+        },
+        {
+          "objID": "43202907-9177-5cb1-9c6a-afdfd8cf70ef",
+          "name": "gui_light",
+          "tags": "gui",
+          "alwaysBuild": true,
+          "backgroundColor": "text",
           "childStyles": []
         },
         {

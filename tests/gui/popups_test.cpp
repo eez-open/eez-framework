@@ -882,3 +882,34 @@ TEST("gui/page: the rounded corners of a menu show the page below, not an earlie
     CHECK_EQ(different, 0);
     app()->popPage();
 }
+
+TEST("gui/page: the shadow of a popup shows in its rounded corners") {
+    // the shadow is drawn around the popup and below its rounded corners
+    // (radius 12): the pixel in a corner, outside of the radius, is as dark as
+    // the shadow next to it, not the white page below without the shadow
+    static const char *items[] = { "Yes", "No", nullptr };
+    app()->showPage(PAGE_ID_GUI_PAGE_LIGHT);
+    harness::frame(2);
+    showMenu(app(), "Question", MENU_TYPE_BUTTON, items, [](int) { app()->popPage(); });
+    harness::frame(3);
+    auto menu = (InternalPage *)app()->getActivePage();
+    int x = menu->x;
+    int y = menu->y;
+    int w = menu->width;
+    int h = menu->height;
+    auto channel = [](uint32_t color, int shift) { return (int)((color >> shift) & 0xFF); };
+    auto distance = [&](uint32_t a, uint32_t b) {
+        int d = 0;
+        for (int shift = 0; shift < 24; shift += 8) {
+            d = MAX(d, abs(channel(a, shift) - channel(b, shift)));
+        }
+        return d;
+    };
+    // the bottom right corner (the shadow is offset 3 right and 6 down)
+    uint32_t corner = harness::pixel(x + w - 1, y + h - 1);
+    uint32_t right = harness::pixel(x + w, y + h - 1);
+    uint32_t below = harness::pixel(x + w - 1, y + h);
+    CHECK(distance(corner, right) <= 8);
+    CHECK(distance(corner, below) <= 8);
+    app()->popPage();
+}

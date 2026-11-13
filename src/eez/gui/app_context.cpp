@@ -417,7 +417,7 @@ void AppContext::updatePage(int i, WidgetCursor &widgetCursor) {
 			memcpy(savedBackgroundStyleStack, widgetCursor.backgroundStyleStack, sizeof(savedBackgroundStyleStack));
 			widgetCursor.backgroundStyleStackPointer = 0;
 
-			bool backgroundChanged = display::setBufferBackgroundBelow(x, y, width, height, backdrop);
+			bool backgroundChanged = display::setBufferBackgroundBelow(x, y, width, height, backdrop, withShadow);
 			if (backgroundChanged || widgetCursor.refreshed) {
 				display::drawBufferBackground(x, y, x + width - 1, y + height - 1);
 				widgetCursor.refreshed = true;
@@ -490,7 +490,7 @@ void AppContext::updatePage(int i, WidgetCursor &widgetCursor) {
             memcpy(savedBackgroundStyleStack, widgetCursor.backgroundStyleStack, sizeof(savedBackgroundStyleStack));
             widgetCursor.backgroundStyleStackPointer = 0;
 
-            bool backgroundChanged = display::setBufferBackgroundBelow(x, y, width, height, backdrop);
+            bool backgroundChanged = display::setBufferBackgroundBelow(x, y, width, height, backdrop, withShadow);
             if (backgroundChanged || widgetCursor.refreshed) {
                 display::drawBufferBackground(x, y, x + width - 1, y + height - 1);
                 widgetCursor.refreshed = true;

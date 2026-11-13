@@ -62,10 +62,12 @@ void endRendering();
 
 // The background of the render buffer currently drawn into (call it right after
 // beginBufferRendering) is what is below it, i.e. the render buffers drawn before
-// it composed in the same way as in endRendering, plus its own backdrop. Used by
-// the page with transparent background. Returns true if the background changed
-// since the previous frame, so the whole buffer must be drawn again.
-bool setBufferBackgroundBelow(int x, int y, int width, int height, gui::Rect *backdrop);
+// it composed in the same way as in endRendering, plus its own backdrop and
+// shadow (withShadow and backdrop as passed to endBufferRendering; the shadow
+// shows in the rounded corners of the page). Used by the page with transparent
+// background. Returns true if the background changed since the previous frame,
+// so the whole buffer must be drawn again.
+bool setBufferBackgroundBelow(int x, int y, int width, int height, gui::Rect *backdrop, bool withShadow = false);
 // draws the background set with setBufferBackgroundBelow (does nothing if not set)
 void drawBufferBackground(int x1, int y1, int x2, int y2);
 

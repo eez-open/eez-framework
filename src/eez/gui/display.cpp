@@ -1526,7 +1526,7 @@ static std::vector<uint32_t> g_blurredBackground[MAX_RENDER_BUFFERS];
 static bool g_blurredBackgroundValid[MAX_RENDER_BUFFERS];
 #endif
 
-static bool isBufferBackgroundChanged(int bufferIndex, int x, int y, int width, int height, Rect *backdrop) {
+static bool isBufferBackgroundChanged(int bufferIndex, int x, int y, int width, int height, Rect *backdrop, bool withShadow) {
     const RenderBuffer &renderBuffer = g_renderBuffers[bufferIndex];
 
     if (g_lastLayersChanged || !renderBuffer.hadBackgroundBelow || bufferIndex >= g_lastNumLayers) {
@@ -1534,7 +1534,7 @@ static bool isBufferBackgroundChanged(int bufferIndex, int x, int y, int width, 
     }
 
     const LayerInfo &lastLayer = g_lastLayers[bufferIndex];
-    if (lastLayer.x != x || lastLayer.y != y || lastLayer.width != width || lastLayer.height != height || lastLayer.hasBackdrop != (backdrop != nullptr)) {
+    if (lastLayer.x != x || lastLayer.y != y || lastLayer.width != width || lastLayer.height != height || lastLayer.hasBackdrop != (backdrop != nullptr) || lastLayer.withShadow != withShadow) {
         return true;
     }
 
@@ -1569,7 +1569,7 @@ static bool isBufferBackgroundChanged(int bufferIndex, int x, int y, int width, 
     return false;
 }
 
-bool setBufferBackgroundBelow(int x, int y, int width, int height, Rect *backdrop) {
+bool setBufferBackgroundBelow(int x, int y, int width, int height, Rect *backdrop, bool withShadow) {
     if (g_currentBufferIndex == -1) {
         return false;
     }
@@ -1577,7 +1577,7 @@ bool setBufferBackgroundBelow(int x, int y, int width, int height, Rect *backdro
     int bufferIndex = g_currentBufferIndex;
     RenderBuffer &renderBuffer = g_renderBuffers[bufferIndex];
 
-    bool changed = isBufferBackgroundChanged(bufferIndex, x, y, width, height, backdrop);
+    bool changed = isBufferBackgroundChanged(bufferIndex, x, y, width, height, backdrop, withShadow);
 
     renderBuffer.hasBackgroundBelow = true;
     // also set in endBufferRendering, but it is needed before (see drawBufferBackground)
@@ -1586,6 +1586,7 @@ bool setBufferBackgroundBelow(int x, int y, int width, int height, Rect *backdro
     renderBuffer.width = width;
     renderBuffer.height = height;
     renderBuffer.backdrop = backdrop;
+    renderBuffer.withShadow = withShadow;
 
 #if defined(EEZ_SW_BACKDROP_BLUR)
     if (changed) {
@@ -1596,7 +1597,8 @@ bool setBufferBackgroundBelow(int x, int y, int width, int height, Rect *backdro
     return changed;
 }
 
-// draws the buffers below and own backdrop, only the part inside the clip rectangle
+// draws the buffers below, own backdrop and shadow, only the part inside the
+// clip rectangle
 static void composeBufferBackground(const RenderBuffer &renderBuffer) {
     auto savedColor = g_fc;
     auto savedOpacity = setOpacity(255);
@@ -1609,6 +1611,12 @@ static void composeBufferBackground(const RenderBuffer &renderBuffer) {
     // own backdrop is composed (in endRendering) under this buffer, so it must be in the background
     if (renderBuffer.backdrop) {
         composeBackdrop(*renderBuffer.backdrop);
+    }
+
+    // own shadow too: drawShadow also draws into the corners of the box, below
+    // the rounded corners of the page
+    if (renderBuffer.withShadow) {
+        drawShadow(renderBuffer.x, renderBuffer.y, renderBuffer.x + renderBuffer.width - 1, renderBuffer.y + renderBuffer.height - 1);
     }
 
     setOpacity(savedOpacity);
