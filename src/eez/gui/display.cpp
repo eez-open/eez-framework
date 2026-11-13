@@ -2474,7 +2474,8 @@ void fillRoundedRectSides(
 	int lineWidthTop, int lineWidthRight, int lineWidthBottom, int lineWidthLeft,
 	int rtlx, int rtly, int rtrx, int rtry,
 	int rbrx, int rbry, int rblx, int rbly,
-	bool drawLine, bool fill
+	bool drawLine, bool fill,
+	const uint16_t *lineColors, bool ignoreLuminocity
 ) {
     RenderBufferTarget target;
     if (target.isEmpty()) {
@@ -2490,13 +2491,30 @@ void fillRoundedRectSides(
         (float)rbrx, (float)rbry, (float)rblx, (float)rbly
     };
 
+    // the colors of the sides as the current color would be set to them
+    uint32_t sideColors[4];
+    if (lineColors) {
+        for (int i = 0; i < 4; i++) {
+            if (lineColors[i] == TRANSPARENT_COLOR_INDEX) {
+                sideColors[i] = 0;
+            } else {
+                Color color = getColorFromIndex(lineColors[i]);
+                if (!ignoreLuminocity) {
+                    adjustColor(color);
+                }
+                sideColors[i] = getRasterColor(color);
+            }
+        }
+    }
+
     raster::roundedRectSides(
         target,
         x1, y1, x2, y2,
         lineWidths,
         radii,
         drawLine ? getRasterColor(g_fc) : 0,
-        fill ? getRasterColor(g_bc) : 0
+        fill ? getRasterColor(g_bc) : 0,
+        drawLine && lineColors ? sideColors : nullptr
     );
 }
 

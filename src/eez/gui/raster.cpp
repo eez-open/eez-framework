@@ -959,10 +959,11 @@ struct RoundedRow {
             c = fabsf(innerSum);
             innerCoverage = c < 1.0f ? c : 1.0f;
         }
-        return pixelOf(outerCoverage, innerCoverage);
+        return pixelOf(outerCoverage, innerCoverage, i);
     }
 
-    uint32_t constant() const { return pixelOf(outerCoverage, innerCoverage); }
+    // only for one line color (see drawRoundedBoxes)
+    uint32_t constant() const { return pixelOf(outerCoverage, innerCoverage, -1); }
 
     const float *outer;
     const float *inner; // nullptr without the inner box
@@ -990,7 +991,8 @@ static void drawRoundedBoxes(
     const RoundedBox &outerBox, const RoundedBox &inner, bool useInner,
     bool drawLine, bool fill,
     uint32_t lineColor, uint32_t fillColor,
-    int topBand, int bottomBand, int strip
+    int topBand, int bottomBand, int strip,
+    const uint32_t *lineColors = nullptr, const float *lineWidths = nullptr
 );
 
 void roundedRect(
@@ -1064,14 +1066,24 @@ void roundedRectSides(
     int x1, int y1, int x2, int y2,
     const float lineWidths[4],
     const float radii[8],
-    uint32_t lineColor, uint32_t fillColor
+    uint32_t lineColor, uint32_t fillColor,
+    const uint32_t *lineColors
 ) {
     float wt = maxf(lineWidths[0], 0);
     float wr = maxf(lineWidths[1], 0);
     float wb = maxf(lineWidths[2], 0);
     float wl = maxf(lineWidths[3], 0);
 
-    bool drawLine = (wt > 0 || wr > 0 || wb > 0 || wl > 0) && (lineColor >> 24);
+    // one color for the sides that have the same color
+    if (lineColors && lineColors[0] == lineColors[1] && lineColors[0] == lineColors[2] && lineColors[0] == lineColors[3]) {
+        lineColor = lineColors[0];
+        lineColors = nullptr;
+    }
+    bool anyLineColor = lineColors ?
+        ((lineColors[0] >> 24) || (lineColors[1] >> 24) || (lineColors[2] >> 24) || (lineColors[3] >> 24)) :
+        (lineColor >> 24) != 0;
+
+    bool drawLine = (wt > 0 || wr > 0 || wb > 0 || wl > 0) && anyLineColor;
     bool fill = (fillColor >> 24) != 0;
     if (!drawLine && !fill) {
         return;
@@ -1141,11 +1153,13 @@ void roundedRectSides(
     int bottomBand = (int)ceilf(maxf(maxf(outer.ry[BOTTOM_LEFT], outer.ry[BOTTOM_RIGHT]), wb)) + 2;
     int strip = (int)ceilf(maxf(wl, wr)) + 2;
 
+    float widths[4] = { wt, wr, wb, wl };
     drawRoundedBoxes(
         target, x1, y1, x2, y2,
         drawLine ? outer : middle, inner, useInner,
         drawLine, fill, lineColor, fillColor,
-        topBand, bottomBand, strip
+        topBand, bottomBand, strip,
+        lineColors, widths
     );
 }
 
@@ -1155,7 +1169,8 @@ static void drawRoundedBoxes(
     const RoundedBox &outerBox, const RoundedBox &inner, bool useInner,
     bool drawLine, bool fill,
     uint32_t lineColor, uint32_t fillColor,
-    int topBand, int bottomBand, int strip
+    int topBand, int bottomBand, int strip,
+    const uint32_t *lineColors, const float *lineWidths
 ) {
     // the outlines are computed once, every part of the rectangle adds them
     // to its coverages (for each strip)
@@ -1164,21 +1179,49 @@ static void drawRoundedBoxes(
         inner.getOutline(g_innerOutline);
     }
 
-    float lineAlpha = (lineColor >> 24) / 255.0f;
     float fillAlpha = (fillColor >> 24) / 255.0f;
 
+    // with a color for each side: the pixel x0 + i, y (set for each row)
+    int x0 = 0;
+    int y = 0;
+
+    // The side of the line the pixel x, y belongs to: the one it is nearest to
+    // relative to the widths of the sides (0 top, 1 right, 2 bottom, 3 left).
+    auto sideOf = [&](int x, int py) -> int {
+        static const float NONE = 1e30f;
+        float cx = x + 0.5f;
+        float cy = py + 0.5f;
+        float d[4] = {
+            lineWidths[0] > 0 ? (cy - y1) / lineWidths[0] : NONE,
+            lineWidths[1] > 0 ? (x2 + 1 - cx) / lineWidths[1] : NONE,
+            lineWidths[2] > 0 ? (y2 + 1 - cy) / lineWidths[2] : NONE,
+            lineWidths[3] > 0 ? (cx - x1) / lineWidths[3] : NONE,
+        };
+        int side = 0;
+        for (int k = 1; k < 4; k++) {
+            if (d[k] < d[side]) {
+                side = k;
+            }
+        }
+        return side;
+    };
+
     // the pixel of the coverage of the outer (or the middle) box and of the
-    // inner box
-    auto pixelOf = [&](float o, float in) -> uint32_t {
+    // inner box (i: the column of the pixel in the row, -1: not known with one
+    // line color)
+    auto pixelOf = [&](float o, float in, int i) -> uint32_t {
         if (!drawLine) {
             return colorWithAlpha(fillColor, o);
         }
+
+        uint32_t lineColor_ = lineColors && i >= 0 ? lineColors[sideOf(x0 + i, y)] : lineColor;
+        float lineAlpha = (lineColor_ >> 24) / 255.0f;
 
         float insideInner = useInner ? minf(in, o) : 0;
         float lineCoverage = o - insideInner;
 
         if (!fill || insideInner <= 0) {
-            return colorWithAlpha(lineColor, lineCoverage);
+            return colorWithAlpha(lineColor_, lineCoverage);
         }
 
         if (lineCoverage <= 0) {
@@ -1194,9 +1237,9 @@ static void drawRoundedBoxes(
         }
         float kl = wl / alpha;
         float kf = wf / alpha;
-        uint32_t r = (uint32_t)((lineColor & 0xFF) * kl + (fillColor & 0xFF) * kf + 0.5f);
-        uint32_t g = (uint32_t)(((lineColor >> 8) & 0xFF) * kl + ((fillColor >> 8) & 0xFF) * kf + 0.5f);
-        uint32_t b = (uint32_t)(((lineColor >> 16) & 0xFF) * kl + ((fillColor >> 16) & 0xFF) * kf + 0.5f);
+        uint32_t r = (uint32_t)((lineColor_ & 0xFF) * kl + (fillColor & 0xFF) * kf + 0.5f);
+        uint32_t g = (uint32_t)(((lineColor_ >> 8) & 0xFF) * kl + ((fillColor >> 8) & 0xFF) * kf + 0.5f);
+        uint32_t b = (uint32_t)(((lineColor_ >> 16) & 0xFF) * kl + ((fillColor >> 16) & 0xFF) * kf + 0.5f);
         uint32_t a = (uint32_t)(alpha * 255.0f + 0.5f);
         return r | (g << 8) | (b << 16) | (a << 24);
     };
@@ -1238,7 +1281,19 @@ static void drawRoundedBoxes(
             }
             for (int i = 0; i < g_strip.rows; i++) {
                 RoundedRow<decltype(pixelOf)> row(outerCoverage.row(i), useInner ? innerCoverage.row(i) : nullptr, pixelOf);
-                drawer.drawRow(px1, py1 + first + i, w, g_strip.ranges[i], row);
+                x0 = px1;
+                y = py1 + first + i;
+                if (lineColors && drawLine) {
+                    // every pixel gets the color of its side (no runs of
+                    // one color between the ranges)
+                    Ranges all;
+                    all.n = 1;
+                    all.start[0] = 0;
+                    all.end[0] = w - 1;
+                    drawer.drawRow(px1, y, w, all, row);
+                } else {
+                    drawer.drawRow(px1, y, w, g_strip.ranges[i], row);
+                }
                 clearCells(outerCoverage.row(i), g_strip.ranges[i]);
                 if (useInner) {
                     clearCells(innerCoverage.row(i), g_strip.ranges[i]);

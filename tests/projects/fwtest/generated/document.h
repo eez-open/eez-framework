@@ -225,7 +225,8 @@ enum StylesEnum {
     STYLE_ID_LAYOUT_PV,
     STYLE_ID_LAYOUT_PL,
     STYLE_ID_LAYOUT_PU,
-    STYLE_ID_LAYOUT_PLINE,
+    STYLE_ID_LAYOUT_PFIELD,
+    STYLE_ID_LAYOUT_PSIDES,
     STYLE_ID_LAYOUT_PV_RIGHT,
     STYLE_ID_RENDER_CELL,
     STYLE_ID_RENDER_CELL_LT,
@@ -642,7 +643,7 @@ enum flow_itemFlowStructureFields {
     FLOW_STRUCTURE_FLOW_ITEM_NUM_FIELDS
 };
 
-extern const uint8_t assets[188489];
+extern const uint8_t assets[188624];
 
 } // namespace gui
 } // namespace eez

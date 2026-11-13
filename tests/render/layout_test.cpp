@@ -335,15 +335,43 @@ TEST("render/layout: an Input with a label and a quantity line, on the baseline 
     showParts();
     int small = measure(STYLE_ID_LAYOUT_TEXT_SMALL, "Ag");
     int x = 25 + small + 10;
-    CHECK_BOX(find(BLUE, 20, 280, 420, 120), x, 285, 200, 100);
-    CHECK_BOX(find(ORANGE, 20, 280, 420, 120), 25, 285 + 53, small, 26);
-    // the line across the content box: under the label (28), the value line
-    // (52) and the padding 3 of the line style
-    CHECK_BOX(find(RED, x, 285, 200, 100), x + 4, 285 + 4 + 28 + 52 + 3, 192, 2);
+    // inside the borders (1 px, the bottom 2 px)
+    CHECK_BOX(find(BLUE, 20, 280, 420, 120), x + 1, 286, 198, 97);
+    // the baseline at 1 + 4 + 28 (the label) + 42 = 75: the text at 75 - 21
+    CHECK_BOX(find(ORANGE, 20, 280, 420, 120), 25, 285 + 54, small, 26);
+    // the quantity line: the bottom border across the box, the top border in
+    // the color of the other sides
+    CHECK_BOX(find(RED, x, 285, 200, 100), x, 285 + 98, 200, 2);
+    CHECK_BOX(find(PURPLE, x, 285, 200, 98), x, 285, 200, 98);
     Box label = find(GREEN, x, 285, 200, 100);
-    CHECK(label.w > 0 && label.y >= 289 && label.y + label.h <= 289 + 26);
+    CHECK(label.w > 0 && label.y >= 290 && label.y + label.h <= 290 + 26);
     Box value = find(WHITE, x, 285, 200, 100);
-    CHECK(value.w > 0 && value.y >= 289 + 28 && value.y + value.h <= 285 + 4 + 28 + 52);
+    CHECK(value.w > 0 && value.y >= 290 + 28 && value.y + value.h <= 290 + 28 + 52);
+}
+
+TEST("render/layout: a rounded box with a color for each side of its border") {
+    // 460, 280, 200x100, radius 12: the bottom 4 px red, the others 2 px purple
+    showParts();
+    auto at = [](int x, int y) { return harness::pixel(x, y) | 0xFF000000u; };
+    // the middle of each side
+    CHECK_EQ(at(560, 280), PURPLE);
+    CHECK_EQ(at(560, 281), PURPLE);
+    CHECK_EQ(at(460, 330), PURPLE);
+    CHECK_EQ(at(659, 330), PURPLE);
+    for (int y = 376; y < 380; y++) {
+        CHECK_EQ(at(560, y), RED);
+    }
+    CHECK_EQ(at(560, 375), BLUE);
+    // the bottom border goes along the bottom into the corners, the side
+    // borders end above them (the sides meet on the line from the outer to the
+    // inner corner)
+    CHECK_EQ(at(474, 378), RED);
+    CHECK_EQ(at(645, 378), RED);
+    CHECK_EQ(at(460, 360), PURPLE);
+    Box red = find(RED, 460, 280, 200, 100);
+    CHECK(red.w > 0 && red.y >= 280 + 100 - 16 && red.y + red.h == 380);
+    Box purple = find(PURPLE, 460, 280, 200, 100);
+    CHECK(purple.y == 280 && purple.y + purple.h <= 380 - 4);
 }
 
 TEST("render/layout: the page with the value parts is drawn as a full redraw") {

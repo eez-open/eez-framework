@@ -148,16 +148,12 @@ struct ValueParts {
     const char *unit = nullptr;
     int unitLength = 0;
     const Style *unitStyle = nullptr;
-    // a box around the value line across the content box of the widget: its
-    // border (a bottom border is the quantity line of a set field), background
-    // and padding
-    const Style *lineStyle = nullptr;
 };
 // The parts in the box x, y, w, h with the border, background and padding of
 // the style. The label and the value line are one block placed by the vertical
 // alignment of the style, the value and the unit are placed by its horizontal
-// alignment. Right aligned (without a line box), the value ends at the right
-// of the content box and the unit is in the right padding, so the values of a
+// alignment. Right aligned, the value ends at the right of the content box and
+// the unit is in the right padding, so the values of a
 // column of widgets end at one x whatever their units (the unit and the value
 // move left if the unit doesn't fit). active: as in drawText.
 // useSmallerFontIfDoesNotFit: a smaller font of the value (on the same

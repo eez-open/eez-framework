@@ -117,13 +117,18 @@ void roundedRect(
 // right, bottom, left). The radii are at the middle of the line: the outer edge
 // of a corner has the radius plus half the width of the side at that end, the
 // inner edge the radius minus half of it. With the same width on every side it
-// is the same rectangle as roundedRect draws.
+// is the same rectangle as roundedRect draws. lineColors (top, right, bottom,
+// left, nullptr: lineColor everywhere): a color for each side, a pixel of the
+// line has the color of the side it is nearest to relative to the side widths
+// (in a corner the sides meet on the line from the outer to the inner corner,
+// as the border colors in CSS).
 void roundedRectSides(
     Target &target,
     int x1, int y1, int x2, int y2,
     const float lineWidths[4],
     const float radii[8],
-    uint32_t lineColor, uint32_t fillColor
+    uint32_t lineColor, uint32_t fillColor,
+    const uint32_t *lineColors = nullptr
 );
 
 } // namespace raster

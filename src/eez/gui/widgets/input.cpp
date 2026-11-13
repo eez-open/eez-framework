@@ -175,9 +175,9 @@ bool InputWidgetState::updateState() {
     WIDGET_STATE_END()
 }
 
-// a label or a line: drawn by drawValueParts
+// with a label: drawn by drawValueParts
 static bool usesValueParts(const InputWidget *widget) {
-	return widget->label || widget->lineStyle;
+	return widget->label != 0;
 }
 
 // The parts drawValueParts draws (usesValueParts): the label, the text of the
@@ -189,7 +189,6 @@ static void getValueParts(const InputWidget *widget, const char *text, const Val
 		parts.label = labelText;
 	}
 	parts.labelStyle = widget->labelStyle ? getStyle(widget->labelStyle) : nullptr;
-	parts.lineStyle = widget->lineStyle ? getStyle(widget->lineStyle) : nullptr;
 }
 
 int InputWidget_getBaseline(const WidgetCursor &widgetCursor, int h) {
@@ -247,13 +246,10 @@ void InputWidgetState::render() {
 		ValueParts parts;
 		getValueParts(widget, text, label, labelText, parts);
 
-		// the label and the line in the states of the widget too
+		// the label in the states of the widget too
 		unsigned otherStates = getDisabledStateFlag(flags.disabled);
 		if (parts.labelStyle) {
 			parts.labelStyle = getWidgetStateStyle(parts.labelStyle, flags.active, flags.focused, otherStates).style;
-		}
-		if (parts.lineStyle) {
-			parts.lineStyle = getWidgetStateStyle(parts.lineStyle, flags.active, flags.focused, otherStates).style;
 		}
 
 		drawValueParts(

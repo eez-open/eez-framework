@@ -53,7 +53,14 @@ STYLES = [
           alignVertical="top", padding="4", font="VRobotoBig"),
     style("layout_pl", color="layout_green", alignHorizontal="left", padding="0 0 2 0", font="VRoboto"),
     style("layout_pu", color="layout_yellow", padding="0 0 0 6", font="VRoboto"),
-    style("layout_pline", borderSize="0 0 2 0", borderColor="layout_red", padding="0 0 3 0"),
+    # a set field: the quantity line is the bottom border, 2 px red, the other
+    # borders 1 px purple (a color for each side)
+    style("layout_pfield", backgroundColor="layout_blue", color="layout_white", alignHorizontal="left",
+          alignVertical="top", padding="4", font="VRobotoBig", borderSize="1 1 2 1",
+          borderColor="layout_purple layout_purple layout_red layout_purple"),
+    # rounded, the bottom border 4 px red, the others 2 px purple
+    style("layout_psides", backgroundColor="layout_blue", borderSize="2 2 4 2", borderRadius="12",
+          borderColor="layout_purple layout_purple layout_red layout_purple"),
     # right aligned: the right padding 40 is the room for the unit
     style("layout_pv_right", backgroundColor="layout_blue", color="layout_white", alignHorizontal="right",
           alignVertical="top", padding="4 40 4 4", font="VRobotoBig"),
@@ -183,14 +190,16 @@ def _parts_page():
             text(("layout", "parts_text1"), 0, 0, 10, 10, "Ag", "layout_text_small", fitToContent="both"),
             _parts_dd("parts_dd_fit", 0, 0, 10, 10, fitToContent="both"),
         ], alignItems="baseline"),
-        # "SET" above "12.5 V" and the quantity line, on the baseline of the text
+        # "SET" above "12.5 V", the quantity line is the bottom border of the
+        # style, on the baseline of the text
         _row("row_parts_input", 20, 280, 420, 120, [
             text(("layout", "parts_text2"), 0, 0, 10, 10, "Ag", "layout_text_small", fitToContent="both"),
-            widget("InputEmbeddedWidget", ("layout", "parts_input"), 0, 0, 200, 100, "layout_pv",
+            widget("InputEmbeddedWidget", ("layout", "parts_input"), 0, 0, 200, 100, "layout_pfield",
                    data="12.5", inputType="number", min="0", max="100", precision="0.1", unit='"V"',
-                   info='""', defaultValue="0", label='"SET"', labelStyle={"useStyle": "layout_pl"},
-                   lineStyle={"useStyle": "layout_pline"}),
+                   info='""', defaultValue="0", label='"SET"', labelStyle={"useStyle": "layout_pl"}),
         ], alignItems="baseline"),
+        # a rounded box with a color for each side
+        rectangle(("layout", "parts_sides"), 460, 280, 200, 100, "layout_psides"),
         # right aligned values with different units end at one x
         widget("DisplayDataWidget", ("layout", "parts_right_v"), 460, 20, 300, 60, "layout_pv_right",
                data='"12.000 V"', displayOption=7, refreshRate="0", unitStyle={"useStyle": "layout_pu"}),

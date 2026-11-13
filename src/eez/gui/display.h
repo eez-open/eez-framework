@@ -234,13 +234,16 @@ void fillRoundedRect(
 );
 
 // fillRoundedRect with a line of its own width on each side (see
-// raster::roundedRectSides)
+// raster::roundedRectSides). lineColors: the color index of each side (top,
+// right, bottom, left; TRANSPARENT_COLOR_INDEX: no line there), nullptr: the
+// current color everywhere.
 void fillRoundedRectSides(
 	int x1, int y1, int x2, int y2,
 	int lineWidthTop, int lineWidthRight, int lineWidthBottom, int lineWidthLeft,
 	int rtlx, int rtly, int rtrx, int rtry,
 	int rbrx, int rbry, int rblx, int rbly,
-	bool drawLine, bool fill
+	bool drawLine, bool fill,
+	const uint16_t *lineColors = nullptr, bool ignoreLuminocity = false
 );
 
 // Keeps the corners of a box with rounded corners: what is drawn between

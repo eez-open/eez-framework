@@ -28,11 +28,10 @@ struct InputWidget : public Widget {
 	// set: in unit) with the decimals of its precision, see getValueInUnit
 	int16_t displayUnit;
 	// a text above the value (a flow expression, 0 if not set) in labelStyle
-	// (0: the widget style), and the box around the value line in lineStyle
-	// (0: none), e.g. the quantity line of a set field; see drawValueParts
+	// (0: the widget style), see drawValueParts
 	int16_t label;
 	int16_t labelStyle;
-	int16_t lineStyle;
+	int16_t reserved1;
 };
 
 struct InputWidgetState : public WidgetState {

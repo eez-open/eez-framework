@@ -291,6 +291,8 @@ struct Style {
     uint8_t borderSizeBottom;
     uint8_t borderSizeLeft;
 
+    // the color of the top border, the other sides are in borderColorRight,
+    // borderColorBottom and borderColorLeft
     uint16_t borderColor;
 
     // in the order Studio writes them: top left, top right, bottom right, bottom left
@@ -338,6 +340,12 @@ struct Style {
     int8_t shadowOffsetY;
     uint8_t shadowBlur;
     int8_t shadowSpread;
+
+    // the colors of the other borders (CSS border-color with up to four
+    // colors); Studio writes borderColor there when the style has one color
+    uint16_t borderColorRight;
+    uint16_t borderColorBottom;
+    uint16_t borderColorLeft;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

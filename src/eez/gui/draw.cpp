@@ -346,6 +346,10 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 	}
 
     if (hasBorder) {
+		// the colors of the sides: top, right, bottom, left
+		const uint16_t sideColors[4] = { style->borderColor, style->borderColorRight, style->borderColorBottom, style->borderColorLeft };
+		bool oneColor = sideColors[1] == sideColors[0] && sideColors[2] == sideColors[0] && sideColors[3] == sideColors[0];
+
 		if (style->borderColor != TRANSPARENT_COLOR_INDEX) {
 			display::setColor(style->borderColor, ignoreLuminocity);
 		}
@@ -358,16 +362,19 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 			if (
 				style->borderSizeRight != style->borderSizeTop ||
 				style->borderSizeBottom != style->borderSizeTop ||
-				style->borderSizeLeft != style->borderSizeTop
+				style->borderSizeLeft != style->borderSizeTop ||
+				!oneColor
 			) {
-				// a different width on some side
+				// a different width or color on some side
+				bool drawLine = !oneColor || style->borderColor != TRANSPARENT_COLOR_INDEX;
 				auto savedOpacity = display::setOpacity(multiplyOpacity(style->opacity));
 				display::fillRoundedRectSides(
 					x1, y1, x2, y2,
 					style->borderSizeTop, style->borderSizeRight, style->borderSizeBottom, style->borderSizeLeft,
 					style->borderRadiusTLX, style->borderRadiusTLY, style->borderRadiusTRX, style->borderRadiusTRY,
 					style->borderRadiusBRX, style->borderRadiusBRY, style->borderRadiusBLX, style->borderRadiusBLY,
-					style->borderColor != TRANSPARENT_COLOR_INDEX, color != TRANSPARENT_COLOR_INDEX
+					drawLine, color != TRANSPARENT_COLOR_INDEX,
+					oneColor ? nullptr : sideColors, ignoreLuminocity
 				);
 				display::setOpacity(savedOpacity);
 
@@ -411,18 +418,45 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
             return;
         }
 
-		if (style->borderColor != TRANSPARENT_COLOR_INDEX) {
-			if (style->borderSizeLeft > 0) {
-				display::fillRect(x1, y1, x1 + style->borderSizeLeft - 1, y2);
+		if (oneColor) {
+			if (style->borderColor != TRANSPARENT_COLOR_INDEX) {
+				if (style->borderSizeLeft > 0) {
+					display::fillRect(x1, y1, x1 + style->borderSizeLeft - 1, y2);
+				}
+				if (style->borderSizeTop > 0) {
+					display::fillRect(x1, y1, x2, y1 + style->borderSizeTop - 1);
+				}
+				if (style->borderSizeRight > 0) {
+					display::fillRect(x2 - (style->borderSizeRight - 1), y1, x2, y2);
+				}
+				if (style->borderSizeBottom > 0) {
+					display::fillRect(x1, y2 - (style->borderSizeBottom - 1), x2, y2);
+				}
 			}
-			if (style->borderSizeTop > 0) {
-				display::fillRect(x1, y1, x2, y1 + style->borderSizeTop - 1);
+		} else {
+			// each side in its color: the top and the bottom across the box,
+			// the left and the right side between them
+			int top = style->borderSizeTop;
+			int right = style->borderSizeRight;
+			int bottom = style->borderSizeBottom;
+			int left = style->borderSizeLeft;
+			auto side = [&](uint16_t sideColor, int sx1, int sy1, int sx2, int sy2) {
+				if (sideColor != TRANSPARENT_COLOR_INDEX && sx1 <= sx2 && sy1 <= sy2) {
+					display::setColor(sideColor, ignoreLuminocity);
+					display::fillRect(sx1, sy1, sx2, sy2);
+				}
+			};
+			if (top > 0) {
+				side(sideColors[0], x1, y1, x2, y1 + top - 1);
 			}
-			if (style->borderSizeRight > 0) {
-				display::fillRect(x2 - (style->borderSizeRight - 1), y1, x2, y2);
+			if (bottom > 0) {
+				side(sideColors[2], x1, y2 - bottom + 1, x2, y2);
 			}
-			if (style->borderSizeBottom > 0) {
-				display::fillRect(x1, y2 - (style->borderSizeBottom - 1), x2, y2);
+			if (left > 0) {
+				side(sideColors[3], x1, y1 + top, x1 + left - 1, y2 - bottom);
+			}
+			if (right > 0) {
+				side(sideColors[1], x2 - right + 1, y1 + top, x2, y2 - bottom);
 			}
 		}
 
@@ -720,16 +754,10 @@ struct ValuePartsGeometry {
     int valueWidth = 0;
     int unitGap = 0;
     int unitWidth = 0;
-    // the border and the padding of the line style on each side of the value
-    // line, 0 without it
-    int lineInsetLeft = 0;
-    int lineInsetTop = 0;
-    int lineInsetRight = 0;
-    int lineInsetBottom = 0;
     // the value line: from its top to the baseline, its height
     int lineAscent = 0;
     int lineHeight = 0;
-    // the label and the line box
+    // the label and the value line
     int blockWidth = 0;
     int blockHeight = 0;
 };
@@ -738,13 +766,13 @@ static bool hasUnit(const ValueParts &parts) {
     return parts.unit && parts.unitLength != 0 && *parts.unit;
 }
 
-// Right aligned value with a unit (and no line box): the value ends at the
-// right of the content box and the unit is in the right padding (the room for
+// Right aligned value with a unit: the value ends at the right of the content
+// box and the unit is in the right padding (the room for
 // the unit), so the values of a column of widgets end at one x whatever their
 // units are (as drawIntegerUnitAndFraction). The unit is moved left with the
 // value when it doesn't fit in the padding.
 static bool isUnitInRightPadding(const ValueParts &parts, const Style *style) {
-    return hasUnit(parts) && !parts.lineStyle && styleIsHorzAlignRight(style);
+    return hasUnit(parts) && styleIsHorzAlignRight(style);
 }
 
 static bool getValuePartsGeometry(const ValueParts &parts, const Style *style, ValuePartsGeometry &g) {
@@ -786,22 +814,14 @@ static bool getValuePartsGeometry(const ValueParts &parts, const Style *style, V
     }
     g.lineHeight = g.lineAscent + lineDescent;
 
-    if (parts.lineStyle) {
-        getBorderInsets(parts.lineStyle, g.lineInsetLeft, g.lineInsetTop, g.lineInsetRight, g.lineInsetBottom);
-        g.lineInsetLeft += parts.lineStyle->paddingLeft;
-        g.lineInsetTop += parts.lineStyle->paddingTop;
-        g.lineInsetRight += parts.lineStyle->paddingRight;
-        g.lineInsetBottom += parts.lineStyle->paddingBottom;
-    }
-
     int labelBlockWidth = g.labelPaddingLeft + g.labelWidth + g.labelPaddingRight;
-    int lineBlockWidth = g.lineInsetLeft + g.valueWidth + g.unitGap + g.unitWidth + g.lineInsetRight;
+    int lineBlockWidth = g.valueWidth + g.unitGap + g.unitWidth;
     if (isUnitInRightPadding(parts, style)) {
         // only what doesn't fit in the right padding
         lineBlockWidth = g.valueWidth + MAX(g.unitGap + g.unitWidth - style->paddingRight, 0);
     }
     g.blockWidth = MAX(labelBlockWidth, lineBlockWidth);
-    g.blockHeight = g.labelHeight + g.lineInsetTop + g.lineHeight + g.lineInsetBottom;
+    g.blockHeight = g.labelHeight + g.lineHeight;
 
     return true;
 }
@@ -852,18 +872,9 @@ void drawValueParts(
         }
     }
 
-    int lineY1 = blockY + g.labelHeight;
-    if (parts.lineStyle) {
-        int boxX1 = contentX1;
-        int boxY1 = lineY1;
-        int boxX2 = contentX2;
-        int boxY2 = MIN(lineY1 + g.lineInsetTop + g.lineHeight + g.lineInsetBottom - 1, y2);
-        drawBorderAndBackground(boxX1, boxY1, boxX2, boxY2, parts.lineStyle, parts.lineStyle->backgroundColor, false, true);
-    }
-
-    int valueX1 = contentX1 + g.lineInsetLeft;
-    int valueX2 = contentX2 - g.lineInsetRight;
-    int baseline = lineY1 + g.lineInsetTop + g.lineAscent;
+    int valueX1 = contentX1;
+    int valueX2 = contentX2;
+    int baseline = blockY + g.labelHeight + g.lineAscent;
 
     font::Font valueFont = g.valueFont;
     int valueWidth = g.valueWidth;
@@ -922,7 +933,7 @@ int getValuePartsBaseline(const ValueParts &parts, const Style *style, int h) {
     if (blockY < 0) {
         blockY = top;
     }
-    return blockY + g.labelHeight + g.lineInsetTop + g.lineAscent;
+    return blockY + g.labelHeight + g.lineAscent;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
