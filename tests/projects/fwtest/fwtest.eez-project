@@ -337,6 +337,13 @@
         "native": true
       },
       {
+        "objID": "4073bb3c-640d-5f75-99ac-6e683111635d",
+        "name": "gui_switch2",
+        "tags": "gui",
+        "type": "boolean",
+        "native": true
+      },
+      {
         "objID": "3dfe805e-4b8e-5c40-83f7-c0b923cde882",
         "name": "gui_name",
         "tags": "gui",
@@ -30668,6 +30675,75 @@
       "style": "gui_light"
     },
     {
+      "objID": "6fcc0a77-a01b-52ea-a1ab-37e8048e7730",
+      "name": "gui_switch_rows",
+      "tags": "gui",
+      "left": 0,
+      "top": 0,
+      "width": 800,
+      "height": 480,
+      "components": [
+        {
+          "type": "ContainerWidget",
+          "objID": "8b238c82-d803-5c96-a272-5675e1a11fd9",
+          "left": 100,
+          "top": 100,
+          "width": 600,
+          "height": 143,
+          "style": {
+            "useStyle": "gui_group"
+          },
+          "layout": "vertical",
+          "alignItems": "stretch",
+          "gap": 0,
+          "dividers": true,
+          "widgets": [
+            {
+              "type": "SwitchWidget",
+              "objID": "3df8e146-1a9c-5fd0-b178-9c00e8aca9c2",
+              "left": 0,
+              "top": 0,
+              "width": 598,
+              "height": 70,
+              "style": {
+                "useStyle": "gui_switch_row"
+              },
+              "data": "gui_switch",
+              "label": "\"Row 1\"",
+              "labelStyle": {
+                "useStyle": "gui_switch_label"
+              },
+              "showStateText": true,
+              "stateTextStyle": {
+                "useStyle": "gui_switch_state"
+              }
+            },
+            {
+              "type": "SwitchWidget",
+              "objID": "2572ba05-2c8d-5d22-9579-3ae2779b146c",
+              "left": 0,
+              "top": 0,
+              "width": 598,
+              "height": 70,
+              "style": {
+                "useStyle": "gui_switch_row"
+              },
+              "data": "gui_switch2",
+              "label": "\"Row 2\"",
+              "labelStyle": {
+                "useStyle": "gui_switch_label"
+              },
+              "enabled": "gui_enabled"
+            }
+          ]
+        }
+      ],
+      "connectionLines": [],
+      "localVariables": [],
+      "userProperties": [],
+      "componentGroups": []
+    },
+    {
       "objID": "b457650c-dd43-5862-906b-403fa6d63936",
       "name": "layout_rows",
       "tags": "layout",
@@ -37742,6 +37818,83 @@
           "useStyle": "gui_dot",
           "state": "selected",
           "backgroundColor": "accent",
+          "childStyles": []
+        },
+        {
+          "objID": "28954900-30b7-5c6f-ace9-1a95940f7fb7",
+          "name": "gui_group",
+          "tags": "gui",
+          "alwaysBuild": true,
+          "borderSize": "1",
+          "borderColor": "accent",
+          "childStyles": []
+        },
+        {
+          "objID": "a161a4ea-80d6-581e-88e2-6940d8bfb502",
+          "name": "gui_switch_row",
+          "tags": "gui",
+          "alwaysBuild": true,
+          "backgroundColor": "backdrop",
+          "color": "text",
+          "padding": "19 16 19 16",
+          "childStyles": []
+        },
+        {
+          "objID": "e713bef1-5a62-5633-ad5c-9f26aa5d353b",
+          "name": "gui_switch_row_checked",
+          "tags": "gui",
+          "alwaysBuild": true,
+          "useStyle": "gui_switch_row",
+          "state": "checked",
+          "backgroundColor": "accent",
+          "childStyles": []
+        },
+        {
+          "objID": "80a750cb-d9ea-591d-baf4-6c4653a6fd3b",
+          "name": "gui_switch_row_disabled",
+          "tags": "gui",
+          "alwaysBuild": true,
+          "useStyle": "gui_switch_row",
+          "state": "disabled",
+          "backgroundColor": "error",
+          "childStyles": []
+        },
+        {
+          "objID": "d56bb009-d218-5027-b045-793cb5ff4af2",
+          "name": "gui_switch_label",
+          "tags": "gui",
+          "alwaysBuild": true,
+          "alignHorizontal": "left",
+          "childStyles": []
+        },
+        {
+          "objID": "8648941b-9b90-5112-a12c-0a7a59827e2b",
+          "name": "gui_switch_label_disabled",
+          "tags": "gui",
+          "alwaysBuild": true,
+          "useStyle": "gui_switch_label",
+          "state": "disabled",
+          "color": "backdrop",
+          "childStyles": []
+        },
+        {
+          "objID": "10d02484-3825-5b0d-8c0d-1fa9deb3c141",
+          "name": "gui_switch_state",
+          "tags": "gui",
+          "alwaysBuild": true,
+          "color": "error",
+          "alignHorizontal": "right",
+          "padding": "0 12 0 0",
+          "childStyles": []
+        },
+        {
+          "objID": "564615a1-ec1b-5fbe-822c-7ea789fe1ecc",
+          "name": "gui_switch_state_checked",
+          "tags": "gui",
+          "alwaysBuild": true,
+          "useStyle": "gui_switch_state",
+          "state": "checked",
+          "color": "bookmark",
           "childStyles": []
         },
         {

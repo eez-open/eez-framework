@@ -13,11 +13,34 @@
 namespace eez {
 namespace gui {
 
+// SwitchWidget::flags: "On" or "Off" left of the track
+#define SWITCH_WIDGET_FLAG_STATE_TEXT (1 << 0)
+
+// A switch: the track and the knob in the widget style (the background of the
+// style is the off part of the track, the background of its checked state the
+// on part, the color the knob). With a label or the state text the widget is a
+// row: the label at the left (from the left padding of the style), the state
+// text and the track at the right, the track in the height of the box without
+// the top and bottom padding and two times as wide; else the track is the
+// whole box without the padding. The whole widget toggles the data.
 struct SwitchWidget : public Widget {
+    // the text left of the track (a flow expression, 0: none)
+    int16_t label;
+    // the style of the label and of the state text (0: the widget style); the
+    // state text: the checked state when on, both: the disabled state
+    int16_t labelStyle;
+    int16_t stateTextStyle;
+    // the switch can be changed (a flow expression, 0: always); not enabled:
+    // drawn in the disabled state styles, a touch doesn't change it
+    int16_t enabled;
+    uint16_t flags; // SWITCH_WIDGET_FLAG_...
+    int16_t reserved;
 };
 
 struct SwitchWidgetState : public WidgetState {
+	WidgetStateFlags flags;
 	Value data;
+	Value label;
 
 	uint32_t changeStartTime = 0;
 

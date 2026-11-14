@@ -21,6 +21,17 @@ STYLES = [
     # page dots: 8x8 white, the current one accent
     style("gui_dot", backgroundColor="text", padding="4"),
     style("gui_dot_selected", useStyle="gui_dot", state="selected", backgroundColor="accent"),
+    # a group of switch rows (gui/switch_rows_test.cpp): accent dividers; the
+    # track 64x32 (backdrop, accent when on, error when disabled), the label
+    # white (backdrop disabled), "Off" error and "On" bookmark
+    style("gui_group", borderSize="1", borderColor="accent"),
+    style("gui_switch_row", backgroundColor="backdrop", color="text", padding="19 16 19 16"),
+    style("gui_switch_row_checked", useStyle="gui_switch_row", state="checked", backgroundColor="accent"),
+    style("gui_switch_row_disabled", useStyle="gui_switch_row", state="disabled", backgroundColor="error"),
+    style("gui_switch_label", alignHorizontal="left"),
+    style("gui_switch_label_disabled", useStyle="gui_switch_label", state="disabled", color="backdrop"),
+    style("gui_switch_state", color="error", alignHorizontal="right", padding="0 12 0 0"),
+    style("gui_switch_state_checked", useStyle="gui_switch_state", state="checked", color="bookmark"),
 ]
 
 GLOBALS = [
@@ -29,6 +40,7 @@ GLOBALS = [
     # native, implemented in tests/gui/gui_app.cpp
     variable("gui_enabled", "boolean", native=True),
     variable("gui_switch", "boolean", native=True),
+    variable("gui_switch2", "boolean", native=True),
     variable("gui_name", "string", native=True),
     variable("gui_overlay", "any", native=True),
     variable("gui_keypad_ok_enabled", "boolean", native=True),
@@ -205,5 +217,18 @@ _ROUNDED = page("gui_rounded_popup", [
 # a white full screen page
 _LIGHT = page("gui_page_light", [], style="gui_light")
 
+# a column with dividers of two switch rows (gui/switch_rows_test.cpp): the
+# rows 598x70 at y 101 and 172, the divider at y 171
+_SWITCH_ROWS = page("gui_switch_rows", [
+    widget("ContainerWidget", "gui/rows/group", 100, 100, 600, 143, "gui_group",
+           layout="vertical", alignItems="stretch", gap=0, dividers=True, widgets=[
+               widget("SwitchWidget", "gui/rows/row1", 0, 0, 598, 70, "gui_switch_row", data="gui_switch",
+                      label='"Row 1"', labelStyle={"useStyle": "gui_switch_label"},
+                      showStateText=True, stateTextStyle={"useStyle": "gui_switch_state"}),
+               widget("SwitchWidget", "gui/rows/row2", 0, 0, 598, 70, "gui_switch_row", data="gui_switch2",
+                      label='"Row 2"', labelStyle={"useStyle": "gui_switch_label"}, enabled="gui_enabled"),
+           ]),
+])
+
 PAGES = [_PAGE_A, _PAGE_B, _POPUP, _POPUP2, _DIALOG, _TRANSPARENT, _YES_NO, _numeric_keypad(), _text_keypad(), _LISTS, _OVERLAY,
-         _SCROLL, _ROUNDED, _LIGHT]
+         _SCROLL, _ROUNDED, _LIGHT, _SWITCH_ROWS]

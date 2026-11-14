@@ -19,6 +19,7 @@
 #include <eez/gui/widgets/switch.h>
 
 static const uint32_t ANIMATION_DURATION = 150;
+static const size_t MAX_TEXT_LEN = 128;
 
 namespace eez {
 namespace gui {
@@ -35,13 +36,21 @@ bool SwitchWidgetState::updateState() {
 
     WIDGET_STATE(data, widget->data ? get(widgetCursor, widget->data) : 0);
 
+    auto enabled = widget->enabled ? get(widgetCursor, widget->enabled) : Value();
+    WIDGET_STATE(flags.enabled, enabled.getType() == VALUE_TYPE_UNDEFINED || enabled.getInt() ? 1 : 0);
+
+    WIDGET_STATE(label, widget->label ? get(widgetCursor, widget->label) : Value());
+
     WIDGET_STATE_END()
 }
 
 void SwitchWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
-    auto widget = (const ButtonWidget *)widgetCursor.widget;
-    const Style *style = getStyle(widget->style);
+    auto widget = (const SwitchWidget *)widgetCursor.widget;
+
+    unsigned disabledState = getDisabledStateFlag(!flags.enabled);
+    const Style *widgetStyle = getStyle(widget->style);
+    const Style *style = getStateStyle(widgetStyle, disabledState);
 
 	drawRectangle(
 		widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
@@ -50,7 +59,7 @@ void SwitchWidgetState::render() {
 		false
 	);
 
-    auto enabled = data.getInt() ? true : false;
+    auto on = data.getInt() ? true : false;
 
 	float t;
 	if (changeStartTime) {
@@ -58,11 +67,11 @@ void SwitchWidgetState::render() {
 		if (t > 1.0f) {
 			t = 1.0f;
 		}
-		if (!enabled) {
+		if (!on) {
 			t = 1.0f - t;
 		}
 	} else {
-		t = enabled ? 1.0f : 0;
+		t = on ? 1.0f : 0;
 	}
 
     auto x = widgetCursor.x + style->paddingLeft;
@@ -76,6 +85,54 @@ void SwitchWidgetState::render() {
         style->paddingTop -
         style->paddingBottom;
 
+    // a row: the label, the state text, then the track at the right
+    if (widget->label || (widget->flags & SWITCH_WIDGET_FLAG_STATE_TEXT)) {
+        int trackW = MIN(2 * h, w);
+        int textLeft = x;
+        int textRight = x + w - trackW;
+        x = textRight;
+        w = trackW;
+
+        // the state text, in the width of the longer one (the label doesn't
+        // move when the state changes)
+        if (widget->flags & SWITCH_WIDGET_FLAG_STATE_TEXT) {
+            const Style *base = widget->stateTextStyle ? getStyle(widget->stateTextStyle) : widgetStyle;
+            const Style *stateTextStyle = getStateStyle(base, (on ? STYLE_STATE_FLAG(STYLE_STATE_CHECKED) : 0) | disabledState);
+            font::Font font = styleGetFont(base);
+            int textW = 0;
+            if (font) {
+                textW = MAX(display::measureStr("On", -1, font), display::measureStr("Off", -1, font));
+            }
+            int boxW = textW + base->paddingLeft + base->paddingRight;
+            textRight -= boxW;
+            drawText(
+                on ? "On" : "Off", -1,
+                textRight, widgetCursor.y, boxW, widgetCursor.h,
+                stateTextStyle,
+                false, false, nullptr, nullptr, false, -1, 0, true
+            );
+        }
+
+        if (widget->label && textRight > textLeft) {
+            const Style *base = widget->labelStyle ? getStyle(widget->labelStyle) : widgetStyle;
+            char text[MAX_TEXT_LEN + 1];
+            text[0] = 0;
+            if (label.getType() != VALUE_TYPE_UNDEFINED) {
+                label.toText(text, sizeof(text));
+            }
+            drawText(
+                text, -1,
+                textLeft, widgetCursor.y, textRight - textLeft, widgetCursor.h,
+                getStateStyle(base, disabledState),
+                false, false, nullptr, nullptr, false, -1, 0, true
+            );
+        }
+    }
+
+    // the on part: the background of the checked state style (without a
+    // checked state style the same as the off part, the knob shows the state)
+    const Style *onStyle = getStateStyle(widgetStyle, STYLE_STATE_FLAG(STYLE_STATE_CHECKED) | disabledState);
+
     display::setColor(style->borderColor);
 
     int pos = (int)floorf(x + t * (w - 1));
@@ -87,21 +144,20 @@ void SwitchWidgetState::render() {
         pos, y, x + w - 1, y + h - 1
 	);
 
-	// the on part: the background of the checked state style (without a
-	// checked state style the same as the off part, the knob shows the state)
-	display::setBackColor(getStateStyle(style, STYLE_STATE_FLAG(STYLE_STATE_CHECKED))->backgroundColor);
+	display::setBackColor(onStyle->backgroundColor);
 	display::fillRoundedRect(
 		x, y, x + w - 1, y + h - 1,
 		style->borderSizeLeft, h, true, true,
 		x, y, pos - 1, y + h - 1
 	);
 
-    // draw knob
-	y += 2 + style->borderSizeLeft;
-	h -= 2 * (2 + style->borderSizeLeft);
+    // draw knob: the same gap to the edge of the track on all sides
+    int inset = 3 + style->borderSizeLeft;
+	y += inset;
+	h -= 2 * inset;
 
-	auto xDisabled = x + 1 + style->borderSizeLeft;
-	auto xEnabled = x + w - h - (1 + style->borderSizeLeft);
+	auto xDisabled = x + inset;
+	auto xEnabled = x + w - h - inset;
     x = (int)round(xDisabled + t * (xEnabled - xDisabled));
 
     w = h;
@@ -116,17 +172,29 @@ bool SwitchWidgetState::hasOnTouch() {
 
 void SwitchWidgetState::onTouch(const WidgetCursor &widgetCursor, Event &touchEvent) {
 	if (touchEvent.type == EVENT_TYPE_TOUCH_UP) {
-        set(widgetCursor, widgetCursor.widget->data, get(widgetCursor, widgetCursor.widget->data).getInt() ? 0 : 1);
+        if (!flags.enabled) {
+            return;
+        }
 
-        if (widgetCursor.widget->action != EEZ_ACTION_ID_NONE) {
-            executeAction(widgetCursor, widgetCursor.widget->action);
-        } else {
+        // data that can't be set (a native variable that refuses the value)
+        // doesn't change: no click and no animation, only the action is
+        // executed
+        auto widget = widgetCursor.widget;
+        bool on = get(widgetCursor, widget->data).getInt() ? true : false;
+        set(widgetCursor, widget->data, on ? 0 : 1);
+        bool changed = (get(widgetCursor, widget->data).getInt() ? true : false) != on;
+
+        if (widget->action != EEZ_ACTION_ID_NONE) {
+            executeAction(widgetCursor, widget->action);
+        } else if (changed) {
             sound::playClick();
         }
 
-		changeStartTime = millis();
-		if (changeStartTime == 0) {
-			changeStartTime = 1;
+		if (changed) {
+			changeStartTime = millis();
+			if (changeStartTime == 0) {
+				changeStartTime = 1;
+			}
 		}
 	}
 }

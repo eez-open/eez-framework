@@ -139,6 +139,21 @@ TEST("gui/event: a switch is toggled at release") {
     CHECK(!g_switch);
 }
 
+TEST("gui/event: a switch whose data refuses the value doesn't move") {
+    // the knob of the switch (300, 120, 100x50, border 1): 44 px, at x 302 when
+    // off, at x 354 when on; during the 150 ms animation it moves between them
+    g_switchReadOnly = true;
+    showPageA();
+    CHECK_EQ(rgb(324, A_SWITCH_Y), 0xFFFFFFu);
+    CHECK_EQ(rgb(376, A_SWITCH_Y), ACCENT);
+    // release and 4 frames (64 ms): still in the time of the animation
+    press(A_SWITCH_X, A_SWITCH_Y);
+    releaseTouch();
+    CHECK(!g_switch);
+    CHECK_EQ(rgb(324, A_SWITCH_Y), 0xFFFFFFu);
+    CHECK_EQ(rgb(376, A_SWITCH_Y), ACCENT);
+}
+
 TEST("gui/event: no touch is handled while the event handling is disabled") {
     showPageA();
     g_hooks.isEventHandlingDisabled = []() { return true; };

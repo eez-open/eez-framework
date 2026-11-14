@@ -93,6 +93,36 @@ bool ContainerWidgetState::updateState() {
 	WIDGET_STATE_END()
 }
 
+// the dividers of a row or column (CONTAINER_WIDGET_DIVIDERS_FLAG): a line in the
+// middle of the gap between two visible children, drawn with the background of
+// the container (the children don't draw over the gap)
+static void drawDividers(const WidgetCursor &widgetCursor, const ContainerWidget *widget, const LayoutChild *layout, int count, const Style *style) {
+    bool row = widget->layout == CONTAINER_WIDGET_LAYOUT_HORIZONTAL;
+    auto savedOpacity = display::setOpacity(widgetCursor.opacity);
+    display::setColor(style->borderColor);
+    int prev = -1;
+    for (int i = 0; i < count; i++) {
+        if (!layout[i].visible) {
+            continue;
+        }
+        if (prev >= 0) {
+            auto &a = layout[prev];
+            auto &b = layout[i];
+            if (row) {
+                int end = a.x + a.w;
+                int x = widgetCursor.x + end + (b.x - end - 1) / 2;
+                display::fillRect(x, widgetCursor.y + style->borderSizeTop, x, widgetCursor.y + widgetCursor.h - 1 - style->borderSizeBottom);
+            } else {
+                int end = a.y + a.h;
+                int y = widgetCursor.y + end + (b.y - end - 1) / 2;
+                display::fillRect(widgetCursor.x + style->borderSizeLeft, y, widgetCursor.x + widgetCursor.w - 1 - style->borderSizeRight, y);
+            }
+        }
+        prev = i;
+    }
+    display::setOpacity(savedOpacity);
+}
+
 void ContainerWidgetState::render() {
 	if (overlay && overlayState == 0) {
 		return;
@@ -192,6 +222,10 @@ void ContainerWidgetState::enumChildren() {
 	auto yBeforeScroll = widgetCursor.y;
 	if (scroll) {
 		widgetCursor.y -= startPosition + scrollContext.renderPixelOffset;
+	}
+
+	if (rowOrColumn && (widget->flags & CONTAINER_WIDGET_DIVIDERS_FLAG) && g_findCallback == nullptr && widgetCursor.refreshed) {
+		drawDividers(widgetCursor, widget, layout, layoutCount, stateStyle.style);
 	}
 
 	int xOffset = 0;

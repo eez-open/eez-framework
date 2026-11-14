@@ -34,6 +34,12 @@ namespace gui {
 #define CONTAINER_WIDGET_SCROLL_NONE 0
 #define CONTAINER_WIDGET_SCROLL_VERTICAL 1
 
+// ContainerWidget::flags (also SHADOW_FLAG and OVERLAPPING_CHILDREN_FLAG of
+// core/assets.h): a row or column has a line of 1 px in the border color of
+// its style between the visible children, in the middle of the gap (the gap is
+// at least 1 px), across the container inside of its border
+#define CONTAINER_WIDGET_DIVIDERS_FLAG (1 << 6)
+
 struct ContainerWidget : public Widget {
 	ListOfAssetsPtr<Widget> widgets;
 	uint16_t flags;

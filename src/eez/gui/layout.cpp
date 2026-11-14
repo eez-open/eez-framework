@@ -56,6 +56,14 @@ static bool isChildVisible(WidgetCursor &cursor, const Widget *child) {
 
 static void getRowOrColumnContentSize(WidgetCursor &cursor, int &w, int &h);
 
+// the gap between the children, at least 1 px for the dividers
+static int getGap(const ContainerWidget *container) {
+    if ((container->flags & CONTAINER_WIDGET_DIVIDERS_FLAG) && container->gap < 1) {
+        return 1;
+    }
+    return container->gap;
+}
+
 // the size of a child of a row or column before it grows or stretches: its own
 // size or the size of its content
 static void getChildSize(WidgetCursor &cursor, const Widget *child, int &w, int &h) {
@@ -117,7 +125,7 @@ static void getRowOrColumnContentSize(WidgetCursor &cursor, int &w, int &h) {
     }
 
     if (numVisible > 1) {
-        main += container->gap * (numVisible - 1);
+        main += getGap(container) * (numVisible - 1);
     }
 
     int insetW = style->borderSizeLeft + style->paddingLeft + style->paddingRight + style->borderSizeRight;
@@ -222,7 +230,7 @@ int layoutChildren(const WidgetCursor &widgetCursor, LayoutChild *children, uint
     }
 
     if (numVisible > 1) {
-        total += container->gap * (numVisible - 1);
+        total += getGap(container) * (numVisible - 1);
     }
 
     int freeSpace = mainSize - total;
@@ -291,7 +299,7 @@ int layoutChildren(const WidgetCursor &widgetCursor, LayoutChild *children, uint
                 crossPos = rowBaseline - baselines[i];
             }
 
-            pos += (row ? layoutChild.w : layoutChild.h) + container->gap + extraGap;
+            pos += (row ? layoutChild.w : layoutChild.h) + getGap(container) + extraGap;
             if (numPlaced < extraGapRest) {
                 pos++;
             }
