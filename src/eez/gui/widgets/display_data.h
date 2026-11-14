@@ -18,20 +18,25 @@ namespace gui {
 struct DisplayDataWidget : public Widget {
     int16_t refreshRate;
     uint8_t displayOption;
-    uint8_t reserved1;
+    // DISPLAY_DATA_WIDGET_LABEL_LEFT_FLAG
+    uint8_t flags;
     int16_t unitAndFractionFont; // only for DISPLAY_OPTION_INTEGER_UNIT_AND_FRACTION
     // a number shown in a unit (a string such as "mA") with the decimals of a
     // precision (the smallest step, in that unit), see getValueInUnit; 0 if not set
     int16_t displayUnit;
     int16_t precision;
-    // a text above the value (a flow expression, 0 if not set) in labelStyle
-    // (0: the widget style), see drawValueParts
+    // a text above the value, or left of it with
+    // DISPLAY_DATA_WIDGET_LABEL_LEFT_FLAG (a flow expression, 0 if not set), in
+    // labelStyle (0: the widget style), see drawValueParts
     int16_t label;
     int16_t labelStyle;
     // the style of the unit with DISPLAY_OPTION_VALUE_AND_UNIT (0: the widget
     // style), see drawValueParts
     int16_t unitStyle;
 };
+
+// the label is left of the value (ValueParts::labelLeft)
+static const uint8_t DISPLAY_DATA_WIDGET_LABEL_LEFT_FLAG = 0x01;
 
 struct DisplayDataWidgetState : public WidgetState {
 	WidgetStateFlags flags;

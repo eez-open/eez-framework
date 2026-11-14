@@ -189,6 +189,7 @@ static void getValueParts(const InputWidget *widget, const char *text, const Val
 		parts.label = labelText;
 	}
 	parts.labelStyle = widget->labelStyle ? getStyle(widget->labelStyle) : nullptr;
+	parts.labelLeft = (widget->flags & INPUT_WIDGET_LABEL_LEFT_FLAG) != 0;
 }
 
 int InputWidget_getBaseline(const WidgetCursor &widgetCursor, int h) {

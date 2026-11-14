@@ -349,6 +349,45 @@ TEST("render/layout: an Input with a label and a quantity line, on the baseline 
     CHECK(value.w > 0 && value.y >= 290 + 28 && value.y + value.h <= 290 + 28 + 52);
 }
 
+TEST("render/layout: the label left of the value, centered on the value line") {
+    showParts();
+    // the Input at (20, 410), 360 x 60, the padding 4 40 4 4, top aligned: the
+    // block is the value line (52 high from y = 414, the baseline at 456), the
+    // label (26 + the padding 2) centered on it from y = 414 + 12 (the baseline
+    // at 426 + 21 = 447), the value right aligned in the content box (it ends
+    // at 20 + 360 - 1 - 40)
+    Box label = find(GREEN, 20, 410, 360, 60);
+    Box value = find(WHITE, 20, 410, 360, 60);
+    CHECK(label.w > 0 && value.w > 0);
+    CHECK(label.x >= 24 && label.x <= 27);
+    int labelBottom = label.y + label.h;
+    CHECK(labelBottom >= 446 && labelBottom <= 448);
+    int valueBottom = value.y + value.h;
+    CHECK(valueBottom >= 455 && valueBottom <= 457);
+    int valueEnd = value.x + value.w;
+    CHECK(valueEnd >= 335 && valueEnd <= 339);
+}
+
+TEST("render/layout: a value with the label left is as big as its content and on the baseline in a row") {
+    showParts();
+    int small = measure(STYLE_ID_LAYOUT_TEXT_SMALL, "Ag");
+    // 4 + "LBL" + "12.345" + 6 + "mA" + 4 wide, 4 + 52 (the value line, the
+    // label centered on it) + 4 high, the baseline at 4 + 42 = 46: the text at
+    // 46 - 21 = 25
+    int w = 4 + measure(STYLE_ID_LAYOUT_PL, "LBL") + measure(STYLE_ID_LAYOUT_PV, "12.345") + 6 +
+            measure(STYLE_ID_LAYOUT_PU, "mA") + 4;
+    CHECK_BOX(find(BLUE, 400, 400, 390, 76), 405 + small + 10, 405, w, 60);
+    CHECK_BOX(find(ORANGE, 400, 400, 390, 76), 405, 405 + 25, small, 26);
+    // the label at the left of the content box, the value after it (in the
+    // box of the widget: the text is white too)
+    int x = 405 + small + 10 + 4;
+    Box label = find(GREEN, x - 4, 405, w, 60);
+    Box value = find(WHITE, x - 4, 405, w, 60);
+    CHECK(label.x >= x && label.x <= x + 3);
+    int valueX = x + measure(STYLE_ID_LAYOUT_PL, "LBL");
+    CHECK(value.x >= valueX && value.x <= valueX + 4);
+}
+
 TEST("render/layout: a rounded box with a color for each side of its border") {
     // 460, 280, 200x100, radius 12: the bottom 4 px red, the others 2 px purple
     showParts();

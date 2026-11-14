@@ -31588,6 +31588,82 @@
           "unitStyle": {
             "useStyle": "layout_pu"
           }
+        },
+        {
+          "type": "InputEmbeddedWidget",
+          "objID": "70b393fd-1786-5f15-b6c5-33d43b554781",
+          "left": 20,
+          "top": 410,
+          "width": 360,
+          "height": 60,
+          "style": {
+            "useStyle": "layout_pv_right"
+          },
+          "data": "12.5",
+          "inputType": "number",
+          "min": "0",
+          "max": "100",
+          "precision": "0.1",
+          "unit": "\"V\"",
+          "info": "\"\"",
+          "defaultValue": "0",
+          "label": "\"SET\"",
+          "labelPosition": "left",
+          "labelStyle": {
+            "useStyle": "layout_pl"
+          }
+        },
+        {
+          "type": "ContainerWidget",
+          "objID": "bc72aed1-e5c6-5675-a020-44da4de817c3",
+          "left": 400,
+          "top": 400,
+          "width": 390,
+          "height": 76,
+          "style": {
+            "useStyle": "layout_box"
+          },
+          "layout": "horizontal",
+          "widgets": [
+            {
+              "type": "TextWidget",
+              "objID": "7809a1ce-6350-5b55-9083-3f754623b787",
+              "left": 0,
+              "top": 0,
+              "width": 10,
+              "height": 10,
+              "style": {
+                "useStyle": "layout_text_small"
+              },
+              "text": "Ag",
+              "fitToContent": "both"
+            },
+            {
+              "type": "DisplayDataWidget",
+              "objID": "1e1360ee-f60e-5262-9969-0615e9334964",
+              "left": 0,
+              "top": 0,
+              "width": 10,
+              "height": 10,
+              "style": {
+                "useStyle": "layout_pv"
+              },
+              "data": "\"12.345 mA\"",
+              "displayOption": 7,
+              "refreshRate": "0",
+              "label": "\"LBL\"",
+              "labelStyle": {
+                "useStyle": "layout_pl"
+              },
+              "unitStyle": {
+                "useStyle": "layout_pu"
+              },
+              "fitToContent": "both",
+              "labelPosition": "left"
+            }
+          ],
+          "alignItems": "baseline",
+          "gap": 10
         }
       ],
       "connectionLines": [],

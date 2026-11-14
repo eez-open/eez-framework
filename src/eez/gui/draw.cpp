@@ -750,7 +750,11 @@ struct ValuePartsGeometry {
     int labelPaddingBottom = 0;
     int labelWidth = 0;
     // with the padding, 0 without a label
+    int labelBlockWidth = 0;
     int labelHeight = 0;
+    // the tops of the label (with its padding) and of the value line in the block
+    int labelTop = 0;
+    int lineTop = 0;
     int valueWidth = 0;
     int unitGap = 0;
     int unitWidth = 0;
@@ -814,14 +818,24 @@ static bool getValuePartsGeometry(const ValueParts &parts, const Style *style, V
     }
     g.lineHeight = g.lineAscent + lineDescent;
 
-    int labelBlockWidth = g.labelPaddingLeft + g.labelWidth + g.labelPaddingRight;
+    if (parts.label) {
+        g.labelBlockWidth = g.labelPaddingLeft + g.labelWidth + g.labelPaddingRight;
+    }
     int lineBlockWidth = g.valueWidth + g.unitGap + g.unitWidth;
     if (isUnitInRightPadding(parts, style)) {
         // only what doesn't fit in the right padding
         lineBlockWidth = g.valueWidth + MAX(g.unitGap + g.unitWidth - style->paddingRight, 0);
     }
-    g.blockWidth = MAX(labelBlockWidth, lineBlockWidth);
-    g.blockHeight = g.labelHeight + g.lineHeight;
+    if (parts.label && parts.labelLeft) {
+        g.blockWidth = g.labelBlockWidth + lineBlockWidth;
+        g.blockHeight = MAX(g.labelHeight, g.lineHeight);
+        g.labelTop = (g.blockHeight - g.labelHeight) / 2;
+        g.lineTop = (g.blockHeight - g.lineHeight) / 2;
+    } else {
+        g.blockWidth = MAX(g.labelBlockWidth, lineBlockWidth);
+        g.blockHeight = g.labelHeight + g.lineHeight;
+        g.lineTop = g.labelHeight;
+    }
 
     return true;
 }
@@ -866,15 +880,20 @@ void drawValueParts(
         const Style *labelStyle = parts.labelStyle ? parts.labelStyle : style;
         uint16_t labelColor = parts.labelStyle && !active ? parts.labelStyle->color : color;
         if (labelColor != TRANSPARENT_COLOR_INDEX) {
-            int labelX = alignContentX(labelStyle, contentX1 + g.labelPaddingLeft, contentX2 - g.labelPaddingRight, g.labelWidth);
+            int labelX = parts.labelLeft
+                ? contentX1 + g.labelPaddingLeft
+                : alignContentX(labelStyle, contentX1 + g.labelPaddingLeft, contentX2 - g.labelPaddingRight, g.labelWidth);
             display::setColor(labelColor);
-            display::drawStr(parts.label, -1, labelX, blockY + g.labelPaddingTop, x1, y1, x2, y2, g.labelFont, -1);
+            display::drawStr(parts.label, -1, labelX, blockY + g.labelTop + g.labelPaddingTop, x1, y1, x2, y2, g.labelFont, -1);
         }
     }
 
     int valueX1 = contentX1;
     int valueX2 = contentX2;
-    int baseline = blockY + g.labelHeight + g.lineAscent;
+    if (parts.label && parts.labelLeft) {
+        valueX1 += g.labelBlockWidth;
+    }
+    int baseline = blockY + g.lineTop + g.lineAscent;
 
     font::Font valueFont = g.valueFont;
     int valueWidth = g.valueWidth;
@@ -933,7 +952,7 @@ int getValuePartsBaseline(const ValueParts &parts, const Style *style, int h) {
     if (blockY < 0) {
         blockY = top;
     }
-    return blockY + g.labelHeight + g.lineAscent;
+    return blockY + g.lineTop + g.lineAscent;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

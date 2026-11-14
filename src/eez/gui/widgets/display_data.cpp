@@ -320,6 +320,7 @@ static void getValueParts(const DisplayDataWidget *widget, const Value &data, co
     }
 
     parts.labelStyle = widget->labelStyle ? getStyle(widget->labelStyle) : nullptr;
+    parts.labelLeft = (widget->flags & DISPLAY_DATA_WIDGET_LABEL_LEFT_FLAG) != 0;
     parts.unitStyle = widget->unitStyle ? getStyle(widget->unitStyle) : nullptr;
 }
 

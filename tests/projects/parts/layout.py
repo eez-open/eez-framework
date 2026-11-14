@@ -7,7 +7,8 @@ alignment on the main axis (justifyContent) and on the cross axis
 from the content (a Text, a row in a column), the baseline of texts in two
 fonts and the right-to-left mirroring. The page layout_parts: a DisplayData and
 an Input with a label, a unit and a quantity line (eez-framework
-drawValueParts), alone and in rows on the baseline.
+drawValueParts), alone and in rows on the baseline, with the label above or
+left of the value.
 
 The children are rectangles or texts with a background of their own color, so
 the test finds their boxes in the frame. The tests set the native variables
@@ -205,6 +206,17 @@ def _parts_page():
                data='"12.000 V"', displayOption=7, refreshRate="0", unitStyle={"useStyle": "layout_pu"}),
         widget("DisplayDataWidget", ("layout", "parts_right_ma"), 460, 90, 300, 60, "layout_pv_right",
                data='"0.750 mA"', displayOption=7, refreshRate="0", unitStyle={"useStyle": "layout_pu"}),
+        # "SET" left of "12.5 V" (right aligned)
+        widget("InputEmbeddedWidget", ("layout", "parts_input_left"), 20, 410, 360, 60, "layout_pv_right",
+               data="12.5", inputType="number", min="0", max="100", precision="0.1", unit='"V"',
+               info='""', defaultValue="0", label='"SET"', labelPosition="left",
+               labelStyle={"useStyle": "layout_pl"}),
+        # "LBL" left of "12.345" and "mA", as big as its content, the value on the
+        # baseline of the text
+        _row("row_parts_left", 400, 400, 390, 76, [
+            text(("layout", "parts_text3"), 0, 0, 10, 10, "Ag", "layout_text_small", fitToContent="both"),
+            _parts_dd("parts_dd_left", 0, 0, 10, 10, fitToContent="both", labelPosition="left"),
+        ], alignItems="baseline"),
     ], style="layout_page")
 
 

@@ -130,9 +130,9 @@ void drawIntegerUnitAndFraction(
     bool active,
     uint16_t *overrideColor, uint16_t *overrideBackgroundColor
 );
-// A value with a label above it and a unit after it (a readout or a set field,
-// see the DisplayData and Input widgets). A part that is not shown is null, a
-// style that is not set is null.
+// A value with a label above or left of it and a unit after it (a readout or a
+// set field, see the DisplayData and Input widgets). A part that is not shown
+// is null, a style that is not set is null.
 struct ValueParts {
     // a line above the value line in labelStyle: its font and color, its
     // padding around the label and its horizontal alignment in the content box
@@ -140,6 +140,11 @@ struct ValueParts {
     // labelStyle is not set
     const char *label = nullptr;
     const Style *labelStyle = nullptr;
+    // the label is left of the value line instead of above it: at the left of
+    // the content box (the alignment of labelStyle is not used), the label and
+    // the value line centered on each other vertically, the value placed in the
+    // rest of the content box
+    bool labelLeft = false;
     const char *value = nullptr;
     int valueLength = -1;
     // after the value, on its baseline, in unitStyle: its font and color, its

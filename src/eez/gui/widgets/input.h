@@ -27,8 +27,9 @@ struct InputWidget : public Widget {
 	// a number Input is shown in this unit (a string such as "mA", 0 if not
 	// set: in unit) with the decimals of its precision, see getValueInUnit
 	int16_t displayUnit;
-	// a text above the value (a flow expression, 0 if not set) in labelStyle
-	// (0: the widget style), see drawValueParts
+	// a text above the value, or left of it with INPUT_WIDGET_LABEL_LEFT_FLAG
+	// (a flow expression, 0 if not set), in labelStyle (0: the widget style),
+	// see drawValueParts
 	int16_t label;
 	int16_t labelStyle;
 	int16_t reserved1;
@@ -55,6 +56,8 @@ struct InputWidgetState : public WidgetState {
 static const uint16_t INPUT_WIDGET_TYPE_TEXT = 0x0001;
 static const uint16_t INPUT_WIDGET_TYPE_NUMBER = 0x0002;
 static const uint16_t INPUT_WIDGET_PASSWORD_FLAG = 0x0100;
+// the label is left of the value (ValueParts::labelLeft)
+static const uint16_t INPUT_WIDGET_LABEL_LEFT_FLAG = 0x0200;
 
 bool getInputWidgetIsPassword(const gui::WidgetCursor &widgetCursor);
 
