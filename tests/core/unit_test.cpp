@@ -19,8 +19,11 @@ TEST("core/unit: names") {
     CHECK_STR(getUnitName(UNIT_MICRO_AMPER), "uA");
     CHECK_STR(getUnitName(UNIT_MILLI_SECOND), "ms");
     CHECK_STR(getUnitName(UNIT_CELSIUS), DEGREE_SYMBOL "C");
-    // U+00B4, the Ohm glyph of the fonts
-    CHECK_STR(getUnitName(UNIT_OHM), "\xC2\xB4");
+    // U+03A9
+    CHECK_STR(getUnitName(UNIT_OHM), "\xCE\xA9");
+    // U+00B0, U+221E
+    CHECK_STR(DEGREE_SYMBOL, "\xC2\xB0");
+    CHECK_STR(INFINITY_SYMBOL, "\xE2\x88\x9E");
     CHECK_STR(getUnitName(UNIT_PERCENT), "%");
     CHECK_STR(getUnitName(UNIT_MHERTZ), "MHz");
     CHECK_STR(getUnitName(UNIT_PICO_FARAD), "pF");

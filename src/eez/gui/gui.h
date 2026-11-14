@@ -116,6 +116,9 @@ extern const int EEZ_STYLE_ID_SELECT_ENUM_ITEM_POPUP_DISABLED_ITEM;
 extern const int EEZ_STYLE_ID_MENU_WITH_BUTTONS_CONTAINER;
 extern const int EEZ_STYLE_ID_MENU_WITH_BUTTONS_MESSAGE;
 extern const int EEZ_STYLE_ID_MENU_WITH_BUTTONS_BUTTON;
+#if defined(GUI_CALC_FPS)
+extern const int EEZ_STYLE_ID_FPS_GRAPH;
+#endif
 
 extern const int EEZ_THEME_ID_LEGACY;
 extern const int EEZ_THEME_ID_DEFAULT;

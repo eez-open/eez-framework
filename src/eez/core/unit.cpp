@@ -34,9 +34,9 @@ const char *g_unitNames[] = {
     "ms", // UNIT_MILLI_SECOND
     DEGREE_SYMBOL"C", // UNIT_CELSIUS
     "rpm", // UNIT_RPM
-    "\u00B4", // UNIT_OHM
-    "K\u00B4", // UNIT_KOHM
-    "M\u00B4", // UNIT_MOHM
+    "\u03A9", // UNIT_OHM
+    "K\u03A9", // UNIT_KOHM
+    "M\u03A9", // UNIT_MOHM
     "%", // UNIT_PERCENT
     "Hz", // UNIT_HERTZ
     "mHz", // UNIT_MILLI_HERTZ

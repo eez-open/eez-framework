@@ -10,8 +10,8 @@
 
 #pragma once
 
-#define INFINITY_SYMBOL "\u0091"
-#define DEGREE_SYMBOL "\u008A"
+#define INFINITY_SYMBOL "∞"
+#define DEGREE_SYMBOL "°"
 
 namespace eez {
 

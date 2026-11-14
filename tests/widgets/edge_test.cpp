@@ -39,7 +39,7 @@ TEST("widgets/text: NaN data is not redrawn in every frame") {
 
 TEST("widgets/dd: infinity is not redrawn without a change") {
     set(V_A, Value(INFINITY, VALUE_TYPE_FLOAT));
-    // the text of infinity is INFINITY_SYMBOL (U+0091), which has no glyph in
+    // the text of infinity is INFINITY_SYMBOL (U+221E), which has no glyph in
     // the font of the test project: only the background is drawn
     char text[64];
     get(V_A).toText(text, sizeof(text));

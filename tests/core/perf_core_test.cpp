@@ -547,7 +547,7 @@ TEST("core/perf: float text with derived units") {
     CHECK_EQ(text(Value(0.0123f, UNIT_VOLT)), "12.3 mV");
     CHECK_EQ(text(Value(0.0000005f, UNIT_AMPER)), "0.5 uA");
     CHECK_EQ(text(Value(2e-11f, UNIT_FARAD)), "20 pF");
-    CHECK_EQ(text(Value(4700.0f, UNIT_OHM)), "4.7 K\xC2\xB4");
+    CHECK_EQ(text(Value(4700.0f, UNIT_OHM)), "4.7 K\xCE\xA9");
     CHECK_EQ(text(Value(2500000.0f, UNIT_HERTZ)), "2.5 MHz");
     CHECK_EQ(text(Value(5.0f, UNIT_VOLT)), "5.0 V");
     CHECK_EQ(text(Value(0.5f, UNIT_NONE)), "0.5");
