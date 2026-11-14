@@ -103,10 +103,6 @@ static bool styleGetSmallerFont(font::Font &font) {
     return false;
 }
 
-static uint8_t getDisplayBackgroundLuminosityStep() {
-    return DISPLAY_BACKGROUND_LUMINOSITY_STEP_DEFAULT;
-}
-
 static uint8_t getSelectedThemeIndex() {
     return eez::gui::g_selectedThemeIndex;
 }
@@ -189,7 +185,6 @@ Hooks g_hooks = {
     overrideStyleColor,
     transformColor,
     styleGetSmallerFont,
-    getDisplayBackgroundLuminosityStep,
     getSelectedThemeIndex,
     turnOnDisplayStart,
     turnOnDisplayTick,

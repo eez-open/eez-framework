@@ -328,7 +328,6 @@ void ToastMessagePage::init(AppContext *appContext, ToastType type, const Value&
     containerRectangleWidget.data = EEZ_DATA_ID_NONE;
     containerRectangleWidget.action = EEZ_ACTION_ID_NONE;
     containerRectangleWidget.style = styleId;
-    containerRectangleWidget.flags.ignoreLuminosity = 0;
     containerRectangleWidget.flags.invertColors = 1;
 	containerRectangleWidget.x = 0;
 	containerRectangleWidget.y = 0;
@@ -908,7 +907,6 @@ void MenuWithButtonsPage::init(AppContext *appContext, const char *message, cons
     m_containerRectangleWidget.data = EEZ_DATA_ID_NONE;
     m_containerRectangleWidget.action = EEZ_ACTION_ID_NONE;
     m_containerRectangleWidget.style = EEZ_STYLE_ID_MENU_WITH_BUTTONS_CONTAINER;
-    m_containerRectangleWidget.flags.ignoreLuminosity = 0;
 	m_containerRectangleWidget.flags.invertColors = 1;
 
     // the texts are copied into the page: the widget texts are offsets from the
@@ -1124,7 +1122,6 @@ void QuestionPage::init(AppContext *appContext, const Value &message, const Valu
     m_containerRectangleWidget.data = EEZ_DATA_ID_NONE;
     m_containerRectangleWidget.action = EEZ_ACTION_ID_NONE;
     m_containerRectangleWidget.style = EEZ_STYLE_ID_MENU_WITH_BUTTONS_CONTAINER;
-    m_containerRectangleWidget.flags.ignoreLuminosity = 0;
 	m_containerRectangleWidget.flags.invertColors = 1;
 
     m_messageTextWidget.type = WIDGET_TYPE_TEXT;

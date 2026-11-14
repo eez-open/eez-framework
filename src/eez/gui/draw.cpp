@@ -187,7 +187,7 @@ int getTextBaseline(const Style *style, int h) {
 // Draws the backgrounds of the widgets below the current one (the background
 // style stack) in the rectangle: what is seen there if the current widget
 // doesn't cover it.
-static void drawBackgroundsBelow(int x1, int y1, int x2, int y2, bool ignoreLuminocity) {
+static void drawBackgroundsBelow(int x1, int y1, int x2, int y2) {
     const WidgetCursor& widgetCursor = g_widgetCursor;
 
     if (x1 > x2 || y1 > y2) {
@@ -238,7 +238,7 @@ static void drawBackgroundsBelow(int x1, int y1, int x2, int y2, bool ignoreLumi
 
         auto color = getStyleBackgroundColor(backgroundStyle.style, backgroundStyle.active);
         if (color != TRANSPARENT_COLOR_INDEX) {
-            display::setColor(color, ignoreLuminocity);
+            display::setColor(color);
             auto savedOpacity = display::setOpacity(backgroundStyle.style->opacity);
             display::fillRect(x1, y1, x2, y2);
             display::setOpacity(savedOpacity);
@@ -282,7 +282,7 @@ static void drawBackgroundsBelow(int x1, int y1, int x2, int y2, bool ignoreLumi
     }
 }
 
-void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *style, uint16_t color, bool ignoreLuminocity, bool insideWidget) {
+void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *style, uint16_t color, bool insideWidget) {
     const WidgetCursor& widgetCursor = g_widgetCursor;
 
 	bool isTransparent = true;
@@ -325,15 +325,15 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 			int sy2 = y2;
 			expandRectWithStyleShadow(style, sx1, sy1, sx2, sy2);
 			if (isTransparent) {
-				drawBackgroundsBelow(sx1, sy1, sx2, sy2, ignoreLuminocity);
+				drawBackgroundsBelow(sx1, sy1, sx2, sy2);
 			} else {
-				drawBackgroundsBelow(sx1, sy1, sx2, y1 - 1, ignoreLuminocity);
-				drawBackgroundsBelow(sx1, y2 + 1, sx2, sy2, ignoreLuminocity);
-				drawBackgroundsBelow(sx1, y1, x1 - 1, y2, ignoreLuminocity);
-				drawBackgroundsBelow(x2 + 1, y1, sx2, y2, ignoreLuminocity);
+				drawBackgroundsBelow(sx1, sy1, sx2, y1 - 1);
+				drawBackgroundsBelow(sx1, y2 + 1, sx2, sy2);
+				drawBackgroundsBelow(sx1, y1, x1 - 1, y2);
+				drawBackgroundsBelow(x2 + 1, y1, sx2, y2);
 			}
 		} else if (isTransparent) {
-			drawBackgroundsBelow(x1, y1, x2, y2, ignoreLuminocity);
+			drawBackgroundsBelow(x1, y1, x2, y2);
 		}
 	}
 
@@ -351,12 +351,12 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 		bool oneColor = sideColors[1] == sideColors[0] && sideColors[2] == sideColors[0] && sideColors[3] == sideColors[0];
 
 		if (style->borderColor != TRANSPARENT_COLOR_INDEX) {
-			display::setColor(style->borderColor, ignoreLuminocity);
+			display::setColor(style->borderColor);
 		}
 
         if (hasBorderRadius) {
 			if (color != TRANSPARENT_COLOR_INDEX) {
-				display::setBackColor(color, ignoreLuminocity);
+				display::setBackColor(color);
 			}
 
 			if (
@@ -374,7 +374,7 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 					style->borderRadiusTLX, style->borderRadiusTLY, style->borderRadiusTRX, style->borderRadiusTRY,
 					style->borderRadiusBRX, style->borderRadiusBRY, style->borderRadiusBLX, style->borderRadiusBLY,
 					drawLine, color != TRANSPARENT_COLOR_INDEX,
-					oneColor ? nullptr : sideColors, ignoreLuminocity
+					oneColor ? nullptr : sideColors
 				);
 				display::setOpacity(savedOpacity);
 
@@ -442,7 +442,7 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 			int left = style->borderSizeLeft;
 			auto side = [&](uint16_t sideColor, int sx1, int sy1, int sx2, int sy2) {
 				if (sideColor != TRANSPARENT_COLOR_INDEX && sx1 <= sx2 && sy1 <= sy2) {
-					display::setColor(sideColor, ignoreLuminocity);
+					display::setColor(sideColor);
 					display::fillRect(sx1, sy1, sx2, sy2);
 				}
 			};
@@ -467,7 +467,7 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 	} else {
 		if (hasBorderRadius) {
 			if (color != TRANSPARENT_COLOR_INDEX) {
-				display::setBackColor(color, ignoreLuminocity);
+				display::setBackColor(color);
 		        auto savedOpacity = display::setOpacity(multiplyOpacity(style->opacity));
                 display::fillRoundedRect(
 					x1, y1, x2, y2,
@@ -483,7 +483,7 @@ void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *st
 	}
 
 	if (color != TRANSPARENT_COLOR_INDEX) {
-		display::setColor(color, ignoreLuminocity);
+		display::setColor(color);
 		auto savedOpacity = display::setOpacity(multiplyOpacity(style->opacity));
         if (x2 >= x1 && y2 >= y1) {
 		    display::fillRect(x1, y1, x2, y2);
@@ -585,7 +585,7 @@ void drawText(
     const char *text, int textLength,
     int x, int y, int w, int h,
     const Style *style,
-    bool active, bool ignoreLuminocity,
+    bool active,
     uint16_t *overrideColor, uint16_t *overrideBackgroundColor,
     bool useSmallerFontIfDoesNotFit, int cursorPosition, int xScroll,
 	bool boolSkipBackground
@@ -600,7 +600,7 @@ void drawText(
     swapColorsIfActive(active, color, backgroundColor);
 
 	if (!boolSkipBackground) {
-		drawBorderAndBackground(x1, y1, x2, y2, style, backgroundColor, ignoreLuminocity);
+		drawBorderAndBackground(x1, y1, x2, y2, style, backgroundColor);
 	}
 
     if (color == TRANSPARENT_COLOR_INDEX) {
@@ -641,7 +641,7 @@ void drawText(
     }
 
     // draw text
-    display::setColor(color, ignoreLuminocity);
+    display::setColor(color);
     if (textEllipsis.isCut) {
         display::drawStr(text, textEllipsis.numChars, x_offset, y_offset, x1, y1, x2, y2, font, -1);
         display::drawStr(textEllipsis.ellipsis, -1, x_offset + textEllipsis.ellipsisX, y_offset, x1, y1, x2, y2, font, -1);
@@ -1369,7 +1369,7 @@ void drawBitmap(Image *image, int x, int y, int w, int h, const Style *style, bo
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void drawRectangle(int x, int y, int w, int h, const Style *style, bool active, bool ignoreLuminocity, bool invertColors) {
+void drawRectangle(int x, int y, int w, int h, const Style *style, bool active, bool invertColors) {
     if (w > 0 && h > 0) {
         int x1 = x;
         int y1 = y;
@@ -1387,7 +1387,7 @@ void drawRectangle(int x, int y, int w, int h, const Style *style, bool active, 
             color = TRANSPARENT_COLOR_INDEX;
         }
 
-        drawBorderAndBackground(x1, y1, x2, y2, style, color, ignoreLuminocity);
+        drawBorderAndBackground(x1, y1, x2, y2, style, color);
     }
 }
 

@@ -58,10 +58,6 @@ Image makeImage(std::vector<uint8_t> &buffer, int width, int height, int bpp) {
     return image;
 }
 
-uint8_t luminosityStepMin() {
-    return DISPLAY_BACKGROUND_LUMINOSITY_STEP_MIN;
-}
-
 // the color c with alpha a over the opaque color below
 uint32_t over(uint32_t c, int a, uint32_t below) {
     auto mix = [a](int s, int d) { return (uint32_t)((s * a + d * (255 - a) + 127) / 255); };
@@ -134,16 +130,6 @@ TEST_BUG("render/display: white pixel of a 16 bpp bitmap is white", "D11") {
     Image image = makeImage(buffer, 1, 1, 16);
     display::drawBitmap(&image, 100, 100);
     CHECK_EQ(px(100, 100), rgb(255, 255, 255));
-}
-
-TEST_BUG("render/display: the background luminosity step changes the colors at 32 bpp", "D11") {
-    display::setColor(COLOR_ID_RENDER_GRAY);
-    uint32_t normal = display::getColor();
-    g_hooks.getDisplayBackgroundLuminosityStep = luminosityStepMin;
-    display::onLuminocityChanged();
-    display::setColor(COLOR_ID_RENDER_GRAY);
-    uint32_t darker = display::getColor();
-    CHECK(render::R(darker) < render::R(normal));
 }
 
 TEST("render/display: the transparent color index is a transparent color") {

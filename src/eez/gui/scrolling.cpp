@@ -188,7 +188,7 @@ static void drawPageDots(const Style *style, const Rect &rect, int pageDot) {
         int x2 = x + dotW - 1;
         int y2 = rect.y + dotH - 1;
         // over the items: the backgrounds below the list are not drawn first
-        drawBorderAndBackground(x1, y1, x2, y2, stateStyle.style, getStyleBackgroundColor(stateStyle.style, active), false, true);
+        drawBorderAndBackground(x1, y1, x2, y2, stateStyle.style, getStyleBackgroundColor(stateStyle.style, active), true);
     }
 }
 
@@ -247,7 +247,7 @@ void ScrollableWidgetState::beginEnumChildren(EnumChildrenContext &context) {
 
         if (context.scrolling || renderedPixelOffset != 0 || scrollIndicatorMoved) {
             // items (or scroll indicator) moved since the previous frame, redraw everything
-            drawRectangle(savedX, savedY, savedW, savedH, style, false, false, true);
+            drawRectangle(savedX, savedY, savedW, savedH, style);
             widgetCursor.refreshed = true;
         }
 

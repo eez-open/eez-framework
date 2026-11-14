@@ -327,7 +327,7 @@ void LineChartWidgetState::render() {
     auto savedClipRect = intersectClipRect(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h);
 
 	// clear background
-    drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style, isActive, false, true);
+    drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, style, isActive);
 
     // draw title
     if (showTitle) {

@@ -46,7 +46,6 @@ bool isOn();
 
 void onThemeChanged();
 void clearScreenTransparent();
-void onLuminocityChanged();
 void updateBrightness();
 
 void update();
@@ -169,7 +168,7 @@ void getColorRGBAFromIndex(uint16_t color, ColorRGBA *colorRGBA);
 Color getColor();
 
 // set foreground color by index
-void setColor(uint16_t colorIndex, bool ignoreLuminocity = false);
+void setColor(uint16_t colorIndex);
 
 // set foreground color by value
 void setColor(uint8_t r, uint8_t g, uint8_t b);
@@ -178,7 +177,7 @@ void setColorByValue(Color color);
 Color getBackColor();
 
 // set background color by index
-void setBackColor(uint16_t colorIndex, bool ignoreLuminocity = false);
+void setBackColor(uint16_t colorIndex);
 
 // set background color by value
 void setBackColor(uint8_t r, uint8_t g, uint8_t b);
@@ -245,7 +244,7 @@ void fillRoundedRectSides(
 	int rtlx, int rtly, int rtrx, int rtry,
 	int rbrx, int rbry, int rblx, int rbly,
 	bool drawLine, bool fill,
-	const uint16_t *lineColors = nullptr, bool ignoreLuminocity = false
+	const uint16_t *lineColors = nullptr
 );
 
 // Keeps the corners of a box with rounded corners: what is drawn between

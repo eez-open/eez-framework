@@ -36,12 +36,7 @@ void SliderWidgetState::render() {
     auto widget = (const ButtonWidget *)widgetCursor.widget;
     const Style *style = getStyle(widget->style);
 
-	drawRectangle(
-		widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
-		nullptr,
-		false,
-		false
-	);
+	drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, nullptr);
 
     auto x = widgetCursor.x + style->paddingLeft;
     auto y = widgetCursor.y + style->paddingTop;

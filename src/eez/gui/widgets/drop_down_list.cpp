@@ -42,7 +42,7 @@ void DropDownListWidgetState::render() {
     int x2 = widgetCursor.x + widgetCursor.w - 1;
     int y2 = widgetCursor.y + widgetCursor.h - 1;
 
-    drawBorderAndBackground(x1, y1, x2, y2, style, getStyleBackgroundColor(style, stateStyle.active), false);
+    drawBorderAndBackground(x1, y1, x2, y2, style, getStyleBackgroundColor(style, stateStyle.active));
 
     double x = x1;
     double y = y1;
@@ -67,7 +67,7 @@ void DropDownListWidgetState::render() {
 		w - h + (2 * h) / 6,
 		h,
 		style,
-		stateStyle.active, false,
+		stateStyle.active,
 		nullptr, nullptr,
 		false, -1, 0,
 		true

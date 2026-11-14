@@ -116,18 +116,18 @@ void ScrollBarWidgetState::render() {
         }
 
         const Style *trackStyle = getStyle(widget->style);
-        drawRectangle(xTrack, yTrack, wTrack, hTrack, trackStyle, false, false, false);
+        drawRectangle(xTrack, yTrack, wTrack, hTrack, trackStyle, false, false);
 
         // draw thumb
         const Style *thumbStyle = getStyle(widget->thumbStyle);
         if (isHorizontal) {
             int xThumb, wThumb;
             getThumbGeometry(size, position, pageSize, xTrack, wTrack, buttonSize, xThumb, wThumb);
-            drawRectangle(xThumb, yTrack, wThumb, hTrack, thumbStyle, false, false, false);
+            drawRectangle(xThumb, yTrack, wThumb, hTrack, thumbStyle, false, false);
         } else {
             int yThumb, hThumb;
             getThumbGeometry(size, position, pageSize, yTrack, hTrack, buttonSize, yThumb, hThumb);
-            drawRectangle(xTrack, yThumb, wTrack, hThumb, thumbStyle, false, false, false);
+            drawRectangle(xTrack, yThumb, wTrack, hThumb, thumbStyle, false, false);
         }
 
         // draw right button
@@ -152,7 +152,7 @@ void ScrollBarWidgetState::render() {
     } else {
         // scroll bar is hidden
         const Style *trackStyle = getStyle(widget->style);
-        drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, trackStyle, false, false, false);
+        drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, trackStyle, false, false);
     }
 }
 

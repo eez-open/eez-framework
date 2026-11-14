@@ -605,7 +605,7 @@ void YTGraphWidgetState::render() {
     // no YT data (e.g. the data of the widget in a flow is not a YT data
     // provider): only the background
     if (!ytDataGetGetValueFunc(widgetCursor, widget->data)) {
-        drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, getStyle(widget->style), false, false, true);
+        drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, getStyle(widget->style));
         return;
     }
 

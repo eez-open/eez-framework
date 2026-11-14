@@ -52,12 +52,7 @@ void SwitchWidgetState::render() {
     const Style *widgetStyle = getStyle(widget->style);
     const Style *style = getStateStyle(widgetStyle, disabledState);
 
-	drawRectangle(
-		widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
-		nullptr,
-		false,
-		false
-	);
+	drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, nullptr);
 
     auto on = data.getInt() ? true : false;
 
@@ -109,7 +104,7 @@ void SwitchWidgetState::render() {
                 on ? "On" : "Off", -1,
                 textRight, widgetCursor.y, boxW, widgetCursor.h,
                 stateTextStyle,
-                false, false, nullptr, nullptr, false, -1, 0, true
+                false, nullptr, nullptr, false, -1, 0, true
             );
         }
 
@@ -124,7 +119,7 @@ void SwitchWidgetState::render() {
                 text, -1,
                 textLeft, widgetCursor.y, textRight - textLeft, widgetCursor.h,
                 getStateStyle(base, disabledState),
-                false, false, nullptr, nullptr, false, -1, 0, true
+                false, nullptr, nullptr, false, -1, 0, true
             );
         }
     }

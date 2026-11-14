@@ -77,14 +77,14 @@ void ProgressWidgetState::render() {
         auto xFrom = percentFrom * widgetCursor.w / 100;
         auto xTo = percentTo * widgetCursor.w / 100;
         if (g_isRTL) {
-            drawRectangle(widgetCursor.x + widgetCursor.w - xTo, widgetCursor.y, xTo - xFrom, widgetCursor.h, fillStyle, false, false, invertColors);
+            drawRectangle(widgetCursor.x + widgetCursor.w - xTo, widgetCursor.y, xTo - xFrom, widgetCursor.h, fillStyle, false, invertColors);
         } else {
-            drawRectangle(widgetCursor.x + xFrom, widgetCursor.y, xTo - xFrom, widgetCursor.h, fillStyle, false, false, invertColors);
+            drawRectangle(widgetCursor.x + xFrom, widgetCursor.y, xTo - xFrom, widgetCursor.h, fillStyle, false, invertColors);
         }
     } else {
         auto yFrom = percentFrom * widgetCursor.h / 100;
         auto yTo = percentTo * widgetCursor.h / 100;
-        drawRectangle(widgetCursor.x, widgetCursor.y + widgetCursor.h - yTo, widgetCursor.w, yTo - yFrom, fillStyle, false, false, invertColors);
+        drawRectangle(widgetCursor.x, widgetCursor.y + widgetCursor.h - yTo, widgetCursor.w, yTo - yFrom, fillStyle, false, invertColors);
     }
 }
 

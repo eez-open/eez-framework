@@ -420,7 +420,7 @@ void DisplayDataWidgetState::renderText(const DisplayDataWidget *widget, const S
         start, length,
         widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
         style,
-        active, false,
+        active,
         &color, &backgroundColor,
         data.getType() == VALUE_TYPE_FLOAT
 #if OPTION_KEYPAD

@@ -266,7 +266,7 @@ void InputWidgetState::render() {
 			text, -1,
 			widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
 			style,
-			stateStyle.active, false,
+			stateStyle.active,
 			&overrideColor, &overrideBackgroundColor,
 			true // useSmallerFontIfDoesNotFit
 		);

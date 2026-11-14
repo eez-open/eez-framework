@@ -423,12 +423,6 @@ static int g_screenshotHeight;
 Color g_fc, g_bc;
 uint8_t g_opacity = 255;
 
-static uint8_t g_colorCache[256][4];
-
-#define FLOAT_TO_COLOR_COMPONENT(F) ((F) < 0 ? 0 : (F) > 255 ? 255 : (uint8_t)(F))
-#define RGB_TO_HIGH_BYTE(R, G, B) (((R) & 248) | (G) >> 5)
-#define RGB_TO_LOW_BYTE(R, G, B) (((G) & 28) << 3 | (B) >> 3)
-
 // the colors of the selected theme and the custom colors of the main assets:
 // 32-bit colors if g_colors32, RGB565 otherwise (see colorFromAssets)
 static const void *g_themeColors;
@@ -730,7 +724,6 @@ static bool allocRenderBuffer(int bufferIndex) {
 }
 
 void init() {
-    onLuminocityChanged();
     onThemeChanged();
 
     uint32_t videoBufferSize = getVideoBufferSize();
@@ -2058,141 +2051,7 @@ void onThemeChanged() {
     g_colors32 = g_mainAssets->projectMinorVersion == 1;
 }
 
-void onLuminocityChanged() {
-    // invalidate cache
-    for (int i = 0; i < 256; ++i) {
-        g_colorCache[i][0] = 0;
-        g_colorCache[i][1] = 0;
-        g_colorCache[i][2] = 0;
-        g_colorCache[i][3] = 0;
-    }
-}
-
 ////////////////////////////////////////////////////////////////////////////////
-
-#define swap(type, i, j) {type t = i; i = j; j = t;}
-
-void rgbToHsl(float r, float g, float b, float &h, float &s, float &l) {
-    r /= 255;
-    g /= 255;
-    b /= 255;
-
-    float min = r;
-    float mid = g;
-    float max = b;
-
-    if (min > mid) {
-        swap(float, min, mid);
-    }
-    if (mid > max) {
-        swap(float, mid, max);
-    }
-    if (min > mid) {
-        swap(float, min, mid);
-    }
-
-    l = (max + min) / 2;
-
-    if (max == min) {
-        h = s = 0; // achromatic
-    } else {
-        float d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-
-        if (max == r) {
-            h = (g - b) / d + (g < b ? 6 : 0);
-        } else if (max == g) {
-            h = (b - r) / d + 2;
-        } else if (max == b) {
-            h = (r - g) / d + 4;
-        }
-
-        h /= 6;
-    }
-}
-
-float hue2rgb(float p, float q, float t) {
-    if (t < 0) t += 1;
-    if (t > 1) t -= 1;
-    if (t < 1.0f/6) return p + (q - p) * 6 * t;
-    if (t < 1.0f/2) return q;
-    if (t < 2.0f/3) return p + (q - p) * (2.0f/3 - t) * 6;
-    return p;
-}
-
-void hslToRgb(float h, float s, float l, float &r, float &g, float &b) {
-    if (s == 0) {
-        r = g = b = l; // achromatic
-    } else {
-        float q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-        float p = 2 * l - q;
-
-        r = hue2rgb(p, q, h + 1.0f/3);
-        g = hue2rgb(p, q, h);
-        b = hue2rgb(p, q, h - 1.0f/3);
-    }
-
-    r *= 255;
-    g *= 255;
-    b *= 255;
-}
-
-void adjustColor(Color &c) {
-#if DISPLAY_BPP == 16
-    if (g_hooks.getDisplayBackgroundLuminosityStep() == DISPLAY_BACKGROUND_LUMINOSITY_STEP_DEFAULT) {
-        return;
-    }
-
-	uint8_t ch = c >> 8;
-	uint8_t cl = c & 0xFF;
-
-    int i = (ch & 0xF0) | (cl & 0x0F);
-    if (ch == g_colorCache[i][0] && cl == g_colorCache[i][1]) {
-        // cache hit!
-		c = (g_colorCache[i][2] << 8) | g_colorCache[i][3];
-        return;
-    }
-
-    uint8_t r, g, b;
-    r = ch & 248;
-    g = ((ch << 5) | (cl >> 3)) & 252;
-    b = cl << 3;
-
-    float h, s, l;
-    rgbToHsl(r, g, b, h, s, l);
-
-    float a = l < 0.5 ? l : 1 - l;
-    if (a > 0.3f) {
-        a = 0.3f;
-    }
-    float lmin = l - a;
-    float lmax = l + a;
-
-    float lNew = remap((float)g_hooks.getDisplayBackgroundLuminosityStep(),
-        (float)DISPLAY_BACKGROUND_LUMINOSITY_STEP_MIN,
-        lmin,
-        (float)DISPLAY_BACKGROUND_LUMINOSITY_STEP_MAX,
-        lmax);
-
-    float floatR, floatG, floatB;
-    hslToRgb(h, s, lNew, floatR, floatG, floatB);
-
-    r = FLOAT_TO_COLOR_COMPONENT(floatR);
-    g = FLOAT_TO_COLOR_COMPONENT(floatG);
-    b = FLOAT_TO_COLOR_COMPONENT(floatB);
-
-    uint8_t chNew = RGB_TO_HIGH_BYTE(r, g, b);
-    uint8_t clNew = RGB_TO_LOW_BYTE(r, g, b);
-
-    // store new color in the cache
-    g_colorCache[i][0] = ch;
-    g_colorCache[i][1] = cl;
-    g_colorCache[i][2] = chNew;
-    g_colorCache[i][3] = clNew;
-
-	c = (chNew << 8) | clNew;
-#endif
-}
 
 // Color i of a color list of the assets. Assets with 32-bit colors (Studio's
 // "Color BPP" 32, projectMinorVersion 1) store R, G, B and alpha (R in the low
@@ -2291,23 +2150,18 @@ Color getColor() {
 }
 
 // set foreground color by index
-void setColor(uint16_t colorIndex, bool ignoreLuminocity) {
+void setColor(uint16_t colorIndex) {
     g_fc = getColorFromIndex(colorIndex);
-    if (!ignoreLuminocity) {
-        adjustColor(g_fc);
-    }
 }
 
 // set foreground color by RGB value
 void setColor(uint8_t r, uint8_t g, uint8_t b) {
     g_fc = RGB_TO_COLOR(r, g, b);
-	adjustColor(g_fc);
 }
 
 // set foreground color by value
 void setColorByValue(Color color) {
     g_fc = color;
-    adjustColor(g_fc);
 }
 
 Color getBackColor() {
@@ -2315,17 +2169,13 @@ Color getBackColor() {
 }
 
 // set background color by index
-void setBackColor(uint16_t colorIndex, bool ignoreLuminocity) {
+void setBackColor(uint16_t colorIndex) {
 	g_bc = getColorFromIndex(colorIndex);
-    if (!ignoreLuminocity) {
-	    adjustColor(g_bc);
-    }
 }
 
 // set background color by value
 void setBackColor(uint8_t r, uint8_t g, uint8_t b) {
     g_bc = RGB_TO_COLOR(r, g, b);
-	adjustColor(g_bc);
 }
 
 uint8_t setOpacity(uint8_t opacity) {
@@ -2483,7 +2333,7 @@ void fillRoundedRectSides(
 	int rtlx, int rtly, int rtrx, int rtry,
 	int rbrx, int rbry, int rblx, int rbly,
 	bool drawLine, bool fill,
-	const uint16_t *lineColors, bool ignoreLuminocity
+	const uint16_t *lineColors
 ) {
     RenderBufferTarget target;
     if (target.isEmpty()) {
@@ -2507,9 +2357,6 @@ void fillRoundedRectSides(
                 sideColors[i] = 0;
             } else {
                 Color color = getColorFromIndex(lineColors[i]);
-                if (!ignoreLuminocity) {
-                    adjustColor(color);
-                }
                 sideColors[i] = getRasterColor(color);
             }
         }

@@ -128,13 +128,13 @@ void ListWidgetState::render() {
         auto offset = n * getItemHeight(widget, widgetCursor.h) + (n - 1) * widget->gap;
         auto height = widgetCursor.h;
         if (offset < height) {
-            drawRectangle(widgetCursor.x, widgetCursor.y + offset, widgetCursor.w, MIN(widgetCursor.h, height - offset), style, false, false, true);
+            drawRectangle(widgetCursor.x, widgetCursor.y + offset, widgetCursor.w, MIN(widgetCursor.h, height - offset), style);
         }
     } else {
         auto offset = n * getItemWidth(widget, widgetCursor.w) + (n - 1) * widget->gap;
         auto width = widgetCursor.w;
         if (offset < width) {
-            drawRectangle(widgetCursor.x + offset, widgetCursor.y, MIN(widgetCursor.w, width - offset), widgetCursor.h, style, false, false, true);
+            drawRectangle(widgetCursor.x + offset, widgetCursor.y, MIN(widgetCursor.w, width - offset), widgetCursor.h, style);
         }
     }
 }

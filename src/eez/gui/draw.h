@@ -101,7 +101,7 @@ void drawStyleShadow(const Style *style, int x1, int y1, int x2, int y2);
 // shrunk to the inside of the border. insideWidget: a box drawn over the
 // background of the current widget (e.g. a part of it), the backgrounds below
 // the widget are not drawn first.
-void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *style, uint16_t color, bool ignoreLuminocity = false, bool insideWidget = false);
+void drawBorderAndBackground(int &x1, int &y1, int &x2, int &y2, const Style *style, uint16_t color, bool insideWidget = false);
 
 // active: the color and the background swapped (see swapColorsIfActive), also
 // overrideColor and overrideBackgroundColor
@@ -109,7 +109,7 @@ void drawText(
     const char *text, int textLength,
     int x, int y, int w, int h,
     const Style *style,
-    bool active = false, bool ignoreLuminocity = false,
+    bool active = false,
     uint16_t *overrideColor = nullptr, uint16_t *overrideBackgroundColor = nullptr,
     bool useSmallerFontIfDoesNotFit = false, int cursorPosition = -1, int xScroll = 0,
 	bool boolSkipBackground = false
@@ -185,7 +185,7 @@ void drawMultilineText(const char *text, int x, int y, int w, int h, const Style
 int measureMultilineText(const char *text, int x, int y, int w, int h, const Style *style, int firstLineIndent, int hangingIndent);
 
 void drawBitmap(Image *image, int x, int y, int w, int h, const Style *style, bool active);
-void drawRectangle(int x, int y, int w, int h, const Style *style, bool active = false, bool ignoreLuminocity = false, bool invertColors = true);
+void drawRectangle(int x, int y, int w, int h, const Style *style, bool active = false, bool invertColors = true);
 
 // CSS box-shadow like parameters, used only by the software shadow renderer (SDL: simulator and CM5)
 struct ShadowParams {

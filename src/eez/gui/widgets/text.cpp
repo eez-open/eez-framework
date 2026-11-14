@@ -21,7 +21,6 @@
 #include <eez/gui/gui.h>
 #include <eez/gui/widgets/text.h>
 
-#define IGNORE_LUMINOSITY_FLAG 1
 #define FIT_TO_CONTENT_WIDTH_FLAG 2
 #define FIT_TO_CONTENT_HEIGHT_FLAG 4
 
@@ -230,13 +229,12 @@ void TextWidgetState::render() {
     uint16_t overrideColor = getTextColor(widgetCursor, style);
     uint16_t overrideBackgroundColor = style->backgroundColor;
 
-    bool ignoreLuminosity = (widget->flags & IGNORE_LUMINOSITY_FLAG) != 0;
     if (text && text[0]) {
         drawText(
             text, -1,
             widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
             style,
-            stateStyle.active, ignoreLuminosity,
+            stateStyle.active,
             &overrideColor, &overrideBackgroundColor
         );
     } else if (widget->data) {
@@ -253,7 +251,7 @@ void TextWidgetState::render() {
                         fullText, -1,
                         widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
                         style,
-                        stateStyle.active, ignoreLuminosity,
+                        stateStyle.active,
                         &overrideColor, &overrideBackgroundColor
                     );
                 } else {
@@ -301,7 +299,7 @@ void TextWidgetState::render() {
                         text, -1,
                         widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
                         style,
-                        stateStyle.active, ignoreLuminosity,
+                        stateStyle.active,
                         &overrideColor, &overrideBackgroundColor
                     );
                 }
@@ -312,7 +310,7 @@ void TextWidgetState::render() {
                     str ? str : "", -1,
                     widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
                     style,
-                    stateStyle.active, ignoreLuminosity,
+                    stateStyle.active,
                     &overrideColor, &overrideBackgroundColor
                 );
             }
@@ -323,7 +321,7 @@ void TextWidgetState::render() {
                 text, -1,
                 widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
                 style,
-                stateStyle.active, ignoreLuminosity,
+                stateStyle.active,
                 &overrideColor, &overrideBackgroundColor,
                 data.getType() == VALUE_TYPE_FLOAT
             );

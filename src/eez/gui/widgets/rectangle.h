@@ -15,7 +15,6 @@ namespace gui {
 
 struct RectangleFlags {
     unsigned invertColors : 1;
-    unsigned ignoreLuminosity : 1;
 };
 
 struct RectangleWidget : public Widget {

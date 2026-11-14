@@ -38,7 +38,6 @@ void RectangleWidgetState::render() {
         widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
         stateStyle.style,
         stateStyle.active,
-        widget->flags.ignoreLuminosity,
         widget->flags.invertColors
     );
 }

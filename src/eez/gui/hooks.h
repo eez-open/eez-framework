@@ -30,7 +30,6 @@ struct Hooks {
     uint16_t (*overrideStyleColor)(const WidgetCursor &widgetCursor, const Style *style);
     uint16_t (*transformColor)(uint16_t color);
     bool (*styleGetSmallerFont)(font::Font &font);
-    uint8_t (*getDisplayBackgroundLuminosityStep)();
     uint8_t (*getSelectedThemeIndex)();
     void (*turnOnDisplayStart)();
     void (*turnOnDisplayTick)();
