@@ -85,6 +85,21 @@ TEST("gui/switch rows: the state text is Off, then On in the checked state of it
     CHECK_EQ(rgb(TRACK_X + 50, ROW1_Y + 35), WHITE);
 }
 
+TEST("gui/switch rows: both ends of the track are the same, on and off") {
+    showRows();
+    for (int y = ROW1_Y + 19; y < ROW1_Y + 19 + 32; y++) {
+        CHECK_EQ(rgb(TRACK_X + 63, y), rgb(TRACK_X, y));
+    }
+    tap(200, ROW1_Y + 35);
+    CHECK(g_switch);
+    harness::frame(2);
+    // the last column is the on part too
+    CHECK(rgb(TRACK_X + 63, ROW1_Y + 35) != BACKDROP);
+    for (int y = ROW1_Y + 19; y < ROW1_Y + 19 + 32; y++) {
+        CHECK_EQ(rgb(TRACK_X + 63, y), rgb(TRACK_X, y));
+    }
+}
+
 TEST("gui/switch rows: a tap on the label toggles the switch") {
     showRows();
     tap(150, ROW1_Y + 35);

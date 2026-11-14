@@ -135,7 +135,9 @@ void SwitchWidgetState::render() {
 
     display::setColor(style->borderColor);
 
-    int pos = (int)floorf(x + t * (w - 1));
+    // the columns left of pos are the on part (all of them when on, none
+    // when off)
+    int pos = x + (int)roundf(t * w);
 
 	display::setBackColor(style->backgroundColor);
     display::fillRoundedRect(
