@@ -63,6 +63,34 @@ TEST("widgets/dd: a float with a unit is drawn as its text") {
     CHECK_EQ(diffWithRef(0, "2.5 V"), 0);
 }
 
+namespace {
+
+const Widget *g_editedWidget;
+
+// the first widget is edited: 7.5 V is its edit value, not set yet
+bool editValueOfFirst(const WidgetCursor &widgetCursor, int16_t id, Value &value) {
+    if (widgetCursor.widget != g_editedWidget) {
+        return false;
+    }
+    value = Value(7.5f, UNIT_VOLT);
+    return true;
+}
+
+} // namespace
+
+TEST("widgets/dd: the edit value of the app context is shown instead of the data") {
+    set(V_A, Value(2.5f, UNIT_VOLT));
+    show(PAGE_ID_W_DD);
+    CHECK_EQ(diffWithRef(0, "2.5 V"), 0);
+    g_editedWidget = pageWidget(PAGE_ID_W_DD, 0);
+    harness::g_appContextOverrides.getFocusEditValue = editValueOfFirst;
+    CHECK_EQ(diffWithRef(0, "7.5 V"), 0);
+    // the other widgets of the same data show the data
+    CHECK_EQ(diffWithRef(1, "2"), 0);
+    harness::g_appContextOverrides.getFocusEditValue = nullptr;
+    CHECK_EQ(diffWithRef(0, "2.5 V"), 0);
+}
+
 TEST("widgets/dd: display options select the parts of a float") {
     set(V_A, Value(2.5f, UNIT_VOLT));
     show(PAGE_ID_W_DD);

@@ -128,7 +128,11 @@ static void renderIntegerUnitAndFraction(DisplayDataWidgetState *widgetState, co
 // the precision of the widget (getValueInUnit), when the widget has them. A
 // value with its own decimals (a module field with a resolution) shows them.
 static Value getDisplayDataValue(const WidgetCursor &widgetCursor, const DisplayDataWidget *widget) {
-    Value data = get(widgetCursor, widget->data);
+    // the edit value that isn't set yet (AppContext::getFocusEditValue), else the data
+    Value data;
+    if (!widgetCursor.appContext->getFocusEditValue(widgetCursor, widget->data, data)) {
+        data = get(widgetCursor, widget->data);
+    }
     if (!widget->displayUnit && !widget->precision) {
         return data;
     }

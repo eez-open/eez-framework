@@ -86,6 +86,11 @@ public:
 
     virtual bool isBlinking(const WidgetCursor &widgetCursor, int16_t id);
 
+    // The value of the data id of the widget that is being edited and not set
+    // yet (e.g. the encoder value in confirmation mode): Input and DisplayData
+    // show it instead of the data. false: there is no such value.
+    virtual bool getFocusEditValue(const WidgetCursor &widgetCursor, int16_t id, Value &value);
+
     virtual void onPageTouch(const WidgetCursor &foundWidget, Event &touchEvent);
 
     virtual bool testExecuteActionOnTouchDown(int action);

@@ -154,14 +154,18 @@ bool InputWidgetState::updateState() {
 	auto stateStyle = getWidgetStateStyle(getStyle(styleId), flags.active, flags.focused, getDisabledStateFlag(flags.disabled));
 	const Style *style = stateStyle.style;
 
-	WIDGET_STATE(blinkOpacity, styleIsBlink(style) ? g_blinkOpacity : 255);
+	WIDGET_STATE(blinkOpacity, styleIsBlink(style) || isBlinking(widgetCursor, widget->data) ? g_blinkOpacity : 255);
 	WIDGET_STATE(color, g_hooks.overrideStyleColor(widgetCursor, style));
 
-	// A string is compared where it is (no copy in every frame), WIDGET_STATE
-	// copies it only when it is changed
-	g_readStringInPlace = true;
-	Value newData = get(widgetCursor, widget->data);
-	g_readStringInPlace = false;
+	// the edit value that isn't set yet (AppContext::getFocusEditValue), else
+	// the data. A string is compared where it is (no copy in every frame),
+	// WIDGET_STATE copies it only when it is changed
+	Value newData;
+	if (!widgetCursor.appContext->getFocusEditValue(widgetCursor, widget->data, newData)) {
+		g_readStringInPlace = true;
+		newData = get(widgetCursor, widget->data);
+		g_readStringInPlace = false;
+	}
 	WIDGET_STATE(data, newData);
 
 	if (widget->flags & INPUT_WIDGET_TYPE_NUMBER) {

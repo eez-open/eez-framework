@@ -117,6 +117,16 @@ public:
         return f ? f(widgetCursor) : AppContext::isFocusWidget(widgetCursor);
     }
 
+    bool isBlinking(const WidgetCursor &widgetCursor, int16_t id) override {
+        auto f = harness::g_appContextOverrides.isBlinking;
+        return f ? f(widgetCursor, id) : AppContext::isBlinking(widgetCursor, id);
+    }
+
+    bool getFocusEditValue(const WidgetCursor &widgetCursor, int16_t id, Value &value) override {
+        auto f = harness::g_appContextOverrides.getFocusEditValue;
+        return f ? f(widgetCursor, id, value) : AppContext::getFocusEditValue(widgetCursor, id, value);
+    }
+
 protected:
     bool canExecuteActionWhenTouchedOutsideOfActivePage(int pageId, int action) override {
         auto f = harness::g_appContextOverrides.canExecuteActionWhenTouchedOutsideOfActivePage;

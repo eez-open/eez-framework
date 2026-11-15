@@ -17,6 +17,7 @@
 #include <vector>
 
 namespace eez {
+struct Value;
 namespace gui {
 class AppContext;
 struct WidgetCursor;
@@ -61,6 +62,8 @@ struct AppContextOverrides {
     bool (*testExecuteActionOnTouchDown)(int action);
     bool (*canExecuteActionWhenTouchedOutsideOfActivePage)(int pageId, int action);
     bool (*isFocusWidget)(const eez::gui::WidgetCursor &widgetCursor);
+    bool (*isBlinking)(const eez::gui::WidgetCursor &widgetCursor, int16_t id);
+    bool (*getFocusEditValue)(const eez::gui::WidgetCursor &widgetCursor, int16_t id, eez::Value &value);
 };
 extern AppContextOverrides g_appContextOverrides;
 

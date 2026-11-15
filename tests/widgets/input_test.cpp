@@ -223,6 +223,70 @@ TEST("widgets/input: a number is shown in the display unit with the decimals of 
     CHECK_EQ(diffBlocks(IN_SHOWN[0], IN_SHOWN[1], IN_REF[0], IN_REF[1], IN_REF[2], IN_REF[3]), 0);
 }
 
+namespace {
+
+const Widget *g_editedWidget;
+
+// the number input is edited: 2.5 is its edit value (e.g. of the encoder in
+// confirmation mode), not set yet
+bool editValueOfNumberInput(const WidgetCursor &widgetCursor, int16_t id, Value &value) {
+    if (widgetCursor.widget != g_editedWidget) {
+        return false;
+    }
+    value = Value(2.5f, VALUE_TYPE_FLOAT);
+    return true;
+}
+
+bool numberInputBlinks(const WidgetCursor &widgetCursor, int16_t id) {
+    return widgetCursor.widget == g_editedWidget;
+}
+
+} // namespace
+
+TEST("widgets/input: the edit value of the app context is shown instead of the data") {
+    inputs("", "", Value(2.5f, VALUE_TYPE_FLOAT), "");
+    show(PAGE_ID_W_INPUT);
+    auto edited = block(RECT(IN_NUM));
+    set(V_C, intValue(2));
+    harness::frame();
+    CHECK(diffBlock(edited, RECT(IN_NUM)) > 0);
+
+    g_editedWidget = pageWidget(PAGE_ID_W_INPUT, 2);
+    harness::g_appContextOverrides.getFocusEditValue = editValueOfNumberInput;
+    harness::frame();
+    CHECK_EQ(diffBlock(edited, RECT(IN_NUM)), 0);
+
+    // no edit value any more (set or discarded): the data again
+    harness::g_appContextOverrides.getFocusEditValue = nullptr;
+    harness::frame();
+    CHECK(diffBlock(edited, RECT(IN_NUM)) > 0);
+}
+
+TEST("widgets/input: blinks while the app context says so") {
+    inputs("", "", intValue(2), "");
+    show(PAGE_ID_W_INPUT);
+    int full = count(RECT(IN_NUM), YELLOW);
+    CHECK(full > 0);
+    CHECK_EQ(framesWithDrawing(3), 0);
+
+    g_editedWidget = pageWidget(PAGE_ID_W_INPUT, 2);
+    harness::g_appContextOverrides.isBlinking = numberInputBlinks;
+    // one blink period (CONF_GUI_BLINK_TIME 400 ms out, 400 ms in): the value
+    // fades out and comes back
+    int least = full;
+    for (int i = 0; i < 2 * 400 / (int)harness::FRAME_MS + 2; i++) {
+        harness::frame();
+        int n = count(RECT(IN_NUM), YELLOW);
+        least = n < least ? n : least;
+    }
+    CHECK(least < full / 2);
+
+    // not blinking any more: drawn in full again
+    harness::g_appContextOverrides.isBlinking = nullptr;
+    harness::frame(2);
+    CHECK_EQ(count(RECT(IN_NUM), YELLOW), full);
+}
+
 TEST("widgets/input: text input with a number shows the number") {
     // a number is shown as its text (W7: getInputWidgetData made a string ref
     // of the getString() of an integer)

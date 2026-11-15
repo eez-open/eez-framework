@@ -295,6 +295,10 @@ bool AppContext::isBlinking(const WidgetCursor &widgetCursor, int16_t id) {
     return false;
 }
 
+bool AppContext::getFocusEditValue(const WidgetCursor &widgetCursor, int16_t id, Value &value) {
+    return false;
+}
+
 bool AppContext::canExecuteActionWhenTouchedOutsideOfActivePage(int pageId, int action) {
     return false;
 }
