@@ -36,6 +36,29 @@
 namespace eez {
 namespace gui {
 
+int getListItemSize(const Widget *list, bool horizontal, int itemSize, int gap, int size) {
+    int designSize = horizontal ? list->width : list->height;
+    if (size == designSize || designSize <= 0) {
+        return itemSize;
+    }
+
+    if (itemSize == designSize) {
+        return size;
+    }
+
+    auto flags = list->flags;
+    bool stretches = (flags & WIDGET_FLAG_GROW) || (horizontal ?
+        (flags & WIDGET_FLAG_PIN_TO_LEFT) && (flags & WIDGET_FLAG_PIN_TO_RIGHT) :
+        (flags & WIDGET_FLAG_PIN_TO_TOP) && (flags & WIDGET_FLAG_PIN_TO_BOTTOM));
+    if (stretches) {
+        return itemSize;
+    }
+
+    // rounded down: the items that fit in the design still fit
+    int pitch = (int)(((int64_t)(itemSize + gap) * size) / designSize);
+    return MAX(pitch - gap, 1);
+}
+
 ScrollLists g_findEnclosingScrollLists;
 
 int (*g_editorScrollPositionHook)(const WidgetCursor &widgetCursor) = nullptr;

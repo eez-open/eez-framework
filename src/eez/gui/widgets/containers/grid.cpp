@@ -44,11 +44,15 @@ bool GridWidgetState::updateState() {
 
     isVertical = widget->gridFlow != GRID_FLOW_COLUMN;
 
+    // the item size when the layout resized the grid, see getListItemSize
+    int itemW = getListItemSize(widget, true, itemWidget->width, 0, widgetCursor.w);
+    int itemH = getListItemSize(widget, false, itemWidget->height, 0, widgetCursor.h);
+
     int extent = isVertical ? widgetCursor.h : widgetCursor.w;
     int cross = isVertical ? widgetCursor.w : widgetCursor.h;
-    int itemCross = isVertical ? itemWidget->width : itemWidget->height;
+    int itemCross = isVertical ? itemW : itemH;
 
-    lineExtent = isVertical ? itemWidget->height : itemWidget->width;
+    lineExtent = isVertical ? itemH : itemW;
     pitch = lineExtent;
 
     itemsPerLine = itemCross > 0 ? cross / itemCross : 0;
@@ -76,8 +80,8 @@ void GridWidgetState::enumChildren() {
 
     const Widget *childWidget = static_cast<const Widget *>(widget->itemWidget);
 
-    int itemW = childWidget->width;
-    int itemH = childWidget->height;
+    int itemW = getListItemSize(widget, true, childWidget->width, 0, context.savedW);
+    int itemH = getListItemSize(widget, false, childWidget->height, 0, context.savedH);
 
     int extent = isVertical ? context.savedH : context.savedW;
     int crossPitch = isVertical ? itemW : itemH;

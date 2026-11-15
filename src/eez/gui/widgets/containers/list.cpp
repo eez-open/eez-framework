@@ -29,17 +29,18 @@ namespace gui {
 #define LIST_TYPE_VERTICAL 1
 #define LIST_TYPE_HORIZONTAL 2
 
-// List can be stretched by the container layout (w and h are the list size
-// after the layout). Item is stretched along with the list only in the
-// dimension in which it has the same size as the list in the design.
+// The item size when the layout resized the list (w and h: the list size after
+// the layout), see getListItemSize.
 static int getItemWidth(const ListWidget *widget, int w) {
     auto itemWidget = static_cast<const Widget *>(widget->itemWidget);
-    return itemWidget->width == widget->width ? w : itemWidget->width;
+    int gap = widget->listType == LIST_TYPE_HORIZONTAL ? widget->gap : 0;
+    return getListItemSize(widget, true, itemWidget->width, gap, w);
 }
 
 static int getItemHeight(const ListWidget *widget, int h) {
     auto itemWidget = static_cast<const Widget *>(widget->itemWidget);
-    return itemWidget->height == widget->height ? h : itemWidget->height;
+    int gap = widget->listType == LIST_TYPE_VERTICAL ? widget->gap : 0;
+    return getListItemSize(widget, false, itemWidget->height, gap, h);
 }
 
 bool ListWidgetState::updateState() {

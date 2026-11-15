@@ -41,6 +41,19 @@ namespace gui {
 //
 // Below, "list" is any scrollable widget (List or Grid).
 
+struct Widget;
+
+// The size of a list item in one dimension (horizontal: the width, otherwise
+// the height) when the layout resized the list to `size` (the design size is
+// the size of the list widget). The item is scaled with the list, so the items
+// that fit in the design still fit (e.g. a module page shown smaller or bigger
+// than designed); `gap` is the gap between the items in that dimension (it is
+// kept, the pitch is scaled). A list that stretches in that dimension (pinned
+// to both edges, or growing in a row or column) shows more or fewer items
+// instead: its item keeps its size. An item as large as the list in the design
+// always follows the list.
+int getListItemSize(const Widget *list, bool horizontal, int itemSize, int gap, int size);
+
 struct ScrollableWidgetState : public WidgetState {
     int startPosition = 0; // in items
     int count;

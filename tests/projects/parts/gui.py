@@ -37,6 +37,7 @@ STYLES = [
 GLOBALS = [
     variable("gui_list_items", "array:integer", "[%s]" % ", ".join(str(i) for i in range(20))),
     variable("gui_grid_items", "array:integer", "[%s]" % ", ".join(str(i) for i in range(60))),
+    variable("gui_resize_items", "array:integer", "[%s]" % ", ".join(str(i) for i in range(8))),
     # native, implemented in tests/gui/gui_app.cpp
     variable("gui_enabled", "boolean", native=True),
     variable("gui_switch", "boolean", native=True),
@@ -230,5 +231,32 @@ _SWITCH_ROWS = page("gui_switch_rows", [
            ]),
 ])
 
+# lists in a page that is shown smaller and bigger than designed (a user widget
+# resizes its page, as BB3+ shows a module page in a slot view): 8 items of a
+# list (100x40), a grid (50x80, 2 in a row) and a list pinned to the top and
+# the bottom fill the 300x320 page exactly
+def _resize_item(key, w, h):
+    # an action, so that findWidget finds the item
+    return widget("TextWidget", key, 0, 0, w, h, "gui_item", data='"" + $index',
+                  eventHandlers=[event_handler(key, "CLICKED", "gui_list_item")])
+
+
+_RESIZE_VIEW = page("gui_resize_view", [
+    widget("ListWidget", "gui/resize/list", 0, 0, 100, 320, "gui_list", data="gui_resize_items",
+           listType="vertical", gap=0, itemWidget=_resize_item("gui/resize/list_item", 100, 40)),
+    widget("GridWidget", "gui/resize/grid", 100, 0, 100, 320, "gui_list", data="gui_resize_items",
+           gridFlow="row", itemWidget=_resize_item("gui/resize/grid_item", 50, 80)),
+    widget("ListWidget", "gui/resize/pinned", 200, 0, 100, 320, "gui_list", data="gui_resize_items",
+           listType="vertical", gap=0, resizing={"pinToEdge": 12, "fixSize": 0},
+           itemWidget=_resize_item("gui/resize/pinned_item", 100, 40)),
+], width=300, height=320, isUsedAsUserWidget=True)
+
+_RESIZE = page("gui_resize", [
+    widget("UserWidgetWidget", "gui/resize/smaller", 0, 0, 300, 240, "default", userWidgetPageName="gui_resize_view"),
+    widget("UserWidgetWidget", "gui/resize/bigger", 400, 0, 300, 480, "default", userWidgetPageName="gui_resize_view"),
+])
+
 PAGES = [_PAGE_A, _PAGE_B, _POPUP, _POPUP2, _DIALOG, _TRANSPARENT, _YES_NO, _numeric_keypad(), _text_keypad(), _LISTS, _OVERLAY,
-         _SCROLL, _ROUNDED, _LIGHT, _SWITCH_ROWS]
+         _SCROLL, _ROUNDED, _LIGHT, _SWITCH_ROWS, _RESIZE]
+
+USER_WIDGETS = [_RESIZE_VIEW]
