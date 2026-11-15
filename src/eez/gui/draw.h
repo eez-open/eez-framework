@@ -185,7 +185,8 @@ void drawMultilineText(const char *text, int x, int y, int w, int h, const Style
 int measureMultilineText(const char *text, int x, int y, int w, int h, const Style *style, int firstLineIndent, int hangingIndent);
 
 void drawBitmap(Image *image, int x, int y, int w, int h, const Style *style, bool active);
-void drawRectangle(int x, int y, int w, int h, const Style *style, bool active = false, bool invertColors = true);
+// the box of the style (border, radius, shadow) filled with its background color
+void drawRectangle(int x, int y, int w, int h, const Style *style, bool active = false);
 
 // CSS box-shadow like parameters, used only by the software shadow renderer (SDL: simulator and CM5)
 struct ShadowParams {

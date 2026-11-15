@@ -61,9 +61,10 @@ STYLES = [
     style("w_lg_cursor", backgroundColor="w_gray"),
     # progress: blue, green part
     style("w_prog", backgroundColor="w_blue", activeBackgroundColor="w_green"),
-    # scroll bar: track gray, thumb green (drawn in the style color)
-    style("w_track", color="w_gray", backgroundColor="w_gray"),
-    style("w_thumb", color="w_green", backgroundColor="w_green"),
+    # scroll bar: track gray, thumb green (their background colors, the red
+    # color isn't used)
+    style("w_track", color="w_red", backgroundColor="w_gray"),
+    style("w_thumb", color="w_red", backgroundColor="w_green"),
     # switch, slider
     style("w_switch", color="w_white", backgroundColor="w_gray", activeBackgroundColor="w_green",
           borderColor="w_gray", padding="2"),

@@ -656,7 +656,7 @@ enum flow_itemFlowStructureFields {
     FLOW_STRUCTURE_FLOW_ITEM_NUM_FIELDS
 };
 
-extern const uint8_t assets[189001];
+extern const uint8_t assets[189024];
 
 } // namespace gui
 } // namespace eez

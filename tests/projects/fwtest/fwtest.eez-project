@@ -39211,7 +39211,7 @@
           "name": "w_track",
           "tags": "widgets",
           "alwaysBuild": true,
-          "color": "w_gray",
+          "color": "w_red",
           "backgroundColor": "w_gray",
           "childStyles": []
         },
@@ -39220,7 +39220,7 @@
           "name": "w_thumb",
           "tags": "widgets",
           "alwaysBuild": true,
-          "color": "w_green",
+          "color": "w_red",
           "backgroundColor": "w_green",
           "childStyles": []
         },

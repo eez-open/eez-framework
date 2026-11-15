@@ -32,13 +32,11 @@ bool RectangleWidgetState::updateState() {
 void RectangleWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
 
-    auto widget = (const RectangleWidget *)widgetCursor.widget;
-    auto stateStyle = getWidgetStateStyle(getStyle(widget->style), flags.active, false, getDisabledStateFlag(flags.disabled));
+    auto stateStyle = getWidgetStateStyle(getStyle(widgetCursor.widget->style), flags.active, false, getDisabledStateFlag(flags.disabled));
     drawRectangle(
         widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
         stateStyle.style,
-        stateStyle.active,
-        widget->flags.invertColors
+        stateStyle.active
     );
 }
 

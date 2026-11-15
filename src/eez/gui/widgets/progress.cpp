@@ -23,6 +23,24 @@ namespace gui {
 static const uint8_t PROGRESS_WIDGET_ORIENTATION_HORIZONTAL = 0;
 // static const uint8_t PROGRESS_WIDGET_ORIENTATION_VERTICAL = 1;
 
+// the filled part: the background color of the checked state style, without a
+// checked state style the color of the style (the background is the empty part)
+static void drawFilledPart(int x, int y, int w, int h, const Style *style) {
+    if (w <= 0 || h <= 0) {
+        return;
+    }
+    int x1 = x;
+    int y1 = y;
+    int x2 = x + w - 1;
+    int y2 = y + h - 1;
+    const Style *checkedStyle = getStateStyle(style, STYLE_STATE_FLAG(STYLE_STATE_CHECKED));
+    if (checkedStyle != style) {
+        drawBorderAndBackground(x1, y1, x2, y2, checkedStyle, checkedStyle->backgroundColor);
+    } else {
+        drawBorderAndBackground(x1, y1, x2, y2, style, style->color);
+    }
+}
+
 bool ProgressWidgetState::updateState() {
     WIDGET_STATE_START(ProgressWidget);
 
@@ -66,25 +84,19 @@ void ProgressWidgetState::render() {
         percentFrom = percentTo;
     }
 
-    // the filled part: the background of the checked state style, without a
-    // checked state style the color of the style
-    const Style *checkedStyle = getStateStyle(style, STYLE_STATE_FLAG(STYLE_STATE_CHECKED));
-    const Style *fillStyle = checkedStyle != style ? checkedStyle : style;
-    bool invertColors = checkedStyle != style;
-
     auto isHorizontal = widget->orientation == PROGRESS_WIDGET_ORIENTATION_HORIZONTAL;
     if (isHorizontal) {
         auto xFrom = percentFrom * widgetCursor.w / 100;
         auto xTo = percentTo * widgetCursor.w / 100;
         if (g_isRTL) {
-            drawRectangle(widgetCursor.x + widgetCursor.w - xTo, widgetCursor.y, xTo - xFrom, widgetCursor.h, fillStyle, false, invertColors);
+            drawFilledPart(widgetCursor.x + widgetCursor.w - xTo, widgetCursor.y, xTo - xFrom, widgetCursor.h, style);
         } else {
-            drawRectangle(widgetCursor.x + xFrom, widgetCursor.y, xTo - xFrom, widgetCursor.h, fillStyle, false, invertColors);
+            drawFilledPart(widgetCursor.x + xFrom, widgetCursor.y, xTo - xFrom, widgetCursor.h, style);
         }
     } else {
         auto yFrom = percentFrom * widgetCursor.h / 100;
         auto yTo = percentTo * widgetCursor.h / 100;
-        drawRectangle(widgetCursor.x, widgetCursor.y + widgetCursor.h - yTo, widgetCursor.w, yTo - yFrom, fillStyle, false, invertColors);
+        drawFilledPart(widgetCursor.x, widgetCursor.y + widgetCursor.h - yTo, widgetCursor.w, yTo - yFrom, style);
     }
 }
 

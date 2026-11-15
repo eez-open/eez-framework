@@ -13,12 +13,8 @@
 namespace eez {
 namespace gui {
 
-struct RectangleFlags {
-    unsigned invertColors : 1;
-};
-
+// filled with the background color of its style
 struct RectangleWidget : public Widget {
-    RectangleFlags flags;
 };
 
 struct RectangleWidgetState : public WidgetState {
