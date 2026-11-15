@@ -70,6 +70,7 @@ STYLES = [
 GLOBALS = [
     variable("layout_visible", "boolean", native=True),
     variable("layout_text", "string", native=True),
+    variable("layout_value", "float", native=True),
 ]
 
 # Roboto Regular (fonts/Roboto-Regular.ttf) at the double size of VRoboto (part
@@ -206,6 +207,10 @@ def _parts_page():
                data='"12.000 V"', displayOption=7, refreshRate="0", unitStyle={"useStyle": "layout_pu"}),
         widget("DisplayDataWidget", ("layout", "parts_right_ma"), 460, 90, 300, 60, "layout_pv_right",
                data='"0.750 mA"', displayOption=7, refreshRate="0", unitStyle={"useStyle": "layout_pu"}),
+        # "12.50" fits the content box (150 - 4 - 40), "V" only the right padding
+        widget("DisplayDataWidget", ("layout", "parts_right_fit"), 460, 160, 150, 60, "layout_pv_right",
+               data="layout_value", displayOption=7, precision="0.01", refreshRate="0",
+               unitStyle={"useStyle": "layout_pu"}),
         # "SET" left of "12.5 V" (right aligned)
         widget("InputEmbeddedWidget", ("layout", "parts_input_left"), 20, 410, 360, 60, "layout_pv_right",
                data="12.5", inputType="number", min="0", max="100", precision="0.1", unit='"V"',

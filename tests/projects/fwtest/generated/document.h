@@ -34,24 +34,25 @@ enum DataEnum {
     DATA_ID_GUI_KEYPAD_OPTION1_TEXT = 18,
     DATA_ID_LAYOUT_VISIBLE = 19,
     DATA_ID_LAYOUT_TEXT = 20,
-    DATA_ID_RENDER_TEXT_A = 21,
-    DATA_ID_RENDER_TEXT_B = 22,
-    DATA_ID_RENDER_TEXT_C = 23,
-    DATA_ID_RENDER_TEXT_D = 24,
-    DATA_ID_RENDER_TEXT_E = 25,
-    DATA_ID_RENDER_TEXT_F = 26,
-    DATA_ID_STYLES_VISIBLE = 27,
-    DATA_ID_STYLES_TEXT = 28,
-    DATA_ID_W_ELL = 29,
-    DATA_ID_W_REF = 30,
-    DATA_ID_W_XSCROLL = 31,
-    DATA_ID_W_COUNTER_A = 32,
-    DATA_ID_W_COUNTER_B = 33,
-    DATA_ID_W_YT = 34,
-    DATA_ID_W_CANVAS = 35,
-    DATA_ID_W_ROL = 36,
-    DATA_ID_W_PROBE = 37,
-    DATA_ID_W_COUNTER_ARR = 38
+    DATA_ID_LAYOUT_VALUE = 21,
+    DATA_ID_RENDER_TEXT_A = 22,
+    DATA_ID_RENDER_TEXT_B = 23,
+    DATA_ID_RENDER_TEXT_C = 24,
+    DATA_ID_RENDER_TEXT_D = 25,
+    DATA_ID_RENDER_TEXT_E = 26,
+    DATA_ID_RENDER_TEXT_F = 27,
+    DATA_ID_STYLES_VISIBLE = 28,
+    DATA_ID_STYLES_TEXT = 29,
+    DATA_ID_W_ELL = 30,
+    DATA_ID_W_REF = 31,
+    DATA_ID_W_XSCROLL = 32,
+    DATA_ID_W_COUNTER_A = 33,
+    DATA_ID_W_COUNTER_B = 34,
+    DATA_ID_W_YT = 35,
+    DATA_ID_W_CANVAS = 36,
+    DATA_ID_W_ROL = 37,
+    DATA_ID_W_PROBE = 38,
+    DATA_ID_W_COUNTER_ARR = 39
 };
 
 void data_none(DataOperationEnum operation, const WidgetCursor &cursor, Value &value);
@@ -75,6 +76,7 @@ void data_gui_keypad_ok_enabled(DataOperationEnum operation, const WidgetCursor 
 void data_gui_keypad_option1_text(DataOperationEnum operation, const WidgetCursor &cursor, Value &value);
 void data_layout_visible(DataOperationEnum operation, const WidgetCursor &cursor, Value &value);
 void data_layout_text(DataOperationEnum operation, const WidgetCursor &cursor, Value &value);
+void data_layout_value(DataOperationEnum operation, const WidgetCursor &cursor, Value &value);
 void data_render_text_a(DataOperationEnum operation, const WidgetCursor &cursor, Value &value);
 void data_render_text_b(DataOperationEnum operation, const WidgetCursor &cursor, Value &value);
 void data_render_text_c(DataOperationEnum operation, const WidgetCursor &cursor, Value &value);
@@ -656,7 +658,7 @@ enum flow_itemFlowStructureFields {
     FLOW_STRUCTURE_FLOW_ITEM_NUM_FIELDS
 };
 
-extern const uint8_t assets[189024];
+extern const uint8_t assets[188842];
 
 } // namespace gui
 } // namespace eez

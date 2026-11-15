@@ -898,7 +898,13 @@ void drawValueParts(
     font::Font valueFont = g.valueFont;
     int valueWidth = g.valueWidth;
     if (useSmallerFontIfDoesNotFit && parts.value) {
-        while (valueWidth + g.unitGap + g.unitWidth > valueX2 - valueX1 + 1 && g_hooks.styleGetSmallerFont(valueFont)) {
+        // a unit in the right padding needs room only for what doesn't fit in
+        // the padding (as in getValuePartsGeometry)
+        int unitRoom = g.unitGap + g.unitWidth;
+        if (isUnitInRightPadding(parts, style)) {
+            unitRoom = MAX(unitRoom - style->paddingRight, 0);
+        }
+        while (valueWidth + unitRoom > valueX2 - valueX1 + 1 && g_hooks.styleGetSmallerFont(valueFont)) {
             valueWidth = display::measureStr(parts.value, parts.valueLength, valueFont, 0);
         }
     }

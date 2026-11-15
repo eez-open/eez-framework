@@ -13,6 +13,7 @@
 #include <eez/gui/gui.h>
 #include <eez/gui/display.h>
 #include <eez/gui/font.h>
+#include <eez/gui/hooks.h>
 
 #include "document.h"
 #include "harness.h"
@@ -45,6 +46,13 @@ void data_layout_visible(DataOperationEnum operation, const WidgetCursor &, Valu
 void data_layout_text(DataOperationEnum operation, const WidgetCursor &, Value &value) {
     if (operation == DATA_OPERATION_GET) {
         value = Value::makeStringRef(g_layoutText.c_str(), (int)g_layoutText.size(), 0x4C415900);
+    }
+}
+
+// 12.5 V (the value of parts_right_fit)
+void data_layout_value(DataOperationEnum operation, const WidgetCursor &, Value &value) {
+    if (operation == DATA_OPERATION_GET) {
+        value = Value(12.5f, UNIT_VOLT);
     }
 }
 
@@ -434,4 +442,35 @@ TEST("render/layout: right aligned values end at one x, the units are in the rig
     int unitX = 719 + 6;
     CHECK(vUnit.x >= unitX && vUnit.x <= unitX + 3);
     CHECK(maUnit.x >= unitX && maUnit.x <= unitX + 3);
+}
+
+namespace {
+
+// the smaller font of the application: VRoboto for VRobotoBig
+bool smallerFont(font::Font &font) {
+    if (font.fontData == getFontData(FONT_ID_VROBOTO_BIG)) {
+        font = font::Font(getFontData(FONT_ID_VROBOTO));
+        return true;
+    }
+    return false;
+}
+
+} // namespace
+
+TEST("render/layout: a value keeps its font when its unit fits in the right padding") {
+    g_hooks.styleGetSmallerFont = smallerFont;
+    showParts();
+    // the DisplayData at x = 460, 150 wide, the padding 4 and 40: "12.50"
+    // fits the content box, "V" only the right padding (the value was drawn in
+    // the smaller font when the value and the unit had to fit the content box)
+    int valueEnd = 460 + 150 - 1 - 40;
+    Box value = find(WHITE, 460, 160, 150, 60);
+    Box unit = find(YELLOW, 460, 160, 150, 60);
+    CHECK(value.w > 0 && unit.w > 0);
+    // the digits of VRobotoBig are 28 px high, of VRoboto 14 px
+    CHECK(value.h >= 26);
+    // the value ends at the content box (the last pixel of "0" a few pixels
+    // before its advance), the unit 6 px after it in the padding
+    CHECK(value.x + value.w - 1 >= valueEnd - 4 && value.x + value.w - 1 <= valueEnd);
+    CHECK(unit.x >= valueEnd + 6 && unit.x <= valueEnd + 9);
 }

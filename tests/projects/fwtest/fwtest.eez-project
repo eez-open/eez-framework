@@ -386,6 +386,13 @@
         "native": true
       },
       {
+        "objID": "d85bd89e-7926-5220-aa94-2fe8b116cecd",
+        "name": "layout_value",
+        "tags": "layout",
+        "type": "float",
+        "native": true
+      },
+      {
         "objID": "f77f252f-7625-5c4c-8dc7-57274555e707",
         "name": "render_text_a",
         "tags": "render",
@@ -31660,6 +31667,24 @@
           },
           "data": "\"0.750 mA\"",
           "displayOption": 7,
+          "refreshRate": "0",
+          "unitStyle": {
+            "useStyle": "layout_pu"
+          }
+        },
+        {
+          "type": "DisplayDataWidget",
+          "objID": "48f5c948-ce63-50ec-9f29-b98b5949776d",
+          "left": 460,
+          "top": 160,
+          "width": 150,
+          "height": 60,
+          "style": {
+            "useStyle": "layout_pv_right"
+          },
+          "data": "layout_value",
+          "displayOption": 7,
+          "precision": "0.01",
           "refreshRate": "0",
           "unitStyle": {
             "useStyle": "layout_pu"

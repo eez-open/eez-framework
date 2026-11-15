@@ -162,7 +162,8 @@ struct ValueParts {
 // column of widgets end at one x whatever their units (the unit and the value
 // move left if the unit doesn't fit). active: as in drawText.
 // useSmallerFontIfDoesNotFit: a smaller font of the value (on the same
-// baseline) if the value and the unit don't fit.
+// baseline) if the value and the unit don't fit (a unit in the right padding
+// only needs the room it takes outside of the padding).
 void drawValueParts(
     const ValueParts &parts,
     int x, int y, int w, int h,
