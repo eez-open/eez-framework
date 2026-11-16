@@ -3141,6 +3141,8 @@ EvalOperation g_evalOperations[] = {
     /* 96 */ do_OPERATION_TYPE_DIB_MODULE_FIELD,
 };
 
+const size_t g_numEvalOperations = sizeof(g_evalOperations) / sizeof(g_evalOperations[0]);
+
 } // namespace flow
 } // namespace eez
 

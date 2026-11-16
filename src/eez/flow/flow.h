@@ -60,6 +60,12 @@ void setGlobalVariable(Assets *assets, uint32_t globalVariableIndex, const Value
 // Outside a native action they do nothing; in a native action called without
 // a CallAction (a widget event handler) they are a flow error.
 Value getUserProperty(unsigned propertyIndex);
+// References must not be retained after the synchronous native action returns.
+Value getUserPropertyReference(unsigned propertyIndex);
+// Assign a reference returned by getUserPropertyReference or a list item from
+// getUserProperty. Only valid in the current synchronous native action call.
+// Like setUserProperty, a bad target/conversion is reported as a Flow error.
+void setUserPropertyReference(const Value &reference, const Value &value);
 void setUserProperty(unsigned propertyIndex, const Value &value);
 
 // Support for async execution for the native user actions. beginAsyncExecution

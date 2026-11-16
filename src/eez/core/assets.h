@@ -486,6 +486,10 @@ static const uint16_t EXPR_EVAL_INSTRUCTION_ARRAY_ELEMENT                = (5 <<
 static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_OPERATION               = (6 << 13);
 static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_END                     = (7 << 13);
 static const uint16_t EXPR_EVAL_INSTRUCTION_TYPE_END_WITH_DST_VALUE_TYPE = (7 << 13) | (1 << 12);
+// Property container: marker:u16, count:u16, total bytes:u32, then
+// (word count:u16, assignable expression)*. Total bytes includes the header.
+// This is not an array-value instruction and cannot be used inside expressions.
+static const uint16_t EXPR_EVAL_ASSIGNABLE_LIST = (7 << 13) | (1 << 10);
 
 // Type 7 with bit 11 set and bit 12 clear: a jump, the kind is in the low bits.
 // The instruction is followed by one uint16 operand, a forward offset in 16-bit
@@ -601,6 +605,12 @@ struct Assets {
 ////////////////////////////////////////////////////////////////////////////////
 
 bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, Assets *decompressedAssets, uint32_t maxDecompressedAssetsSize, int *err);
+
+// Actual loaded/decompressed byte count, not a length read from asset content.
+// For external assets decompressAssetsData stores it in the runtime-only
+// reserved header word (the header is not part of compressed data).
+uint32_t getAssetsDataSize(const Assets *assets);
+size_t getAssetsRemainingSize(const Assets *assets, const void *position);
 
 ////////////////////////////////////////////////////////////////////////////////
 

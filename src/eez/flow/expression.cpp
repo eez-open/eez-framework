@@ -12,6 +12,8 @@
 #include <eez/conf-internal.h>
 
 #include <stdio.h>
+#include <string.h>
+#include <eez/core/alloc.h>
 
 #include <eez/flow/private.h>
 #include <eez/flow/operations.h>
@@ -296,6 +298,104 @@ bool evalAssignableExpression(FlowState *flowState, int componentIndex, const ui
 	return false;
 }
 
+static uint16_t readListWord(const uint8_t *p) { return p[0] | (p[1] << 8); }
+
+// Prevalidate the entire item before calling the ordinary evaluator. In
+// particular, no operand or branch can read the next item or leave the span.
+static bool validateListItem(FlowState *flowState, const uint8_t *instructions, size_t size) {
+    if (size < 2 || size % 2) return false;
+    const size_t words = size / 2;
+    const size_t mapSize = (words + 7) / 8;
+    auto boundaries = (uint8_t *)alloc(mapSize, 0x481c5331);
+    if (!boundaries) return false;
+    struct FreeMap { uint8_t *p; ~FreeMap() { free(p); } } freeMap { boundaries };
+    memset(boundaries, 0, mapSize);
+    auto isBoundary = [&](size_t offset) { return offset < size && (boundaries[(offset / 2) / 8] & (1 << ((offset / 2) % 8))); };
+    for (size_t offset = 0; offset < size;) {
+        boundaries[(offset / 2) / 8] |= 1 << ((offset / 2) % 8);
+        const auto instruction = readListWord(instructions + offset);
+        const auto type = instruction & EXPR_EVAL_INSTRUCTION_TYPE_MASK;
+        const auto argument = instruction & EXPR_EVAL_INSTRUCTION_PARAM_MASK;
+        if (type == EXPR_EVAL_INSTRUCTION_TYPE_OPERATION && argument >= g_numEvalOperations) return false;
+        if (type == EXPR_EVAL_INSTRUCTION_TYPE_PUSH_CONSTANT && argument >= flowState->assets->flowDefinition->constants.count) return false;
+        if (type == EXPR_EVAL_INSTRUCTION_TYPE_PUSH_INPUT && argument >= flowState->flow->componentInputs.count) return false;
+        if (type == EXPR_EVAL_INSTRUCTION_TYPE_PUSH_LOCAL_VAR && argument >= flowState->flow->localVariables.count) return false;
+        if (type == EXPR_EVAL_INSTRUCTION_TYPE_END) {
+            if (instruction == EXPR_EVAL_INSTRUCTION_TYPE_END) {
+                if (offset + 2 != size) return false;
+                offset += 2;
+            } else if (instruction == EXPR_EVAL_INSTRUCTION_TYPE_END_WITH_DST_VALUE_TYPE) {
+                if (size - offset != 6) return false;
+                offset += 6;
+            } else if (instruction >= ((7 << 13) | (1 << 11)) && instruction <= ((7 << 13) | (1 << 11) | 3)) {
+                if (size - offset < 4) return false;
+                offset += 4;
+            } else return false;
+        } else {
+            if (offset + 2 == size) return false; // Missing END.
+            offset += 2;
+        }
+    }
+    // Check destinations only after all instruction boundaries are known.
+    for (size_t offset = 0; offset < size;) {
+        const auto instruction = readListWord(instructions + offset);
+        if (instruction >= ((7 << 13) | (1 << 11)) && instruction <= ((7 << 13) | (1 << 11) | 3)) {
+            const size_t target = offset + 4 + 2U * readListWord(instructions + offset + 2);
+            if (!isBoundary(target)) return false;
+            if (instruction == ((7 << 13) | (1 << 11) | 1) &&
+                (readListWord(instructions + target) != ((7 << 13) | (1 << 11)) || !isBoundary(target + 4))) return false;
+            offset += 4;
+        } else if (instruction == EXPR_EVAL_INSTRUCTION_TYPE_END_WITH_DST_VALUE_TYPE) offset += 6;
+        else offset += 2;
+    }
+    return true;
+}
+
+bool evalAssignableListExpression(FlowState *flowState, int componentIndex, const uint8_t *instructions, size_t instructionsSize, Value &result, const FlowError &errorMessage, int *numInstructionBytes, const int32_t *iterators) {
+    result = Value();
+    if (numInstructionBytes) *numInstructionBytes = 0;
+    auto invalid = [&]() {
+        throwError(flowState, componentIndex, errorMessage.setDescription("Invalid assignable list byte span"));
+        return false;
+    };
+    if (!instructions || instructionsSize < 8 || readListWord(instructions) != EXPR_EVAL_ASSIGNABLE_LIST) return invalid();
+    const size_t size = readListWord(instructions + 4) | ((uint32_t)readListWord(instructions + 6) << 16);
+    if (size < 8 || size > instructionsSize || size > INT32_MAX || size % 2) return invalid();
+    const unsigned count = readListWord(instructions + 2);
+    size_t offset = 8;
+    for (unsigned i = 0; i < count; ++i) {
+        if (size - offset < 2) return invalid();
+        const size_t bytes = 2U * readListWord(instructions + offset);
+        offset += 2;
+        if (bytes > size - offset || !validateListItem(flowState, instructions + offset, bytes)) return invalid();
+        offset += bytes;
+    }
+    if (offset != size) return invalid();
+    auto array = Value::makeArrayRef(count, defs_v3::ARRAY_TYPE_ANY, 0x733d341a);
+    if (!array.isArray()) {
+        throwError(flowState, componentIndex, errorMessage.setDescription("Assignable list allocation failed"));
+        return false;
+    }
+    offset = 8;
+    for (unsigned i = 0; i < count; ++i) {
+        const unsigned words = readListWord(instructions + offset);
+        offset += 2;
+        int consumed = 0;
+        if (!evalAssignableExpression(flowState, componentIndex,
+                instructions + offset, array.getArray()->values[i], errorMessage, &consumed, iterators)) {
+            return false;
+        }
+        if ((unsigned)consumed != words * 2) {
+            throwError(flowState, componentIndex, errorMessage.setDescription("Invalid assignable list item size"));
+            return false;
+        }
+        offset += consumed;
+    }
+    if (numInstructionBytes) *numInstructionBytes = offset;
+    result = array;
+    return true;
+}
+
 #if EEZ_OPTION_GUI
 bool evalProperty(FlowState *flowState, int componentIndex, int propertyIndex, Value &result, const FlowError &errorMessage, int *numInstructionBytes, const int32_t *iterators, DataOperationEnum operation) {
 #else
@@ -316,8 +416,17 @@ bool evalProperty(FlowState *flowState, int componentIndex, int propertyIndex, V
         throwError(flowState, componentIndex, flowError);
         return false;
     }
+    const auto *instructions = component->properties[propertyIndex]->evalInstructions;
+    const auto available = getAssetsRemainingSize(flowState->assets, instructions);
+    if (available < 2) {
+        throwError(flowState, componentIndex, errorMessage.setDescription("Property is outside loaded assets"));
+        return false;
+    }
+    if ((instructions[0] | (instructions[1] << 8)) == EXPR_EVAL_ASSIGNABLE_LIST) {
+        return evalAssignableListExpression(flowState, componentIndex, instructions, available, result, errorMessage, numInstructionBytes, iterators);
+    }
 #if EEZ_OPTION_GUI
-    return evalExpression(flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, result, errorMessage, numInstructionBytes, iterators, operation);
+    return evalExpression(flowState, componentIndex, instructions, result, errorMessage, numInstructionBytes, iterators, operation);
 #else
     return evalExpression(flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, result, errorMessage, numInstructionBytes, iterators);
 #endif

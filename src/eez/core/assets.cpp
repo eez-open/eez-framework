@@ -43,6 +43,21 @@ namespace eez {
 
 Assets *g_mainAssets;
 bool g_mainAssetsAreMutable;
+static uint32_t g_mainAssetsDataSize;
+
+uint32_t getAssetsDataSize(const Assets *assets) {
+    if (!assets) return 0;
+    return assets == g_mainAssets ? g_mainAssetsDataSize : assets->reserved;
+}
+
+size_t getAssetsRemainingSize(const Assets *assets, const void *position) {
+    if (!assets || !position) return 0;
+    const auto begin = reinterpret_cast<uintptr_t>(assets);
+    const auto at = reinterpret_cast<uintptr_t>(position);
+    const auto size = getAssetsDataSize(assets);
+    if (at < begin || at - begin > size) return 0;
+    return size - (at - begin);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -50,6 +65,11 @@ void fixOffsets(Assets *assets);
 
 bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, Assets *decompressedAssets, uint32_t maxDecompressedAssetsSize, int *err) {
 #if EEZ_FOR_LVGL_LZ4_OPTION
+	if (assetsDataSize < sizeof(Header)) {
+        if (err) *err = SCPI_ERROR_INVALID_BLOCK_DATA;
+        return false;
+    }
+	decompressedAssets->reserved = 0;
 	uint32_t compressedDataOffset;
 	uint32_t decompressedSize;
 
@@ -74,7 +94,7 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 #pragma GCC diagnostic pop
 #endif
 
-	if (decompressedDataOffset + decompressedSize > maxDecompressedAssetsSize) {
+	if (maxDecompressedAssetsSize < decompressedDataOffset || decompressedSize > maxDecompressedAssetsSize - decompressedDataOffset) {
 		if (err) {
 			*err = SCPI_ERROR_OUT_OF_DEVICE_MEMORY;
 		}
@@ -96,6 +116,7 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 		}
 		return false;
 	}
+    decompressedAssets->reserved = (uint32_t)(decompressedDataOffset + decompressedSize);
 	return true;
 #else
     EEZ_UNUSED(assetsData);
@@ -136,6 +157,7 @@ static void allocMemoryForDecompressedAssets(const uint8_t *assetsData, uint32_t
 }
 
 void loadMainAssets(const uint8_t *assets, uint32_t assetsSize) {
+    g_mainAssetsDataSize = 0;
 #if EEZ_OPTION_GUI && EEZ_OPTION_GUI_VECTOR_FONTS
     // the cached vector fonts are of the previous assets
     gui::vector_font::reset();
@@ -148,6 +170,7 @@ void loadMainAssets(const uint8_t *assets, uint32_t assetsSize) {
 		// Also, see initGlobalVariables.
         g_mainAssets = (Assets *)(assets + sizeof(uint32_t)/* skip HEADER_TAG*/);
 		g_mainAssetsAreMutable = false;
+        g_mainAssetsDataSize = assetsSize - sizeof(uint32_t);
     } else {
         // a buffer of the size of the decompressed assets
         uint8_t *decompressedAssetsBuffer = nullptr;
@@ -159,6 +182,7 @@ void loadMainAssets(const uint8_t *assets, uint32_t assetsSize) {
         g_mainAssets->external = false;
         auto decompressedSize = decompressAssetsData(assets, assetsSize, g_mainAssets, decompressedAssetsBufferSize, nullptr);
         assert(decompressedSize);
+        g_mainAssetsDataSize = g_mainAssets->reserved;
     }
 }
 
