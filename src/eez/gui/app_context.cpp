@@ -74,11 +74,14 @@ bool AppContext::isWidgetActionEnabled(const WidgetCursor &widgetCursor) {
     const Widget *widget = widgetCursor.widget;
     auto action = getWidgetAction(widgetCursor);
     if (action) {
-        if (widget->type == WIDGET_TYPE_BUTTON) {
-            auto buttonWidget = (const ButtonWidget *)widget;
-			auto enabled = get(widgetCursor, buttonWidget->enabled);
-            if (!(enabled.getType() == VALUE_TYPE_UNDEFINED || enabled.getInt() ? 1 : 0)) {
-                return false;
+        if (isTextWidgetType(widget->type)) {
+            // the Enabled of a Text, DisplayData or Button widget
+            auto textWidget = (const TextWidget *)widget;
+            if (textWidget->enabled) {
+                auto enabled = get(widgetCursor, textWidget->enabled);
+                if (!(enabled.getType() == VALUE_TYPE_UNDEFINED || enabled.getInt() ? 1 : 0)) {
+                    return false;
+                }
             }
         }
 
