@@ -27,13 +27,14 @@ bool DropDownListWidgetState::updateState() {
 	WIDGET_STATE(flags.active, g_isActiveWidget);
 	WIDGET_STATE(data, get(widgetCursor, widget->data));
 	WIDGET_STATE(options, get(widgetCursor, widget->options));
+	WIDGET_STATE(label, widget->label ? get(widgetCursor, widget->label) : Value());
 
     WIDGET_STATE_END()
 }
 
 void DropDownListWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
-    auto widget = (const ButtonWidget *)widgetCursor.widget;
+    auto widget = (const DropDownListWidget *)widgetCursor.widget;
     auto stateStyle = getWidgetStateStyle(getStyle(widget->style), flags.active);
     const Style *style = stateStyle.style;
 
@@ -41,6 +42,43 @@ void DropDownListWidgetState::render() {
     int y1 = widgetCursor.y;
     int x2 = widgetCursor.x + widgetCursor.w - 1;
     int y2 = widgetCursor.y + widgetCursor.h - 1;
+
+    // a row in the label style: the label at the left, the box at the right
+    // inside the padding of the label style
+    if (widget->label) {
+        Style plainLabelStyle;
+        const Style *labelStyle;
+        if (widget->labelStyle) {
+            // (the row is not drawn pressed, the box is)
+            labelStyle = getStyle(widget->labelStyle);
+        } else {
+            // the font and the color of the box, without the box
+            plainLabelStyle = *style;
+            plainLabelStyle.borderSizeTop = plainLabelStyle.borderSizeRight = plainLabelStyle.borderSizeBottom = plainLabelStyle.borderSizeLeft = 0;
+            plainLabelStyle.paddingTop = plainLabelStyle.paddingRight = plainLabelStyle.paddingBottom = plainLabelStyle.paddingLeft = 0;
+            plainLabelStyle.backgroundColor = TRANSPARENT_COLOR_INDEX;
+            plainLabelStyle.flags = (plainLabelStyle.flags & ~STYLE_FLAGS_HORZ_ALIGN_MASK) | STYLE_FLAGS_HORZ_ALIGN_LEFT;
+            labelStyle = &plainLabelStyle;
+        }
+
+        char labelText[64] = { 0 };
+        if (label.getType() != VALUE_TYPE_UNDEFINED) {
+            label.toText(labelText, sizeof(labelText));
+        }
+        drawText(labelText, -1, x1, y1, widgetCursor.w, widgetCursor.h, labelStyle, false);
+
+        // the content box of the row
+        x1 += labelStyle->borderSizeLeft + labelStyle->paddingLeft;
+        y1 += labelStyle->borderSizeTop + labelStyle->paddingTop;
+        x2 -= labelStyle->borderSizeRight + labelStyle->paddingRight;
+        y2 -= labelStyle->borderSizeBottom + labelStyle->paddingBottom;
+
+        int contentWidth = x2 - x1 + 1;
+        int boxWidth = widget->boxWidth > 0 ? widget->boxWidth : contentWidth / 2;
+        if (boxWidth < contentWidth) {
+            x1 = x2 - boxWidth + 1;
+        }
+    }
 
     drawBorderAndBackground(x1, y1, x2, y2, style, getStyleBackgroundColor(style, stateStyle.active));
 

@@ -78,10 +78,8 @@ static void getChildSize(WidgetCursor &cursor, const Widget *child, int &w, int 
     int contentH = h;
 
     cursor.widget = child;
-    if (child->type == WIDGET_TYPE_TEXT) {
+    if (isTextWidgetType(child->type)) {
         TextWidget_getContentSize(cursor, contentW, contentH);
-    } else if (child->type == WIDGET_TYPE_DISPLAY_DATA) {
-        DisplayDataWidget_getContentSize(cursor, contentW, contentH);
     } else if (isRowOrColumn(child)) {
         getRowOrColumnContentSize(cursor, contentW, contentH);
     }
@@ -141,10 +139,8 @@ static void getRowOrColumnContentSize(WidgetCursor &cursor, int &w, int &h) {
 static int getChildBaseline(WidgetCursor &cursor, const Widget *child, int h) {
     int baseline = -1;
     cursor.widget = child;
-    if (child->type == WIDGET_TYPE_TEXT) {
-        baseline = getTextBaseline(getLayoutStyle(cursor), h);
-    } else if (child->type == WIDGET_TYPE_DISPLAY_DATA) {
-        baseline = DisplayDataWidget_getBaseline(cursor, h);
+    if (isTextWidgetType(child->type)) {
+        baseline = TextWidget_getBaseline(cursor, h);
     } else if (child->type == WIDGET_TYPE_INPUT) {
         baseline = InputWidget_getBaseline(cursor, h);
     }

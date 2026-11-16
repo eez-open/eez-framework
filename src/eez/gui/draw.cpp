@@ -764,10 +764,52 @@ struct ValuePartsGeometry {
     // the label and the value line
     int blockWidth = 0;
     int blockHeight = 0;
+    // the icons: the width of the square with the left and right padding of
+    // the style (0 without the icon), the x of the text in it
+    font::Font iconFont;
+    int iconX = 0;
+    int iconBlockWidth = 0;
+    font::Font trailingIconFont;
+    int trailingIconX = 0;
+    int trailingIconBlockWidth = 0;
+    // of the higher icon
+    int iconsHeight = 0;
 };
 
 static bool hasUnit(const ValueParts &parts) {
     return parts.unit && parts.unitLength != 0 && *parts.unit;
+}
+
+static bool hasIcon(const char *icon) {
+    return icon && *icon;
+}
+
+static void getIconGeometry(const char *icon, const Style *iconStyle, font::Font valueFont, font::Font &font, int &iconX, int &blockWidth, int &iconsHeight) {
+    if (!hasIcon(icon)) {
+        return;
+    }
+    font = iconStyle ? styleGetFont(iconStyle) : valueFont;
+    if (!font) {
+        font = valueFont;
+    }
+    // the text centered in a square of the height of the font
+    int width = display::measureStr(icon, -1, font, 0);
+    int boxWidth = MAX(width, (int)font.getHeight());
+    int paddingLeft = iconStyle ? iconStyle->paddingLeft : 0;
+    iconX = paddingLeft + (boxWidth - width) / 2;
+    blockWidth = paddingLeft + boxWidth + (iconStyle ? iconStyle->paddingRight : 0);
+    iconsHeight = MAX(iconsHeight, (int)font.getHeight());
+}
+
+// the icon at x in the content box contentY1 .. contentY2
+static void drawIcon(const char *icon, const Style *iconStyle, font::Font &font, int x, int contentY1, int contentY2, int x1, int y1, int x2, int y2, uint16_t color, bool active) {
+    uint16_t iconColor = iconStyle && !active ? iconStyle->color : color;
+    if (iconColor == TRANSPARENT_COLOR_INDEX) {
+        return;
+    }
+    int y = contentY1 + (contentY2 - contentY1 + 1 - (int)font.getHeight()) / 2;
+    display::setColor(iconColor);
+    display::drawStr(icon, -1, x, y, x1, y1, x2, y2, font, -1);
 }
 
 // Right aligned value with a unit: the value ends at the right of the content
@@ -777,6 +819,12 @@ static bool hasUnit(const ValueParts &parts) {
 // value when it doesn't fit in the padding.
 static bool isUnitInRightPadding(const ValueParts &parts, const Style *style) {
     return hasUnit(parts) && styleIsHorzAlignRight(style);
+}
+
+// the room of the right padding a unit can take: none with a trailing icon,
+// it is where the icon is
+static int getUnitPaddingRoom(const ValueParts &parts, const Style *style) {
+    return hasIcon(parts.trailingIcon) ? 0 : style->paddingRight;
 }
 
 static bool getValuePartsGeometry(const ValueParts &parts, const Style *style, ValuePartsGeometry &g) {
@@ -824,7 +872,7 @@ static bool getValuePartsGeometry(const ValueParts &parts, const Style *style, V
     int lineBlockWidth = g.valueWidth + g.unitGap + g.unitWidth;
     if (isUnitInRightPadding(parts, style)) {
         // only what doesn't fit in the right padding
-        lineBlockWidth = g.valueWidth + MAX(g.unitGap + g.unitWidth - style->paddingRight, 0);
+        lineBlockWidth = g.valueWidth + MAX(g.unitGap + g.unitWidth - getUnitPaddingRoom(parts, style), 0);
     }
     if (parts.label && parts.labelLeft) {
         g.blockWidth = g.labelBlockWidth + lineBlockWidth;
@@ -836,6 +884,9 @@ static bool getValuePartsGeometry(const ValueParts &parts, const Style *style, V
         g.blockHeight = g.labelHeight + g.lineHeight;
         g.lineTop = g.labelHeight;
     }
+
+    getIconGeometry(parts.icon, parts.iconStyle, g.valueFont, g.iconFont, g.iconX, g.iconBlockWidth, g.iconsHeight);
+    getIconGeometry(parts.trailingIcon, parts.trailingIconStyle, g.valueFont, g.trailingIconFont, g.trailingIconX, g.trailingIconBlockWidth, g.iconsHeight);
 
     return true;
 }
@@ -868,6 +919,17 @@ void drawValueParts(
     int contentX1 = x1 + style->paddingLeft;
     int contentX2 = x2 - style->paddingRight;
 
+    // the icons at the ends of the content box, the label and the value in
+    // what is left
+    if (g.iconBlockWidth) {
+        drawIcon(parts.icon, parts.iconStyle, g.iconFont, contentX1 + g.iconX, y1 + style->paddingTop, y2 - style->paddingBottom, x1, y1, x2, y2, color, active);
+        contentX1 += g.iconBlockWidth;
+    }
+    if (g.trailingIconBlockWidth) {
+        contentX2 -= g.trailingIconBlockWidth;
+        drawIcon(parts.trailingIcon, parts.trailingIconStyle, g.trailingIconFont, contentX2 + 1 + g.trailingIconX, y1 + style->paddingTop, y2 - style->paddingBottom, x1, y1, x2, y2, color, active);
+    }
+
     int blockY = getContentY(style, y1, y2, g.blockHeight);
     // box above the display (e.g. list item while touch scrolling) is not snapped
     if (blockY < 0 && y1 >= 0) {
@@ -897,15 +959,36 @@ void drawValueParts(
 
     font::Font valueFont = g.valueFont;
     int valueWidth = g.valueWidth;
+    // a unit in the right padding needs room only for what doesn't fit in the
+    // padding (as in getValuePartsGeometry)
+    int unitRoom = g.unitGap + g.unitWidth;
+    if (isUnitInRightPadding(parts, style)) {
+        unitRoom = MAX(unitRoom - getUnitPaddingRoom(parts, style), 0);
+    }
     if (useSmallerFontIfDoesNotFit && parts.value) {
-        // a unit in the right padding needs room only for what doesn't fit in
-        // the padding (as in getValuePartsGeometry)
-        int unitRoom = g.unitGap + g.unitWidth;
-        if (isUnitInRightPadding(parts, style)) {
-            unitRoom = MAX(unitRoom - style->paddingRight, 0);
-        }
         while (valueWidth + unitRoom > valueX2 - valueX1 + 1 && g_hooks.styleGetSmallerFont(valueFont)) {
             valueWidth = display::measureStr(parts.value, parts.valueLength, valueFont, 0);
+        }
+    }
+
+    // Next to a label at the left or an icon the value has what is left of
+    // the content box: it is cut with an ellipsis if the style says so, and
+    // it is not drawn over the label or an icon.
+    bool besideParts = (parts.label && parts.labelLeft) || g.iconBlockWidth || g.trailingIconBlockWidth;
+    TextEllipsis valueEllipsis;
+    int valueClipX1 = x1;
+    int valueClipX2 = x2;
+    if (besideParts) {
+        int room = valueX2 - valueX1 + 1 - unitRoom;
+        if ((style->flags & STYLE_FLAGS_ELLIPSIS) && parts.value && room > 0 && valueWidth > room) {
+            valueEllipsis.cut(parts.value, parts.valueLength, valueFont, room);
+            valueWidth = valueEllipsis.width;
+        }
+        if ((parts.label && parts.labelLeft) || g.iconBlockWidth) {
+            valueClipX1 = valueX1;
+        }
+        if (g.trailingIconBlockWidth) {
+            valueClipX2 = contentX2;
         }
     }
 
@@ -913,16 +996,27 @@ void drawValueParts(
     int valueX;
     if (isUnitInRightPadding(parts, style)) {
         valueX = alignContentX(style, valueX1, valueX2, valueWidth);
-        if (valueX + lineWidth > x2) {
-            valueX = x2 - lineWidth;
+        // the unit ends in the box, before a trailing icon
+        int lineX2 = g.trailingIconBlockWidth ? contentX2 : x2;
+        if (valueX + lineWidth > lineX2) {
+            valueX = lineX2 - lineWidth;
         }
     } else {
         valueX = alignContentX(style, valueX1, valueX2, lineWidth);
     }
 
+    // (the label and the icons above are not drawn with it)
+    BlinkOpacity blinkOpacityScope(parts.blinkOpacity);
+
     if (parts.value && color != TRANSPARENT_COLOR_INDEX) {
         display::setColor(color);
-        display::drawStr(parts.value, parts.valueLength, valueX, baseline - valueFont.getAscent(), x1, y1, x2, y2, valueFont, -1);
+        int valueY = baseline - valueFont.getAscent();
+        if (valueEllipsis.isCut) {
+            display::drawStr(parts.value, valueEllipsis.numChars, valueX, valueY, valueClipX1, y1, valueClipX2, y2, valueFont, -1);
+            display::drawStr(valueEllipsis.ellipsis, -1, valueX + valueEllipsis.ellipsisX, valueY, valueClipX1, y1, valueClipX2, y2, valueFont, -1);
+        } else {
+            display::drawStr(parts.value, parts.valueLength, valueX, valueY, valueClipX1, y1, valueClipX2, y2, valueFont, -1);
+        }
     }
 
     if (hasUnit(parts)) {
@@ -941,8 +1035,8 @@ bool measureValueParts(const ValueParts &parts, const Style *style, int &w, int 
     }
     int left, top, right, bottom;
     getBorderInsets(style, left, top, right, bottom);
-    w = left + style->paddingLeft + g.blockWidth + style->paddingRight + right;
-    h = top + style->paddingTop + g.blockHeight + style->paddingBottom + bottom;
+    w = left + style->paddingLeft + g.iconBlockWidth + g.blockWidth + g.trailingIconBlockWidth + style->paddingRight + right;
+    h = top + style->paddingTop + MAX(g.blockHeight, g.iconsHeight) + style->paddingBottom + bottom;
     return true;
 }
 

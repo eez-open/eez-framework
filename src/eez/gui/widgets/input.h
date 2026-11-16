@@ -32,6 +32,14 @@ struct InputWidget : public Widget {
 	// see drawValueParts
 	int16_t label;
 	int16_t labelStyle;
+	// an icon at the left, before the label, and one at the right, after the
+	// value (a row of a settings group): a text in the font of its style
+	// (flow expressions, 0 if not set; the styles 0: the widget style), see
+	// ValueParts
+	int16_t icon;
+	int16_t iconStyle;
+	int16_t trailingIcon;
+	int16_t trailingIconStyle;
 	int16_t reserved1;
 };
 
@@ -42,6 +50,8 @@ struct InputWidgetState : public WidgetState {
 	// also with the display unit and the precision
 	Value shownData;
 	Value label;
+	Value icon;
+	Value trailingIcon;
 	// style after overrideStyle and the text color after the
 	// overrideStyleColor hook
 	int styleId;

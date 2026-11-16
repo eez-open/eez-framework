@@ -692,7 +692,12 @@ static void findWidgetStep() {
 				g_foundWidget.widget->type == WIDGET_TYPE_GRID
 			) {
                 g_foundWidget = widgetCursor;
-                g_distanceToFoundWidget = distance;
+                // A scrollable list is found only if the touch is on no
+                // widget inside of it: any widget found after it is found
+                // instead, also where the touch is nearer to the center of
+                // the list than to the center of the widget (near an edge of
+                // a wide row in the middle of the list).
+                g_distanceToFoundWidget = isScrollList ? INT_MAX : distance;
                 g_foundWidgetTouchRect = getTouchDetectionRect(x, y, w, h);
                 g_foundWidgetScrollLists = g_findEnclosingScrollLists;
                 if (isScrollList && g_foundWidgetScrollLists.count < MAX_NESTED_SCROLL_LISTS) {
