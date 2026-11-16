@@ -51,6 +51,14 @@ struct TextWidget : public Widget {
     // the style of the unit with DISPLAY_OPTION_VALUE_AND_UNIT (0: the widget
     // style), see drawValueParts
     int16_t unitStyle = 0;
+    // an icon at the left, before the label, and one at the right, after the
+    // value and the unit (a row of a settings group): a text in the font of
+    // its style (flow expressions, 0 if not set; the styles 0: the widget
+    // style), see ValueParts
+    int16_t icon = 0;
+    int16_t iconStyle = 0;
+    int16_t trailingIcon = 0;
+    int16_t trailingIconStyle = 0;
     int16_t reserved = 0;
 };
 
@@ -64,6 +72,8 @@ struct TextWidgetState : public WidgetState {
 	WidgetStateFlags flags;
 	Value data;
     Value label;
+    Value icon;
+    Value trailingIcon;
 
     // style after overrideStyle and the colors of the text after the hooks: a
     // change of the hook results redraws the widget

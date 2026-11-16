@@ -13,14 +13,26 @@
 namespace eez {
 namespace gui {
 
+// A dropdown: the box with the selected option and an arrow, in the widget
+// style. With a label the widget is a row in the label style: its background
+// and border are those of the row, the label is at the left, the box at the
+// right inside the padding of the label style, in the box width (0: half of
+// the row). The whole widget opens the list.
 struct DropDownListWidget : public Widget {
 	int16_t options;
+	// the text left of the box (a flow expression, 0: none) and its style (0:
+	// the widget style, left aligned, without its border, background and
+	// padding)
+	int16_t label;
+	int16_t labelStyle;
+	int16_t boxWidth;
 };
 
 struct DropDownListWidgetState : public WidgetState {
 	WidgetStateFlags flags;
 	Value data;
 	Value options;
+	Value label;
 
 	bool updateState() override;
     void render() override;

@@ -173,10 +173,19 @@ static Value getTextWidgetValue(const WidgetCursor &widgetCursor, const TextWidg
     return getValueInUnit(data, unit, precision);
 }
 
-// a label or the unit in its own style: drawn by drawValueParts
+// a label, an icon or the unit in its own style: drawn by drawValueParts
 static bool usesValueParts(const TextWidget *widget) {
-    return widget->label || widget->displayOption == DISPLAY_OPTION_VALUE_AND_UNIT;
+    return widget->label || widget->icon || widget->trailingIcon || widget->displayOption == DISPLAY_OPTION_VALUE_AND_UNIT;
 }
+
+// the texts of the parts drawValueParts draws
+struct ValuePartsTexts {
+    char text[TEXT_BUFFER_SIZE];
+    char label[TEXT_BUFFER_SIZE];
+    // an icon: one character, with a font tag at most
+    char icon[32];
+    char trailingIcon[32];
+};
 
 // The text of the data as the display option shows it: from start, length
 // characters (-1: to the end). text has room for TEXT_BUFFER_SIZE characters.
@@ -240,8 +249,10 @@ static void getDisplayText(const TextWidget *widget, const Value &data, char *te
 
 // The parts drawValueParts draws (usesValueParts): the label, the text of the
 // data cut as the display option says, the unit apart with the value and unit
-// option. text and labelText have room for TEXT_BUFFER_SIZE characters.
-static void getValueParts(const TextWidget *widget, const Value &data, const Value &label, char *text, char *labelText, ValueParts &parts) {
+// option, the icons.
+static void getValueParts(const TextWidget *widget, const Value &data, const Value &label, const Value &icon, const Value &trailingIcon, ValuePartsTexts &texts, ValueParts &parts) {
+    char *text = texts.text;
+    char *labelText = texts.label;
     if (widget->displayOption == DISPLAY_OPTION_VALUE_AND_UNIT) {
         data.toText(text, TEXT_BUFFER_SIZE);
         const char *value = text;
@@ -278,15 +289,28 @@ static void getValueParts(const TextWidget *widget, const Value &data, const Val
     parts.labelStyle = widget->labelStyle ? getStyle(widget->labelStyle) : nullptr;
     parts.labelLeft = (widget->flags & DISPLAY_DATA_WIDGET_LABEL_LEFT_FLAG) != 0;
     parts.unitStyle = widget->unitStyle ? getStyle(widget->unitStyle) : nullptr;
+
+    if (widget->icon && icon.getType() != VALUE_TYPE_UNDEFINED) {
+        icon.toText(texts.icon, sizeof(texts.icon));
+        parts.icon = texts.icon;
+    }
+    parts.iconStyle = widget->iconStyle ? getStyle(widget->iconStyle) : nullptr;
+    if (widget->trailingIcon && trailingIcon.getType() != VALUE_TYPE_UNDEFINED) {
+        trailingIcon.toText(texts.trailingIcon, sizeof(texts.trailingIcon));
+        parts.trailingIcon = texts.trailingIcon;
+    }
+    parts.trailingIconStyle = widget->trailingIconStyle ? getStyle(widget->trailingIconStyle) : nullptr;
 }
 
 // the parts of the widget widgetCursor.widget (usesValueParts) with its data
 // and label now
-static void getCurrentValueParts(const WidgetCursor &widgetCursor, char *text, char *labelText, ValueParts &parts) {
+static void getCurrentValueParts(const WidgetCursor &widgetCursor, ValuePartsTexts &texts, ValueParts &parts) {
     auto widget = (const TextWidget *)widgetCursor.widget;
     Value label = widget->label ? get(widgetCursor, widget->label) : Value();
+    Value icon = widget->icon ? get(widgetCursor, widget->icon) : Value();
+    Value trailingIcon = widget->trailingIcon ? get(widgetCursor, widget->trailingIcon) : Value();
     Value data = showsData(widget) ? getTextWidgetValue(widgetCursor, widget) : Value();
-    getValueParts(widget, data, label, text, labelText, parts);
+    getValueParts(widget, data, label, icon, trailingIcon, texts, parts);
     const char *fixedText = getFixedText(widget);
     if (fixedText) {
         parts.value = fixedText;
@@ -334,10 +358,9 @@ bool TextWidget_getContentSize(const WidgetCursor &widgetCursor, int &w, int &h)
     const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
 
     if (usesValueParts(widget)) {
-        char text[TEXT_BUFFER_SIZE];
-        char labelText[TEXT_BUFFER_SIZE];
+        ValuePartsTexts texts;
         ValueParts parts;
-        getCurrentValueParts(widgetCursor, text, labelText, parts);
+        getCurrentValueParts(widgetCursor, texts, parts);
         if (measureValueParts(parts, style, w, h)) {
             return true;
         }
@@ -360,10 +383,9 @@ int TextWidget_getBaseline(const WidgetCursor &widgetCursor, int h) {
     const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
 
     if (usesValueParts(widget) && widget->displayOption != DISPLAY_OPTION_INTEGER_UNIT_AND_FRACTION) {
-        char text[TEXT_BUFFER_SIZE];
-        char labelText[TEXT_BUFFER_SIZE];
+        ValuePartsTexts texts;
         ValueParts parts;
-        getCurrentValueParts(widgetCursor, text, labelText, parts);
+        getCurrentValueParts(widgetCursor, texts, parts);
         return getValuePartsBaseline(parts, style, h);
     }
 
@@ -430,6 +452,12 @@ bool TextWidgetState::updateState() {
 
     if (widget->label) {
         WIDGET_STATE(label, get(widgetCursor, widget->label));
+    }
+    if (widget->icon) {
+        WIDGET_STATE(icon, get(widgetCursor, widget->icon));
+    }
+    if (widget->trailingIcon) {
+        WIDGET_STATE(trailingIcon, get(widgetCursor, widget->trailingIcon));
     }
 
     WIDGET_STATE(color, getTextColor(widgetCursor, widget, hasData, stateStyle.style));
@@ -530,7 +558,10 @@ void TextWidgetState::render() {
         renderedH = widgetCursor.h;
     }
 
-    BlinkOpacity blinkOpacityScope(blinkOpacity);
+    // in a row only the value and the unit blink (see renderParts)
+    bool isRow = usesValueParts(widget) && widget->displayOption != DISPLAY_OPTION_INTEGER_UNIT_AND_FRACTION &&
+        isValuePartsRow(widget->label && (widget->flags & TEXT_WIDGET_LABEL_LEFT_FLAG), widget->icon != 0, widget->trailingIcon != 0);
+    BlinkOpacity blinkOpacityScope(isRow ? 255 : blinkOpacity);
 
     // the colors now (not the ones of updateState: see above)
     bool hasData = showsData(widget);
@@ -604,10 +635,9 @@ void TextWidgetState::renderIntegerUnitAndFraction(const TextWidget *widget, con
 void TextWidgetState::renderParts(const TextWidget *widget, const Style *style, bool active) {
     const WidgetCursor &widgetCursor = g_widgetCursor;
 
-    char text[TEXT_BUFFER_SIZE];
-    char labelText[TEXT_BUFFER_SIZE];
+    ValuePartsTexts texts;
     ValueParts parts;
-    getValueParts(widget, data, label, text, labelText, parts);
+    getValueParts(widget, data, label, icon, trailingIcon, texts, parts);
     const char *fixedText = getFixedText(widget);
     if (fixedText) {
         parts.value = fixedText;
@@ -623,6 +653,16 @@ void TextWidgetState::renderParts(const TextWidget *widget, const Style *style, 
     }
     if (parts.unitStyle) {
         parts.unitStyle = getWidgetStateStyle(parts.unitStyle, flags.active, flags.focused, otherStates).style;
+    }
+    if (parts.iconStyle) {
+        parts.iconStyle = getWidgetStateStyle(parts.iconStyle, flags.active, flags.focused, otherStates).style;
+    }
+    if (parts.trailingIconStyle) {
+        parts.trailingIconStyle = getWidgetStateStyle(parts.trailingIconStyle, flags.active, flags.focused, otherStates).style;
+    }
+
+    if (isValuePartsRow(widget->label && (widget->flags & TEXT_WIDGET_LABEL_LEFT_FLAG), widget->icon != 0, widget->trailingIcon != 0)) {
+        parts.blinkOpacity = blinkOpacity;
     }
 
     drawValueParts(

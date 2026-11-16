@@ -175,25 +175,50 @@ bool InputWidgetState::updateState() {
 	if (widget->label) {
 		WIDGET_STATE(label, get(widgetCursor, widget->label));
 	}
+	if (widget->icon) {
+		WIDGET_STATE(icon, get(widgetCursor, widget->icon));
+	}
+	if (widget->trailingIcon) {
+		WIDGET_STATE(trailingIcon, get(widgetCursor, widget->trailingIcon));
+	}
 
     WIDGET_STATE_END()
 }
 
-// with a label: drawn by drawValueParts
+// with a label or an icon: drawn by drawValueParts
 static bool usesValueParts(const InputWidget *widget) {
-	return widget->label != 0;
+	return widget->label != 0 || widget->icon != 0 || widget->trailingIcon != 0;
 }
 
+// the texts of the parts drawValueParts draws, next to the text of the value
+struct ValuePartsTexts {
+	char label[MAX_TEXT_LEN + 1];
+	// an icon: one character, with a font tag at most
+	char icon[32];
+	char trailingIcon[32];
+};
+
 // The parts drawValueParts draws (usesValueParts): the label, the text of the
-// value and the line. labelText has room for MAX_TEXT_LEN + 1 characters.
-static void getValueParts(const InputWidget *widget, const char *text, const Value &label, char *labelText, ValueParts &parts) {
+// value, the icons.
+static void getValueParts(const InputWidget *widget, const char *text, const Value &label, const Value &icon, const Value &trailingIcon, ValuePartsTexts &texts, ValueParts &parts) {
 	parts.value = text;
 	if (widget->label) {
-		label.toText(labelText, MAX_TEXT_LEN + 1);
-		parts.label = labelText;
+		label.toText(texts.label, sizeof(texts.label));
+		parts.label = texts.label;
 	}
 	parts.labelStyle = widget->labelStyle ? getStyle(widget->labelStyle) : nullptr;
 	parts.labelLeft = (widget->flags & INPUT_WIDGET_LABEL_LEFT_FLAG) != 0;
+
+	if (widget->icon && icon.getType() != VALUE_TYPE_UNDEFINED) {
+		icon.toText(texts.icon, sizeof(texts.icon));
+		parts.icon = texts.icon;
+	}
+	parts.iconStyle = widget->iconStyle ? getStyle(widget->iconStyle) : nullptr;
+	if (widget->trailingIcon && trailingIcon.getType() != VALUE_TYPE_UNDEFINED) {
+		trailingIcon.toText(texts.trailingIcon, sizeof(texts.trailingIcon));
+		parts.trailingIcon = texts.trailingIcon;
+	}
+	parts.trailingIconStyle = widget->trailingIconStyle ? getStyle(widget->trailingIconStyle) : nullptr;
 }
 
 int InputWidget_getBaseline(const WidgetCursor &widgetCursor, int h) {
@@ -201,11 +226,11 @@ int InputWidget_getBaseline(const WidgetCursor &widgetCursor, int h) {
 	const Style *style = getStyle(overrideStyle(widgetCursor, widget->style));
 
 	if (usesValueParts(widget)) {
-		// the value doesn't move the baseline
-		char labelText[MAX_TEXT_LEN + 1];
+		// the value and the icons don't move the baseline
+		ValuePartsTexts texts;
 		Value label = widget->label ? get(widgetCursor, widget->label) : Value();
 		ValueParts parts;
-		getValueParts(widget, "", label, labelText, parts);
+		getValueParts(widget, "", label, Value(), Value(), texts, parts);
 		return getValuePartsBaseline(parts, style, h);
 	}
 
@@ -220,7 +245,9 @@ void InputWidgetState::render() {
 	auto stateStyle = getWidgetStateStyle(getStyle(styleId), flags.active, flags.focused, getDisabledStateFlag(flags.disabled));
 	const Style *style = stateStyle.style;
 
-	BlinkOpacity blinkOpacityScope(blinkOpacity);
+	// in a row only the value blinks (ValueParts::blinkOpacity)
+	bool isRow = isValuePartsRow(widget->label && (widget->flags & INPUT_WIDGET_LABEL_LEFT_FLAG), widget->icon != 0, widget->trailingIcon != 0);
+	BlinkOpacity blinkOpacityScope(isRow ? 255 : blinkOpacity);
 
 	uint16_t overrideColor = color;
 	uint16_t overrideBackgroundColor = style->backgroundColor;
@@ -247,14 +274,24 @@ void InputWidgetState::render() {
 	}
 
 	if (usesValueParts(widget)) {
-		char labelText[MAX_TEXT_LEN + 1];
+		ValuePartsTexts texts;
 		ValueParts parts;
-		getValueParts(widget, text, label, labelText, parts);
+		getValueParts(widget, text, label, icon, trailingIcon, texts, parts);
 
-		// the label in the states of the widget too
+		// the label and the icons in the states of the widget too
 		unsigned otherStates = getDisabledStateFlag(flags.disabled);
 		if (parts.labelStyle) {
 			parts.labelStyle = getWidgetStateStyle(parts.labelStyle, flags.active, flags.focused, otherStates).style;
+		}
+		if (parts.iconStyle) {
+			parts.iconStyle = getWidgetStateStyle(parts.iconStyle, flags.active, flags.focused, otherStates).style;
+		}
+		if (parts.trailingIconStyle) {
+			parts.trailingIconStyle = getWidgetStateStyle(parts.trailingIconStyle, flags.active, flags.focused, otherStates).style;
+		}
+
+		if (isRow) {
+			parts.blinkOpacity = blinkOpacity;
 		}
 
 		drawValueParts(

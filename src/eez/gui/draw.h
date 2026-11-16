@@ -131,9 +131,22 @@ void drawIntegerUnitAndFraction(
     uint16_t *overrideColor, uint16_t *overrideBackgroundColor
 );
 // A value with a label above or left of it and a unit after it (a readout or a
-// set field, see the DisplayData and Input widgets). A part that is not shown
-// is null, a style that is not set is null.
+// set field, see the DisplayData and Input widgets), and an icon at each end
+// (a row of a settings group). A part that is not shown is null, a style that
+// is not set is null.
 struct ValueParts {
+    // An icon at the left of the content box, before the label and the value,
+    // and one at the right, after the value and the unit: a text in the font
+    // and the color of its style (the widget style if not set), centered in a
+    // square of the height of the font (wider if the text is), the square
+    // centered vertically in the content box. The left and right padding of
+    // its style is the room around the square, so the gap to the next part.
+    // The label and the value are placed in what is left of the content box.
+    // An empty text is no icon.
+    const char *icon = nullptr;
+    const Style *iconStyle = nullptr;
+    const char *trailingIcon = nullptr;
+    const Style *trailingIconStyle = nullptr;
     // a line above the value line in labelStyle: its font and color, its
     // padding around the label and its horizontal alignment in the content box
     // of the widget; the font, color and alignment of the widget style if
@@ -143,7 +156,9 @@ struct ValueParts {
     // the label is left of the value line instead of above it: at the left of
     // the content box (the alignment of labelStyle is not used), the label and
     // the value line centered on each other vertically, the value placed in the
-    // rest of the content box
+    // rest of the content box. There (and next to an icon) a value that
+    // doesn't fit is cut and ends with an ellipsis if the style says so, and
+    // is never drawn over the label or an icon.
     bool labelLeft = false;
     const char *value = nullptr;
     int valueLength = -1;
@@ -153,14 +168,25 @@ struct ValueParts {
     const char *unit = nullptr;
     int unitLength = 0;
     const Style *unitStyle = nullptr;
+    // The opacity of the value and the unit while they blink (see
+    // BlinkOpacity), 255: no blink. For a row (isValuePartsRow), where the
+    // label, the icons and the background don't blink with the value; a
+    // widget that is not a row blinks as a whole (its caller sets the
+    // opacity).
+    uint8_t blinkOpacity = 255;
 };
+// A row: the label is at the left of the value, or there is an icon.
+inline bool isValuePartsRow(bool hasLabelLeft, bool hasIcon, bool hasTrailingIcon) {
+    return hasLabelLeft || hasIcon || hasTrailingIcon;
+}
 // The parts in the box x, y, w, h with the border, background and padding of
 // the style. The label and the value line are one block placed by the vertical
 // alignment of the style, the value and the unit are placed by its horizontal
 // alignment. Right aligned, the value ends at the right of the content box and
 // the unit is in the right padding, so the values of a
 // column of widgets end at one x whatever their units (the unit and the value
-// move left if the unit doesn't fit). active: as in drawText.
+// move left if the unit doesn't fit; with a trailing icon the unit ends before
+// it). active: as in drawText.
 // useSmallerFontIfDoesNotFit: a smaller font of the value (on the same
 // baseline) if the value and the unit don't fit (a unit in the right padding
 // only needs the room it takes outside of the padding).

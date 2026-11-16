@@ -463,6 +463,44 @@
         "native": true
       },
       {
+        "objID": "c5af86e4-ad94-502b-81d6-6a9025a9c65b",
+        "name": "rows_icon",
+        "tags": "rows",
+        "type": "string",
+        "native": true
+      },
+      {
+        "objID": "953f2611-2e6d-5097-a6a8-0d72350a433a",
+        "name": "rows_value",
+        "tags": "rows",
+        "type": "float",
+        "native": true
+      },
+      {
+        "objID": "55c5cfff-c362-5077-8ddc-775d74ab1dac",
+        "name": "rows_number",
+        "tags": "rows",
+        "type": "float",
+        "native": false,
+        "defaultValue": "1.5"
+      },
+      {
+        "objID": "a19351f0-33c8-5678-9840-1a0f84580dee",
+        "name": "rows_choice",
+        "tags": "rows",
+        "type": "integer",
+        "native": false,
+        "defaultValue": "1"
+      },
+      {
+        "objID": "fd8ac78f-d082-561e-9f31-55fd593ca06c",
+        "name": "rows_options",
+        "tags": "rows",
+        "type": "array:string",
+        "native": false,
+        "defaultValue": "[\"zero\", \"one\", \"two\"]"
+      },
+      {
         "objID": "69b57217-190b-55a3-a508-2afebff6959d",
         "name": "styles_visible",
         "tags": "styles",
@@ -6907,6 +6945,17 @@
       "objID": "2673140c-2fe7-5a2d-b7bc-a4f7c17cc685",
       "name": "gui_keypad_option1",
       "tags": "gui, keypad",
+      "implementationType": "native",
+      "components": [],
+      "connectionLines": [],
+      "localVariables": [],
+      "componentGroups": [],
+      "userProperties": []
+    },
+    {
+      "objID": "f5a08228-dcfd-575b-b28c-037982712e78",
+      "name": "rows_on_click",
+      "tags": "rows",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -33874,6 +33923,277 @@
       "style": "render_popup"
     },
     {
+      "objID": "c13c4055-aace-5ae7-b03a-f1243a17eb0c",
+      "name": "rows_page",
+      "tags": "rows",
+      "left": 0,
+      "top": 0,
+      "width": 800,
+      "height": 480,
+      "components": [
+        {
+          "type": "DisplayDataWidget",
+          "objID": "9e4959fa-0062-526c-81e8-ae17c189c698",
+          "left": 20,
+          "top": 10,
+          "width": 400,
+          "height": 40,
+          "style": {
+            "useStyle": "rows_row"
+          },
+          "data": "\"value\"",
+          "displayOption": 0,
+          "refreshRate": "0",
+          "label": "\"Label\"",
+          "labelPosition": "left",
+          "labelStyle": {
+            "useStyle": "rows_label"
+          },
+          "unitStyle": {},
+          "icon": "\"#\"",
+          "iconStyle": {
+            "useStyle": "rows_icon"
+          },
+          "trailingIcon": "\">\"",
+          "trailingIconStyle": {
+            "useStyle": "rows_trailing"
+          }
+        },
+        {
+          "type": "ButtonWidget",
+          "objID": "815ee421-2e2a-53da-a6fc-f1aca0a0417b",
+          "left": 20,
+          "top": 60,
+          "width": 400,
+          "height": 40,
+          "style": {
+            "useStyle": "rows_row_left"
+          },
+          "data": "\"Open\"",
+          "trailingIcon": "\">\"",
+          "trailingIconStyle": {
+            "useStyle": "rows_trailing"
+          },
+          "eventHandlers": [
+            {
+              "objID": "2d656708-f465-54c2-b34f-cb0e149b6c4a",
+              "eventName": "CLICKED",
+              "handlerType": "action",
+              "action": "rows_on_click"
+            }
+          ]
+        },
+        {
+          "type": "TextWidget",
+          "objID": "62538510-cbd7-50be-bb75-2dc0ba65a813",
+          "left": 20,
+          "top": 110,
+          "width": 400,
+          "height": 40,
+          "style": {
+            "useStyle": "rows_row_left"
+          },
+          "data": "\"Text\"",
+          "fitToContent": "none",
+          "icon": "rows_icon",
+          "iconStyle": {
+            "useStyle": "rows_icon"
+          }
+        },
+        {
+          "type": "DisplayDataWidget",
+          "objID": "3f6a044b-8f50-54c4-ad02-0ce1e7d185f9",
+          "left": 20,
+          "top": 160,
+          "width": 400,
+          "height": 40,
+          "style": {
+            "useStyle": "rows_row"
+          },
+          "data": "rows_value",
+          "displayOption": 7,
+          "refreshRate": "0",
+          "label": "\"Voltage\"",
+          "labelPosition": "left",
+          "labelStyle": {
+            "useStyle": "rows_label"
+          },
+          "unitStyle": {
+            "useStyle": "rows_unit"
+          },
+          "trailingIcon": "\">\"",
+          "trailingIconStyle": {
+            "useStyle": "rows_trailing"
+          }
+        },
+        {
+          "type": "TextWidget",
+          "objID": "18879417-4a3b-5a4f-acef-c879bbb87050",
+          "left": 20,
+          "top": 210,
+          "width": 400,
+          "height": 40,
+          "style": {
+            "useStyle": "rows_row"
+          },
+          "data": "\"mid\"",
+          "fitToContent": "none",
+          "icon": "\"<\"",
+          "trailingIcon": "\">\""
+        },
+        {
+          "type": "InputEmbeddedWidget",
+          "objID": "1eeb076f-8eaa-5001-820e-fc73da723c10",
+          "left": 20,
+          "top": 260,
+          "width": 400,
+          "height": 40,
+          "style": {
+            "useStyle": "rows_row"
+          },
+          "data": "rows_number",
+          "inputType": "number",
+          "min": "0",
+          "max": "10",
+          "precision": "0.1",
+          "unit": "\"V\"",
+          "info": "\"\"",
+          "defaultValue": "0",
+          "label": "\"Limit\"",
+          "labelPosition": "left",
+          "labelStyle": {
+            "useStyle": "rows_label"
+          },
+          "icon": "\"#\"",
+          "iconStyle": {
+            "useStyle": "rows_icon"
+          },
+          "trailingIcon": "\">\"",
+          "trailingIconStyle": {
+            "useStyle": "rows_trailing"
+          }
+        },
+        {
+          "type": "DropDownListWidget",
+          "objID": "957749dc-565f-5536-8334-b19cb4106a5e",
+          "left": 20,
+          "top": 310,
+          "width": 400,
+          "height": 40,
+          "style": {
+            "useStyle": "rows_box"
+          },
+          "data": "rows_choice",
+          "options": "rows_options",
+          "label": "\"Range\"",
+          "labelStyle": {
+            "useStyle": "rows_ddl_row"
+          },
+          "boxWidth": 150
+        },
+        {
+          "type": "DropDownListWidget",
+          "objID": "482b48dd-bfb4-54b0-9e4a-4053970d5513",
+          "left": 20,
+          "top": 360,
+          "width": 400,
+          "height": 40,
+          "style": {
+            "useStyle": "rows_box"
+          },
+          "data": "rows_choice",
+          "options": "rows_options",
+          "label": "\"Range\"",
+          "labelStyle": {
+            "useStyle": "rows_ddl_row"
+          }
+        },
+        {
+          "type": "DropDownListWidget",
+          "objID": "b6e1b87a-a190-5821-a453-f894d148e00f",
+          "left": 20,
+          "top": 410,
+          "width": 400,
+          "height": 40,
+          "style": {
+            "useStyle": "rows_box"
+          },
+          "data": "rows_choice",
+          "options": "rows_options"
+        },
+        {
+          "type": "TextWidget",
+          "objID": "083af8cb-77d1-5f6c-8033-65020ed80df8",
+          "left": 450,
+          "top": 10,
+          "width": 300,
+          "height": 40,
+          "style": {
+            "useStyle": "rows_row_left"
+          },
+          "data": "\"Fit\"",
+          "fitToContent": "width",
+          "icon": "\"#\"",
+          "iconStyle": {
+            "useStyle": "rows_icon"
+          },
+          "trailingIcon": "\">\"",
+          "trailingIconStyle": {
+            "useStyle": "rows_trailing"
+          }
+        },
+        {
+          "type": "DisplayDataWidget",
+          "objID": "f316516c-22e4-5826-ac63-1130b302c5de",
+          "left": 450,
+          "top": 60,
+          "width": 330,
+          "height": 40,
+          "style": {
+            "useStyle": "rows_row_ellipsis"
+          },
+          "data": "\"a very long value that does not fit in this row\"",
+          "displayOption": 0,
+          "refreshRate": "0",
+          "label": "\"Label\"",
+          "labelPosition": "left",
+          "labelStyle": {
+            "useStyle": "rows_label"
+          },
+          "unitStyle": {},
+          "trailingIcon": "\">\"",
+          "trailingIconStyle": {
+            "useStyle": "rows_trailing"
+          }
+        },
+        {
+          "type": "DisplayDataWidget",
+          "objID": "85ba751e-2d96-5094-962b-186f373543d0",
+          "left": 450,
+          "top": 110,
+          "width": 330,
+          "height": 40,
+          "style": {
+            "useStyle": "rows_row"
+          },
+          "data": "\"a very long value that does not fit in this row\"",
+          "displayOption": 0,
+          "refreshRate": "0",
+          "label": "\"Label\"",
+          "labelPosition": "left",
+          "labelStyle": {
+            "useStyle": "rows_label"
+          },
+          "unitStyle": {}
+        }
+      ],
+      "connectionLines": [],
+      "localVariables": [],
+      "userProperties": [],
+      "componentGroups": [],
+      "style": "rows_page"
+    },
+    {
       "objID": "7e77653a-9e6f-5bce-98f1-a6463bc21595",
       "name": "styles_states",
       "tags": "styles",
@@ -39237,6 +39557,129 @@
           "childStyles": []
         },
         {
+          "objID": "ae3180dd-aa8f-51a7-94d8-03b727da834d",
+          "name": "rows_row",
+          "tags": "rows",
+          "alwaysBuild": true,
+          "backgroundColor": "rows_bg",
+          "color": "rows_white",
+          "alignHorizontal": "right",
+          "padding": "0 16",
+          "childStyles": []
+        },
+        {
+          "objID": "9aad299f-8c8c-5047-bd94-6dc4f8d99473",
+          "name": "rows_row_pressed",
+          "tags": "rows",
+          "alwaysBuild": true,
+          "state": "pressed",
+          "useStyle": "rows_row",
+          "backgroundColor": "rows_pressed",
+          "childStyles": []
+        },
+        {
+          "objID": "99b3394b-db21-59c7-9f83-5f2c6fb38158",
+          "name": "rows_row_left",
+          "tags": "rows",
+          "alwaysBuild": true,
+          "backgroundColor": "rows_bg",
+          "color": "rows_white",
+          "alignHorizontal": "left",
+          "padding": "0 16",
+          "childStyles": []
+        },
+        {
+          "objID": "44afa4f2-23c0-5239-90f1-8e3ca98ef0ae",
+          "name": "rows_row_left_pressed",
+          "tags": "rows",
+          "alwaysBuild": true,
+          "state": "pressed",
+          "useStyle": "rows_row_left",
+          "backgroundColor": "rows_pressed",
+          "childStyles": []
+        },
+        {
+          "objID": "ef2ff14f-0c58-569a-b002-117a3fca637b",
+          "name": "rows_row_ellipsis",
+          "tags": "rows",
+          "alwaysBuild": true,
+          "backgroundColor": "rows_bg",
+          "color": "rows_white",
+          "alignHorizontal": "right",
+          "padding": "0 16",
+          "ellipsis": true,
+          "childStyles": []
+        },
+        {
+          "objID": "bb4ebdec-7409-52f8-8d44-030578ccb0ca",
+          "name": "rows_label",
+          "tags": "rows",
+          "alwaysBuild": true,
+          "color": "rows_yellow",
+          "backgroundColor": "rows_bg",
+          "childStyles": []
+        },
+        {
+          "objID": "2f82a69e-7058-560d-9e7f-5ff7dc8aa8e0",
+          "name": "rows_icon",
+          "tags": "rows",
+          "alwaysBuild": true,
+          "color": "rows_red",
+          "backgroundColor": "rows_bg",
+          "padding": "0 12 0 0",
+          "childStyles": []
+        },
+        {
+          "objID": "8adcbae3-ec19-52c3-a896-7bc442e55e27",
+          "name": "rows_trailing",
+          "tags": "rows",
+          "alwaysBuild": true,
+          "color": "rows_green",
+          "backgroundColor": "rows_bg",
+          "padding": "0 0 0 12",
+          "childStyles": []
+        },
+        {
+          "objID": "b1e8cf70-3339-5df2-bd41-ca5612036c8d",
+          "name": "rows_unit",
+          "tags": "rows",
+          "alwaysBuild": true,
+          "color": "rows_blue",
+          "backgroundColor": "rows_bg",
+          "padding": "0 0 0 4",
+          "childStyles": []
+        },
+        {
+          "objID": "77d3dede-d7f8-5c97-8d98-7764830921bc",
+          "name": "rows_ddl_row",
+          "tags": "rows",
+          "alwaysBuild": true,
+          "color": "rows_yellow",
+          "backgroundColor": "rows_bg",
+          "alignHorizontal": "left",
+          "padding": "5 16",
+          "childStyles": []
+        },
+        {
+          "objID": "a25fc0e6-8300-5330-a2fd-a884d87fcda7",
+          "name": "rows_box",
+          "tags": "rows",
+          "alwaysBuild": true,
+          "backgroundColor": "rows_blue",
+          "color": "rows_white",
+          "borderSize": "1",
+          "borderColor": "rows_white",
+          "childStyles": []
+        },
+        {
+          "objID": "38d07dc9-7279-5aa0-aef9-8888ec597706",
+          "name": "rows_page",
+          "tags": "rows",
+          "alwaysBuild": true,
+          "backgroundColor": "rows_page_bg",
+          "childStyles": []
+        },
+        {
           "objID": "704d1a7f-b63c-599c-9594-91ba047b8cc7",
           "name": "styles_box",
           "tags": "styles",
@@ -42283,6 +42726,46 @@
       "tags": "render"
     },
     {
+      "objID": "3f3cd5ef-37f2-5170-8a20-44e47fa83991",
+      "name": "rows_bg",
+      "tags": "rows"
+    },
+    {
+      "objID": "da9dd645-85d8-5292-bda5-fcf03bdf799d",
+      "name": "rows_page_bg",
+      "tags": "rows"
+    },
+    {
+      "objID": "2235a8dd-09ce-584b-b32a-229c3884fc41",
+      "name": "rows_white",
+      "tags": "rows"
+    },
+    {
+      "objID": "b561e62d-0bd9-5507-8f56-8d403af0e071",
+      "name": "rows_red",
+      "tags": "rows"
+    },
+    {
+      "objID": "6c5e8aad-55e5-59e6-a074-67fb5aaccfde",
+      "name": "rows_green",
+      "tags": "rows"
+    },
+    {
+      "objID": "4b9ec846-c2ec-5849-a113-03c7070287f8",
+      "name": "rows_blue",
+      "tags": "rows"
+    },
+    {
+      "objID": "dec0533f-9d69-58b3-97fd-ec682c881c85",
+      "name": "rows_yellow",
+      "tags": "rows"
+    },
+    {
+      "objID": "60aa0cd3-7a61-58af-82ea-6a6ff76bc804",
+      "name": "rows_pressed",
+      "tags": "rows"
+    },
+    {
       "objID": "b824047f-6729-5a90-a1e8-b11a044f5b41",
       "name": "styles_bg",
       "tags": "styles"
@@ -42458,6 +42941,14 @@
         "#ff000080",
         "#ffffff40",
         "#0000ff00",
+        "#202020",
+        "#406080",
+        "#f8fcf8",
+        "#f80000",
+        "#00fc00",
+        "#0000f8",
+        "#f8fc00",
+        "#804000",
         "#202020",
         "#f8fcf8",
         "#808080",
