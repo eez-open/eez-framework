@@ -363,3 +363,34 @@ TEST("gui/scrolling: a tap on a row of the scrolled container is a tap of that r
     CHECK_EQ(clicks, 1);
     g_onAction = nullptr;
 }
+
+TEST("gui/scrolling: a tap near the edge of a row is a tap of the row, not of the scrolling container") {
+    showScroll();
+    drag(200, 250, 130);
+    settle();
+    // Scrolled by 100 px: row 4 is from y = 140 to 199, the center of the
+    // container is at 200, 150. The point 10, 141 is in row 4, nearer to the
+    // center of the container than to the center of the row.
+    auto widgetCursor = findWidget(10, 141, true);
+    REQUIRE(widgetCursor.widget != nullptr);
+    CHECK_EQ((int)widgetCursor.widget->type, (int)WIDGET_TYPE_TEXT);
+    CHECK_EQ(widgetCursor.widget->y / 60, 4);
+
+    int clicks = 0;
+    g_onAction = [&clicks](int actionId) {
+        if (actionId == ACTION_ID_GUI_CLICK_A) {
+            clicks++;
+        }
+    };
+    tap(10, 141);
+    CHECK_EQ(clicks, 1);
+    // the bottom edge of the row above
+    tap(390, 139);
+    CHECK_EQ(clicks, 2);
+    g_onAction = nullptr;
+
+    // the container still scrolls from a touch on a row
+    drag(10, 141, 61);
+    settle();
+    CHECK_EQ(rowAt(200, 141), 5);
+}
