@@ -2843,7 +2843,7 @@ static bool layoutVectorRun(const char *&p, int &i, int textLength, int64_t &pen
     while (textLength == -1 || i + numChars < textLength) {
         utf8_int32_t encoding;
         const char *next = decodeUtf8(q, encoding);
-        if (!encoding || isFontTag(encoding)) {
+        if (!encoding || isFontTag(encoding) || encoding == DIGIT_GROUP_GAP_CHAR) {
             break;
         }
         if (numChars == 64) {
@@ -2964,6 +2964,35 @@ static void layoutText(const char *text, int textLength, gui::font::Font &defaul
             break;
         }
 
+        if (encoding == DIGIT_GROUP_GAP_CHAR) {
+            text = next;
+
+            int x = (int)((pen + 32) >> 6);
+
+            if (onChar(i, x)) {
+                return;
+            }
+
+            TextGlyph glyph;
+            glyph.charIndex = i;
+            glyph.x = x;
+            glyph.advance = getDigitGroupGapWidth(font);
+            glyph.pixels = nullptr;
+            glyph.width = 0;
+            glyph.height = 0;
+            glyph.left = 0;
+            glyph.top = 0;
+            glyph.font = font;
+
+            if (onGlyph(glyph)) {
+                return;
+            }
+
+            pen = (int64_t)(x + glyph.advance) * 64;
+            ++i;
+            continue;
+        }
+
 #if EEZ_OPTION_GUI_VECTOR_FONTS
         if (font.isVector() && !isFontTag(encoding)) {
             if (layoutVectorRun(text, i, textLength, pen, letterSpacing, font, ligatures, onChar, onGlyph)) {
@@ -3026,9 +3055,56 @@ static void layoutText(const char *text, int textLength, gui::font::Font &defaul
     onChar(i, (int)((pen + 32) >> 6));
 }
 
+int getDigitGroupGapWidth(gui::font::Font &font) {
+    // about a fifth of the size of the font, as a thin space
+    return font ? MAX((font.getHeight() + 3) / 6, 1) : 0;
+}
+
+void groupDecimals(char *text, size_t size) {
+    // the decimals: the digits after the first point that is after a digit
+    size_t first = 0;
+    while (text[first] && !(text[first] == '.' && first > 0 && text[first - 1] >= '0' && text[first - 1] <= '9')) {
+        first++;
+    }
+    if (!text[first]) {
+        return;
+    }
+    first++;
+
+    size_t numDecimals = 0;
+    while (text[first + numDecimals] >= '0' && text[first + numDecimals] <= '9') {
+        numDecimals++;
+    }
+    if (numDecimals <= 4) {
+        return;
+    }
+
+    size_t numGaps = (numDecimals - 1) / 3;
+    size_t length = strlen(text);
+    if (length + numGaps + 1 > size) {
+        return;
+    }
+
+    // from the end, so every character is moved once
+    size_t from = length;
+    size_t to = length + numGaps;
+    text[to] = 0;
+    while (numGaps > 0) {
+        text[--to] = text[--from];
+        if (from > first && from < first + numDecimals && (from - first) % 3 == 0) {
+            text[--to] = DIGIT_GROUP_GAP_CHAR;
+            numGaps--;
+        }
+    }
+}
+
 int8_t measureGlyph(int32_t encoding, gui::font::Font &font) {
     if (!font) {
         return 0;
+    }
+
+    if (encoding == DIGIT_GROUP_GAP_CHAR) {
+        return (int8_t)getDigitGroupGapWidth(font);
     }
 
     if (!font.isVector()) {

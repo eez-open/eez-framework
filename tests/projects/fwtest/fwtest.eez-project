@@ -36325,6 +36325,25 @@
             "useStyle": "w_txt"
           },
           "data": "w_str"
+        },
+        {
+          "type": "InputEmbeddedWidget",
+          "objID": "c2e78018-8e40-5408-843d-3232f6096f49",
+          "left": 10,
+          "top": 260,
+          "width": 200,
+          "height": 40,
+          "style": {
+            "useStyle": "w_txt"
+          },
+          "data": "w_e",
+          "inputType": "number",
+          "min": "0",
+          "max": "10",
+          "precision": "0.00001",
+          "unit": "\"A\"",
+          "info": "\"\"",
+          "defaultValue": "0"
         }
       ],
       "connectionLines": [],

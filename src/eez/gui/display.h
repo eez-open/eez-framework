@@ -303,6 +303,18 @@ int8_t measureGlyph(int32_t encoding, gui::font::Font &font);
 int measureStr(const char *text, int textLength, gui::font::Font &font, int max_width = 0, int startFontIndex = 0);
 int getFontIndexAtEnd(const char *text, int textLength, int fontIndex);
 
+// The gap between the groups of digits of a number ("0.123 45"): one character
+// in the text, laid out as an empty space of getDigitGroupGapWidth pixels, in
+// every font (no font has a glyph for it).
+static const char DIGIT_GROUP_GAP_CHAR = '\x1F';
+int getDigitGroupGapWidth(gui::font::Font &font);
+
+// Puts DIGIT_GROUP_GAP_CHAR after every three decimals of the first number in
+// the text (size: the room of the text with the NUL): "0.12345 A" becomes
+// "0.123 45 A". A number with four decimals or less is not changed, so no
+// decimal is alone after a gap.
+void groupDecimals(char *text, size_t size);
+
 // Decodes the UTF-8 character at text into codePoint and returns the text after
 // it. At the terminating NUL codePoint is 0 and text is returned. A byte that
 // doesn't start a valid UTF-8 sequence, also a sequence cut short by the NUL, is

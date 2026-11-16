@@ -255,6 +255,10 @@ void InputWidgetState::render() {
 	char text[MAX_TEXT_LEN + 1];
 	if (widget->flags & INPUT_WIDGET_TYPE_NUMBER) {
 		shownData.toText(text, sizeof(text));
+		if (shownData.isFloat() || shownData.isDouble()) {
+			// the decimals in groups of three
+			display::groupDecimals(text, sizeof(text));
+		}
 	} else {
 		data.toText(text, sizeof(text));
 	}

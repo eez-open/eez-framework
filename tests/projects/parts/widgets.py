@@ -380,6 +380,9 @@ PAGES.append(_page("w_input", [
     _w("InputEmbeddedWidget", "input/shown", 10, 210, 200, 40, "w_txt", data="w_e", inputType="number",
        min="0", max="10", precision="0.0005", unit='"A"', displayUnit='"mA"', info='""', defaultValue="0"),
     _w("TextWidget", "input/ref", 250, 210, 200, 40, "w_txt", data="w_str"),
+    # a number with five decimals
+    _w("InputEmbeddedWidget", "input/decimals", 10, 260, 200, 40, "w_txt", data="w_e", inputType="number",
+       min="0", max="10", precision="0.00001", unit='"A"', info='""', defaultValue="0"),
 ]))
 
 # Roller: native data (counted writes) and flow data
