@@ -181,6 +181,9 @@ def project(parts):
                 "displayHeight": DISPLAY_HEIGHT,
                 "colorBpp": "32",
                 "bitmapColorFormat": "RGB",
+            },
+            "eezGui": {
+                "objID": oid("settings", "eezGui"),
                 "styleVariants": [
                     {"objID": oid("style variant", name), "id": id_, "name": name}
                     for part in parts for id_, name in getattr(part, "VARIANTS", [])

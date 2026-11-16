@@ -10,7 +10,10 @@
       "displayWidth": 800,
       "displayHeight": 480,
       "colorBpp": "32",
-      "bitmapColorFormat": "RGB",
+      "bitmapColorFormat": "RGB"
+    },
+    "eezGui": {
+      "objID": "798b3588-7dfa-53f5-a129-2e0ab93460d5",
       "styleVariants": [
         {
           "objID": "384ae387-e5ba-599a-8ff5-d4399bfca120",
