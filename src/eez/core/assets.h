@@ -232,6 +232,13 @@ struct Widget {
 	int16_t height;
 	int16_t style;
     uint16_t flags;
+    // The variant of the widget style (see getVariantStyles) chosen by
+    // data: a data item that gives the id of the variant, a negative number
+    // for no variant, or 0: the widget then has fixedVariant. 0: no data item.
+    int16_t variant;
+    // The variant the widget always has: the id of the variant, 0 to take the
+    // variant of the container, STYLE_VARIANT_NONE for no variant.
+    uint16_t fixedVariant;
     ListOfAssetsPtr<TimelineKeyframe> timeline;
 };
 
@@ -279,6 +286,12 @@ enum StyleState {
 };
 
 #define STYLE_STATE_FLAG(state) (1 << (state))
+
+// A variant is a look of a style that a widget chooses, by data or always (a
+// warning, a quantity color). The project defines the variants, their ids
+// start at 1. A widget without a variant of its own has the variant of its
+// container.
+#define STYLE_VARIANT_NONE 0xFFFF
 
 struct Style {
     uint16_t flags; // STYLE_FLAGS_...
@@ -346,7 +359,27 @@ struct Style {
     uint16_t borderColorRight;
     uint16_t borderColorBottom;
     uint16_t borderColorLeft;
+
+    uint16_t reserved;
+
+    // The styles of this style in the variants of the project (see
+    // getVariantStyles), 0 if it has none: the offset of the list from this
+    // field, as in an AssetsPtr. A plain offset keeps the Style a structure
+    // that can be copied; the list is only reached from a style in the assets.
+    int32_t variantStylesOffset;
 };
+
+// The styles of the style (a style in the assets, not a copy) in the variants
+// of the project, null if it has none: the number of variants, then the style
+// of each variant (at its id), a style id as in stateStyles, 0 if the style
+// has no style for that variant. Studio writes the style with the variant
+// properties over the style, with its own stateStyles (a variant style and a
+// state style have no list).
+inline const int16_t *getVariantStyles(const Style *style) {
+    return style->variantStylesOffset
+        ? (const int16_t *)((const uint8_t *)&style->variantStylesOffset + style->variantStylesOffset)
+        : nullptr;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -578,7 +611,16 @@ void loadMainAssets(const uint8_t *assets, uint32_t assetsSize);
 #if EEZ_OPTION_GUI
 const gui::PageAsset *getPageAsset(int pageId);
 const gui::PageAsset* getPageAsset(int pageId, gui::WidgetCursor& widgetCursor);
+// The style with the id, in the variant of the widget that is being updated
+// or drawn (see setStyleVariant) if the style has a style for it.
 const gui::Style *getStyle(int styleID);
+// the style with the id, without the variant
+const gui::Style *getStyleNoVariant(int styleID);
+
+// The variant of the styles getStyle returns: the id of the variant, 0 for
+// none. Returns the previous one.
+int setStyleVariant(int variant);
+int getStyleVariant();
 const gui::FontData *getFontData(int fontID);
 const gui::Bitmap *getBitmap(int bitmapID);
 const int getBitmapIdByName(const char *bitmapName);

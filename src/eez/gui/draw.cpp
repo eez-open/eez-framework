@@ -64,7 +64,7 @@ const Style *getStateStyle(const Style *style, unsigned states, unsigned *applie
                 if (appliedState) {
                     *appliedState = STYLE_STATE_FLAG(state);
                 }
-                return getStyle(style->stateStyles[state]);
+                return getStyleNoVariant(style->stateStyles[state]);
             }
         }
     }

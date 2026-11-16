@@ -10,7 +10,24 @@
       "displayWidth": 800,
       "displayHeight": 480,
       "colorBpp": "32",
-      "bitmapColorFormat": "RGB"
+      "bitmapColorFormat": "RGB",
+      "styleVariants": [
+        {
+          "objID": "384ae387-e5ba-599a-8ff5-d4399bfca120",
+          "id": 1,
+          "name": "variants_warn"
+        },
+        {
+          "objID": "b3164435-7d77-56ce-90cc-e94b08598261",
+          "id": 2,
+          "name": "variants_volt"
+        },
+        {
+          "objID": "bb26ea5c-bcc0-563e-a245-9036ea65f849",
+          "id": 3,
+          "name": "variants_unused"
+        }
+      ]
     },
     "build": {
       "objID": "c7ea3a95-de6f-5e10-b08e-db16f4e82103",
@@ -454,6 +471,13 @@
         "name": "styles_text",
         "tags": "styles",
         "type": "string",
+        "native": true
+      },
+      {
+        "objID": "cf90e855-5712-5f8a-af5b-5197fce30182",
+        "name": "variants_state",
+        "tags": "variants",
+        "type": "integer",
         "native": true
       },
       {
@@ -6891,6 +6915,17 @@
       "objID": "592606fc-ba50-5eca-b08c-36e0accb41ab",
       "name": "styles_on_click",
       "tags": "styles",
+      "implementationType": "native",
+      "components": [],
+      "connectionLines": [],
+      "localVariables": [],
+      "componentGroups": [],
+      "userProperties": []
+    },
+    {
+      "objID": "d98390eb-1c4f-5bb7-b21f-45ef224000d6",
+      "name": "variants_on_click",
+      "tags": "variants",
       "implementationType": "native",
       "components": [],
       "connectionLines": [],
@@ -34173,6 +34208,292 @@
       "style": "styles_page"
     },
     {
+      "objID": "1dd612bf-d8e2-594b-84d9-e7ce3af641c8",
+      "name": "variants_page",
+      "tags": "variants",
+      "left": 0,
+      "top": 0,
+      "width": 800,
+      "height": 480,
+      "components": [
+        {
+          "type": "ButtonWidget",
+          "objID": "43bd768d-eaf4-5894-abe1-f623b05a3980",
+          "left": 20,
+          "top": 20,
+          "width": 160,
+          "height": 50,
+          "style": {
+            "useStyle": "variants_box"
+          },
+          "data": "\"fixed\"",
+          "eventHandlers": [
+            {
+              "objID": "fa6beab3-9d72-51da-aa49-14e8910e4cdd",
+              "eventName": "CLICKED",
+              "handlerType": "action",
+              "action": "variants_on_click"
+            }
+          ],
+          "variant": "variants_warn"
+        },
+        {
+          "type": "ButtonWidget",
+          "objID": "ca2f2fd3-c907-532e-843f-63ba67aa9df3",
+          "left": 200,
+          "top": 20,
+          "width": 160,
+          "height": 50,
+          "style": {
+            "useStyle": "variants_box"
+          },
+          "data": "\"base\"",
+          "eventHandlers": [
+            {
+              "objID": "dfe1f46b-b560-5378-92a8-83e80608d0f3",
+              "eventName": "CLICKED",
+              "handlerType": "action",
+              "action": "variants_on_click"
+            }
+          ]
+        },
+        {
+          "type": "ButtonWidget",
+          "objID": "d07b084f-b889-5057-ad18-32fd2f8a0d39",
+          "left": 380,
+          "top": 20,
+          "width": 160,
+          "height": 50,
+          "style": {
+            "useStyle": "variants_box"
+          },
+          "data": "\"volt\"",
+          "eventHandlers": [
+            {
+              "objID": "46d1c991-bda6-59a8-9801-c0293907d12b",
+              "eventName": "CLICKED",
+              "handlerType": "action",
+              "action": "variants_on_click"
+            }
+          ],
+          "variant": "variants_volt"
+        },
+        {
+          "type": "ButtonWidget",
+          "objID": "d36ac23d-0ae3-5684-b295-12122da4ca57",
+          "left": 560,
+          "top": 20,
+          "width": 160,
+          "height": 50,
+          "style": {
+            "useStyle": "variants_box"
+          },
+          "data": "\"unused\"",
+          "eventHandlers": [
+            {
+              "objID": "b4d1b1ba-14e0-591c-8afa-69c49034680f",
+              "eventName": "CLICKED",
+              "handlerType": "action",
+              "action": "variants_on_click"
+            }
+          ],
+          "variant": "variants_unused"
+        },
+        {
+          "type": "ButtonWidget",
+          "objID": "e88418e3-0bea-57bb-84e5-0d9eb3535e58",
+          "left": 20,
+          "top": 90,
+          "width": 160,
+          "height": 50,
+          "style": {
+            "useStyle": "variants_box"
+          },
+          "data": "\"rules\"",
+          "eventHandlers": [
+            {
+              "objID": "6a061eaa-a787-50d1-a74b-a87562fa5157",
+              "eventName": "CLICKED",
+              "handlerType": "action",
+              "action": "variants_on_click"
+            }
+          ],
+          "variantRules": [
+            {
+              "objID": "1a293889-6189-5dd3-a0bb-bcece82230a6",
+              "variant": "variants_warn",
+              "condition": "variants_state == 1"
+            },
+            {
+              "objID": "b9101b8d-ff49-5e0c-af14-e74a99ebc6ce",
+              "variant": "variants_volt",
+              "condition": "variants_state == 2"
+            }
+          ]
+        },
+        {
+          "type": "ButtonWidget",
+          "objID": "faf7987b-95b0-508d-a637-661a0321746e",
+          "left": 200,
+          "top": 90,
+          "width": 160,
+          "height": 50,
+          "style": {
+            "useStyle": "variants_box"
+          },
+          "data": "\"rules_fixed\"",
+          "eventHandlers": [
+            {
+              "objID": "a0d06725-6781-5272-9bec-d120776b9b23",
+              "eventName": "CLICKED",
+              "handlerType": "action",
+              "action": "variants_on_click"
+            }
+          ],
+          "variant": "variants_volt",
+          "variantRules": [
+            {
+              "objID": "b3a8fc77-e89c-50e0-9175-012240a1b0d5",
+              "variant": "variants_warn",
+              "condition": "variants_state == 1"
+            },
+            {
+              "objID": "a8ff5c13-56c6-5ca3-8880-4fd7899fff3b",
+              "variant": "none",
+              "condition": "variants_state == 2"
+            }
+          ]
+        },
+        {
+          "type": "ContainerWidget",
+          "objID": "a38bb475-8737-5eff-a141-b8bf8104899c",
+          "left": 20,
+          "top": 160,
+          "width": 760,
+          "height": 70,
+          "style": {
+            "useStyle": "variants_plain"
+          },
+          "variant": "variants_warn",
+          "widgets": [
+            {
+              "type": "TextWidget",
+              "objID": "fbb6becf-29d0-523b-91cf-20fbf6e808b1",
+              "left": 0,
+              "top": 10,
+              "width": 160,
+              "height": 50,
+              "style": {
+                "useStyle": "variants_box"
+              },
+              "text": "inherit"
+            },
+            {
+              "type": "TextWidget",
+              "objID": "854a1e77-6703-590c-af20-9a1a56b58f33",
+              "left": 180,
+              "top": 10,
+              "width": 160,
+              "height": 50,
+              "style": {
+                "useStyle": "variants_box"
+              },
+              "text": "none",
+              "variant": "none"
+            },
+            {
+              "type": "TextWidget",
+              "objID": "e4fcc71b-5ada-51f4-91a4-df812e14723f",
+              "left": 360,
+              "top": 10,
+              "width": 160,
+              "height": 50,
+              "style": {
+                "useStyle": "variants_box"
+              },
+              "text": "own",
+              "variant": "variants_volt"
+            },
+            {
+              "type": "ContainerWidget",
+              "objID": "477d6f76-0de8-5d61-bbc5-5f872a3cabc3",
+              "left": 540,
+              "top": 0,
+              "width": 220,
+              "height": 70,
+              "style": {
+                "useStyle": "variants_plain"
+              },
+              "widgets": [
+                {
+                  "type": "TextWidget",
+                  "objID": "e57f5f1a-46a2-5b2f-982e-e452fb4ea44d",
+                  "left": 0,
+                  "top": 10,
+                  "width": 160,
+                  "height": 50,
+                  "style": {
+                    "useStyle": "variants_box"
+                  },
+                  "text": "deep"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "ContainerWidget",
+          "objID": "cae60437-0420-5f69-b8bd-24cfb8eaa492",
+          "left": 20,
+          "top": 250,
+          "width": 760,
+          "height": 70,
+          "style": {
+            "useStyle": "variants_plain"
+          },
+          "variantRules": [
+            {
+              "objID": "3a23af23-268c-5ac1-ab8e-e0db19c76f67",
+              "variant": "variants_warn",
+              "condition": "variants_state == 1"
+            }
+          ],
+          "widgets": [
+            {
+              "type": "TextWidget",
+              "objID": "be9a2a30-d2fa-5772-9d9a-c68efe037168",
+              "left": 0,
+              "top": 10,
+              "width": 160,
+              "height": 50,
+              "style": {
+                "useStyle": "variants_box"
+              },
+              "text": "follows"
+            },
+            {
+              "type": "TextWidget",
+              "objID": "d4285fc5-9c8e-576b-892d-369938b5b0a2",
+              "left": 180,
+              "top": 10,
+              "width": 160,
+              "height": 50,
+              "style": {
+                "useStyle": "variants_box"
+              },
+              "text": "follows_none",
+              "variant": "none"
+            }
+          ]
+        }
+      ],
+      "connectionLines": [],
+      "localVariables": [],
+      "userProperties": [],
+      "componentGroups": [],
+      "style": "variants_page"
+    },
+    {
       "objID": "03c59aee-9f1a-5a14-8c2c-117dc3ad116f",
       "name": "w_text",
       "tags": "widgets",
@@ -39220,6 +39541,72 @@
           "childStyles": []
         },
         {
+          "objID": "fc22d1fd-e7d8-513d-822b-9ee24a555547",
+          "name": "variants_box",
+          "tags": "variants",
+          "alwaysBuild": true,
+          "backgroundColor": "variants_bg",
+          "color": "variants_white",
+          "borderSize": "1",
+          "borderColor": "variants_gray",
+          "childStyles": []
+        },
+        {
+          "objID": "481190b5-15b3-5a13-a362-d12970d7c44c",
+          "name": "variants_box_pressed",
+          "tags": "variants",
+          "alwaysBuild": true,
+          "state": "pressed",
+          "useStyle": "variants_box",
+          "backgroundColor": "variants_green",
+          "childStyles": []
+        },
+        {
+          "objID": "b0a2ddd4-3368-5ace-856b-45a7ad488122",
+          "name": "variants_box__warn",
+          "tags": "variants",
+          "useStyle": "variants_box",
+          "variant": "variants_warn",
+          "backgroundColor": "variants_orange",
+          "childStyles": []
+        },
+        {
+          "objID": "6268c538-9abd-5238-a08e-ea7bd7a83df4",
+          "name": "variants_box__warn_pressed",
+          "tags": "variants",
+          "useStyle": "variants_box",
+          "variant": "variants_warn",
+          "backgroundColor": "variants_red",
+          "childStyles": [],
+          "state": "pressed"
+        },
+        {
+          "objID": "f062346a-f877-5ff2-a863-4a0ea27af7b3",
+          "name": "variants_box__volt",
+          "tags": "variants",
+          "useStyle": "variants_box",
+          "variant": "variants_volt",
+          "backgroundColor": "variants_blue",
+          "childStyles": []
+        },
+        {
+          "objID": "de95a376-46b2-5bc6-940c-c844465c2617",
+          "name": "variants_plain",
+          "tags": "variants",
+          "alwaysBuild": true,
+          "backgroundColor": "variants_page_bg",
+          "color": "variants_white",
+          "childStyles": []
+        },
+        {
+          "objID": "ee4de298-e635-5611-af6a-4fc72566ab88",
+          "name": "variants_page",
+          "tags": "variants",
+          "alwaysBuild": true,
+          "backgroundColor": "variants_page_bg",
+          "childStyles": []
+        },
+        {
           "objID": "67740019-1eac-5229-ae06-c71c511b76d7",
           "name": "w_txt",
           "tags": "widgets",
@@ -41948,6 +42335,46 @@
       "tags": "styles"
     },
     {
+      "objID": "bc6b8832-1678-52c5-bb46-d22ba8619a77",
+      "name": "variants_bg",
+      "tags": "variants"
+    },
+    {
+      "objID": "bc03a71a-a2da-5340-9766-290af87aed96",
+      "name": "variants_white",
+      "tags": "variants"
+    },
+    {
+      "objID": "f4bc844d-930e-5911-af02-532a80c83a48",
+      "name": "variants_gray",
+      "tags": "variants"
+    },
+    {
+      "objID": "0896538b-a872-5b01-a399-26e6a1f33ec0",
+      "name": "variants_red",
+      "tags": "variants"
+    },
+    {
+      "objID": "7d4b7aa7-548e-5e7e-8d51-de1b9bf401f9",
+      "name": "variants_green",
+      "tags": "variants"
+    },
+    {
+      "objID": "aba725fd-eb69-59e8-9586-ce1409537d60",
+      "name": "variants_blue",
+      "tags": "variants"
+    },
+    {
+      "objID": "56cb3e40-b2b3-5394-bd3f-e659ba679ac6",
+      "name": "variants_orange",
+      "tags": "variants"
+    },
+    {
+      "objID": "f4b9ed9e-caed-57b5-8b9c-e0851e40b7c6",
+      "name": "variants_page_bg",
+      "tags": "variants"
+    },
+    {
       "objID": "4980a8bb-795e-554a-b496-59bc656529c1",
       "name": "w_red",
       "tags": "widgets"
@@ -42039,6 +42466,14 @@
         "#8000f8",
         "#406080",
         "#000000a0",
+        "#202020",
+        "#f8fcf8",
+        "#808080",
+        "#f80000",
+        "#00fc00",
+        "#0000f8",
+        "#f88000",
+        "#406080",
         "#f80000",
         "#00fc00",
         "#0000f8",

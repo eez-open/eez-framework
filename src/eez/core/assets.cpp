@@ -196,18 +196,44 @@ const gui::PageAsset *getPageAsset(int pageId, WidgetCursor& widgetCursor) {
 	return nullptr;
 }
 
-const gui::Style *getStyle(int styleID) {
+const gui::Style *getStyleNoVariant(int styleID) {
 	if (styleID > 0) {
 		return g_mainAssets->styles[styleID - 1];
 	} else if (styleID < 0) {
 		auto assets = g_widgetCursor.assets;
 		int id = -styleID - 1;
 		if (assets == nullptr || assets == g_mainAssets || id >= (int)assets->styles.count) {
-			return getStyle(EEZ_STYLE_ID_DEFAULT);
+			return getStyleNoVariant(EEZ_STYLE_ID_DEFAULT);
 		}
 		return assets->styles[id];
 	}
-	return getStyle(EEZ_STYLE_ID_DEFAULT);
+	return getStyleNoVariant(EEZ_STYLE_ID_DEFAULT);
+}
+
+static int g_styleVariant;
+
+int setStyleVariant(int variant) {
+    int previous = g_styleVariant;
+    g_styleVariant = variant;
+    return previous;
+}
+
+int getStyleVariant() {
+    return g_styleVariant;
+}
+
+const gui::Style *getStyle(int styleID) {
+    const gui::Style *style = getStyleNoVariant(styleID);
+    if (g_styleVariant > 0) {
+        const int16_t *variantStyles = gui::getVariantStyles(style);
+        if (variantStyles && g_styleVariant <= variantStyles[0]) {
+            int variantStyleID = variantStyles[g_styleVariant];
+            if (variantStyleID != 0) {
+                return getStyleNoVariant(variantStyleID);
+            }
+        }
+    }
+    return style;
 }
 
 const gui::FontData *getFontData(int fontID) {

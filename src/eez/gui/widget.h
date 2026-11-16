@@ -211,6 +211,8 @@ struct WidgetState {
 	uint16_t type;
     // state is moved to the new frame states (used for previous frame states only)
     bool moved;
+    // the variant of the styles of the widget (see getWidgetVariant), 0 for none
+    uint8_t variant;
     // size in bytes of this state and the states of all its descendants
     uint32_t subtreeSize;
     // widget for which this state is created

@@ -311,6 +311,36 @@ bool endWidgetStatesUpdate() {
     return g_widgetStatesStructureChanged;
 }
 
+// The variant of the styles of the widget (0 for none): its own variant, the
+// one its data item gives or else its fixed one, otherwise the variant of its
+// container.
+static int getWidgetVariant(const WidgetCursor &widgetCursor, const Widget *widget, int containerVariant) {
+    unsigned variant = widget->fixedVariant;
+    if (widget->variant) {
+        Value value = get(widgetCursor, widget->variant);
+        int err = 0;
+        int id = value.toInt32(&err);
+        if (!err && id != 0) {
+            variant = id < 0 ? STYLE_VARIANT_NONE : id;
+        }
+    }
+    if (variant == STYLE_VARIANT_NONE) {
+        return 0;
+    }
+    if (variant == 0) {
+        return containerVariant;
+    }
+    return variant <= 255 ? (int)variant : 0;
+}
+
+// sets the variant of the styles while a widget and its children are
+// enumerated and restores the one of the container after them
+struct StyleVariantScope {
+    int containerVariant;
+    StyleVariantScope() : containerVariant(getStyleVariant()) {}
+    ~StyleVariantScope() { setStyleVariant(containerVariant); }
+};
+
 void enumWidget() {
     WidgetCursor &widgetCursor = g_widgetCursor;
     const Widget *widget = widgetCursor.widget;
@@ -331,7 +361,12 @@ void enumWidget() {
 	bool savedIsActiveWidget = g_isActiveWidget;
 	g_isActiveWidget = g_isActiveWidget || widgetCursor == g_activeWidget;
 
+    StyleVariantScope styleVariantScope;
+
     if (g_findCallback) {
+        // the state of the last frame
+        setStyleVariant(widgetState->variant);
+
         if (g_repaintingOverlappingWidgets && isRenderedIntoOwnBuffer(widgetState)) {
             // not affected by the repaint of the current buffer, skip the whole subtree
             widgetCursor.currentState = (WidgetState *)((uint8_t *)widgetState + widgetState->subtreeSize);
@@ -357,6 +392,9 @@ void enumWidget() {
         return;
     }
 
+    int variant = getWidgetVariant(widgetCursor, widget, styleVariantScope.containerVariant);
+    setStyleVariant(variant);
+
     bool savedHasPreviousState = widgetCursor.hasPreviousState;
     bool savedReadPreviousStates = g_readPreviousStates;
 
@@ -381,8 +419,12 @@ void enumWidget() {
         // previous states of the children follow
         g_previousStateOffset += (uint32_t)g_widgetStateSizes[widget->type];
 
+        // a widget in another variant is drawn again
+        bool variantChanged = widgetState->variant != variant;
+        widgetState->variant = (uint8_t)variant;
+
         bool refresh = widgetState->updateState();
-        if (refresh || widgetCursor.refreshed) {
+        if (refresh || variantChanged || widgetCursor.refreshed) {
             RENDER_WIDGET();
         }
     } else {
@@ -406,6 +448,7 @@ void enumWidget() {
         widgetState->type = widget->type;
         widgetState->moved = false;
         widgetState->widget = widget;
+        widgetState->variant = (uint8_t)variant;
 
         widgetState->updateState();
 

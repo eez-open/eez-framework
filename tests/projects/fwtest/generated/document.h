@@ -43,16 +43,17 @@ enum DataEnum {
     DATA_ID_RENDER_TEXT_F = 27,
     DATA_ID_STYLES_VISIBLE = 28,
     DATA_ID_STYLES_TEXT = 29,
-    DATA_ID_W_ELL = 30,
-    DATA_ID_W_REF = 31,
-    DATA_ID_W_XSCROLL = 32,
-    DATA_ID_W_COUNTER_A = 33,
-    DATA_ID_W_COUNTER_B = 34,
-    DATA_ID_W_YT = 35,
-    DATA_ID_W_CANVAS = 36,
-    DATA_ID_W_ROL = 37,
-    DATA_ID_W_PROBE = 38,
-    DATA_ID_W_COUNTER_ARR = 39
+    DATA_ID_VARIANTS_STATE = 30,
+    DATA_ID_W_ELL = 31,
+    DATA_ID_W_REF = 32,
+    DATA_ID_W_XSCROLL = 33,
+    DATA_ID_W_COUNTER_A = 34,
+    DATA_ID_W_COUNTER_B = 35,
+    DATA_ID_W_YT = 36,
+    DATA_ID_W_CANVAS = 37,
+    DATA_ID_W_ROL = 38,
+    DATA_ID_W_PROBE = 39,
+    DATA_ID_W_COUNTER_ARR = 40
 };
 
 void data_none(DataOperationEnum operation, const WidgetCursor &cursor, Value &value);
@@ -85,6 +86,7 @@ void data_render_text_e(DataOperationEnum operation, const WidgetCursor &cursor,
 void data_render_text_f(DataOperationEnum operation, const WidgetCursor &cursor, Value &value);
 void data_styles_visible(DataOperationEnum operation, const WidgetCursor &cursor, Value &value);
 void data_styles_text(DataOperationEnum operation, const WidgetCursor &cursor, Value &value);
+void data_variants_state(DataOperationEnum operation, const WidgetCursor &cursor, Value &value);
 void data_w_ell(DataOperationEnum operation, const WidgetCursor &cursor, Value &value);
 void data_w_ref(DataOperationEnum operation, const WidgetCursor &cursor, Value &value);
 void data_w_xscroll(DataOperationEnum operation, const WidgetCursor &cursor, Value &value);
@@ -131,8 +133,9 @@ enum ActionsEnum {
     ACTION_ID_GUI_TOGGLE_KEYPAD_MODE = 27,
     ACTION_ID_GUI_KEYPAD_OPTION1 = 28,
     ACTION_ID_STYLES_ON_CLICK = 29,
-    ACTION_ID_W_ON_CLICK = 30,
-    ACTION_ID_W_ON_CLICK2 = 31
+    ACTION_ID_VARIANTS_ON_CLICK = 30,
+    ACTION_ID_W_ON_CLICK = 31,
+    ACTION_ID_W_ON_CLICK2 = 32
 };
 
 void action_drag_overlay();
@@ -164,6 +167,7 @@ void action_gui_keypad_unit();
 void action_gui_toggle_keypad_mode();
 void action_gui_keypad_option1();
 void action_styles_on_click();
+void action_variants_on_click();
 void action_w_on_click();
 void action_w_on_click2();
 
@@ -339,6 +343,10 @@ enum StylesEnum {
     STYLE_ID_STYLES_ELLIPSIS,
     STYLE_ID_STYLES_ELLIPSIS_V,
     STYLE_ID_STYLES_ELLIPSIS_CENTER,
+    STYLE_ID_VARIANTS_BOX,
+    STYLE_ID_VARIANTS_BOX_PRESSED,
+    STYLE_ID_VARIANTS_PLAIN,
+    STYLE_ID_VARIANTS_PAGE,
     STYLE_ID_W_TXT,
     STYLE_ID_W_TXT_LEFT,
     STYLE_ID_W_TXT_ALT,
@@ -417,20 +425,28 @@ enum ColorsEnum {
     COLOR_ID_STYLES_PURPLE = 37,
     COLOR_ID_STYLES_PAGE_BG = 38,
     COLOR_ID_STYLES_SHADOW = 39,
-    COLOR_ID_W_RED = 40,
-    COLOR_ID_W_GREEN = 41,
-    COLOR_ID_W_BLUE = 42,
-    COLOR_ID_W_YELLOW = 43,
-    COLOR_ID_W_GRAY = 44,
-    COLOR_ID_W_MAGENTA = 45,
-    COLOR_ID_W_CYAN = 46,
-    COLOR_ID_W_WHITE = 47,
-    COLOR_ID_W_BLACK = 48,
-	COLOR_ID_CUSTOM_000000 = 49,
-	COLOR_ID_CUSTOM_336699 = 50,
-	COLOR_ID_CUSTOM_123456 = 51,
-	COLOR_ID_CUSTOM_FEDCBA = 52,
-	COLOR_ID_CUSTOM_FFFFFF = 53
+    COLOR_ID_VARIANTS_BG = 40,
+    COLOR_ID_VARIANTS_WHITE = 41,
+    COLOR_ID_VARIANTS_GRAY = 42,
+    COLOR_ID_VARIANTS_RED = 43,
+    COLOR_ID_VARIANTS_GREEN = 44,
+    COLOR_ID_VARIANTS_BLUE = 45,
+    COLOR_ID_VARIANTS_ORANGE = 46,
+    COLOR_ID_VARIANTS_PAGE_BG = 47,
+    COLOR_ID_W_RED = 48,
+    COLOR_ID_W_GREEN = 49,
+    COLOR_ID_W_BLUE = 50,
+    COLOR_ID_W_YELLOW = 51,
+    COLOR_ID_W_GRAY = 52,
+    COLOR_ID_W_MAGENTA = 53,
+    COLOR_ID_W_CYAN = 54,
+    COLOR_ID_W_WHITE = 55,
+    COLOR_ID_W_BLACK = 56,
+	COLOR_ID_CUSTOM_000000 = 57,
+	COLOR_ID_CUSTOM_336699 = 58,
+	COLOR_ID_CUSTOM_123456 = 59,
+	COLOR_ID_CUSTOM_FEDCBA = 60,
+	COLOR_ID_CUSTOM_FFFFFF = 61
 };
 
 enum PagesEnum {
@@ -566,58 +582,59 @@ enum PagesEnum {
     PAGE_ID_RENDER_STACK6 = 129,
     PAGE_ID_STYLES_STATES = 130,
     PAGE_ID_STYLES_SHAPES = 131,
-    PAGE_ID_W_TEXT = 132,
-    PAGE_ID_W_MTEXT = 133,
-    PAGE_ID_W_DD = 134,
-    PAGE_ID_W_RECT = 135,
-    PAGE_ID_W_BUTTON = 136,
-    PAGE_ID_W_TOGGLE = 137,
-    PAGE_ID_W_BGROUP = 138,
-    PAGE_ID_W_BAR = 139,
-    PAGE_ID_W_YT = 140,
-    PAGE_ID_W_YT_LIST = 141,
-    PAGE_ID_W_UPDOWN = 142,
-    PAGE_ID_W_LGRAPH = 143,
-    PAGE_ID_W_PROGRESS = 144,
-    PAGE_ID_W_SBAR = 145,
-    PAGE_ID_W_CANVAS = 146,
-    PAGE_ID_W_LCHART = 147,
-    PAGE_ID_W_LCHART_SMALL = 148,
-    PAGE_ID_W_LCHART_LEGEND = 149,
-    PAGE_ID_W_GAUGE = 150,
-    PAGE_ID_W_INPUT = 151,
-    PAGE_ID_W_ROLLER = 152,
-    PAGE_ID_W_SWITCH = 153,
-    PAGE_ID_W_DDL = 154,
-    PAGE_ID_W_QR = 155,
-    PAGE_ID_W_CHECK = 156,
-    PAGE_ID_W_CONT = 157,
-    PAGE_ID_W_CONT_TL = 158,
-    PAGE_ID_W_LIST = 159,
-    PAGE_ID_W_LIST_COUNT = 160,
-    PAGE_ID_W_MANY = 161,
-    PAGE_ID_W_SELECT = 162,
-    PAGE_ID_W_UW = 163,
-    PAGE_ID_W_OVERLAP = 164,
-    PAGE_ID_W_TIMELINE = 165,
-    PAGE_ID_W_BADTYPE = 166,
-    PAGE_ID_EXT_UW_MAIN = 167,
-    PAGE_ID_FLOW_UW_A = 168,
-    PAGE_ID_FLOW_UW_ASSIGN = 169,
-    PAGE_ID_FLOW_UW_IN = 170,
-    PAGE_ID_FLOW_UW_L0 = 171,
-    PAGE_ID_FLOW_UW_L1 = 172,
-    PAGE_ID_FLOW_UW_L2 = 173,
-    PAGE_ID_FLOW_UW_L3 = 174,
-    PAGE_ID_FLOW_UW_L4 = 175,
-    PAGE_ID_FLOW_UW_L5 = 176,
-    PAGE_ID_FLOW_UW_L6 = 177,
-    PAGE_ID_FLOW_UW_L7 = 178,
-    PAGE_ID_FLOW_UW_L8 = 179,
-    PAGE_ID_FLOW_UW_L9 = 180,
-    PAGE_ID_GUI_RESIZE_VIEW = 181,
-    PAGE_ID_W_UW_BUTTON = 182,
-    PAGE_ID_W_UW_TEXT = 183
+    PAGE_ID_VARIANTS_PAGE = 132,
+    PAGE_ID_W_TEXT = 133,
+    PAGE_ID_W_MTEXT = 134,
+    PAGE_ID_W_DD = 135,
+    PAGE_ID_W_RECT = 136,
+    PAGE_ID_W_BUTTON = 137,
+    PAGE_ID_W_TOGGLE = 138,
+    PAGE_ID_W_BGROUP = 139,
+    PAGE_ID_W_BAR = 140,
+    PAGE_ID_W_YT = 141,
+    PAGE_ID_W_YT_LIST = 142,
+    PAGE_ID_W_UPDOWN = 143,
+    PAGE_ID_W_LGRAPH = 144,
+    PAGE_ID_W_PROGRESS = 145,
+    PAGE_ID_W_SBAR = 146,
+    PAGE_ID_W_CANVAS = 147,
+    PAGE_ID_W_LCHART = 148,
+    PAGE_ID_W_LCHART_SMALL = 149,
+    PAGE_ID_W_LCHART_LEGEND = 150,
+    PAGE_ID_W_GAUGE = 151,
+    PAGE_ID_W_INPUT = 152,
+    PAGE_ID_W_ROLLER = 153,
+    PAGE_ID_W_SWITCH = 154,
+    PAGE_ID_W_DDL = 155,
+    PAGE_ID_W_QR = 156,
+    PAGE_ID_W_CHECK = 157,
+    PAGE_ID_W_CONT = 158,
+    PAGE_ID_W_CONT_TL = 159,
+    PAGE_ID_W_LIST = 160,
+    PAGE_ID_W_LIST_COUNT = 161,
+    PAGE_ID_W_MANY = 162,
+    PAGE_ID_W_SELECT = 163,
+    PAGE_ID_W_UW = 164,
+    PAGE_ID_W_OVERLAP = 165,
+    PAGE_ID_W_TIMELINE = 166,
+    PAGE_ID_W_BADTYPE = 167,
+    PAGE_ID_EXT_UW_MAIN = 168,
+    PAGE_ID_FLOW_UW_A = 169,
+    PAGE_ID_FLOW_UW_ASSIGN = 170,
+    PAGE_ID_FLOW_UW_IN = 171,
+    PAGE_ID_FLOW_UW_L0 = 172,
+    PAGE_ID_FLOW_UW_L1 = 173,
+    PAGE_ID_FLOW_UW_L2 = 174,
+    PAGE_ID_FLOW_UW_L3 = 175,
+    PAGE_ID_FLOW_UW_L4 = 176,
+    PAGE_ID_FLOW_UW_L5 = 177,
+    PAGE_ID_FLOW_UW_L6 = 178,
+    PAGE_ID_FLOW_UW_L7 = 179,
+    PAGE_ID_FLOW_UW_L8 = 180,
+    PAGE_ID_FLOW_UW_L9 = 181,
+    PAGE_ID_GUI_RESIZE_VIEW = 182,
+    PAGE_ID_W_UW_BUTTON = 183,
+    PAGE_ID_W_UW_TEXT = 184
 };
 
 enum FlowStructures {
@@ -660,7 +677,7 @@ enum flow_itemFlowStructureFields {
     FLOW_STRUCTURE_FLOW_ITEM_NUM_FIELDS
 };
 
-extern const uint8_t assets[189273];
+extern const uint8_t assets[190447];
 
 } // namespace gui
 } // namespace eez
