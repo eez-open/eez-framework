@@ -83,7 +83,7 @@ TEST("render/text: glyph advance of present, missing and grouped glyphs") {
     CHECK_EQ((int)display::measureGlyph(127, font), 0);
     CHECK_EQ((int)display::measureGlyph(128, font), 8);
     CHECK_EQ((int)display::measureGlyph(0x20AC, font), 0);
-    CHECK_EQ((int)display::measureGlyph(31, font), 0);
+    CHECK_EQ((int)display::measureGlyph(30, font), 0);
     font::Font icons(getFontData(FONT_ID_ICONS_WAVEFORM_S));
     CHECK_EQ((int)display::measureGlyph(195, icons), 39);
     CHECK_EQ((int)display::measureGlyph('A', icons), 0);
@@ -491,6 +491,68 @@ TEST("render/text: a font tag at the end of the text does not take the NUL as it
     // with "AB")
     const char text[] = "A" TAG_START "\0AB";
     CHECK_EQ(width(text), width("A"));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// groups of decimals
+
+namespace {
+
+// the text with its decimals in groups, the gap as '_'
+const char *grouped(const char *text, size_t size = 64) {
+    static char buffer[64];
+    strcpy(buffer, text);
+    display::groupDecimals(buffer, size);
+    std::replace(buffer, buffer + strlen(buffer), display::DIGIT_GROUP_GAP_CHAR, '_');
+    return buffer;
+}
+
+} // namespace
+
+TEST("render/text: groupDecimals puts a gap after every three decimals") {
+    CHECK_STR(grouped("0.12345 A"), "0.123_45 A");
+    CHECK_STR(grouped("-12.123456 V"), "-12.123_456 V");
+    CHECK_STR(grouped("0.1234567"), "0.123_456_7");
+    CHECK_STR(grouped("< 0.00001 A"), "< 0.000_01 A");
+}
+
+TEST("render/text: groupDecimals leaves four decimals or less, and what is not a number with decimals") {
+    CHECK_STR(grouped("0.1234 A"), "0.1234 A");
+    CHECK_STR(grouped("12.5 V"), "12.5 V");
+    CHECK_STR(grouped("1234567 Hz"), "1234567 Hz");
+    CHECK_STR(grouped(""), "");
+    CHECK_STR(grouped("abc.12345"), "abc.12345");
+    // only the first number
+    CHECK_STR(grouped("1.5 2.123456"), "1.5 2.123456");
+}
+
+TEST("render/text: groupDecimals changes nothing when the text has no room") {
+    // 9 characters and the NUL: no room for the gap
+    CHECK_STR(grouped("0.12345 A", 10), "0.12345 A");
+    CHECK_STR(grouped("0.12345 A", 11), "0.123_45 A");
+}
+
+TEST("render/text: the gap of a group of digits is an empty space of a part of the font height") {
+    auto font = roboto();
+    // height 26
+    CHECK_EQ(display::getDigitGroupGapWidth(font), 4);
+    CHECK_EQ(width("123\x1F" "45"), width("12345") + 4);
+    CHECK_EQ((int)display::measureGlyph(display::DIGIT_GROUP_GAP_CHAR, font), 4);
+    // one character
+    CHECK_EQ(width("123\x1F" "45", 4), width("123") + 4);
+
+    render::resetDrawState();
+    render::clearRect(0, 0, 199, 99);
+    display::setColorByValue(rgb(255, 255, 255));
+    display::drawStr("1\x1F" "1", -1, 10, 10, 0, 0, 799, 479, font, -1);
+    int ax1, ay1, ax2, ay2;
+    REQUIRE(drawnBounds(rgb(0, 0, 0), 0, 0, 199, 99, ax1, ay1, ax2, ay2));
+    render::clearRect(0, 0, 199, 99);
+    display::drawStr("11", -1, 10, 10, 0, 0, 799, 479, font, -1);
+    int bx1, by1, bx2, by2;
+    REQUIRE(drawnBounds(rgb(0, 0, 0), 0, 0, 199, 99, bx1, by1, bx2, by2));
+    CHECK_EQ(ax1, bx1);
+    CHECK_EQ(ax2, bx2 + 4);
 }
 
 TEST_BUG("render/text: multiline layout does not break a line at a font index '\\n'", "D10") {

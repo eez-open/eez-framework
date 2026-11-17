@@ -243,6 +243,18 @@ TEST("widgets/dd: display unit and precision fix the unit and the number of deci
     CHECK_EQ(diffRectWithRef(DD_FIXED_INTFRAC, "0.7500"), 0);
 }
 
+TEST("widgets/dd: more than four decimals are shown in groups of three") {
+    set(V_A, Value(0.12345f, UNIT_AMPER, FLOAT_OPTIONS_SET_NUM_FIXED_DECIMALS(5)));
+    show(PAGE_ID_W_DD);
+    // all, fraction, fraction and unit, integer and fraction
+    CHECK_EQ(diffWithRef(0, "0.123\x1F" "45 A"), 0);
+    CHECK(diffWithRef(0, "0.12345 A") > 0);
+    CHECK_EQ(diffWithRef(2, ".123\x1F" "45 A"), 0);
+    CHECK_EQ(diffWithRef(3, ".123\x1F" "45"), 0);
+    CHECK_EQ(diffWithRef(5, "0.123\x1F" "45"), 0);
+    CHECK_EQ(diffWithRef(4, "A"), 0);
+}
+
 TEST("widgets/dd: a value with its own decimals (a module field resolution) shows them") {
     set(V_A, Value(0.75f, UNIT_AMPER, FLOAT_OPTIONS_SET_NUM_FIXED_DECIMALS(4)));
     show(PAGE_ID_W_DD);

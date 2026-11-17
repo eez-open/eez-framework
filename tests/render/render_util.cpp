@@ -13,8 +13,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <SDL.h>
-#include <SDL_image.h>
+#include <stb_image.h>
+#include <stb_image_write.h>
 
 #include <eez/conf-internal.h>
 #include <eez/core/memory.h>
@@ -92,39 +92,25 @@ Image32 captureFrame() {
 ////////////////////////////////////////////////////////////////////////////////
 // PNG
 
+// Image32 pixels are R, G, B, A bytes, as in stb
+
 bool savePng(const std::string &path, const Image32 &image) {
-    SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormatFrom(
-        (void *)image.px.data(), image.w, image.h, 32, image.w * 4, SDL_PIXELFORMAT_RGBA32);
-    if (!surface) {
-        fprintf(stderr, "SDL_CreateRGBSurfaceWithFormatFrom: %s\n", SDL_GetError());
-        return false;
-    }
-    int result = IMG_SavePNG(surface, path.c_str());
-    SDL_FreeSurface(surface);
-    if (result != 0) {
-        fprintf(stderr, "IMG_SavePNG %s: %s\n", path.c_str(), IMG_GetError());
+    if (!stbi_write_png(path.c_str(), image.w, image.h, 4, image.px.data(), image.w * 4)) {
+        fprintf(stderr, "stbi_write_png %s failed\n",path.c_str());
         return false;
     }
     return true;
 }
 
 bool loadPng(const std::string &path, Image32 &image) {
-    SDL_Surface *loaded = IMG_Load(path.c_str());
-    if (!loaded) {
+    int w, h, channels;
+    stbi_uc *pixels = stbi_load(path.c_str(), &w, &h, &channels, 4);
+    if (!pixels) {
         return false;
     }
-    SDL_Surface *surface = SDL_ConvertSurfaceFormat(loaded, SDL_PIXELFORMAT_RGBA32, 0);
-    SDL_FreeSurface(loaded);
-    if (!surface) {
-        return false;
-    }
-    image = Image32(surface->w, surface->h);
-    SDL_LockSurface(surface);
-    for (int y = 0; y < surface->h; y++) {
-        memcpy(&image.px[(size_t)y * surface->w], (uint8_t *)surface->pixels + y * surface->pitch, surface->w * 4);
-    }
-    SDL_UnlockSurface(surface);
-    SDL_FreeSurface(surface);
+    image = Image32(w, h);
+    memcpy(image.px.data(), pixels, (size_t)w * h * 4);
+    stbi_image_free(pixels);
     return true;
 }
 

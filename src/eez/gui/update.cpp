@@ -39,7 +39,7 @@ void refreshScreen() {
 	g_refreshScreen = true;
 }
 
-void updateScreen() {
+void updateScreen(bool fullRedraw) {
 	if (!g_rootWidget) {
 		static AppViewWidget g_rootAppViewWidget;
 
@@ -85,7 +85,7 @@ void updateScreen() {
 	g_widgetCursor.appContext = getRootAppContext();
 	g_widgetCursor.widget = g_rootWidget;
 	g_widgetCursor.currentState = g_widgetStateStart;
-	g_widgetCursor.refreshed = !hasPreviousState;
+	g_widgetCursor.refreshed = !hasPreviousState || fullRedraw;
 	g_widgetCursor.hasPreviousState = hasPreviousState;
 
     g_widgetCursor.x = 0;
@@ -100,7 +100,10 @@ void updateScreen() {
     }
 
 	g_widgetStateEnd = g_widgetCursor.currentState;
-	g_widgetStateStructureChanged = endWidgetStatesUpdate();
+	// (in the full redraw after a dry run the structure is the same, what the
+	// dry run found is kept)
+	bool structureChanged = endWidgetStatesUpdate();
+	g_widgetStateStructureChanged = fullRedraw ? g_widgetStateStructureChanged || structureChanged : structureChanged;
 
 	if (g_foundWidgetAtDownInvalid) {
 		WidgetCursor widgetCursor;

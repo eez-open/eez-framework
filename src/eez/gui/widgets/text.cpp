@@ -93,7 +93,7 @@ int findStartOfFraction(char *text) {
 }
 
 int findStartOfUnit(char *text, int i) {
-    for (i = 0; text[i] && (text[i] == '<' || text[i] == ' ' || text[i] == '-' || (text[i] >= '0' && text[i] <= '9') || text[i] == '.'); i++);
+    for (i = 0; text[i] && (text[i] == '<' || text[i] == ' ' || text[i] == '-' || (text[i] >= '0' && text[i] <= '9') || text[i] == '.' || text[i] == display::DIGIT_GROUP_GAP_CHAR); i++);
     return i;
 }
 
@@ -173,6 +173,15 @@ static Value getTextWidgetValue(const WidgetCursor &widgetCursor, const TextWidg
     return getValueInUnit(data, unit, precision);
 }
 
+// The text of the data as it is shown: the decimals of a number are in groups
+// of three (display::groupDecimals).
+static void getDataText(const Value &data, char *text, int count) {
+    data.toText(text, count);
+    if (data.isFloat() || data.isDouble()) {
+        display::groupDecimals(text, count);
+    }
+}
+
 // a label, an icon or the unit in its own style: drawn by drawValueParts
 static bool usesValueParts(const TextWidget *widget) {
     return widget->label || widget->icon || widget->trailingIcon || widget->displayOption == DISPLAY_OPTION_VALUE_AND_UNIT;
@@ -190,7 +199,7 @@ struct ValuePartsTexts {
 // The text of the data as the display option shows it: from start, length
 // characters (-1: to the end). text has room for TEXT_BUFFER_SIZE characters.
 static void getDisplayText(const TextWidget *widget, const Value &data, char *text, char *&start, int &length) {
-    data.toText(text, TEXT_BUFFER_SIZE);
+    getDataText(data, text, TEXT_BUFFER_SIZE);
 
     start = text;
 
@@ -254,7 +263,7 @@ static void getValueParts(const TextWidget *widget, const Value &data, const Val
     char *text = texts.text;
     char *labelText = texts.label;
     if (widget->displayOption == DISPLAY_OPTION_VALUE_AND_UNIT) {
-        data.toText(text, TEXT_BUFFER_SIZE);
+        getDataText(data, text, TEXT_BUFFER_SIZE);
         const char *value = text;
         int valueLength = (int)strlen(text);
         // a value that is not a number has no unit
@@ -585,7 +594,7 @@ void TextWidgetState::renderIntegerUnitAndFraction(const TextWidget *widget, con
     const WidgetCursor &widgetCursor = g_widgetCursor;
 
     char text[TEXT_BUFFER_SIZE];
-    data.toText(text, sizeof(text));
+    getDataText(data, text, sizeof(text));
 
     const char *integer = text;
     int integerLength = (int)strlen(text);

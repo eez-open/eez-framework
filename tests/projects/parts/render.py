@@ -320,7 +320,7 @@ def _opacity_page():
         widget("ContainerWidget", ("render_o", "cblue"), 400, 120, 240, 100, "render_bg_blue", widgets=[
             _box(("render_o", "radius"), 20, 10, 200, 80, "render_op_radius", "op 160 r10"),
         ]),
-    ], allowOverlappingChildren=True)
+    ])
 
 
 def _colors_page():

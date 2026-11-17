@@ -35,7 +35,7 @@ struct UserWidgetWidget : public Widget {
 struct UserWidgetWidgetState : public WidgetState {
 	WidgetStateFlags flags;
     Value context;
-	bool repainted;
+	bool repainted = false;
     const PageAsset* layout;
     flow::FlowState *flowState;
     float timelinePosition;

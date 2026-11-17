@@ -32605,8 +32605,7 @@
       "connectionLines": [],
       "localVariables": [],
       "userProperties": [],
-      "componentGroups": [],
-      "allowOverlappingChildren": true
+      "componentGroups": []
     },
     {
       "objID": "87f90be9-04a1-5eb3-9a12-dc8d8e517bfc",
@@ -36325,6 +36324,25 @@
             "useStyle": "w_txt"
           },
           "data": "w_str"
+        },
+        {
+          "type": "InputEmbeddedWidget",
+          "objID": "c2e78018-8e40-5408-843d-3232f6096f49",
+          "left": 10,
+          "top": 260,
+          "width": 200,
+          "height": 40,
+          "style": {
+            "useStyle": "w_txt"
+          },
+          "data": "w_e",
+          "inputType": "number",
+          "min": "0",
+          "max": "10",
+          "precision": "0.00001",
+          "unit": "\"A\"",
+          "info": "\"\"",
+          "defaultValue": "0"
         }
       ],
       "connectionLines": [],
@@ -37087,6 +37105,97 @@
               }
             }
           ]
+        },
+        {
+          "type": "ContainerWidget",
+          "objID": "0563cb36-a18c-5b10-9f04-6cad45933944",
+          "left": 10,
+          "top": 100,
+          "width": 200,
+          "height": 50,
+          "style": {
+            "useStyle": "w_blue_box"
+          },
+          "widgets": [
+            {
+              "type": "SelectWidget",
+              "objID": "7c08fdc6-7e1e-5bbf-964f-7f023866f2b4",
+              "left": 0,
+              "top": 0,
+              "width": 200,
+              "height": 50,
+              "style": {
+                "useStyle": "w_transparent"
+              },
+              "data": "w_int2",
+              "widgets": [
+                {
+                  "type": "RectangleWidget",
+                  "objID": "45b7342e-3c15-593c-87af-904974097b12",
+                  "left": 0,
+                  "top": 0,
+                  "width": 200,
+                  "height": 50,
+                  "style": {
+                    "useStyle": "w_red_box"
+                  }
+                },
+                {
+                  "type": "SpacerWidget",
+                  "objID": "2cb45691-e005-508c-974b-ca62ad92a9d6",
+                  "left": 0,
+                  "top": 0,
+                  "width": 200,
+                  "height": 50
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "ContainerWidget",
+          "objID": "a9859fe1-1dee-5c54-b4c5-114cac33ef54",
+          "left": 10,
+          "top": 200,
+          "width": 300,
+          "height": 50,
+          "style": {
+            "useStyle": "w_blue_box"
+          },
+          "layout": "horizontal",
+          "widgets": [
+            {
+              "type": "RectangleWidget",
+              "objID": "505f6a46-73b0-56a8-bc06-79e7151ddf76",
+              "left": 0,
+              "top": 0,
+              "width": 50,
+              "height": 50,
+              "style": {
+                "useStyle": "w_red_box"
+              }
+            },
+            {
+              "type": "SpacerWidget",
+              "objID": "aef1db80-7bc8-535b-804d-dabddba52726",
+              "left": 0,
+              "top": 0,
+              "width": 10,
+              "height": 50,
+              "flexGrow": true
+            },
+            {
+              "type": "RectangleWidget",
+              "objID": "cb7746c0-d778-5ac4-a1b1-a299409ab25b",
+              "left": 0,
+              "top": 0,
+              "width": 50,
+              "height": 50,
+              "style": {
+                "useStyle": "w_green_box"
+              }
+            }
+          ]
         }
       ],
       "connectionLines": [],
@@ -37217,8 +37326,7 @@
       "connectionLines": [],
       "localVariables": [],
       "userProperties": [],
-      "componentGroups": [],
-      "allowOverlappingChildren": true
+      "componentGroups": []
     },
     {
       "objID": "a43a9907-d85c-5d3e-a75a-7fd7a7a88dca",
@@ -40120,6 +40228,14 @@
           "tags": "widgets",
           "alwaysBuild": true,
           "backgroundColor": "w_gray",
+          "childStyles": []
+        },
+        {
+          "objID": "457d58f5-72fd-5b43-bd99-10a4338b97d0",
+          "name": "w_transparent",
+          "tags": "widgets",
+          "alwaysBuild": true,
+          "backgroundColor": "transparent",
           "childStyles": []
         },
         {

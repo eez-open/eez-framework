@@ -31,6 +31,8 @@ const int IN_PW2[] = { 10, 160, 200, 40 };
 // w_e in A shown in mA with the precision 0.0005 A, a reference text (w_str)
 const int IN_SHOWN[] = { 10, 210, 200, 40 };
 const int IN_REF[] = { 250, 210, 200, 40 };
+// w_e in A with the precision 0.00001 A
+const int IN_DECIMALS[] = { 10, 260, 200, 40 };
 
 // w_roller: items 26 px high, the selected one in the middle (y + 87 .. y + 113)
 const int RO_NAT[] = { 10, 10, 120, 200 };
@@ -221,6 +223,15 @@ TEST("widgets/input: a number is shown in the display unit with the decimals of 
     set(V_STR, str("12.5 mA"));
     harness::frame(2);
     CHECK_EQ(diffBlocks(IN_SHOWN[0], IN_SHOWN[1], IN_REF[0], IN_REF[1], IN_REF[2], IN_REF[3]), 0);
+}
+
+TEST("widgets/input: more than four decimals of a number are shown in groups of three") {
+    inputs("", "", intValue(0), "");
+    set(V_E, Value(0.75f, UNIT_AMPER));
+    set(V_STR, str("0.750\x1F" "00 A"));
+    show(PAGE_ID_W_INPUT);
+    harness::frame(2);
+    CHECK_EQ(diffBlocks(IN_DECIMALS[0], IN_DECIMALS[1], IN_REF[0], IN_REF[1], IN_REF[2], IN_REF[3]), 0);
 }
 
 namespace {

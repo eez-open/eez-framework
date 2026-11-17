@@ -7,7 +7,7 @@ mirrors the order of GLOBALS below). Native variables and actions are
 implemented in tests/widgets/native.cpp.
 
 Pages are full screen (800x480, "default" style: black background). Widgets do
-not overlap (except where the page allows overlapping children), the positions
+not overlap (except on the pages that test it), the positions
 are mirrored as constants in the C++ tests.
 """
 
@@ -42,6 +42,7 @@ STYLES = [
     style("w_green_box", backgroundColor="w_green"),
     style("w_blue_box", backgroundColor="w_blue"),
     style("w_gray_box", backgroundColor="w_gray"),
+    style("w_transparent", backgroundColor="transparent"),
     # buttons: blue, red while pressed
     style("w_btn", color="w_white", backgroundColor="w_blue",
           activeColor="w_white", activeBackgroundColor="w_red"),
@@ -380,6 +381,9 @@ PAGES.append(_page("w_input", [
     _w("InputEmbeddedWidget", "input/shown", 10, 210, 200, 40, "w_txt", data="w_e", inputType="number",
        min="0", max="10", precision="0.0005", unit='"A"', displayUnit='"mA"', info='""', defaultValue="0"),
     _w("TextWidget", "input/ref", 250, 210, 200, 40, "w_txt", data="w_str"),
+    # a number with five decimals
+    _w("InputEmbeddedWidget", "input/decimals", 10, 260, 200, 40, "w_txt", data="w_e", inputType="number",
+       min="0", max="10", precision="0.00001", unit='"A"', info='""', defaultValue="0"),
 ]))
 
 # Roller: native data (counted writes) and flow data
@@ -475,6 +479,20 @@ PAGES.append(_page("w_select", [
         _w("RectangleWidget", "select/1", 0, 0, 200, 50, "w_green_box"),
         _w("RectangleWidget", "select/2", 0, 0, 200, 50, "w_blue_box"),
     ]),
+    # a Select with a Spacer as its second child, on a blue container: the
+    # Spacer has no style (a widget made without one)
+    _w("ContainerWidget", "spacer/cont", 10, 100, 200, 50, "w_blue_box", widgets=[
+        _w("SelectWidget", "spacer/select", 0, 0, 200, 50, "w_transparent", data="w_int2", widgets=[
+            _w("RectangleWidget", "spacer/0", 0, 0, 200, 50, "w_red_box"),
+            {k: v for k, v in _w("SpacerWidget", "spacer/1", 0, 0, 200, 50).items() if k != "style"},
+        ]),
+    ]),
+    # a Spacer with Grow between two boxes of a row
+    _w("ContainerWidget", "spacer/row", 10, 200, 300, 50, "w_blue_box", layout="horizontal", widgets=[
+        _w("RectangleWidget", "spacer/row/a", 0, 0, 50, 50, "w_red_box"),
+        {k: v for k, v in _w("SpacerWidget", "spacer/row/s", 0, 0, 10, 50, flexGrow=True).items() if k != "style"},
+        _w("RectangleWidget", "spacer/row/b", 0, 0, 50, 50, "w_green_box"),
+    ]),
 ]))
 
 # user widgets
@@ -515,7 +533,7 @@ PAGES.append(_page("w_uw", [
 PAGES.append(_page("w_overlap", [
     _w("TextWidget", "overlap/text", 10, 10, 150, 60, "w_txt", data="w_a"),
     _w("RectangleWidget", "overlap/rect", 60, 40, 150, 60, "w_blue_box"),
-], allowOverlappingChildren=True))
+]))
 
 # timelines: position (left 10 -> 210), opacity to 0 with easeOutBack (W18)
 PAGES.append(_page("w_timeline", [

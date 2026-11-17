@@ -92,9 +92,9 @@ TEST("widgets/visible: data of a hidden widget is not evaluated in every frame")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// overlapping children (page with allowOverlappingChildren)
+// overlapping children (the frame is drawn again, every widget in order)
 
-TEST("widgets/overlap: the widget on top is repainted over a changed widget below it") {
+TEST("widgets/overlap: the widget on top stays over a changed widget below it") {
     set(V_A, str("one"));
     show(PAGE_ID_W_OVERLAP);
     // overlapped area: blue rectangle on top
@@ -155,7 +155,7 @@ TEST_BUG("widgets/timeline: a page with a timeline is drawn while the flow is st
 
 TEST_BUG("widgets/widget: a widget type unknown to the framework is ignored", "W17") {
     // e.g. module assets built with a newer Studio
-    pageWidget(PAGE_ID_W_BADTYPE, 0)->type = 34;
+    pageWidget(PAGE_ID_W_BADTYPE, 0)->type = 35;
     show(PAGE_ID_W_BADTYPE);
     CHECK_EQ(countOther(10, 10, 100, 50, BLACK), 0);
 }

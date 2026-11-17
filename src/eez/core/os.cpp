@@ -52,7 +52,9 @@ uint32_t millis() {
 #if defined(EEZ_PLATFORM_STM32)
 	return HAL_GetTick();
 #elif defined(__EMSCRIPTEN__)
-	return (uint32_t)emscripten_get_now();
+	// with threads it is the time since 1970, more than 32 bits: only the low
+	// 32 bits are taken (a conversion of the double to uint32_t would saturate)
+	return (uint32_t)(uint64_t)emscripten_get_now();
 #elif defined(EEZ_PLATFORM_SIMULATOR) || defined(EEZ_PLATFORM_CM5_RASPI)
     using namespace std::chrono;
     return (uint32_t)duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
@@ -72,7 +74,7 @@ uint32_t millis() {
 }
 
 void sleepMs(uint32_t ms) {
-#if defined(__EMSCRIPTEN__)
+#if EEZ_EMSCRIPTEN_NO_THREADS
     (void)ms;
 #elif EEZ_OPTION_THREADS && defined(EEZ_PLATFORM_STM32)
     osDelay(ms);
@@ -87,7 +89,7 @@ void sleepMs(uint32_t ms) {
 
 #if EEZ_OPTION_THREADS && !defined(EEZ_PLATFORM_STM32) && !defined(EEZ_FOR_LVGL)
 
-#if defined(__EMSCRIPTEN__)
+#if EEZ_EMSCRIPTEN_NO_THREADS
 
 struct EmscriptenThread {
     Thread *thread;
@@ -135,7 +137,7 @@ bool Thread::isCurrent() const {
 
 } // namespace eez
 
-#if defined(__EMSCRIPTEN__) && EEZ_OPTION_THREADS && !defined(EEZ_FOR_LVGL)
+#if EEZ_EMSCRIPTEN_NO_THREADS && EEZ_OPTION_THREADS && !defined(EEZ_FOR_LVGL)
 // called from the Emscripten main loop: one iteration of every thread, twice
 void eez_system_tick() {
     for (int i = 0; i < 2; i++) {

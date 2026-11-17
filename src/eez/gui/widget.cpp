@@ -60,6 +60,7 @@
 #include <eez/gui/widgets/yt_chart.h>
 #include <eez/gui/widgets/checkbox.h>
 #include <eez/gui/widgets/radio.h>
+#include <eez/gui/widgets/spacer.h>
 
 namespace eez {
 namespace gui {
@@ -73,28 +74,9 @@ uint32_t g_maxGuiStateSize;
 
 bool g_isRTL = false;
 
-// set while overlapping widgets are repainted (see doStaticLayoutWithOverlapping)
-static bool g_repaintingOverlappingWidgets;
-
-bool isRepaintingOverlappingWidgets() {
-    return g_repaintingOverlappingWidgets;
-}
-
-static bool isRenderedIntoOwnBuffer(WidgetState *widgetState) {
-    if (widgetState->type == WIDGET_TYPE_APP_VIEW) {
-        // each page is rendered into its own buffer
-        return true;
-    }
-    if (widgetState->type == WIDGET_TYPE_CONTAINER) {
-        // overlay
-        return ((ContainerWidgetState *)widgetState)->overlay != nullptr;
-    }
-    return false;
-}
-
 // Some widgets (Text widget with "Fit to content") calculate their size in
 // updateState. Applies that size to g_widgetCursor when the widget is visited
-// without calling updateState (find, repaint of overlapping widgets).
+// without calling updateState (find).
 static void applyContentSize(WidgetState *widgetState) {
     if (g_widgetCursor.widget->type == WIDGET_TYPE_TEXT && widgetState->type == WIDGET_TYPE_TEXT) {
         ((TextWidgetState *)widgetState)->applyFitToContent();
@@ -193,7 +175,10 @@ void WidgetCursor::popBackground() {
 ////////////////////////////////////////////////////////////////////////////////
 
 #define RENDER_WIDGET() \
-    if ((!widget->visible || widgetState->isVisible.toBool()) && widgetCursor.opacity > 0) { \
+    if (display::isDryRun()) { \
+        /* the widget would be drawn: something changed (see display::update) */ \
+        display::markRenderBufferDirty(); \
+    } else if ((!widget->visible || widgetState->isVisible.toBool()) && widgetCursor.opacity > 0) { \
         auto savedOpacity = display::setOpacity(widgetCursor.opacity); \
         widgetState->render(); \
         display::setOpacity(savedOpacity); \
@@ -366,13 +351,6 @@ void enumWidget() {
     if (g_findCallback) {
         // the state of the last frame
         setStyleVariant(widgetState->variant);
-
-        if (g_repaintingOverlappingWidgets && isRenderedIntoOwnBuffer(widgetState)) {
-            // not affected by the repaint of the current buffer, skip the whole subtree
-            widgetCursor.currentState = (WidgetState *)((uint8_t *)widgetState + widgetState->subtreeSize);
-            g_isActiveWidget = savedIsActiveWidget;
-            return;
-        }
 
         bool isVisible = !widget->visible || widgetState->isVisible.toBool();
 
@@ -1097,266 +1075,11 @@ void doStaticLayout(
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Overlapping widgets
-//
-// Widgets are rendered in order (the next widget is drawn over the previous
-// one), but only the widgets that are changed are rendered. If widget A is
-// changed and widget B after it overlaps it, A is drawn over B. Also, if B is
-// changed and it has transparent background, the container background is
-// drawn under B, i.e. over A.
-//
-// So, while children are rendered as usual, it is collected (with the display
-// damage probe) what is drawn by each child. If that area is shared by more
-// than one child, the area is repainted afterwards, clipped to that area:
-// container background and then all the children that intersect with it.
-// Children are repainted by walking their states from the first pass (like
-// forEachWidget), so updateState is not called again.
-
-static const int MAX_OVERLAPPING_DAMAGE_RECTS = 8;
-
-struct OverlappingDamageRects {
-    Rect rects[MAX_OVERLAPPING_DAMAGE_RECTS];
-    int count = 0;
-
-    void add(const display::DamageProbe &probe) {
-        Rect rect;
-        rect.x = probe.x1;
-        rect.y = probe.y1;
-        rect.w = probe.x2 - probe.x1 + 1;
-        rect.h = probe.y2 - probe.y1 + 1;
-
-        // already included
-        for (int i = 0; i < count; i++) {
-            if (isInside(rect, rects[i])) {
-                return;
-            }
-        }
-
-        if (count < MAX_OVERLAPPING_DAMAGE_RECTS) {
-            rects[count++] = rect;
-        } else {
-            // no more space, merge with the last one
-            unite(rects[count - 1], rect);
-        }
-    }
-
-    static bool isInside(const Rect &rect, const Rect &outer) {
-        return rect.x >= outer.x && rect.y >= outer.y &&
-            rect.x + rect.w <= outer.x + outer.w && rect.y + rect.h <= outer.y + outer.h;
-    }
-
-    static void unite(Rect &rect, const Rect &other) {
-        int x1 = MIN(rect.x, other.x);
-        int y1 = MIN(rect.y, other.y);
-        int x2 = MAX(rect.x + rect.w, other.x + other.w);
-        int y2 = MAX(rect.y + rect.h, other.y + other.h);
-        rect.x = x1;
-        rect.y = y1;
-        rect.w = x2 - x1;
-        rect.h = y2 - y1;
-    }
-};
-
-static bool isIntersecting(const Rect &rect, int x, int y, int w, int h) {
-    return rect.x < x + w && x < rect.x + rect.w && rect.y < y + h && y < rect.y + rect.h;
-}
-
-// true if the widget at the widget cursor, with the shadow of its style, is in
-// the rectangle
-static bool isWidgetIntersecting(const Rect &rect, const WidgetCursor &widgetCursor) {
-    int x1 = widgetCursor.x;
-    int y1 = widgetCursor.y;
-    int x2 = widgetCursor.x + widgetCursor.w - 1;
-    int y2 = widgetCursor.y + widgetCursor.h - 1;
-    auto style = getStyle(widgetCursor.widget->style);
-    if (styleHasShadow(style)) {
-        expandRectWithStyleShadow(style, x1, y1, x2, y2);
-    }
-    return isIntersecting(rect, x1, y1, x2 - x1 + 1, y2 - y1 + 1);
-}
-
-static void repaintOverlappingWidgetStep() {
-    WidgetCursor &widgetCursor = g_widgetCursor;
-
-    if (widgetCursor.opacity == 0) {
-        return;
-    }
-
-    display::ClipRect savedClipRect;
-    if (g_findClipRect.w > 0) {
-        // widget is inside of the list
-        savedClipRect = display::intersectClipRect(g_findClipRect.x, g_findClipRect.y, g_findClipRect.w, g_findClipRect.h);
-    } else {
-        savedClipRect = display::getClipRect();
-    }
-
-    auto widgetState = widgetCursor.currentState;
-
-    // Containers remember in render that their children must be rendered as
-    // refreshed (it is used in enumChildren right after render). When repainting,
-    // enumChildren doesn't use it, so it must not stay set for the next frame.
-    bool savedRepainted = false;
-    bool savedRendered = false;
-    if (widgetState->type == WIDGET_TYPE_CONTAINER) {
-        savedRepainted = ((ContainerWidgetState *)widgetState)->repainted;
-        savedRendered = ((ContainerWidgetState *)widgetState)->rendered;
-    } else if (widgetState->type == WIDGET_TYPE_SELECT) {
-        savedRepainted = ((SelectWidgetState *)widgetState)->repainted;
-    } else if (widgetState->type == WIDGET_TYPE_USER_WIDGET) {
-        savedRepainted = ((UserWidgetWidgetState *)widgetState)->repainted;
-    } else if (widgetState->type == WIDGET_TYPE_LIST || widgetState->type == WIDGET_TYPE_GRID) {
-        savedRepainted = ((ScrollableWidgetState *)widgetState)->rendered;
-    }
-
-    auto savedOpacity = display::setOpacity(widgetCursor.opacity);
-    widgetState->render();
-    display::setOpacity(savedOpacity);
-
-    if (widgetState->type == WIDGET_TYPE_CONTAINER) {
-        ((ContainerWidgetState *)widgetState)->repainted = savedRepainted;
-        ((ContainerWidgetState *)widgetState)->rendered = savedRendered;
-    } else if (widgetState->type == WIDGET_TYPE_SELECT) {
-        ((SelectWidgetState *)widgetState)->repainted = savedRepainted;
-    } else if (widgetState->type == WIDGET_TYPE_USER_WIDGET) {
-        ((UserWidgetWidgetState *)widgetState)->repainted = savedRepainted;
-    } else if (widgetState->type == WIDGET_TYPE_LIST || widgetState->type == WIDGET_TYPE_GRID) {
-        ((ScrollableWidgetState *)widgetState)->rendered = savedRepainted;
-    }
-
-    display::restoreClipRect(savedClipRect);
-}
-
-static void repaintOverlappingWidgets(
-    WidgetCursor& widgetCursor,
-    const ListOfAssetsPtr<Widget> &widgets,
-    int containerOriginalWidth,
-    int containerOriginalHeight,
-    int containerWidth,
-    int containerHeight,
-    const Style *containerStyle,
-    bool containerActive,
-    WidgetState *firstChildState,
-    WidgetState *endChildState,
-    const Rect &rect
-) {
-    // count children in the repainted area
-    int count = 0;
-    auto childState = firstChildState;
-    for (uint32_t index = 0; index < widgets.count && childState < endChildState && count < 2; ++index) {
-        widgetCursor.widget = widgets[index];
-
-        if (childState->widget != widgetCursor.widget) {
-            // state was not created (state buffer overflow)
-            break;
-        }
-
-        auto savedX = widgetCursor.x;
-        auto savedY = widgetCursor.y;
-        auto savedOpacity = widgetCursor.opacity;
-
-        setStaticLayoutChildPosition(widgetCursor, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
-        applyContentSize(childState);
-
-        if (isWidgetIntersecting(rect, widgetCursor)) {
-            count++;
-        }
-
-        childState = (WidgetState *)((uint8_t *)childState + childState->subtreeSize);
-
-        widgetCursor.x = savedX;
-        widgetCursor.y = savedY;
-        widgetCursor.opacity = savedOpacity;
-    }
-
-    if (count < 2) {
-        // nothing is overlapped
-        return;
-    }
-
-    auto savedClipRect = display::intersectClipRect(rect.x, rect.y, rect.w, rect.h);
-    auto &clipRect = display::getClipRect();
-    if (clipRect.x1 > clipRect.x2 || clipRect.y1 > clipRect.y2) {
-        display::restoreClipRect(savedClipRect);
-        return;
-    }
-
-    // container background, the container itself is on the top of the background
-    // stack, it is removed so that only the backgrounds under the container are
-    // drawn (if container background is transparent)
-    BackgroundStyle containerBackground = {};
-    bool containerBackgroundRemoved = false;
-    if (widgetCursor.backgroundStyleStackPointer > 0) {
-        containerBackground = widgetCursor.backgroundStyleStack[widgetCursor.backgroundStyleStackPointer - 1];
-        widgetCursor.backgroundStyleStackPointer--;
-        containerBackgroundRemoved = true;
-    }
-
-    auto savedOpacity = display::setOpacity(widgetCursor.opacity);
-    drawRectangle(widgetCursor.x, widgetCursor.y, containerWidth, containerHeight, containerStyle, containerActive);
-    display::setOpacity(savedOpacity);
-
-    if (containerBackgroundRemoved) {
-        widgetCursor.backgroundStyleStack[widgetCursor.backgroundStyleStackPointer++] = containerBackground;
-    }
-
-    // children, background is already drawn so they are rendered as refreshed
-    auto savedRefreshed = widgetCursor.refreshed;
-    auto savedFindCallback = g_findCallback;
-    auto savedFindClipRect = g_findClipRect;
-    auto savedRepaintingOverlappingWidgets = g_repaintingOverlappingWidgets;
-
-    widgetCursor.refreshed = true;
-    g_findCallback = repaintOverlappingWidgetStep;
-    g_findClipRect = Rect();
-    g_repaintingOverlappingWidgets = true;
-
-    childState = firstChildState;
-    for (uint32_t index = 0; index < widgets.count && childState < endChildState; ++index) {
-        widgetCursor.widget = widgets[index];
-
-        if (childState->widget != widgetCursor.widget) {
-            // state was not created (state buffer overflow)
-            break;
-        }
-
-        auto savedX = widgetCursor.x;
-        auto savedY = widgetCursor.y;
-        auto savedOpacity = widgetCursor.opacity;
-
-        setStaticLayoutChildPosition(widgetCursor, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
-
-        applyContentSize(childState);
-
-        auto nextChildState = (WidgetState *)((uint8_t *)childState + childState->subtreeSize);
-
-        if (isWidgetIntersecting(rect, widgetCursor)) {
-            widgetCursor.currentState = childState;
-            enumWidget();
-        }
-
-        childState = nextChildState;
-
-        widgetCursor.x = savedX;
-        widgetCursor.y = savedY;
-        widgetCursor.opacity = savedOpacity;
-    }
-
-    widgetCursor.currentState = endChildState;
-
-    widgetCursor.refreshed = savedRefreshed;
-    g_findCallback = savedFindCallback;
-    g_findClipRect = savedFindClipRect;
-    g_repaintingOverlappingWidgets = savedRepaintingOverlappingWidgets;
-
-    display::restoreClipRect(savedClipRect);
-}
-
-////////////////////////////////////////////////////////////////////////////////
 
 void ChildrenRoundedClip::begin(const WidgetCursor &widgetCursor, const Style *style) {
     clip.level = -1;
 
-    if (!style || (g_findCallback && !g_repaintingOverlappingWidgets)) {
+    if (!style || g_findCallback) {
         // nothing is drawn
         return;
     }
@@ -1415,10 +1138,7 @@ void ChildrenRoundedClip::begin(const WidgetCursor &widgetCursor, const Style *s
         (int)clip.right - (int)clip.left, (int)clip.bottom - (int)clip.top
     );
 
-    // the widget is just drawn (not only a part of it, as when overlapping
-    // widgets are repainted): the corners are its background
-    clip.owner = style;
-    display::beginRoundedClip(clip, widgetCursor.refreshed && !g_repaintingOverlappingWidgets);
+    display::beginRoundedClip(clip);
 
     // also when nothing is saved (other displays)
     clip.level = clip.level < 0 ? -2 : clip.level;
@@ -1432,66 +1152,6 @@ void ChildrenRoundedClip::end() {
         display::endRoundedClip(clip);
     }
     display::restoreClipRect(savedClipRect);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void doStaticLayoutWithOverlapping(
-    WidgetCursor& widgetCursor,
-    const ListOfAssetsPtr<Widget> &widgets,
-    int containerOriginalWidth,
-    int containerOriginalHeight,
-    int containerWidth,
-    int containerHeight,
-    const Style *containerStyle,
-    bool containerActive
-) {
-    if (g_findCallback || widgetCursor.refreshed) {
-        // all the children are rendered (in order), so overlapping is not a problem
-        doStaticLayout(widgetCursor, widgets, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
-        return;
-    }
-
-    auto firstChildState = widgetCursor.currentState;
-
-    OverlappingDamageRects damageRects;
-
-    for (uint32_t index = 0; index < widgets.count; ++index) {
-        widgetCursor.widget = widgets[index];
-
-        auto savedX = widgetCursor.x;
-        auto savedY = widgetCursor.y;
-        auto savedOpacity = widgetCursor.opacity;
-
-        setStaticLayoutChildPosition(widgetCursor, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
-
-        display::DamageProbe probe;
-        display::beginDamageProbe(probe);
-
-        enumWidget();
-
-        display::endDamageProbe(probe);
-
-        if (!probe.isEmpty()) {
-            damageRects.add(probe);
-        }
-
-        widgetCursor.x = savedX;
-        widgetCursor.y = savedY;
-        widgetCursor.opacity = savedOpacity;
-    }
-
-    auto endChildState = widgetCursor.currentState;
-
-    for (int i = 0; i < damageRects.count; i++) {
-        repaintOverlappingWidgets(
-            widgetCursor, widgets,
-            containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight,
-            containerStyle, containerActive,
-            firstChildState, endChildState,
-            damageRects.rects[i]
-        );
-    }
 }
 
 } // namespace gui

@@ -246,6 +246,13 @@ TEST("render/layout: the first lines of texts in two fonts are on one baseline")
     int big = measure(STYLE_ID_LAYOUT_TEXT_BIG, "Ag");
     CHECK_EQ(getTextBaseline(getStyle(STYLE_ID_LAYOUT_TEXT_SMALL), 26), 21);
     CHECK_EQ(getTextBaseline(getStyle(STYLE_ID_LAYOUT_TEXT_BIG), 52), 42);
+    // a box lower than the font: the text is centered on it and starts above
+    // it (as drawText draws it), the baseline is not the one of a text at
+    // the top of the box
+    Style centered = *getStyle(STYLE_ID_LAYOUT_TEXT_BIG);
+    centered.flags = (centered.flags & ~STYLE_FLAGS_VERT_ALIGN_MASK) | STYLE_FLAGS_VERT_ALIGN_CENTER;
+    CHECK_EQ(getTextBaseline(&centered, 52), 42);
+    CHECK_EQ(getTextBaseline(&centered, 46), 39);
     CHECK_BOX(inRight(178, 70, YELLOW), 445 + small + 10, 183, big, 52);
     CHECK_BOX(inRight(178, 70, ORANGE), 445, 183 + 21, small, 26);
     CHECK_BOX(inRight(178, 70, RED), 445 + small + 10 + big + 10, 183 + 22, 40, 20);

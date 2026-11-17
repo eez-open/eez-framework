@@ -65,7 +65,8 @@ void endRendering();
 // shadow (withShadow and backdrop as passed to endBufferRendering; the shadow
 // shows in the rounded corners of the page). Used by the page with transparent
 // background. Returns true if the background changed since the previous frame,
-// so the whole buffer must be drawn again.
+// so the whole buffer must be drawn again (never on a display with full
+// redraw, where a change below draws the whole frame again).
 bool setBufferBackgroundBelow(int x, int y, int width, int height, gui::Rect *backdrop, bool withShadow = false);
 // draws the background set with setBufferBackgroundBelow (does nothing if not set)
 void drawBufferBackground(int x1, int y1, int x2, int y2);
@@ -85,25 +86,6 @@ ClipRect intersectClipRect(int x, int y, int width, int height);
 void restoreClipRect(const ClipRect &previousClipRect);
 const ClipRect &getClipRect();
 
-// Collects the bounding rectangle (inclusive, empty when x1 > x2) of everything
-// drawn into the current buffer between beginDamageProbe and endDamageProbe.
-// Probes can be nested, what is collected by the inner probe is also added to
-// the outer probe.
-struct DamageProbe {
-    int x1;
-    int y1;
-    int x2;
-    int y2;
-
-    bool isEmpty() const { return x1 > x2 || y1 > y2; }
-
-    // internal
-    DamageProbe *parent;
-    const void *target;
-};
-void beginDamageProbe(DamageProbe &probe);
-void endDamageProbe(DamageProbe &probe);
-
 // The rectangle (inclusive) of the current buffer is drawn into directly (not
 // with the drawing functions): it is added to the damage, inside the clip
 // rectangle.
@@ -111,17 +93,18 @@ void addDamageRect(int x1, int y1, int x2, int y2);
 
 VideoBuffer getBufferPointer();
 
-// What the last frame cost (for tests and tuning): the pixels composed from
-// the render buffers into the frame, transferred to the screen and of the
-// backdrop blurred, and the number of rectangles composed and transferred.
-struct FrameStats {
-    uint32_t composedPixels;
-    uint32_t composedRects;
-    uint32_t presentedPixels;
-    uint32_t presentedRects;
-    uint32_t blurredPixels;
-};
-const FrameStats &getFrameStats();
+#if defined(__EMSCRIPTEN__)
+// Emscripten has no window, the web page draws the frames: the last finished
+// frame (DISPLAY_WIDTH x DISPLAY_HEIGHT pixels, RGBA) and counter, which is
+// incremented with every new frame. nullptr before the first frame. The frame
+// is not drawn into until the frame after the next one is started.
+VideoBuffer getPresentedFrame(uint32_t &counter);
+#endif
+
+// True while the widgets are updated only to find out if something changed
+// (display with full redraw, see update): the drawing functions draw nothing.
+// Code that draws directly into the buffer must not draw then.
+bool isDryRun();
 
 // The RGB pixels (3 bytes each) of the frame of the device app context,
 // getScreenshotWidth() x getScreenshotHeight(). Valid until releaseScreenshot.
@@ -253,23 +236,17 @@ void fillRoundedRectSides(
 // radii (rtlx, rtly, rtrx, rtry, rbrx, rbry, rblx, rbly) is undone, the
 // antialiased edge in part. The pairs nest. Only on displays with a 32-bit
 // buffer, elsewhere it does nothing.
-//
-// The corners are blended with what is below the content of the box (its
-// background), so it must be known also when only the content is drawn again:
-// with backgroundIsFresh the box itself is just drawn and the corner pixels are
-// its background, they are kept for the next times (by the box and the owner,
-// e.g. its style), when the corner pixels are the last frame.
+// The corners are blended with what is in them at beginRoundedClip: the
+// background of the box, which is drawn before its content.
 struct RoundedClip {
 	float left, top, right, bottom;
 	float radii[8];
-	const void *owner;
 
 	// set by beginRoundedClip
 	int level; // -1: not active
 	void *buffer;
-	DamageProbe probe;
 };
-void beginRoundedClip(RoundedClip &clip, bool backgroundIsFresh);
+void beginRoundedClip(RoundedClip &clip);
 void endRoundedClip(RoundedClip &clip);
 
 // only the line of the rectangle with rounded corners, in the foreground color,
@@ -302,6 +279,18 @@ int getCursorXPosition(int cursorPosition, const char *text, int textLength, int
 int8_t measureGlyph(int32_t encoding, gui::font::Font &font);
 int measureStr(const char *text, int textLength, gui::font::Font &font, int max_width = 0, int startFontIndex = 0);
 int getFontIndexAtEnd(const char *text, int textLength, int fontIndex);
+
+// The gap between the groups of digits of a number ("0.123 45"): one character
+// in the text, laid out as an empty space of getDigitGroupGapWidth pixels, in
+// every font (no font has a glyph for it).
+static const char DIGIT_GROUP_GAP_CHAR = '\x1F';
+int getDigitGroupGapWidth(gui::font::Font &font);
+
+// Puts DIGIT_GROUP_GAP_CHAR after every three decimals of the first number in
+// the text (size: the room of the text with the NUL): "0.12345 A" becomes
+// "0.123 45 A". A number with four decimals or less is not changed, so no
+// decimal is alone after a gap.
+void groupDecimals(char *text, size_t size);
 
 // Decodes the UTF-8 character at text into codePoint and returns the text after
 // it. At the terminating NUL codePoint is 0 and text is returned. A byte that

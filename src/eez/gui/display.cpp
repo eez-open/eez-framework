@@ -57,13 +57,15 @@
 #define CONF_BACKDROP_BLUR_RADIUS 2 // in downscaled pixels
 #define CONF_BACKDROP_BLUR_PASSES 3
 #define CONF_BACKDROP_BLUR_TINT_OPACITY 80
-
-// compose and transfer to the screen only the changed part of the frame
-#define EEZ_DAMAGE_TRACKING 1
-// print composed damage rectangle (and its share of the screen) for every dirty frame
-#if !defined(__EMSCRIPTEN__)
-#define EEZ_DAMAGE_TRACKING_DEBUG 0
 #endif
+
+// Full redraw: a frame in which something changed is drawn from the start,
+// every widget in order (see update). Without it only the widgets that
+// changed are drawn, over the previous frame.
+#if EEZ_USE_SDL
+#define EEZ_FULL_REDRAW 1
+#else
+#define EEZ_FULL_REDRAW 0
 #endif
 
 #if defined(EEZ_PLATFORM_STM32)
@@ -81,12 +83,8 @@ extern "C" DMA2D_HandleTypeDef hdma2d_eval;
 
 #endif
 
-#if EEZ_USE_SDL
-#include <string>
-#if !defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
 #include <SDL.h>
-#include <SDL_image.h>
-#endif
 #endif
 
 #if DISPLAY_BPP == 16
@@ -194,183 +192,11 @@ struct DamageRect {
     }
 };
 
-// Up to MAX_RECTS rectangles in display coordinates. They don't overlap, so a
-// pixel of the region is composed once (the shadow and the layers with opacity
-// are blended over what is below them).
-struct DamageRegion {
-    static const int MAX_RECTS = 8;
-
-    // Two rectangles are merged into their bounding rectangle when it has at
-    // most this many pixels more than the two: one rectangle more costs a
-    // compose pass over all the layers and a transfer to the screen.
-    static const uint32_t MERGE_MAX_EXTRA_PIXELS = 4096;
-
-    DamageRect rects[MAX_RECTS];
-    int numRects = 0;
-
-    bool isEmpty() const { return numRects == 0; }
-
-    void clear() { numRects = 0; }
-
-    void setFull() {
-        rects[0].setFull();
-        numRects = 1;
-    }
-
-    void add(int x1, int y1, int x2, int y2) {
-        if (x1 > x2 || y1 > y2) {
-            return;
-        }
-
-        // inside a rectangle of the region
-        for (int i = numRects - 1; i >= 0; i--) {
-            if (rects[i].contains(x1, y1, x2, y2)) {
-                return;
-            }
-        }
-
-        DamageRect rect;
-        rect.add(x1, y1, x2, y2);
-
-        while (true) {
-            // merge with a rectangle it overlaps or that is cheap to merge with,
-            // or, when there is no room for one more, the cheapest one
-            int mergeIndex = -1;
-            int cheapestIndex = -1;
-            uint32_t cheapestExtra = 0;
-            for (int i = 0; i < numRects; i++) {
-                uint32_t extra;
-                if (isMergeCheap(rect, rects[i], extra)) {
-                    mergeIndex = i;
-                    break;
-                }
-                if (cheapestIndex == -1 || extra < cheapestExtra) {
-                    cheapestIndex = i;
-                    cheapestExtra = extra;
-                }
-            }
-
-            if (mergeIndex == -1) {
-                if (numRects < MAX_RECTS) {
-                    break;
-                }
-                mergeIndex = cheapestIndex;
-            }
-
-            // the merged rectangle can overlap others now, so look again
-            rect.add(rects[mergeIndex]);
-            rects[mergeIndex] = rects[--numRects];
-        }
-
-        rects[numRects++] = rect;
-    }
-
-    void add(const DamageRect &rect) { add(rect.x1, rect.y1, rect.x2, rect.y2); }
-
-    void add(const DamageRegion &region) {
-        for (int i = 0; i < region.numRects; i++) {
-            add(region.rects[i]);
-        }
-    }
-
-    // keeps only the part inside the rectangle
-    void intersect(int x1, int y1, int x2, int y2) {
-        int n = 0;
-        for (int i = 0; i < numRects; i++) {
-            DamageRect rect = rects[i];
-            rect.intersect(x1, y1, x2, y2);
-            if (!rect.isEmpty()) {
-                rects[n++] = rect;
-            }
-        }
-        numRects = n;
-    }
-
-    bool intersects(int x1, int y1, int x2, int y2) const {
-        for (int i = 0; i < numRects; i++) {
-            if (rects[i].intersects(x1, y1, x2, y2)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    uint32_t area() const {
-        uint32_t result = 0;
-        for (int i = 0; i < numRects; i++) {
-            result += rects[i].area();
-        }
-        return result;
-    }
-
-    // the rectangles overlap (they must be merged) or their bounding rectangle
-    // has at most MERGE_MAX_EXTRA_PIXELS pixels (extra) more than the two
-    static bool isMergeCheap(const DamageRect &a, const DamageRect &b, uint32_t &extra) {
-        if (a.intersects(b.x1, b.y1, b.x2, b.y2)) {
-            extra = 0;
-            return true;
-        }
-        DamageRect bounds = a;
-        bounds.add(b);
-        extra = bounds.area() - a.area() - b.area();
-        return extra <= MERGE_MAX_EXTRA_PIXELS;
-    }
-};
-
-static DamageRegion makeFullDamageRegion() {
-    DamageRegion region;
-    region.setFull();
-    return region;
-}
-
-// The damage of a buffer while it is drawn into (see addDamage). What is drawn
-// one after the other is mostly next to each other (the glyphs of a text, the
-// spans of a shape), so it is collected in one rectangle while that is cheap
-// (DamageRegion::isMergeCheap) and only then added to the region.
-struct BufferDamage {
-    void clear() {
-        m_region.clear();
-        m_current.clear();
-    }
-
-    void add(int x1, int y1, int x2, int y2) {
-        if (x1 > x2 || y1 > y2) {
-            return;
-        }
-        if (m_current.contains(x1, y1, x2, y2)) {
-            return;
-        }
-        DamageRect rect;
-        rect.add(x1, y1, x2, y2);
-        if (!m_current.isEmpty()) {
-            uint32_t extra;
-            if (DamageRegion::isMergeCheap(m_current, rect, extra)) {
-                m_current.add(rect);
-                return;
-            }
-            m_region.add(m_current);
-        }
-        m_current = rect;
-    }
-
-    const DamageRegion &region() const {
-        if (!m_current.isEmpty()) {
-            m_region.add(m_current);
-            m_current.clear();
-        }
-        return m_region;
-    }
-
-private:
-    mutable DamageRegion m_region;
-    mutable DamageRect m_current;
-};
-
 struct RenderBuffer {
     VideoBuffer bufferPointer;
     VideoBuffer previousBuffer;
-    BufferDamage damage; // part of this buffer drawn in the current frame
-    BufferDamage *previousDamage;
+    DamageRect damage; // the bounding rectangle of what is drawn into this buffer in the current frame
+    DamageRect *previousDamage;
     int x;
     int y;
     int width;
@@ -408,7 +234,7 @@ static std::atomic<bool> g_takeScreenshot;
 // also an animation buffer, so the animations are not drawn while it is set.
 static std::atomic<bool> g_screenshotAllocated;
 
-#if EEZ_OPTION_THREADS && !defined(__EMSCRIPTEN__)
+#if EEZ_OPTION_THREADS && !EEZ_EMSCRIPTEN_NO_THREADS
 // One screenshot at a time: taken in takeScreenshot, given back in
 // releaseScreenshot. Not a mutex, because the screenshot can be released by
 // another thread than the one that took it.
@@ -464,66 +290,35 @@ static int g_numBuffersToDraw;
 // render buffer currently drawn into (-1 for the main buffer)
 static int g_currentBufferIndex = -1;
 
-// part of the buffer currently drawn into that was changed in this frame (nullptr when not tracked)
-static BufferDamage *g_damage;
+// what is drawn into the buffer currently drawn into in this frame (nullptr when not collected)
+static DamageRect *g_damage;
 // drawn directly into the main render buffer in this frame
-static BufferDamage g_mainDamage;
-// where the render buffer to be drawn next is stale compared to the synced buffer
-static DamageRegion g_staleDamage = makeFullDamageRegion();
-// part of the synced buffer that must be transferred to the screen: what
-// changed since the frame transferred last
-static DamageRegion g_presentDamage = makeFullDamageRegion();
+static DamageRect g_mainDamage;
+// the render buffer to be drawn next is not the same as the synced buffer
+static bool g_renderBufferStale = true;
+// the synced buffer must be transferred to the screen
+static bool g_presentNeeded = true;
 
-// innermost active damage probe
-static DamageProbe *g_damageProbe;
+// Dry run (see update): the drawing functions draw nothing, they only note
+// that something would be drawn (isDirty).
+static bool g_dryRun;
 
-static FrameStats g_frameStats;
-
-const FrameStats &getFrameStats() {
-    return g_frameStats;
+bool isDryRun() {
+    return g_dryRun;
 }
 
-static inline void addProbeDamage(DamageProbe *probe, int x1, int y1, int x2, int y2) {
-    if (x1 > x2 || y1 > y2) {
-        return;
-    }
-    if (probe->isEmpty()) {
-        probe->x1 = x1;
-        probe->y1 = y1;
-        probe->x2 = x2;
-        probe->y2 = y2;
-    } else {
-        probe->x1 = std::min(probe->x1, x1);
-        probe->y1 = std::min(probe->y1, y1);
-        probe->x2 = std::max(probe->x2, x2);
-        probe->y2 = std::max(probe->y2, y2);
-    }
-}
+#if EEZ_FULL_REDRAW
+// the next frame is drawn also if nothing changed
+static bool g_redrawNeeded = true;
+// The screen is transparent where no widget draws (see clearScreenTransparent):
+// every frame is drawn into cleared buffers, so what is blended over the
+// transparent screen is not blended over the previous frame.
+static bool g_transparentScreen;
+#endif
 
 static inline void addDamage(int x1, int y1, int x2, int y2) {
     if (g_damage) {
         g_damage->add(x1, y1, x2, y2);
-    }
-    // drawing into some other buffer (e.g. overlay) is not collected
-    if (g_damageProbe && g_damageProbe->target == g_damage) {
-        addProbeDamage(g_damageProbe, x1, y1, x2, y2);
-    }
-}
-
-void beginDamageProbe(DamageProbe &probe) {
-    probe.x1 = 0;
-    probe.y1 = 0;
-    probe.x2 = -1;
-    probe.y2 = -1;
-    probe.parent = g_damageProbe;
-    probe.target = g_damage;
-    g_damageProbe = &probe;
-}
-
-void endDamageProbe(DamageProbe &probe) {
-    g_damageProbe = probe.parent;
-    if (g_damageProbe && g_damageProbe->target == probe.target && !probe.isEmpty()) {
-        addProbeDamage(g_damageProbe, probe.x1, probe.y1, probe.x2, probe.y2);
     }
 }
 
@@ -565,8 +360,8 @@ static LayerInfo getLayerInfo(const RenderBuffer &renderBuffer) {
 }
 
 static void setFullDamage() {
-    g_staleDamage.setFull();
-    g_presentDamage.setFull();
+    g_renderBufferStale = true;
+    g_presentNeeded = true;
 }
 
 // the frame of a backdrop: its rectangle inside the display
@@ -602,25 +397,27 @@ static bool isBackdropVisible(const RenderBuffer &renderBuffer) {
     return !(x1 <= frame.x1 && y1 <= frame.y1 && x2 >= frame.x2 && y2 >= frame.y2);
 }
 
-// adds the visible part (inside its rectangle) of the damage of the render
-// buffer, in display coordinates
-static void addLayerDamage(DamageRegion &region, const RenderBuffer &renderBuffer) {
-    const DamageRegion &bufferDamage = renderBuffer.damage.region();
-    for (int i = 0; i < bufferDamage.numRects; i++) {
-        DamageRect damage = bufferDamage.rects[i];
-        damage.intersect(renderBuffer.x, renderBuffer.y, renderBuffer.x + renderBuffer.width - 1, renderBuffer.y + renderBuffer.height - 1);
-        if (!damage.isEmpty()) {
-            region.add(
-                damage.x1 + renderBuffer.xOffset, damage.y1 + renderBuffer.yOffset,
-                damage.x2 + renderBuffer.xOffset, damage.y2 + renderBuffer.yOffset
-            );
-        }
+#if !EEZ_FULL_REDRAW
+// the visible part (inside its rectangle) of what is drawn into the render
+// buffer in this frame, in display coordinates
+static DamageRect getLayerDamage(const RenderBuffer &renderBuffer) {
+    DamageRect damage = renderBuffer.damage;
+    damage.intersect(renderBuffer.x, renderBuffer.y, renderBuffer.x + renderBuffer.width - 1, renderBuffer.y + renderBuffer.height - 1);
+    if (!damage.isEmpty()) {
+        damage.x1 += renderBuffer.xOffset;
+        damage.y1 += renderBuffer.yOffset;
+        damage.x2 += renderBuffer.xOffset;
+        damage.y2 += renderBuffer.yOffset;
     }
+    return damage;
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
 static void initDriver();
+static bool updateLayers();
+static bool isOverlayDirty();
 static void syncBuffer();
 static void copySyncedBufferToScreenshotBuffer();
 static void drawStrInit();
@@ -781,6 +578,10 @@ void clearScreenTransparent() {
         }
     }
     setFullDamage();
+#if EEZ_FULL_REDRAW
+    g_redrawNeeded = true;
+    g_transparentScreen = true;
+#endif
 }
 
 void turnOn() {
@@ -966,7 +767,39 @@ void update() {
     touchScrollTick();
 
     display::beginRendering();
+
+#if EEZ_FULL_REDRAW
+    // Dry run: the widgets are updated as when only the widgets that changed
+    // are drawn, but nothing is drawn. It tells if something changed.
+    g_dryRun = true;
     updateScreen();
+    g_dryRun = false;
+
+    bool changed = isDirty() || g_redrawNeeded;
+    if (!updateLayers()) {
+        // page opened/closed, moved or changed opacity
+        changed = true;
+    }
+    if (isOverlayDirty()) {
+        changed = true;
+    }
+
+    if (changed) {
+        // every widget is drawn, in order
+        g_redrawNeeded = false;
+        display::beginRendering();
+        if (g_transparentScreen) {
+            memset((void *)g_renderBuffer, 0, getVideoBufferSize());
+        }
+        updateScreen(true);
+        setDirty();
+    } else {
+        clearDirty();
+    }
+#else
+    updateScreen();
+#endif
+
     display::endRendering();
 
 #ifdef GUI_CALC_FPS
@@ -997,7 +830,7 @@ void update() {
 }
 
 const uint8_t *takeScreenshot() {
-#if !EEZ_OPTION_THREADS || defined(__EMSCRIPTEN__)
+#if !EEZ_OPTION_THREADS || EEZ_EMSCRIPTEN_NO_THREADS
     copySyncedBufferToScreenshotBuffer();
 #else
     // waits until the screenshot taken before is released
@@ -1024,7 +857,7 @@ int getScreenshotHeight() {
 }
 
 void releaseScreenshot() {
-#if !EEZ_OPTION_THREADS || defined(__EMSCRIPTEN__)
+#if !EEZ_OPTION_THREADS || EEZ_EMSCRIPTEN_NO_THREADS
     g_screenshotAllocated = false;
 #else
     // (only after takeScreenshot got the copy)
@@ -1059,10 +892,6 @@ void beginRendering() {
     g_numBuffersToDraw = 0;
     g_currentBufferIndex = -1;
 
-    g_frameStats.composedPixels = 0;
-    g_frameStats.composedRects = 0;
-    g_frameStats.blurredPixels = 0;
-
     g_mainDamage.clear();
     g_damage = &g_mainDamage;
 }
@@ -1083,6 +912,12 @@ int beginBufferRendering() {
     }
 	g_renderBuffers[bufferIndex].previousBuffer = getBufferPointer();
     setBufferPointer(g_renderBuffers[bufferIndex].bufferPointer);
+
+#if EEZ_FULL_REDRAW
+    if (g_transparentScreen && !g_dryRun) {
+        memset((void *)g_renderBuffers[bufferIndex].bufferPointer, 0, getVideoBufferSize());
+    }
+#endif
 
     g_renderBuffers[bufferIndex].damage.clear();
     g_renderBuffers[bufferIndex].previousDamage = g_damage;
@@ -1216,15 +1051,7 @@ static void boxBlurLines(const uint8_t *src, uint8_t *dst, int length, int numLi
 
 // The blur of a backdrop: its frame (the backdrop rectangle inside the display)
 // is downscaled (block average), blurred with box blur passes and upscaled
-// bilinearly, mixed with the backdrop tint color. A blurred pixel depends only
-// on the frame pixels within BACKDROP_BLUR_REACH of it, so a part of the frame
-// can be blurred again with the same result as the blur of the whole frame.
-
-// cells of the downscaled frame next to a blurred cell that it depends on
-#define BACKDROP_BLUR_CELL_REACH (CONF_BACKDROP_BLUR_RADIUS * CONF_BACKDROP_BLUR_PASSES)
-
-// pixels of the frame next to a blurred pixel that it depends on
-#define BACKDROP_BLUR_REACH ((BACKDROP_BLUR_CELL_REACH + 2) * CONF_BACKDROP_BLUR_DOWNSCALE)
+// bilinearly, mixed with the backdrop tint color.
 
 // source coordinate (8.8 fixed point) of the destination pixel center: (p + 0.5) / F - 0.5
 static inline void blurSrcCoord(int p, int maxIndex, int &i0, int &i1, int &f) {
@@ -1236,51 +1063,8 @@ static inline void blurSrcCoord(int p, int maxIndex, int &i0, int &i1, int &f) {
     f = u & 255;
 }
 
-// The cells of the downscaled frame computed to blur the part "out" of the
-// frame (inclusive, cell indexes relative to the frame): the cells the
-// upscale of "out" reads, with BACKDROP_BLUR_CELL_REACH cells around them.
-struct BlurCells {
-    int x1;
-    int y1;
-    int x2;
-    int y2;
-};
-
-static BlurCells getBlurCells(const DamageRect &frame, const DamageRect &out) {
-    const int F = CONF_BACKDROP_BLUR_DOWNSCALE;
-    int dsW = (frame.x2 - frame.x1 + 1 + F - 1) / F;
-    int dsH = (frame.y2 - frame.y1 + 1 + F - 1) / F;
-
-    // blurSrcCoord is monotonic
-    int i0, i1, f;
-    BlurCells cells;
-    blurSrcCoord(out.x1 - frame.x1, dsW - 1, i0, i1, f);
-    cells.x1 = std::max(i0 - BACKDROP_BLUR_CELL_REACH, 0);
-    blurSrcCoord(out.x2 - frame.x1, dsW - 1, i0, i1, f);
-    cells.x2 = std::min(i1 + BACKDROP_BLUR_CELL_REACH, dsW - 1);
-    blurSrcCoord(out.y1 - frame.y1, dsH - 1, i0, i1, f);
-    cells.y1 = std::max(i0 - BACKDROP_BLUR_CELL_REACH, 0);
-    blurSrcCoord(out.y2 - frame.y1, dsH - 1, i0, i1, f);
-    cells.y2 = std::min(i1 + BACKDROP_BLUR_CELL_REACH, dsH - 1);
-    return cells;
-}
-
-// the pixels the blur of the part "out" of the frame is computed from
-static DamageRect getBlurInput(const DamageRect &frame, const DamageRect &out) {
-    const int F = CONF_BACKDROP_BLUR_DOWNSCALE;
-    BlurCells cells = getBlurCells(frame, out);
-    DamageRect input;
-    input.x1 = frame.x1 + cells.x1 * F;
-    input.y1 = frame.y1 + cells.y1 * F;
-    input.x2 = std::min(frame.x1 + (cells.x2 + 1) * F - 1, frame.x2);
-    input.y2 = std::min(frame.y1 + (cells.y2 + 1) * F - 1, frame.y2);
-    return input;
-}
-
-// Blurs the part "out" (inside the frame) of the frame of the buffer. Reads
-// getBlurInput(frame, out), writes only "out", so the buffer can be the
-// source and the destination.
-static void blurBackdropPart(uint32_t *buffer, const DamageRect &frame, const DamageRect &out) {
+// blurs the frame of the buffer
+static void blurBackdropFrame(uint32_t *buffer, const DamageRect &frame) {
     const int F = CONF_BACKDROP_BLUR_DOWNSCALE;
 
     int displayWidth = getDisplayWidth();
@@ -1290,32 +1074,23 @@ static void blurBackdropPart(uint32_t *buffer, const DamageRect &frame, const Da
     int dsW = (w + F - 1) / F;
     int dsH = (h + F - 1) / F;
 
-    BlurCells cells = getBlurCells(frame, out);
-    int cellsW = cells.x2 - cells.x1 + 1;
-    int cellsH = cells.y2 - cells.y1 + 1;
-
-    int outW = out.x2 - out.x1 + 1;
-    int outH = out.y2 - out.y1 + 1;
-
-    g_frameStats.blurredPixels += outW * outH;
-
     static std::vector<uint8_t> bufA;
     static std::vector<uint8_t> bufB;
     static std::vector<int> colX0;
     static std::vector<int> colX1;
     static std::vector<int> colFx;
-    bufA.resize(cellsW * cellsH * 3);
-    bufB.resize(cellsW * cellsH * 3);
-    colX0.resize(outW);
-    colX1.resize(outW);
-    colFx.resize(outW);
+    bufA.resize(dsW * dsH * 3);
+    bufB.resize(dsW * dsH * 3);
+    colX0.resize(w);
+    colX1.resize(w);
+    colFx.resize(w);
 
     // 1. downscale (block average)
-    for (int dy = 0; dy < cellsH; dy++) {
-        int y0 = (cells.y1 + dy) * F;
+    for (int dy = 0; dy < dsH; dy++) {
+        int y0 = dy * F;
         int y1 = std::min(y0 + F, h);
-        for (int dx = 0; dx < cellsW; dx++) {
-            int x0 = (cells.x1 + dx) * F;
+        for (int dx = 0; dx < dsW; dx++) {
+            int x0 = dx * F;
             int x1 = std::min(x0 + F, w);
             uint32_t r = 0, g = 0, b = 0;
             for (int sy = y0; sy < y1; sy++) {
@@ -1327,20 +1102,17 @@ static void blurBackdropPart(uint32_t *buffer, const DamageRect &frame, const Da
                 }
             }
             uint32_t n = (y1 - y0) * (x1 - x0);
-            uint8_t *d = &bufA[(dy * cellsW + dx) * 3];
+            uint8_t *d = &bufA[(dy * dsW + dx) * 3];
             d[0] = (uint8_t)((r + n / 2) / n);
             d[1] = (uint8_t)((g + n / 2) / n);
             d[2] = (uint8_t)((b + n / 2) / n);
         }
     }
 
-    // 2. separable box blur passes: at the edges of the frame the lines are
-    // clamped as in the blur of the whole frame, elsewhere the cells within
-    // BACKDROP_BLUR_CELL_REACH of the edge of the computed cells are not
-    // exact, but the upscale doesn't read them
+    // 2. separable box blur passes, the lines are clamped at the edges of the frame
     for (int pass = 0; pass < CONF_BACKDROP_BLUR_PASSES; pass++) {
-        boxBlurLines(bufA.data(), bufB.data(), cellsW, cellsH, 3, cellsW * 3, CONF_BACKDROP_BLUR_RADIUS);
-        boxBlurLines(bufB.data(), bufA.data(), cellsH, cellsW, cellsW * 3, 3, CONF_BACKDROP_BLUR_RADIUS);
+        boxBlurLines(bufA.data(), bufB.data(), dsW, dsH, 3, dsW * 3, CONF_BACKDROP_BLUR_RADIUS);
+        boxBlurLines(bufB.data(), bufA.data(), dsH, dsW, dsW * 3, 3, CONF_BACKDROP_BLUR_RADIUS);
     }
 
     // 3. bilinear upscale back into the buffer, mixed with the backdrop tint color
@@ -1352,19 +1124,17 @@ static void blurBackdropPart(uint32_t *buffer, const DamageRect &frame, const Da
     const int tb = COLOR_TO_B(g_fc) * ta;
     g_fc = savedColor;
 
-    for (int px = 0; px < outW; px++) {
-        blurSrcCoord(out.x1 - frame.x1 + px, dsW - 1, colX0[px], colX1[px], colFx[px]);
-        colX0[px] -= cells.x1;
-        colX1[px] -= cells.x1;
+    for (int px = 0; px < w; px++) {
+        blurSrcCoord(px, dsW - 1, colX0[px], colX1[px], colFx[px]);
     }
 
-    for (int py = 0; py < outH; py++) {
+    for (int py = 0; py < h; py++) {
         int y0, y1, fy;
-        blurSrcCoord(out.y1 - frame.y1 + py, dsH - 1, y0, y1, fy);
-        const uint8_t *row0 = &bufA[(y0 - cells.y1) * cellsW * 3];
-        const uint8_t *row1 = &bufA[(y1 - cells.y1) * cellsW * 3];
-        uint32_t *dst = buffer + (out.y1 + py) * displayWidth + out.x1;
-        for (int px = 0; px < outW; px++) {
+        blurSrcCoord(py, dsH - 1, y0, y1, fy);
+        const uint8_t *row0 = &bufA[y0 * dsW * 3];
+        const uint8_t *row1 = &bufA[y1 * dsW * 3];
+        uint32_t *dst = buffer + (frame.y1 + py) * displayWidth + frame.x1;
+        for (int px = 0; px < w; px++) {
             const uint8_t *p00 = row0 + colX0[px] * 3;
             const uint8_t *p01 = row0 + colX1[px] * 3;
             const uint8_t *p10 = row1 + colX0[px] * 3;
@@ -1388,7 +1158,7 @@ static void blurBackdropPart(uint32_t *buffer, const DamageRect &frame, const Da
 static void blurBackdrop(int x, int y, int w, int h) {
     DamageRect frame = getBackdropFrame(x, y, w, h);
     if (!frame.isEmpty()) {
-        blurBackdropPart((uint32_t *)g_renderBuffer, frame, frame);
+        blurBackdropFrame((uint32_t *)g_renderBuffer, frame);
     }
 }
 #endif
@@ -1462,7 +1232,9 @@ static inline bool clipToClipRect(int &x1, int &y1, int &x2, int &y2) {
 
 void addDamageRect(int x1, int y1, int x2, int y2) {
     if (clipToClipRect(x1, y1, x2, y2)) {
-        addDamage(x1, y1, x2, y2);
+        if (!g_dryRun) {
+            addDamage(x1, y1, x2, y2);
+        }
         setDirty();
     }
 }
@@ -1484,9 +1256,8 @@ static void composeBackdrop(const Rect &backdrop) {
 }
 
 // Composes the render buffer into the buffer currently drawn into, only the
-// part inside the clip rectangle, with its backdrop if it can be seen, unless
-// withBackdrop is false (the backdrop is in the backdrop cache).
-static void composeRenderBuffer(const RenderBuffer &renderBuffer, bool withBackdrop = true) {
+// part inside the clip rectangle, with its backdrop if it can be seen.
+static void composeRenderBuffer(const RenderBuffer &renderBuffer) {
     int sx = renderBuffer.x;
     int sy = renderBuffer.y;
 
@@ -1495,7 +1266,7 @@ static void composeRenderBuffer(const RenderBuffer &renderBuffer, bool withBackd
     int x2 = x1 + renderBuffer.width - 1;
     int y2 = y1 + renderBuffer.height - 1;
 
-    if (withBackdrop && isBackdropVisible(renderBuffer)) {
+    if (isBackdropVisible(renderBuffer)) {
         composeBackdrop(*renderBuffer.backdrop);
     }
 
@@ -1510,15 +1281,7 @@ static void composeRenderBuffer(const RenderBuffer &renderBuffer, bool withBackd
     }
 }
 
-#if defined(EEZ_SW_BACKDROP_BLUR)
-// Blurred background of the render buffer with backdrop. The blur of the part of
-// the backdrop is not the same as the part of the blurred backdrop (and it is
-// slow), so the background is blurred all at once and the parts redrawn later
-// are taken from here.
-static std::vector<uint32_t> g_blurredBackground[MAX_RENDER_BUFFERS];
-static bool g_blurredBackgroundValid[MAX_RENDER_BUFFERS];
-#endif
-
+#if !EEZ_FULL_REDRAW
 static bool isBufferBackgroundChanged(int bufferIndex, int x, int y, int width, int height, Rect *backdrop, bool withShadow) {
     const RenderBuffer &renderBuffer = g_renderBuffers[bufferIndex];
 
@@ -1531,19 +1294,6 @@ static bool isBufferBackgroundChanged(int bufferIndex, int x, int y, int width, 
         return true;
     }
 
-    // with a blurred backdrop a change below changes the background also next to it
-    int reach = 0;
-#if defined(EEZ_SW_BACKDROP_BLUR)
-    if (backdrop) {
-        reach = BACKDROP_BLUR_REACH;
-        for (int i = 0; i < bufferIndex; i++) {
-            if (isBackdropVisible(g_renderBuffers[i])) {
-                reach += BACKDROP_BLUR_REACH;
-            }
-        }
-    }
-#endif
-
     for (int i = 0; i < bufferIndex; i++) {
         const RenderBuffer &below = g_renderBuffers[i];
 
@@ -1552,15 +1302,14 @@ static bool isBufferBackgroundChanged(int bufferIndex, int x, int y, int width, 
             return true;
         }
 
-        DamageRegion screenDamage;
-        addLayerDamage(screenDamage, below);
-        if (screenDamage.intersects(x - reach, y - reach, x + width - 1 + reach, y + height - 1 + reach)) {
+        if (getLayerDamage(below).intersects(x, y, x + width - 1, y + height - 1)) {
             return true;
         }
     }
 
     return false;
 }
+#endif
 
 bool setBufferBackgroundBelow(int x, int y, int width, int height, Rect *backdrop, bool withShadow) {
     if (g_currentBufferIndex == -1) {
@@ -1570,7 +1319,12 @@ bool setBufferBackgroundBelow(int x, int y, int width, int height, Rect *backdro
     int bufferIndex = g_currentBufferIndex;
     RenderBuffer &renderBuffer = g_renderBuffers[bufferIndex];
 
+#if EEZ_FULL_REDRAW
+    // a change below is a change of the frame, the buffer is drawn again in any case
+    bool changed = false;
+#else
     bool changed = isBufferBackgroundChanged(bufferIndex, x, y, width, height, backdrop, withShadow);
+#endif
 
     renderBuffer.hasBackgroundBelow = true;
     // also set in endBufferRendering, but it is needed before (see drawBufferBackground)
@@ -1580,12 +1334,6 @@ bool setBufferBackgroundBelow(int x, int y, int width, int height, Rect *backdro
     renderBuffer.height = height;
     renderBuffer.backdrop = backdrop;
     renderBuffer.withShadow = withShadow;
-
-#if defined(EEZ_SW_BACKDROP_BLUR)
-    if (changed) {
-        g_blurredBackgroundValid[bufferIndex] = false;
-    }
-#endif
 
     return changed;
 }
@@ -1616,69 +1364,13 @@ static void composeBufferBackground(const RenderBuffer &renderBuffer) {
     g_fc = savedColor;
 }
 
-#if defined(EEZ_SW_BACKDROP_BLUR)
-static void drawBlurredBufferBackground(const RenderBuffer &renderBuffer) {
-    auto &blurredBackground = g_blurredBackground[g_currentBufferIndex];
-    uint32_t *buffer = (uint32_t *)g_renderBuffer;
-
-    int x1 = g_clipRect.x1;
-    int y1 = g_clipRect.y1;
-    int x2 = g_clipRect.x2;
-    int y2 = g_clipRect.y2;
-
-    if (!g_blurredBackgroundValid[g_currentBufferIndex]) {
-        // the whole backdrop is blurred (as in endRendering), so there is no seam at the edge of the buffer,
-        // the part of the buffer outside of its rectangle is not composed so it can be drawn over
-        auto savedClipRect = g_clipRect;
-        resetClipRect();
-        const Rect &backdrop = *renderBuffer.backdrop;
-        intersectClipRect(
-            MIN(backdrop.x, renderBuffer.x),
-            MIN(backdrop.y, renderBuffer.y),
-            MAX(backdrop.x + backdrop.w, renderBuffer.x + renderBuffer.width) - MIN(backdrop.x, renderBuffer.x),
-            MAX(backdrop.y + backdrop.h, renderBuffer.y + renderBuffer.height) - MIN(backdrop.y, renderBuffer.y)
-        );
-        composeBufferBackground(renderBuffer);
-        g_clipRect = savedClipRect;
-
-        // remember the part inside the buffer rectangle
-        blurredBackground.resize(DISPLAY_WIDTH * DISPLAY_HEIGHT);
-        int bx1 = MAX(renderBuffer.x, 0);
-        int by1 = MAX(renderBuffer.y, 0);
-        int bx2 = MIN(renderBuffer.x + renderBuffer.width, (int)DISPLAY_WIDTH) - 1;
-        int by2 = MIN(renderBuffer.y + renderBuffer.height, (int)DISPLAY_HEIGHT) - 1;
-        for (int y = by1; y <= by2; y++) {
-            memcpy(&blurredBackground[y * DISPLAY_WIDTH + bx1], buffer + y * DISPLAY_WIDTH + bx1, (bx2 - bx1 + 1) * sizeof(uint32_t));
-        }
-
-        g_blurredBackgroundValid[g_currentBufferIndex] = true;
-    }
-
-    // only the part inside the buffer rectangle is remembered
-    x1 = MAX(x1, renderBuffer.x);
-    y1 = MAX(y1, renderBuffer.y);
-    x2 = MIN(x2, renderBuffer.x + renderBuffer.width - 1);
-    y2 = MIN(y2, renderBuffer.y + renderBuffer.height - 1);
-    if (x1 > x2 || y1 > y2) {
-        return;
-    }
-
-    addDamage(x1, y1, x2, y2);
-    setDirty();
-
-    for (int y = y1; y <= y2; y++) {
-        memcpy(buffer + y * DISPLAY_WIDTH + x1, &blurredBackground[y * DISPLAY_WIDTH + x1], (x2 - x1 + 1) * sizeof(uint32_t));
-    }
-}
-#endif
-
 void drawBufferBackground(int x1, int y1, int x2, int y2) {
     if (g_currentBufferIndex == -1) {
         return;
     }
 
     const RenderBuffer &renderBuffer = g_renderBuffers[g_currentBufferIndex];
-    if (!renderBuffer.hasBackgroundBelow) {
+    if (!renderBuffer.hasBackgroundBelow || g_dryRun) {
         return;
     }
 
@@ -1687,13 +1379,22 @@ void drawBufferBackground(int x1, int y1, int x2, int y2) {
     if (g_clipRect.x1 <= g_clipRect.x2 && g_clipRect.y1 <= g_clipRect.y2) {
 #if defined(EEZ_SW_BACKDROP_BLUR)
         if (renderBuffer.backdrop) {
-            drawBlurredBufferBackground(renderBuffer);
-        } else {
-            composeBufferBackground(renderBuffer);
+            // The blur of a part of the backdrop is not the same as the part
+            // of the blurred backdrop, so the whole backdrop is blurred (as in
+            // endRendering) and there is no seam at the edge of the buffer.
+            // What is composed outside of the rectangle of the buffer is not
+            // shown.
+            resetClipRect();
+            const Rect &backdrop = *renderBuffer.backdrop;
+            intersectClipRect(
+                MIN(backdrop.x, renderBuffer.x),
+                MIN(backdrop.y, renderBuffer.y),
+                MAX(backdrop.x + backdrop.w, renderBuffer.x + renderBuffer.width) - MIN(backdrop.x, renderBuffer.x),
+                MAX(backdrop.y + backdrop.h, renderBuffer.y + renderBuffer.height) - MIN(backdrop.y, renderBuffer.y)
+            );
         }
-#else
-        composeBufferBackground(renderBuffer);
 #endif
+        composeBufferBackground(renderBuffer);
     }
 
     restoreClipRect(savedClipRect);
@@ -1719,192 +1420,36 @@ static bool updateLayers() {
     return same;
 }
 
-#if defined(EEZ_SW_BACKDROP_BLUR)
-// The backdrop cache: the frame below the topmost layer with a visible
-// backdrop as a full compose leaves it before that layer is composed (the
-// layers below it composed and its backdrop blurred). The frame is composed
-// from it, so a change above the backdrop needs no blur, and a change below
-// it is blurred again only in its part of the frame.
-static VideoBuffer g_backdropCacheBuffer;
-// the layer the cache is for, -1 when it is not valid
-static int g_backdropCacheLayer = -1;
-// the frame of the backdrop and the tint color the cache was made with
-static DamageRect g_backdropCacheFrame;
-static Color g_backdropCacheColor;
-// the pixels of the cache kept while a part of it is composed again (see updateBackdropCacheRect)
-static std::vector<uint32_t> g_backdropCacheSaved;
-
-static Color getBackdropColor() {
-    auto savedColor = g_fc;
-    setColor(EEZ_COLOR_ID_BACKDROP);
-    auto color = g_fc;
-    g_fc = savedColor;
-    return color;
-}
-
-// composes the layers below the layer and blurs its backdrop, in the whole cache
-static void composeBackdropCache(int layer) {
-    auto savedBuffer = getBufferPointer();
-    setBufferPointer(g_backdropCacheBuffer);
-    resetClipRect();
-
-    for (int bufferIndex = 0; bufferIndex < layer; bufferIndex++) {
-        composeRenderBuffer(g_renderBuffers[bufferIndex]);
-    }
-    composeBackdrop(*g_renderBuffers[layer].backdrop);
-
-    setBufferPointer(savedBuffer);
-}
-
-// Composes the layers below the layer again in the part "out" of the cache and
-// blurs the part of the backdrop frame in it. There is no other visible
-// backdrop below the layer, so the layers can be composed in a part of the
-// display. The blur reads the pixels around "out" (getBlurInput): they are
-// composed too and then put back.
-static void updateBackdropCacheRect(int layer, const DamageRect &frame, const DamageRect &out) {
-    DamageRect blurOut = out;
-    blurOut.intersect(frame.x1, frame.y1, frame.x2, frame.y2);
-
-    DamageRect composed = out;
-    if (!blurOut.isEmpty()) {
-        composed.add(getBlurInput(frame, blurOut));
-    }
-
-    uint32_t *cache = (uint32_t *)g_backdropCacheBuffer;
-    int w = composed.x2 - composed.x1 + 1;
-    int h = composed.y2 - composed.y1 + 1;
-
-    bool putBack = !(composed == out);
-    if (putBack) {
-        g_backdropCacheSaved.resize(w * h);
-        for (int y = 0; y < h; y++) {
-            memcpy(&g_backdropCacheSaved[y * w], cache + (composed.y1 + y) * DISPLAY_WIDTH + composed.x1, w * sizeof(uint32_t));
-        }
-    }
-
-    auto savedBuffer = getBufferPointer();
-    setBufferPointer(g_backdropCacheBuffer);
-    g_clipRect.x1 = composed.x1;
-    g_clipRect.y1 = composed.y1;
-    g_clipRect.x2 = composed.x2;
-    g_clipRect.y2 = composed.y2;
-
-    for (int bufferIndex = 0; bufferIndex < layer; bufferIndex++) {
-        composeRenderBuffer(g_renderBuffers[bufferIndex]);
-    }
-    if (!blurOut.isEmpty()) {
-        blurBackdropPart(cache, frame, blurOut);
-    }
-
-    resetClipRect();
-    setBufferPointer(savedBuffer);
-
-    // put back the pixels around "out"
-    for (int y = composed.y1; putBack && y <= composed.y2; y++) {
-        uint32_t *row = cache + y * DISPLAY_WIDTH;
-        const uint32_t *savedRow = &g_backdropCacheSaved[(y - composed.y1) * w];
-        if (y < out.y1 || y > out.y2) {
-            memcpy(row + composed.x1, savedRow, w * sizeof(uint32_t));
-        } else {
-            if (out.x1 > composed.x1) {
-                memcpy(row + composed.x1, savedRow, (out.x1 - composed.x1) * sizeof(uint32_t));
-            }
-            if (out.x2 < composed.x2) {
-                memcpy(row + out.x2 + 1, savedRow + (out.x2 + 1 - composed.x1), (composed.x2 - out.x2) * sizeof(uint32_t));
-            }
-        }
-    }
-}
-
-// Brings the backdrop cache up to date for this frame and adds the part of it
-// that changed to the frame damage. Returns the layer composed over the cache
-// (its backdrop and the layers below it are in the cache), -1 for none.
-static int updateBackdropCache(DamageRegion &frameDamage) {
-    int layer = -1;
-    int numBackdropsBelow = 0;
+// composes the layers in the clip rectangle
+static void composeLayers() {
     for (int bufferIndex = 0; bufferIndex < g_numBuffersToDraw; bufferIndex++) {
-        if (isBackdropVisible(g_renderBuffers[bufferIndex])) {
-            if (layer != -1) {
-                numBackdropsBelow++;
-            }
-            layer = bufferIndex;
-        }
-    }
-
-    if (layer == -1) {
-        g_backdropCacheLayer = -1;
-        return -1;
-    }
-
-    if (!g_backdropCacheBuffer) {
-        g_backdropCacheBuffer = (VideoBuffer)allocBuffer(getVideoBufferSize());
-        if (!g_backdropCacheBuffer) {
-            // not enough memory: all the layers are composed, with the blur, in the whole frame
-            frameDamage.setFull();
-            return -1;
-        }
-    }
-
-    DamageRect frame = getBackdropFrame(*g_renderBuffers[layer].backdrop);
-    Color color = getBackdropColor();
-
-    if (layer != g_backdropCacheLayer || g_lastLayersChanged || !(frame == g_backdropCacheFrame) || color != g_backdropCacheColor) {
-        composeBackdropCache(layer);
-        g_backdropCacheLayer = layer;
-        g_backdropCacheFrame = frame;
-        g_backdropCacheColor = color;
-        frameDamage.setFull();
-        return layer;
-    }
-
-    // what changed below the layer
-    DamageRegion below;
-    for (int bufferIndex = 0; bufferIndex < layer; bufferIndex++) {
-        addLayerDamage(below, g_renderBuffers[bufferIndex]);
-    }
-    below.intersect(0, 0, getDisplayWidth() - 1, getDisplayHeight() - 1);
-    if (below.isEmpty()) {
-        return layer;
-    }
-
-    // the blur of every visible backdrop up to the layer spreads the change
-    int reach = BACKDROP_BLUR_REACH * (numBackdropsBelow + 1);
-    DamageRegion changed;
-    for (int i = 0; i < below.numRects; i++) {
-        const DamageRect &rect = below.rects[i];
-        changed.add(rect.x1 - reach, rect.y1 - reach, rect.x2 + reach, rect.y2 + reach);
-    }
-    changed.intersect(0, 0, getDisplayWidth() - 1, getDisplayHeight() - 1);
-
-    if (numBackdropsBelow > 0) {
-        // the backdrops below the layer are blurred in their whole frame
-        composeBackdropCache(layer);
-    } else {
-        for (int i = 0; i < changed.numRects; i++) {
-            updateBackdropCacheRect(layer, frame, changed.rects[i]);
-        }
-    }
-
-    frameDamage.add(changed);
-    return layer;
-}
-#endif
-
-// composes the layers in the clip rectangle, from the backdrop cache if cachedLayer is not -1 (see updateBackdropCache)
-static void composeLayers(int cachedLayer) {
-    int firstLayer = 0;
-
-#if defined(EEZ_SW_BACKDROP_BLUR)
-    if (cachedLayer != -1) {
-        bitBlt(g_backdropCacheBuffer, getBufferPointer(), g_clipRect.x1, g_clipRect.y1, g_clipRect.x2, g_clipRect.y2);
-        composeRenderBuffer(g_renderBuffers[cachedLayer], false);
-        firstLayer = cachedLayer + 1;
-    }
-#endif
-
-    for (int bufferIndex = firstLayer; bufferIndex < g_numBuffersToDraw; bufferIndex++) {
         composeRenderBuffer(g_renderBuffers[bufferIndex]);
     }
+}
+
+// the keyboard focus, the mouse pointer or the FPS graph must be drawn again
+static bool isOverlayDirty() {
+    bool dirty = false;
+
+#if OPTION_KEYBOARD
+    if (keyboard::isDisplayDirty()) {
+        dirty = true;
+    }
+#endif
+
+#if OPTION_MOUSE
+    if (mouse::isDisplayDirty()) {
+        dirty = true;
+    }
+#endif
+
+#if defined(GUI_CALC_FPS)
+    if (g_drawFpsGraphEnabled) {
+        dirty = true;
+    }
+#endif
+
+    return dirty;
 }
 
 void endRendering() {
@@ -1912,30 +1457,12 @@ void endRendering() {
 
     resetClipRect();
 
-    // composing below is not a source of damage
+    // composing below is not collected
     g_damage = nullptr;
 
-    // when set, the whole frame is composed (and transferred to the screen)
-    bool fullDamage = false;
-
-#if OPTION_KEYBOARD
-    if (keyboard::isDisplayDirty()) {
-    	setDirty();
-        fullDamage = true;
-    }
-#endif
-
-#if OPTION_MOUSE
-    if (mouse::isDisplayDirty()) {
-    	setDirty();
-        fullDamage = true;
-    }
-#endif
-
-#if defined(GUI_CALC_FPS)
-    if (g_drawFpsGraphEnabled) {
-	    setDirty();
-        fullDamage = true;
+#if !EEZ_FULL_REDRAW
+    if (isOverlayDirty()) {
+        setDirty();
     }
 #endif
 
@@ -1943,98 +1470,37 @@ void endRendering() {
     if (g_lastLayersChanged) {
         // page opened/closed, moved or changed opacity
         setDirty();
-        fullDamage = true;
     }
 
-    // render buffer misses only g_staleDamage compared to the synced buffer,
-    // otherwise (i.e. during animation) we don't know what is in the render buffer
-    bool isRenderBufferTracked = g_syncedBuffer != g_renderBuffer && (g_syncedBuffer == g_renderBuffer1 || g_syncedBuffer == g_renderBuffer2);
-
-#if !EEZ_DAMAGE_TRACKING
-    fullDamage = true;
-#endif
-
     if (isDirty()) {
-        // part of the frame changed by this frame's drawing
-        DamageRegion frameDamage;
-
-        if (fullDamage || !isRenderBufferTracked) {
-            frameDamage.setFull();
-        } else {
-            frameDamage = g_mainDamage.region();
-            for (int bufferIndex = 0; bufferIndex < g_numBuffersToDraw; bufferIndex++) {
-                addLayerDamage(frameDamage, g_renderBuffers[bufferIndex]);
-            }
-            frameDamage.intersect(0, 0, getDisplayWidth() - 1, getDisplayHeight() - 1);
-        }
-
-        int cachedLayer = -1;
-#if defined(EEZ_SW_BACKDROP_BLUR)
-        cachedLayer = updateBackdropCache(frameDamage);
-#endif
-
-        // compose also the part this render buffer misses from the previous frame(s)
-        DamageRegion composeDamage = frameDamage;
-        composeDamage.add(g_staleDamage);
-        composeDamage.intersect(0, 0, getDisplayWidth() - 1, getDisplayHeight() - 1);
-
-        for (int i = 0; i < composeDamage.numRects; i++) {
-            const DamageRect &rect = composeDamage.rects[i];
-
-            g_frameStats.composedPixels += rect.area();
-            g_frameStats.composedRects++;
-
-            g_clipRect.x1 = rect.x1;
-            g_clipRect.y1 = rect.y1;
-            g_clipRect.x2 = rect.x2;
-            g_clipRect.y2 = rect.y2;
-
-            composeLayers(cachedLayer);
+        // the whole frame is composed
+        composeLayers();
 
 #if defined(GUI_CALC_FPS)
-            if (g_drawFpsGraphEnabled) {
-                drawFpsGraph(getDisplayWidth() - NUM_FPS_VALUES - 4, 4, NUM_FPS_VALUES, 32, getStyle(EEZ_STYLE_ID_FPS_GRAPH));
-            }
+        if (g_drawFpsGraphEnabled) {
+            drawFpsGraph(getDisplayWidth() - NUM_FPS_VALUES - 4, 4, NUM_FPS_VALUES, 32, getStyle(EEZ_STYLE_ID_FPS_GRAPH));
+        }
 #endif
 
 #if OPTION_KEYBOARD
-            keyboard::updateDisplay();
+        keyboard::updateDisplay();
 #endif
 
 #if OPTION_MOUSE
-            mouse::updateDisplay();
-#endif
-        }
-
-        resetClipRect();
-
-#if EEZ_DAMAGE_TRACKING_DEBUG
-        {
-            float screenArea = (float)(getDisplayWidth() * getDisplayHeight());
-            printf("damage: frame %5.1f%% (%d rects), composed %5.1f%% (%d rects), blurred %5.1f%%%s\n",
-                100.0f * frameDamage.area() / screenArea, frameDamage.numRects,
-                100.0f * composeDamage.area() / screenArea, composeDamage.numRects,
-                100.0f * g_frameStats.blurredPixels / screenArea,
-                fullDamage ? " [full]" : "");
-        }
+        mouse::updateDisplay();
 #endif
 
-        // the other render buffer (synced buffer) misses this frame's changes
-        g_staleDamage = frameDamage;
-        // The screen shows the synced buffer, the frame before this one, so
-        // only this frame's changes are transferred: the stale part composed
-        // above is the same in both frames. (Added, not replaced, in case the
-        // previous frame was not transferred.)
-        g_presentDamage.add(frameDamage);
+        // the other render buffer (the synced buffer) misses this frame
+        g_renderBufferStale = true;
+        g_presentNeeded = true;
     } else {
-        // nothing was drawn, make the render buffer same as the synced buffer
-        // (only the stale part, consecutive idle frames don't need to copy anything)
-        if (isRenderBufferTracked) {
-            for (int i = 0; i < g_staleDamage.numRects; i++) {
-                const DamageRect &rect = g_staleDamage.rects[i];
-                bitBlt(g_syncedBuffer, rect.x1, rect.y1, rect.x2, rect.y2);
-            }
-            g_staleDamage.clear();
+        // Nothing was drawn: the render buffer is made the same as the synced
+        // buffer (once, the next idle frames have nothing to copy). During an
+        // animation it is not known what is in the render buffer.
+        bool isRenderBufferTracked = g_syncedBuffer != g_renderBuffer && (g_syncedBuffer == g_renderBuffer1 || g_syncedBuffer == g_renderBuffer2);
+        if (isRenderBufferTracked && g_renderBufferStale) {
+            bitBlt(g_syncedBuffer, 0, 0, getDisplayWidth() - 1, getDisplayHeight() - 1);
+            g_renderBufferStale = false;
         }
         clearDirty();
     }
@@ -2252,6 +1718,10 @@ struct RenderBufferTarget : raster::Target {
 
     void blendSpan(int x, int y, int n, const uint32_t *pixels) override {
 #if EEZ_USE_SDL
+        if (g_dryRun) {
+            setDirty();
+            return;
+        }
         uint32_t *dst = g_renderBuffer + y * (int)DISPLAY_WIDTH + x;
         for (int i = 0; i < n; i++) {
             if (pixels[i] >> 24) {
@@ -2380,61 +1850,6 @@ void fillRoundedRectSides(
 static std::vector<std::vector<uint32_t>> g_roundedClipPixels;
 static int g_roundedClipLevel;
 
-// the background corner pixels of the boxes drawn last (see RoundedClip)
-struct RoundedClipBackground {
-    float left, top, right, bottom;
-    float radii[8];
-    const void *owner;
-    std::vector<uint32_t> pixels;
-    uint32_t lastUsed;
-};
-static const size_t MAX_ROUNDED_CLIP_BACKGROUNDS = 64;
-static std::vector<RoundedClipBackground> g_roundedClipBackgrounds;
-static uint32_t g_roundedClipBackgroundsUse;
-
-static bool isSameRoundedClip(const RoundedClipBackground &background, const RoundedClip &clip) {
-    return background.left == clip.left && background.top == clip.top &&
-        background.right == clip.right && background.bottom == clip.bottom &&
-        memcmp(background.radii, clip.radii, sizeof(clip.radii)) == 0 &&
-        background.owner == clip.owner;
-}
-
-static RoundedClipBackground *findRoundedClipBackground(const RoundedClip &clip) {
-    for (auto &background : g_roundedClipBackgrounds) {
-        if (isSameRoundedClip(background, clip)) {
-            background.lastUsed = ++g_roundedClipBackgroundsUse;
-            return &background;
-        }
-    }
-    return nullptr;
-}
-
-static void keepRoundedClipBackground(const RoundedClip &clip, const std::vector<uint32_t> &pixels) {
-    auto background = findRoundedClipBackground(clip);
-    if (!background) {
-        if (g_roundedClipBackgrounds.size() < MAX_ROUNDED_CLIP_BACKGROUNDS) {
-            g_roundedClipBackgrounds.emplace_back();
-            background = &g_roundedClipBackgrounds.back();
-        } else {
-            // the least recently used one
-            background = &g_roundedClipBackgrounds[0];
-            for (auto &other : g_roundedClipBackgrounds) {
-                if (other.lastUsed < background->lastUsed) {
-                    background = &other;
-                }
-            }
-        }
-        background->left = clip.left;
-        background->top = clip.top;
-        background->right = clip.right;
-        background->bottom = clip.bottom;
-        memcpy(background->radii, clip.radii, sizeof(clip.radii));
-        background->owner = clip.owner;
-        background->lastUsed = ++g_roundedClipBackgroundsUse;
-    }
-    background->pixels = pixels;
-}
-
 // The rectangle of the pixels (inclusive) of corner i (top left, top right,
 // bottom right, bottom left) of the clip, inside the display; false if there is
 // none.
@@ -2495,8 +1910,13 @@ static float getRoundedClipCoverage(const RoundedClip &clip, int i, int x, int y
 }
 #endif
 
-void beginRoundedClip(RoundedClip &clip, bool backgroundIsFresh) {
+void beginRoundedClip(RoundedClip &clip) {
 #if EEZ_USE_SDL
+    if (g_dryRun) {
+        clip.level = -1;
+        return;
+    }
+
     clip.level = g_roundedClipLevel++;
     clip.buffer = g_renderBuffer;
 
@@ -2516,19 +1936,6 @@ void beginRoundedClip(RoundedClip &clip, bool backgroundIsFresh) {
             }
         }
     }
-
-    if (backgroundIsFresh) {
-        keepRoundedClipBackground(clip, pixels);
-    } else {
-        // the background of the box drawn last, the last frame if it isn't
-        // known
-        auto background = findRoundedClipBackground(clip);
-        if (background && background->pixels.size() == pixels.size()) {
-            pixels = background->pixels;
-        }
-    }
-
-    beginDamageProbe(clip.probe);
 #else
     clip.level = -1;
 #endif
@@ -2540,11 +1947,10 @@ void endRoundedClip(RoundedClip &clip) {
         return;
     }
 
-    endDamageProbe(clip.probe);
     g_roundedClipLevel = clip.level;
 
-    if (clip.buffer != g_renderBuffer || clip.probe.isEmpty()) {
-        // drawn into another buffer or nothing drawn
+    if (clip.buffer != g_renderBuffer) {
+        // drawn into another buffer
         return;
     }
 
@@ -2558,15 +1964,9 @@ void endRoundedClip(RoundedClip &clip) {
             continue;
         }
 
-        bool drawn = x1 <= clip.probe.x2 && clip.probe.x1 <= x2 && y1 <= clip.probe.y2 && clip.probe.y1 <= y2;
-
         for (int y = y1; y <= y2; y++) {
             auto row = buffer + y * (int)DISPLAY_WIDTH;
             for (int x = x1; x <= x2; x++, k++) {
-                if (!drawn) {
-                    continue;
-                }
-
                 uint32_t saved = pixels[k];
                 uint32_t current = row[x];
                 if (saved == current) {
@@ -2843,7 +2243,7 @@ static bool layoutVectorRun(const char *&p, int &i, int textLength, int64_t &pen
     while (textLength == -1 || i + numChars < textLength) {
         utf8_int32_t encoding;
         const char *next = decodeUtf8(q, encoding);
-        if (!encoding || isFontTag(encoding)) {
+        if (!encoding || isFontTag(encoding) || encoding == DIGIT_GROUP_GAP_CHAR) {
             break;
         }
         if (numChars == 64) {
@@ -2964,6 +2364,35 @@ static void layoutText(const char *text, int textLength, gui::font::Font &defaul
             break;
         }
 
+        if (encoding == DIGIT_GROUP_GAP_CHAR) {
+            text = next;
+
+            int x = (int)((pen + 32) >> 6);
+
+            if (onChar(i, x)) {
+                return;
+            }
+
+            TextGlyph glyph;
+            glyph.charIndex = i;
+            glyph.x = x;
+            glyph.advance = getDigitGroupGapWidth(font);
+            glyph.pixels = nullptr;
+            glyph.width = 0;
+            glyph.height = 0;
+            glyph.left = 0;
+            glyph.top = 0;
+            glyph.font = font;
+
+            if (onGlyph(glyph)) {
+                return;
+            }
+
+            pen = (int64_t)(x + glyph.advance) * 64;
+            ++i;
+            continue;
+        }
+
 #if EEZ_OPTION_GUI_VECTOR_FONTS
         if (font.isVector() && !isFontTag(encoding)) {
             if (layoutVectorRun(text, i, textLength, pen, letterSpacing, font, ligatures, onChar, onGlyph)) {
@@ -3026,9 +2455,56 @@ static void layoutText(const char *text, int textLength, gui::font::Font &defaul
     onChar(i, (int)((pen + 32) >> 6));
 }
 
+int getDigitGroupGapWidth(gui::font::Font &font) {
+    // about a fifth of the size of the font, as a thin space
+    return font ? MAX((font.getHeight() + 3) / 6, 1) : 0;
+}
+
+void groupDecimals(char *text, size_t size) {
+    // the decimals: the digits after the first point that is after a digit
+    size_t first = 0;
+    while (text[first] && !(text[first] == '.' && first > 0 && text[first - 1] >= '0' && text[first - 1] <= '9')) {
+        first++;
+    }
+    if (!text[first]) {
+        return;
+    }
+    first++;
+
+    size_t numDecimals = 0;
+    while (text[first + numDecimals] >= '0' && text[first + numDecimals] <= '9') {
+        numDecimals++;
+    }
+    if (numDecimals <= 4) {
+        return;
+    }
+
+    size_t numGaps = (numDecimals - 1) / 3;
+    size_t length = strlen(text);
+    if (length + numGaps + 1 > size) {
+        return;
+    }
+
+    // from the end, so every character is moved once
+    size_t from = length;
+    size_t to = length + numGaps;
+    text[to] = 0;
+    while (numGaps > 0) {
+        text[--to] = text[--from];
+        if (from > first && from < first + numDecimals && (from - first) % 3 == 0) {
+            text[--to] = DIGIT_GROUP_GAP_CHAR;
+            numGaps--;
+        }
+    }
+}
+
 int8_t measureGlyph(int32_t encoding, gui::font::Font &font) {
     if (!font) {
         return 0;
+    }
+
+    if (encoding == DIGIT_GROUP_GAP_CHAR) {
+        return (int8_t)getDigitGroupGapWidth(font);
     }
 
     if (!font.isVector()) {
@@ -3184,20 +2660,6 @@ static SDL_Renderer *g_renderer;
 static SDL_Texture *g_texture;
 static bool g_textureInitialized;
 #endif
-
-// heuristics to find resource file
-std::string getFullPath(std::string category, std::string path) {
-    std::string fullPath = category + "/" + path;
-    for (int i = 0; i < 5; ++i) {
-        FILE *fp = fopen(fullPath.c_str(), "r");
-        if (fp) {
-            fclose(fp);
-            return fullPath;
-        }
-        fullPath = std::string("../") + fullPath;
-    }
-    return path;
-}
 #endif
 
 #if defined(EEZ_PLATFORM_STM32)
@@ -3258,23 +2720,6 @@ static void initDriver() {
 
     SDL_SetRenderDrawBlendMode(g_renderer, SDL_BLENDMODE_BLEND);
 
-    // Initialize PNG loading
-    int imgFlags = IMG_INIT_PNG;
-    if ((IMG_Init(imgFlags) & imgFlags) != imgFlags) {
-        printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
-    } else {
-#if !defined(__EMSCRIPTEN__)
-        // Set icon
-        SDL_Surface *iconSurface = IMG_Load(getFullPath("images", ICON).c_str());
-        if (!iconSurface) {
-            printf("Warning: Failed to load icon! SDL Error: %s\n", SDL_GetError());
-        } else {
-            SDL_SetWindowIcon(g_mainWindow, iconSurface);
-            SDL_FreeSurface(iconSurface);
-        }
-#endif
-    }
-
     SDL_ShowWindow(g_mainWindow);
 
 #if OPTION_MOUSE
@@ -3296,7 +2741,7 @@ static void initDriver() {
 #endif
 }
 
-#if EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL && !EEZ_EMSCRIPTEN_NO_THREADS
 // The shortest time between two frames. The next VSYNC message is queued
 // right after the frame is presented: when the present doesn't wait for the
 // vertical sync (a renderer without vsync, a hidden window) the GUI loop would
@@ -3314,6 +2759,16 @@ static void waitForFrameInterval() {
 }
 #endif
 
+#if EEZ_USE_SDL && defined(__EMSCRIPTEN__)
+static std::atomic<VideoBuffer> g_presentedFrame;
+static std::atomic<uint32_t> g_presentedFrameCounter;
+
+VideoBuffer getPresentedFrame(uint32_t &counter) {
+    counter = g_presentedFrameCounter;
+    return g_presentedFrame;
+}
+#endif
+
 static void syncBuffer() {
 #if EEZ_USE_SDL
 
@@ -3323,27 +2778,18 @@ static void syncBuffer() {
     }
 
     if (!g_textureInitialized) {
-        g_presentDamage.setFull();
+        g_presentNeeded = true;
     }
 
-    // upload only the changed part of the frame, what fails is uploaded with the next frame
-    DamageRegion failedDamage;
-    g_frameStats.presentedPixels = 0;
-    g_frameStats.presentedRects = 0;
-    for (int i = 0; i < g_presentDamage.numRects; i++) {
-        const DamageRect &damage = g_presentDamage.rects[i];
-        SDL_Rect rect = { damage.x1, damage.y1, damage.x2 - damage.x1 + 1, damage.y2 - damage.y1 + 1 };
-        const uint32_t *pixels = g_syncedBuffer + damage.y1 * DISPLAY_WIDTH + damage.x1;
-        if (SDL_UpdateTexture(g_texture, &rect, pixels, DISPLAY_WIDTH * sizeof(uint32_t)) == 0) {
+    // the frame is uploaded only when it changed, if that fails it is uploaded with the next frame
+    if (g_presentNeeded) {
+        if (SDL_UpdateTexture(g_texture, nullptr, g_syncedBuffer, DISPLAY_WIDTH * sizeof(uint32_t)) == 0) {
             g_textureInitialized = true;
-            g_frameStats.presentedPixels += damage.area();
-            g_frameStats.presentedRects++;
+            g_presentNeeded = false;
         } else {
             printf("Unable to update streaming texture! SDL Error: %s\n", SDL_GetError());
-            failedDamage.add(damage);
         }
     }
-    g_presentDamage = failedDamage;
 
     if (g_textureInitialized && SDL_RenderCopy(g_renderer, g_texture, nullptr, nullptr) != 0) {
         printf("Unable to render streaming texture! SDL Error: %s\n", SDL_GetError());
@@ -3351,7 +2797,16 @@ static void syncBuffer() {
     SDL_RenderPresent(g_renderer);
 #endif
 
-#if !defined(__EMSCRIPTEN__)
+#if defined(__EMSCRIPTEN__)
+    // no window here: the web page draws the frame it gets with getPresentedFrame
+    if (g_presentNeeded) {
+        g_presentedFrame = g_syncedBuffer;
+        g_presentedFrameCounter++;
+        g_presentNeeded = false;
+    }
+#endif
+
+#if !EEZ_EMSCRIPTEN_NO_THREADS
     waitForFrameInterval();
     sendMessageToGuiThread(GUI_QUEUE_MESSAGE_TYPE_DISPLAY_VSYNC, 0, 0);
 #endif
@@ -3670,6 +3125,11 @@ void drawPixel(int x, int y) {
         return;
     }
 
+    if (g_dryRun) {
+        setDirty();
+        return;
+    }
+
 #if EEZ_USE_SDL
     auto dest = g_renderBuffer + y * (int)DISPLAY_WIDTH + x;
     uint32_t opacity = getDrawOpacity(g_fc);
@@ -3699,6 +3159,11 @@ void drawPixel(int x, int y) {
 
 void drawPixel(int x, int y, uint8_t opacity) {
     if (!isInsideClipRect(x, y)) {
+        return;
+    }
+
+    if (g_dryRun) {
+        setDirty();
         return;
     }
 
@@ -3749,6 +3214,11 @@ void fillRect(int x1, int y1, int x2, int y2) {
         return;
     }
 
+    if (g_dryRun) {
+        setDirty();
+        return;
+    }
+
     addDamage(x1, y1, x2, y2);
 
 #if EEZ_USE_SDL
@@ -3788,6 +3258,11 @@ void fillRect(int x1, int y1, int x2, int y2) {
 }
 
 void fillRect(void *dstBuffer, int x1, int y1, int x2, int y2) {
+    if (g_dryRun) {
+        setDirty();
+        return;
+    }
+
     if (dstBuffer == g_renderBuffer) {
         addDamage(x1, y1, x2, y2);
     }
@@ -3819,6 +3294,11 @@ void bitBlt(int x1, int y1, int x2, int y2, int dstx, int dsty) {
     if (!clipToClipRect(dx1, dy1, dx2, dy2)) {
         return;
     }
+    if (g_dryRun) {
+        setDirty();
+        return;
+    }
+
     x1 += dx1 - dstx;
     y1 += dy1 - dsty;
     x2 = x1 + dx2 - dx1;
@@ -3860,6 +3340,11 @@ void bitBlt(void *src, int x1, int y1, int x2, int y2) {
 }
 
 void bitBlt(void *src, void *dst, int x1, int y1, int x2, int y2) {
+    if (g_dryRun) {
+        setDirty();
+        return;
+    }
+
     if (dst == g_renderBuffer) {
         addDamage(x1, y1, x2, y2);
     }
@@ -3887,6 +3372,11 @@ void bitBlt(void *src, void *dst, int x1, int y1, int x2, int y2) {
 }
 
 void bitBlt(void *src, void *dst, int sx, int sy, int sw, int sh, int dx, int dy, uint8_t opacity) {
+    if (g_dryRun) {
+        setDirty();
+        return;
+    }
+
     if (dst == nullptr) {
         dst = g_renderBuffer;
     }
@@ -3971,6 +3461,11 @@ void drawBitmap(Image *image, int x, int y) {
     int x2 = x + (int)image->width - 1;
     int y2 = y + (int)image->height - 1;
     if (!clipToClipRect(x1, y1, x2, y2)) {
+        return;
+    }
+
+    if (g_dryRun) {
+        setDirty();
         return;
     }
 
@@ -4083,6 +3578,11 @@ static void drawStrInit() {
 }
 
 static void drawGlyph(const uint8_t *src, uint32_t srcLineOffset, int x_glyph, int y_glyph, int width, int height) {
+    if (g_dryRun) {
+        setDirty();
+        return;
+    }
+
     addDamage(x_glyph, y_glyph, x_glyph + width - 1, y_glyph + height - 1);
 
 #if EEZ_USE_SDL
