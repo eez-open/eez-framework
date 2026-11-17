@@ -35,6 +35,10 @@ const int G[] = { 10, 150, 200, 100 };    // items 100x50 green, 2 per row
 
 // w_select
 const int S[] = { 10, 10, 200, 50 };
+// a Select with a red box and a Spacer on a blue container; a row with a red
+// box, a Spacer that grows and a green box
+const int SP[] = { 10, 100, 200, 50 };
+const int SP_ROW[] = { 10, 200, 300, 50 };
 
 // w_uw
 const int UW_B0[] = { 10, 10, 150, 50 };
@@ -218,6 +222,29 @@ TEST("widgets/select: an index outside of the children shows the first child") {
     set(V_INT, intValue(-1));
     harness::frame();
     CHECK_EQ(countOther(RECT(S), RED), 0);
+}
+
+TEST("widgets/spacer: a Select that shows a Spacer shows what is below it") {
+    set(V_INT2, intValue(0));
+    show(PAGE_ID_W_SELECT);
+    CHECK_EQ(countOther(RECT(SP), RED), 0);
+    // the red box is replaced by the background of the container
+    set(V_INT2, intValue(1));
+    harness::frame();
+    CHECK_EQ(countOther(RECT(SP), BLUE), 0);
+    CHECK_EQ(framesWithDrawing(3), 0);
+    CHECK_EQ(diffWithFullRedraw(), 0);
+    set(V_INT2, intValue(0));
+    harness::frame();
+    CHECK_EQ(countOther(RECT(SP), RED), 0);
+    CHECK_EQ(diffWithFullRedraw(), 0);
+}
+
+TEST("widgets/spacer: a Spacer with Grow takes the space between the children of a row") {
+    show(PAGE_ID_W_SELECT);
+    CHECK_EQ(countOther(SP_ROW[0], SP_ROW[1], 50, 50, RED), 0);
+    CHECK_EQ(countOther(SP_ROW[0] + 50, SP_ROW[1], 200, 50, BLUE), 0);
+    CHECK_EQ(countOther(SP_ROW[0] + 250, SP_ROW[1], 50, 50, GREEN), 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

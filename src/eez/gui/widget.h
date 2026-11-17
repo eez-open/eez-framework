@@ -63,6 +63,7 @@ namespace gui {
     WIDGET_TYPE(YTChart,       YT_CHART,       31) \
     WIDGET_TYPE(Checkbox,      CHECKBOX,       32) \
     WIDGET_TYPE(Radio,         RADIO,          33) \
+    WIDGET_TYPE(Spacer,        SPACER,         34) \
 
 #define WIDGET_TYPE(NAME_PASCAL_CASE, NAME, ID) WIDGET_TYPE_##NAME = ID,
 enum WidgetTypes {

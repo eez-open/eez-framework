@@ -42,6 +42,7 @@ STYLES = [
     style("w_green_box", backgroundColor="w_green"),
     style("w_blue_box", backgroundColor="w_blue"),
     style("w_gray_box", backgroundColor="w_gray"),
+    style("w_transparent", backgroundColor="transparent"),
     # buttons: blue, red while pressed
     style("w_btn", color="w_white", backgroundColor="w_blue",
           activeColor="w_white", activeBackgroundColor="w_red"),
@@ -477,6 +478,20 @@ PAGES.append(_page("w_select", [
         _w("RectangleWidget", "select/0", 0, 0, 200, 50, "w_red_box"),
         _w("RectangleWidget", "select/1", 0, 0, 200, 50, "w_green_box"),
         _w("RectangleWidget", "select/2", 0, 0, 200, 50, "w_blue_box"),
+    ]),
+    # a Select with a Spacer as its second child, on a blue container: the
+    # Spacer has no style (a widget made without one)
+    _w("ContainerWidget", "spacer/cont", 10, 100, 200, 50, "w_blue_box", widgets=[
+        _w("SelectWidget", "spacer/select", 0, 0, 200, 50, "w_transparent", data="w_int2", widgets=[
+            _w("RectangleWidget", "spacer/0", 0, 0, 200, 50, "w_red_box"),
+            {k: v for k, v in _w("SpacerWidget", "spacer/1", 0, 0, 200, 50).items() if k != "style"},
+        ]),
+    ]),
+    # a Spacer with Grow between two boxes of a row
+    _w("ContainerWidget", "spacer/row", 10, 200, 300, 50, "w_blue_box", layout="horizontal", widgets=[
+        _w("RectangleWidget", "spacer/row/a", 0, 0, 50, 50, "w_red_box"),
+        {k: v for k, v in _w("SpacerWidget", "spacer/row/s", 0, 0, 10, 50, flexGrow=True).items() if k != "style"},
+        _w("RectangleWidget", "spacer/row/b", 0, 0, 50, 50, "w_green_box"),
     ]),
 ]))
 

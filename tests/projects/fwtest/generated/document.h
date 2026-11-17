@@ -373,6 +373,7 @@ enum StylesEnum {
     STYLE_ID_W_GREEN_BOX,
     STYLE_ID_W_BLUE_BOX,
     STYLE_ID_W_GRAY_BOX,
+    STYLE_ID_W_TRANSPARENT,
     STYLE_ID_W_BTN,
     STYLE_ID_W_BTN_DIS,
     STYLE_ID_W_SEL,
@@ -704,7 +705,7 @@ enum flow_itemFlowStructureFields {
     FLOW_STRUCTURE_FLOW_ITEM_NUM_FIELDS
 };
 
-extern const uint8_t assets[191543];
+extern const uint8_t assets[191766];
 
 } // namespace gui
 } // namespace eez
