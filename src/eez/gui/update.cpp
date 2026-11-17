@@ -24,6 +24,7 @@ namespace eez {
 namespace gui {
 
 static bool g_refreshScreen;
+static bool g_fullRedraw;
 static Widget *g_rootWidget;
 
 WidgetState *g_widgetStateStart;
@@ -37,6 +38,14 @@ alignas(8) EXTRAM_DATA uint8_t tmp_GUI_STATE_BUFFER[GUI_STATE_BUFFER_SIZE];
 
 void refreshScreen() {
 	g_refreshScreen = true;
+}
+
+void setFullRedraw(bool enabled) {
+	g_fullRedraw = enabled;
+}
+
+bool isFullRedraw() {
+	return g_fullRedraw;
 }
 
 void updateScreen() {
@@ -85,7 +94,7 @@ void updateScreen() {
 	g_widgetCursor.appContext = getRootAppContext();
 	g_widgetCursor.widget = g_rootWidget;
 	g_widgetCursor.currentState = g_widgetStateStart;
-	g_widgetCursor.refreshed = !hasPreviousState;
+	g_widgetCursor.refreshed = !hasPreviousState || g_fullRedraw;
 	g_widgetCursor.hasPreviousState = hasPreviousState;
 
     g_widgetCursor.x = 0;

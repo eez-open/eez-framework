@@ -62,6 +62,10 @@ void setFoundWidgetAtDown(WidgetCursor &widgetCursor);
 void clearFoundWidgetAtDown();
 bool isFocusWidget(const WidgetCursor &widgetCursor);
 void refreshScreen();
+// Full redraw: every widget is drawn in every frame, in order, not only the
+// widgets that changed. Off by default.
+void setFullRedraw(bool enabled);
+bool isFullRedraw();
 inline bool isPageInternal(int pageId) { return pageId > FIRST_INTERNAL_PAGE_ID; }
 
 int getWidgetAction(const WidgetCursor &widgetCursor);
