@@ -234,7 +234,7 @@ static std::atomic<bool> g_takeScreenshot;
 // also an animation buffer, so the animations are not drawn while it is set.
 static std::atomic<bool> g_screenshotAllocated;
 
-#if EEZ_OPTION_THREADS && !defined(__EMSCRIPTEN__)
+#if EEZ_OPTION_THREADS && !EEZ_EMSCRIPTEN_NO_THREADS
 // One screenshot at a time: taken in takeScreenshot, given back in
 // releaseScreenshot. Not a mutex, because the screenshot can be released by
 // another thread than the one that took it.
@@ -830,7 +830,7 @@ void update() {
 }
 
 const uint8_t *takeScreenshot() {
-#if !EEZ_OPTION_THREADS || defined(__EMSCRIPTEN__)
+#if !EEZ_OPTION_THREADS || EEZ_EMSCRIPTEN_NO_THREADS
     copySyncedBufferToScreenshotBuffer();
 #else
     // waits until the screenshot taken before is released
@@ -857,7 +857,7 @@ int getScreenshotHeight() {
 }
 
 void releaseScreenshot() {
-#if !EEZ_OPTION_THREADS || defined(__EMSCRIPTEN__)
+#if !EEZ_OPTION_THREADS || EEZ_EMSCRIPTEN_NO_THREADS
     g_screenshotAllocated = false;
 #else
     // (only after takeScreenshot got the copy)
@@ -2741,7 +2741,7 @@ static void initDriver() {
 #endif
 }
 
-#if EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL && !EEZ_EMSCRIPTEN_NO_THREADS
 // The shortest time between two frames. The next VSYNC message is queued
 // right after the frame is presented: when the present doesn't wait for the
 // vertical sync (a renderer without vsync, a hidden window) the GUI loop would
@@ -2756,6 +2756,16 @@ static void waitForFrameInterval() {
         sleepMs(CONF_MIN_FRAME_INTERVAL_MS - elapsed);
     }
     g_lastFrameTime = millis();
+}
+#endif
+
+#if EEZ_USE_SDL && defined(__EMSCRIPTEN__)
+static std::atomic<VideoBuffer> g_presentedFrame;
+static std::atomic<uint32_t> g_presentedFrameCounter;
+
+VideoBuffer getPresentedFrame(uint32_t &counter) {
+    counter = g_presentedFrameCounter;
+    return g_presentedFrame;
 }
 #endif
 
@@ -2787,7 +2797,16 @@ static void syncBuffer() {
     SDL_RenderPresent(g_renderer);
 #endif
 
-#if !defined(__EMSCRIPTEN__)
+#if defined(__EMSCRIPTEN__)
+    // no window here: the web page draws the frame it gets with getPresentedFrame
+    if (g_presentNeeded) {
+        g_presentedFrame = g_syncedBuffer;
+        g_presentedFrameCounter++;
+        g_presentNeeded = false;
+    }
+#endif
+
+#if !EEZ_EMSCRIPTEN_NO_THREADS
     waitForFrameInterval();
     sendMessageToGuiThread(GUI_QUEUE_MESSAGE_TYPE_DISPLAY_VSYNC, 0, 0);
 #endif

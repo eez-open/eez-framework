@@ -68,7 +68,7 @@ void startThread() {
 	EEZ_THREAD_CREATE(gui, mainLoop);
 #endif
 
-#ifdef __EMSCRIPTEN__
+#if EEZ_EMSCRIPTEN_NO_THREADS
     eez::gui::guiInit();
 #endif
 }
@@ -88,7 +88,7 @@ void runOnMainThread() {
 #endif
 
 void mainLoop(void *) {
-#ifdef __EMSCRIPTEN__
+#if EEZ_EMSCRIPTEN_NO_THREADS
 	oneIter();
 #else
 
@@ -108,7 +108,7 @@ void mainLoop(void *) {
 }
 
 void processGuiQueue(uint32_t timeout) {
-#ifdef __EMSCRIPTEN__
+#if EEZ_EMSCRIPTEN_NO_THREADS
     while (true) {
 #endif
     guiMessageQueueObject obj;
@@ -140,7 +140,7 @@ void processGuiQueue(uint32_t timeout) {
     } else {
         g_hooks.onGuiQueueMessage(type, obj.param);
     }
-#ifdef __EMSCRIPTEN__
+#if EEZ_EMSCRIPTEN_NO_THREADS
     }
 #endif
 }

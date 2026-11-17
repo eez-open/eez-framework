@@ -93,6 +93,14 @@ void addDamageRect(int x1, int y1, int x2, int y2);
 
 VideoBuffer getBufferPointer();
 
+#if defined(__EMSCRIPTEN__)
+// Emscripten has no window, the web page draws the frames: the last finished
+// frame (DISPLAY_WIDTH x DISPLAY_HEIGHT pixels, RGBA) and counter, which is
+// incremented with every new frame. nullptr before the first frame. The frame
+// is not drawn into until the frame after the next one is started.
+VideoBuffer getPresentedFrame(uint32_t &counter);
+#endif
+
 // True while the widgets are updated only to find out if something changed
 // (display with full redraw, see update): the drawing functions draw nothing.
 // Code that draws directly into the buffer must not draw then.

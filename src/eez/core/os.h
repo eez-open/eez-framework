@@ -82,9 +82,10 @@ uint32_t osKernelGetTickCount(void);
 
 namespace eez {
 
-// A detached thread with a name (shown by debuggers and top -H). Emscripten
-// has no threads: there the thread function is called once in every main
-// loop iteration (eez_system_tick), so it must do one iteration and return.
+// A detached thread with a name (shown by debuggers and top -H). 
+// Emscripten without threads (EEZ_EMSCRIPTEN_NO_THREADS): there the thread 
+// function is called once in every main loop iteration (eez_system_tick), 
+// so it must do one iteration and return.
 class Thread {
 public:
     void start(const char *name, std::function<void()> func);
@@ -92,7 +93,7 @@ public:
     // the calling thread is this thread
     bool isCurrent() const;
 
-#ifndef __EMSCRIPTEN__
+#if !EEZ_EMSCRIPTEN_NO_THREADS
     // the thread with this id is this thread (e.g. the GUI loop that runs on
     // the process main thread)
     void attach(std::thread::id id) { m_id = id; }
@@ -115,12 +116,12 @@ public:
     }
 
     // Takes the oldest message. Waits for it at most timeoutMs: WAIT_FOREVER
-    // waits without a limit and 0 doesn't wait (Emscripten never waits).
+    // waits without a limit and 0 doesn't wait (Emscripten without threads never waits).
     // Returns false if there is no message.
     bool get(T &message, uint32_t timeoutMs) {
         std::unique_lock<std::mutex> lock(m_mutex);
         auto hasMessage = [this] { return !m_messages.empty(); };
-#ifndef __EMSCRIPTEN__
+#if !EEZ_EMSCRIPTEN_NO_THREADS
         if (timeoutMs == WAIT_FOREVER) {
             m_messagePut.wait(lock, hasMessage);
         } else if (timeoutMs > 0) {

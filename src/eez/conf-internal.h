@@ -32,6 +32,16 @@
     #define EEZ_OPTION_THREADS 1
 #endif
 
+// Emscripten built without -pthread has no threads: a thread function is
+// called once in every main loop iteration (eez_system_tick), so it does one
+// iteration and returns, and nothing waits. With -pthread the threads are
+// real threads, as on the other platforms.
+#if defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
+    #define EEZ_EMSCRIPTEN_NO_THREADS 1
+#else
+    #define EEZ_EMSCRIPTEN_NO_THREADS 0
+#endif
+
 #ifndef EEZ_OPTION_GUI
     #define EEZ_OPTION_GUI 1
 #endif
