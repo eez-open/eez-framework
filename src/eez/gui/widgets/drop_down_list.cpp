@@ -21,12 +21,38 @@
 namespace eez {
 namespace gui {
 
+// The same options: the same array or arrays with equal elements (an
+// expression makes a new array every time it is evaluated).
+static bool isSameOptions(const Value &a, const Value &b) {
+	if (a == b) {
+		return true;
+	}
+	if (!a.isArray() || !b.isArray()) {
+		return false;
+	}
+	auto arrayA = a.getArray();
+	auto arrayB = b.getArray();
+	if (arrayA->arraySize != arrayB->arraySize) {
+		return false;
+	}
+	for (uint32_t i = 0; i < arrayA->arraySize; i++) {
+		if (arrayA->values[i] != arrayB->values[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
 bool DropDownListWidgetState::updateState() {
     WIDGET_STATE_START(DropDownListWidget);
 
 	WIDGET_STATE(flags.active, g_isActiveWidget);
 	WIDGET_STATE(data, get(widgetCursor, widget->data));
-	WIDGET_STATE(options, get(widgetCursor, widget->options));
+	Value newOptions = get(widgetCursor, widget->options);
+	if (!hasPreviousState || !isSameOptions(options, newOptions)) {
+		hasPreviousState = false;
+		options = newOptions;
+	}
 	WIDGET_STATE(label, widget->label ? get(widgetCursor, widget->label) : Value());
 
     WIDGET_STATE_END()

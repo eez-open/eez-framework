@@ -18,7 +18,9 @@ extern WidgetState *g_widgetStateEnd;
 extern bool g_widgetStateStructureChanged;
 extern WidgetCursor g_widgetCursor;
 
-void updateScreen();
+// With fullRedraw every widget is drawn, in order, otherwise only the widgets
+// that changed since the last call.
+void updateScreen(bool fullRedraw = false);
 
 void enumRootWidget();
 

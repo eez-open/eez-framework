@@ -1851,7 +1851,9 @@ void drawStyleShadow(const Style *style, int x1, int y1, int x2, int y2) {
 #if defined(EEZ_SW_SHADOW)
     auto params = getStyleShadowParams(style);
     if (params.opacity > 0) {
-        drawShadowSW(params, x1, y1, x2, y2);
+        if (!display::isDryRun()) {
+            drawShadowSW(params, x1, y1, x2, y2);
+        }
 
         // drawn directly into the buffer
         int left, top, right, bottom;

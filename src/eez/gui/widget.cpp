@@ -1416,10 +1416,7 @@ void ChildrenRoundedClip::begin(const WidgetCursor &widgetCursor, const Style *s
         (int)clip.right - (int)clip.left, (int)clip.bottom - (int)clip.top
     );
 
-    // the widget is just drawn (not only a part of it, as when overlapping
-    // widgets are repainted): the corners are its background
-    clip.owner = style;
-    display::beginRoundedClip(clip, widgetCursor.refreshed && !g_repaintingOverlappingWidgets);
+    display::beginRoundedClip(clip);
 
     // also when nothing is saved (other displays)
     clip.level = clip.level < 0 ? -2 : clip.level;

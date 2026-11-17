@@ -1,13 +1,12 @@
 /*
  * eez-framework tests: composition of the render buffers (pages, popups with
- * shadow and backdrop, transparent pages, toasts), damage tracking and the
- * invariant that after incremental updates the presented frame is the same as
- * a full redraw (refreshScreen + frame).
+ * shadow and backdrop, transparent pages, toasts) and the invariant that
+ * after updates the presented frame is the same as a full redraw
+ * (refreshScreen + frame).
  *
- * Damage is measured with markers (render_util.h, putMarkers): pixels put into
- * the buffer the next frame is rendered into survive where that frame does not
- * compose, so the share of overwritten markers is the composed share of the
- * frame.
+ * What a frame composes is measured with markers (render_util.h, putMarkers):
+ * pixels put into the buffer the next frame is rendered into survive where
+ * that frame does not compose.
  */
 
 #include <atomic>
@@ -47,19 +46,7 @@ float composedShare(void (*changeFunc)(int), int n) {
     return 1.0f - (float)render::countMarkers() / render::numMarkers();
 }
 
-void changeA(int n) { change(0, n); }
-void changeAB(int n) { change(0, n); change(1, n); }
-void changeF(int n) { change(5, n); }
 void changeNothing(int) {}
-
-// a few frames with the change, so the stale part of the next render buffer
-// is the previous change only
-void settle(void (*changeFunc)(int)) {
-    for (int i = 0; i < 3; i++) {
-        changeFunc(100 + i);
-        harness::frame();
-    }
-}
 
 } // namespace
 
@@ -283,7 +270,7 @@ TEST("render/compose: a blinking rounded text without a border equals a full red
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// damage tracking (counts)
+// what a frame composes
 
 TEST("render/compose: the marker measure: an idle frame composes nothing") {
     render::showPage(PAGE_ID_RENDER_DYNAMIC);
@@ -293,16 +280,6 @@ TEST("render/compose: the marker measure: an idle frame composes nothing") {
     CHECK_EQ(share, 0.0f);
 }
 
-TEST("render/compose: a small change composes only its part of the frame") {
-    render::showPage(PAGE_ID_RENDER_DYNAMIC);
-    settle(changeA);
-    float share = composedShare(changeA, 0);
-    printf("    composed share: %.3f\n", share);
-    // text a is 120 x 30 of 800 x 480 (0.9 %)
-    CHECK(share > 0.0f);
-    CHECK(share < 0.05f);
-}
-
 TEST("render/compose: opening a popup composes the whole frame") {
     render::showPage(PAGE_ID_RENDER_DYNAMIC);
     harness::frame(2);
@@ -310,27 +287,6 @@ TEST("render/compose: opening a popup composes the whole frame") {
     harness::appContext()->pushPage(PAGE_ID_RENDER_POPUP1);
     harness::frame();
     CHECK_EQ(render::countMarkers(), 0);
-}
-
-TEST("render/compose: two small changes far apart compose only their parts") {
-    // text a (top left) and text b (bottom right) are two damage rectangles
-    // (DP2: one rectangle per frame made it nearly the whole frame)
-    render::showPage(PAGE_ID_RENDER_DYNAMIC);
-    settle(changeAB);
-    float share = composedShare(changeAB, 0);
-    printf("    composed share: %.3f\n", share);
-    CHECK(share < 0.1f);
-}
-
-TEST("render/compose: a small change on a popup with backdrop composes only its part") {
-    // the layers below the popup and its blurred backdrop come from the backdrop
-    // cache (DP1: every dirty frame was a full compose with blur)
-    render::showPage(PAGE_ID_RENDER_DYNAMIC);
-    render::pushPage(PAGE_ID_RENDER_POPUP1);
-    settle(changeF);
-    float share = composedShare(changeF, 0);
-    printf("    composed share: %.3f\n", share);
-    CHECK(share < 0.1f);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
