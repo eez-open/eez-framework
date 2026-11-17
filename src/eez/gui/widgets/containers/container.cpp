@@ -305,15 +305,7 @@ void ContainerWidgetState::enumChildren() {
         int containerHeight = widgetCursor.h;
 
         if (widget->layout == CONTAINER_WIDGET_LAYOUT_STATIC) {
-            if (widget->flags & OVERLAPPING_CHILDREN_FLAG) {
-                doStaticLayoutWithOverlapping(
-                    widgetCursor, widgets,
-                    containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight,
-                    stateStyle.style, stateStyle.active
-                );
-            } else {
-                doStaticLayout(widgetCursor, widgets, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
-            }
+            doStaticLayout(widgetCursor, widgets, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
         } else if (rowOrColumn) {
             auto savedX = widgetCursor.x;
             auto savedY = widgetCursor.y;

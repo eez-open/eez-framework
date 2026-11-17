@@ -152,15 +152,7 @@ void UserWidgetWidgetState::enumChildren() {
         int containerWidth = widgetCursor.w;
         int containerHeight = widgetCursor.h;
 
-        if (layout->flags & OVERLAPPING_CHILDREN_FLAG) {
-            doStaticLayoutWithOverlapping(
-                widgetCursor, widgets,
-                containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight,
-                stateStyle.style, stateStyle.active
-            );
-        } else {
-            doStaticLayout(widgetCursor, widgets, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
-        }
+        doStaticLayout(widgetCursor, widgets, containerOriginalWidth, containerOriginalHeight, containerWidth, containerHeight);
 
 		widgetCursor.widget = savedWidget;
 	}

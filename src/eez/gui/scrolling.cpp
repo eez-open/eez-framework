@@ -354,21 +354,6 @@ void ScrollableWidgetState::endEnumChildren(EnumChildrenContext &context) {
         display::restoreClipRect(context.savedClipRect);
     } else {
         g_findClipRect = context.savedFindClipRect;
-
-        if (isRepaintingOverlappingWidgets() && renderedScrollIndicator.w > 0) {
-            // items are repainted, scroll indicator is drawn over them
-            auto savedClipRect = display::intersectClipRect(context.savedX, context.savedY, context.savedW, context.savedH);
-            if (pageDotsStyle) {
-                drawPageDots(getStyle(pageDotsStyle), renderedScrollIndicator, renderedPageDot);
-            } else {
-                display::setColor(style->color);
-                display::fillRect(
-                    renderedScrollIndicator.x, renderedScrollIndicator.y,
-                    renderedScrollIndicator.x + renderedScrollIndicator.w - 1, renderedScrollIndicator.y + renderedScrollIndicator.h - 1
-                );
-            }
-            display::restoreClipRect(savedClipRect);
-        }
     }
 
     if (context.isFindScrollList) {

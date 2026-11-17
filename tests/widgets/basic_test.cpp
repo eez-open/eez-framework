@@ -92,9 +92,9 @@ TEST("widgets/visible: data of a hidden widget is not evaluated in every frame")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// overlapping children (page with allowOverlappingChildren)
+// overlapping children (the frame is drawn again, every widget in order)
 
-TEST("widgets/overlap: the widget on top is repainted over a changed widget below it") {
+TEST("widgets/overlap: the widget on top stays over a changed widget below it") {
     set(V_A, str("one"));
     show(PAGE_ID_W_OVERLAP);
     // overlapped area: blue rectangle on top

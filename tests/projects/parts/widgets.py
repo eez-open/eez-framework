@@ -7,7 +7,7 @@ mirrors the order of GLOBALS below). Native variables and actions are
 implemented in tests/widgets/native.cpp.
 
 Pages are full screen (800x480, "default" style: black background). Widgets do
-not overlap (except where the page allows overlapping children), the positions
+not overlap (except on the pages that test it), the positions
 are mirrored as constants in the C++ tests.
 """
 
@@ -533,7 +533,7 @@ PAGES.append(_page("w_uw", [
 PAGES.append(_page("w_overlap", [
     _w("TextWidget", "overlap/text", 10, 10, 150, 60, "w_txt", data="w_a"),
     _w("RectangleWidget", "overlap/rect", 60, 40, 150, 60, "w_blue_box"),
-], allowOverlappingChildren=True))
+]))
 
 # timelines: position (left 10 -> 210), opacity to 0 with easeOutBack (W18)
 PAGES.append(_page("w_timeline", [

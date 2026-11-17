@@ -247,8 +247,6 @@ struct Widget {
 #define PAGE_IS_USED_AS_USER_WIDGET (1 << 2)
 #define PAGE_CONTAINER (1 << 3)
 #define PAGE_SCALE_TO_FIT (1 << 4)
-// children of the container (or page) with static layout are allowed to overlap
-#define OVERLAPPING_CHILDREN_FLAG (1 << 5)
 
 struct PageAsset : public Widget {
 	ListOfAssetsPtr<Widget> widgets;

@@ -367,8 +367,8 @@ void YTChartWidgetState::render() {
     float *values = (float *)(canvas.pixels + w * h);
     float *values2 = values + YT_CHART_MAX_TRACES * (w + 1);
 
-    // the values before bufferPosition are in the buffer already (render can
-    // be called again for the same state, e.g. when overlapped)
+    // the values before bufferPosition are in the buffer already (render is
+    // called also when the state is not changed)
     uint32_t startPosition;
     if (redrawAll || bufferPosition > position || position - bufferPosition > (uint32_t)w) {
         startPosition = position > (uint32_t)w ? position - w : 0;

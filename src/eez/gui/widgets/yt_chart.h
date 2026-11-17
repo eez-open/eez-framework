@@ -49,8 +49,7 @@ struct YTChartWidgetState : public WidgetState {
     float period;
 
     // graph pixels, drawn incrementally (only the new values) and copied to
-    // the display, so the graph can be rendered again at any time (e.g. when
-    // it is overlapped by some other widget)
+    // the display, so the graph can be rendered again at any time
     void *buffer = nullptr;
     int bufferWidth = 0;
     int bufferHeight = 0;

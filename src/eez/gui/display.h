@@ -86,25 +86,6 @@ ClipRect intersectClipRect(int x, int y, int width, int height);
 void restoreClipRect(const ClipRect &previousClipRect);
 const ClipRect &getClipRect();
 
-// Collects the bounding rectangle (inclusive, empty when x1 > x2) of everything
-// drawn into the current buffer between beginDamageProbe and endDamageProbe.
-// Probes can be nested, what is collected by the inner probe is also added to
-// the outer probe.
-struct DamageProbe {
-    int x1;
-    int y1;
-    int x2;
-    int y2;
-
-    bool isEmpty() const { return x1 > x2 || y1 > y2; }
-
-    // internal
-    DamageProbe *parent;
-    const void *target;
-};
-void beginDamageProbe(DamageProbe &probe);
-void endDamageProbe(DamageProbe &probe);
-
 // The rectangle (inclusive) of the current buffer is drawn into directly (not
 // with the drawing functions): it is added to the damage, inside the clip
 // rectangle.

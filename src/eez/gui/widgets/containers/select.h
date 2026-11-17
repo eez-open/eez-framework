@@ -27,7 +27,7 @@ struct SelectWidget : public Widget {
 
 struct SelectWidgetState : public WidgetState {
     int widgetIndex;
-	bool repainted;
+	bool repainted = false;
 
     bool updateState() override;
 	void render() override;

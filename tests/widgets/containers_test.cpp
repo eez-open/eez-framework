@@ -188,7 +188,7 @@ TEST("widgets/grid: items in rows") {
     CHECK_EQ(countOther(G[0], G[1] + 50, 100, 50, GREEN), 0);
 }
 
-TEST_BUG("widgets/grid: fewer items clear the place of the removed ones", "W11") {
+TEST("widgets/grid: fewer items clear the place of the removed ones") {
     set(V_C, intArray({ 1, 2, 3, 4 }));
     show(PAGE_ID_W_LIST);
     set(V_C, intArray({ 1, 2, 3 }));

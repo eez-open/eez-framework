@@ -76,8 +76,7 @@ TEST("widgets/canvas: drawn again only when something changes") {
     g_native.canvasColor = GREEN;
     g_native.canvasRefresh++;
     harness::frame();
-    // (the draw function is also called in the dry run of the frame)
-    CHECK(g_native.canvasDraws > draws);
+    CHECK_EQ(g_native.canvasDraws, draws + 1);
     CHECK_EQ(countOther(RECT(CV), GREEN), 0);
 }
 

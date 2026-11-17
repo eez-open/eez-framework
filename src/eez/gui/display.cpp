@@ -303,9 +303,6 @@ static bool g_renderBufferStale = true;
 // the synced buffer must be transferred to the screen
 static bool g_presentNeeded = true;
 
-// innermost active damage probe
-static DamageProbe *g_damageProbe;
-
 // Dry run (see update): the drawing functions draw nothing, they only note
 // that something would be drawn (isDirty).
 static bool g_dryRun;
@@ -323,47 +320,9 @@ static bool g_redrawNeeded = true;
 static bool g_transparentScreen;
 #endif
 
-static inline void addProbeDamage(DamageProbe *probe, int x1, int y1, int x2, int y2) {
-    if (x1 > x2 || y1 > y2) {
-        return;
-    }
-    if (probe->isEmpty()) {
-        probe->x1 = x1;
-        probe->y1 = y1;
-        probe->x2 = x2;
-        probe->y2 = y2;
-    } else {
-        probe->x1 = std::min(probe->x1, x1);
-        probe->y1 = std::min(probe->y1, y1);
-        probe->x2 = std::max(probe->x2, x2);
-        probe->y2 = std::max(probe->y2, y2);
-    }
-}
-
 static inline void addDamage(int x1, int y1, int x2, int y2) {
     if (g_damage) {
         g_damage->add(x1, y1, x2, y2);
-    }
-    // drawing into some other buffer (e.g. overlay) is not collected
-    if (g_damageProbe && g_damageProbe->target == g_damage) {
-        addProbeDamage(g_damageProbe, x1, y1, x2, y2);
-    }
-}
-
-void beginDamageProbe(DamageProbe &probe) {
-    probe.x1 = 0;
-    probe.y1 = 0;
-    probe.x2 = -1;
-    probe.y2 = -1;
-    probe.parent = g_damageProbe;
-    probe.target = g_damage;
-    g_damageProbe = &probe;
-}
-
-void endDamageProbe(DamageProbe &probe) {
-    g_damageProbe = probe.parent;
-    if (g_damageProbe && g_damageProbe->target == probe.target && !probe.isEmpty()) {
-        addProbeDamage(g_damageProbe, probe.x1, probe.y1, probe.x2, probe.y2);
     }
 }
 

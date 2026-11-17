@@ -32605,8 +32605,7 @@
       "connectionLines": [],
       "localVariables": [],
       "userProperties": [],
-      "componentGroups": [],
-      "allowOverlappingChildren": true
+      "componentGroups": []
     },
     {
       "objID": "87f90be9-04a1-5eb3-9a12-dc8d8e517bfc",
@@ -37327,8 +37326,7 @@
       "connectionLines": [],
       "localVariables": [],
       "userProperties": [],
-      "componentGroups": [],
-      "allowOverlappingChildren": true
+      "componentGroups": []
     },
     {
       "objID": "a43a9907-d85c-5d3e-a75a-7fd7a7a88dca",

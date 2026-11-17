@@ -28,8 +28,8 @@ namespace gui {
 // Pixels of the graph drawn with YT_GRAPH_UPDATE_METHOD_SCROLL and
 // YT_GRAPH_UPDATE_METHOD_SCAN_LINE. Graph is drawn incrementally (only the new
 // values) into this buffer and then the whole buffer is copied to the display,
-// so the graph can be rendered again at any time, e.g. when it is overlapped by
-// some other widget (see doStaticLayoutWithOverlapping).
+// so the graph can be rendered again at any time (every frame in which
+// something on the screen changed).
 struct YTGraphCanvas {
     display::Color *pixels;
     int w;
@@ -635,9 +635,8 @@ void YTGraphWidgetState::render() {
             redrawAll = true;
         }
 
-        // Render can be called more than once for the same state (e.g. when
-        // overlapped by other widget), so only the values that are not already
-        // in the buffer are drawn.
+        // Render is called also when the state is not changed, so only the
+        // values that are not already in the buffer are drawn.
         uint32_t startPosition;
         if (
             refreshBackground || redrawAll ||
