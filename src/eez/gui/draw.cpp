@@ -175,10 +175,8 @@ int getTextBaseline(const Style *style, int h) {
     // as drawText places the text in a box at y = 0, inside of the border
     int left, top, right, bottom;
     getBorderInsets(style, left, top, right, bottom);
+    // (a font higher than the box starts above it: y is negative)
     int y = getContentY(style, top, h - 1 - bottom, font.getHeight());
-    if (y < 0) {
-        y = top;
-    }
     return y + font.getAscent();
 }
 
@@ -1048,10 +1046,8 @@ int getValuePartsBaseline(const ValueParts &parts, const Style *style, int h) {
     // as drawValueParts places the block in a box at y = 0
     int left, top, right, bottom;
     getBorderInsets(style, left, top, right, bottom);
+    // (a block higher than the box starts above it: blockY is negative)
     int blockY = getContentY(style, top, h - 1 - bottom, g.blockHeight);
-    if (blockY < 0) {
-        blockY = top;
-    }
     return blockY + g.lineTop + g.lineAscent;
 }
 
