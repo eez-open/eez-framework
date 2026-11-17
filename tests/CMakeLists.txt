@@ -13,7 +13,7 @@ option(EEZ_TESTS_SANITIZE "Build with AddressSanitizer and UndefinedBehaviorSani
 option(EEZ_TESTS_TSAN "Build with ThreadSanitizer (instead of EEZ_TESTS_SANITIZE)" OFF)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(SDL2 REQUIRED IMPORTED_TARGET sdl2 SDL2_image)
+pkg_check_modules(SDL2 REQUIRED IMPORTED_TARGET sdl2)
 
 if(EEZ_TESTS_TSAN)
     set(SANITIZE_FLAGS -fsanitize=thread -fno-omit-frame-pointer)
@@ -39,6 +39,13 @@ add_subdirectory("${FW_SRC}/../third_party" "${CMAKE_BINARY_DIR}/eez-third-party
 target_link_libraries(eez_framework PUBLIC eez-harfbuzz eez-freetype)
 
 ################################################################################
+# stb_image and stb_image_write: the PNG files of the render tests
+
+add_library(stb STATIC third_party/stb/stb.c)
+target_include_directories(stb PUBLIC third_party/stb)
+target_compile_options(stb PRIVATE -w)
+
+################################################################################
 # the tests
 
 file(GLOB_RECURSE TEST_SOURCES
@@ -53,8 +60,8 @@ file(GLOB_RECURSE TEST_SOURCES
 
 add_executable(eez-framework-tests ${TEST_SOURCES} projects/fwtest/generated/document.cpp)
 target_include_directories(eez-framework-tests PRIVATE harness projects/fwtest/generated)
-# -Wno-unused-variable: TITLE and ICON of eez-framework-conf.h
+# -Wno-unused-variable: TITLE of eez-framework-conf.h
 target_compile_options(eez-framework-tests PRIVATE -Wall -Wno-unused-variable ${SANITIZE_FLAGS})
 # eez::millis() is the fake clock of harness/clock.cpp
 target_link_options(eez-framework-tests PRIVATE ${SANITIZE_FLAGS} -Wl,--wrap=_ZN3eez6millisEv)
-target_link_libraries(eez-framework-tests PRIVATE eez_framework)
+target_link_libraries(eez-framework-tests PRIVATE eez_framework stb)

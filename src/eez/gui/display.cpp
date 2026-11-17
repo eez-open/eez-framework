@@ -83,12 +83,8 @@ extern "C" DMA2D_HandleTypeDef hdma2d_eval;
 
 #endif
 
-#if EEZ_USE_SDL
-#include <string>
-#if !defined(__EMSCRIPTEN__)
+#if EEZ_USE_SDL && !defined(__EMSCRIPTEN__)
 #include <SDL.h>
-#include <SDL_image.h>
-#endif
 #endif
 
 #if DISPLAY_BPP == 16
@@ -2664,20 +2660,6 @@ static SDL_Renderer *g_renderer;
 static SDL_Texture *g_texture;
 static bool g_textureInitialized;
 #endif
-
-// heuristics to find resource file
-std::string getFullPath(std::string category, std::string path) {
-    std::string fullPath = category + "/" + path;
-    for (int i = 0; i < 5; ++i) {
-        FILE *fp = fopen(fullPath.c_str(), "r");
-        if (fp) {
-            fclose(fp);
-            return fullPath;
-        }
-        fullPath = std::string("../") + fullPath;
-    }
-    return path;
-}
 #endif
 
 #if defined(EEZ_PLATFORM_STM32)
@@ -2737,23 +2719,6 @@ static void initDriver() {
     SDL_SetTextureBlendMode(g_texture, SDL_BLENDMODE_NONE);
 
     SDL_SetRenderDrawBlendMode(g_renderer, SDL_BLENDMODE_BLEND);
-
-    // Initialize PNG loading
-    int imgFlags = IMG_INIT_PNG;
-    if ((IMG_Init(imgFlags) & imgFlags) != imgFlags) {
-        printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
-    } else {
-#if !defined(__EMSCRIPTEN__)
-        // Set icon
-        SDL_Surface *iconSurface = IMG_Load(getFullPath("images", ICON).c_str());
-        if (!iconSurface) {
-            printf("Warning: Failed to load icon! SDL Error: %s\n", SDL_GetError());
-        } else {
-            SDL_SetWindowIcon(g_mainWindow, iconSurface);
-            SDL_FreeSurface(iconSurface);
-        }
-#endif
-    }
 
     SDL_ShowWindow(g_mainWindow);
 

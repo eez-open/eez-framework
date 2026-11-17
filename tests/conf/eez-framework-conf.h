@@ -17,7 +17,6 @@ static const uint32_t DISPLAY_HEIGHT = 480;
 #define DISPLAY_BPP 32
 
 static const char *TITLE = "eez-framework tests";
-static const char *ICON = "eez.png";
 
 #define MAX_NUM_OF_Y_AXES 18
 #define MAX_NUM_OF_Y_VALUES MAX_NUM_OF_Y_AXES
