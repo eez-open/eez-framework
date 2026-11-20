@@ -375,6 +375,29 @@ Value getUserProperty(unsigned propertyIndex) {
     return value;
 }
 
+Value getUserPropertyReference(unsigned propertyIndex) {
+    Value value;
+    if (g_executeActionFlowState) {
+        evalAssignableProperty(g_executeActionFlowState, g_executeActionComponentIndex, propertyIndex, value, FlowError::PropertyNum("CallAction", propertyIndex));
+    }
+    return value;
+}
+
+void setUserPropertyReference(const Value &reference, const Value &value) {
+    if (!g_executeActionFlowState) return;
+    if (reference.getType() != VALUE_TYPE_VALUE_PTR &&
+        reference.getType() != VALUE_TYPE_NATIVE_VARIABLE &&
+        reference.getType() != VALUE_TYPE_MODULE_FIELD &&
+        reference.getType() != VALUE_TYPE_FLOW_OUTPUT &&
+        reference.getType() != VALUE_TYPE_ARRAY_ELEMENT_VALUE &&
+        reference.getType() != VALUE_TYPE_JSON_MEMBER_VALUE) {
+        throwError(g_executeActionFlowState, g_executeActionComponentIndex, FlowError::Plain("Assignable user property reference expected"));
+        return;
+    }
+    Value destination = reference;
+    assignValue(g_executeActionFlowState, g_executeActionComponentIndex, destination, value);
+}
+
 void setUserProperty(unsigned propertyIndex, const Value &value) {
     if (!g_executeActionFlowState) {
         return;
