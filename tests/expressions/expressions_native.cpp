@@ -1,5 +1,5 @@
 /*
- * eez-framework tests: the native variables expr_nat_* of parts/expr_extra.py.
+ * eez-framework tests: the native variables expr_nat_* of parts/expr_extra.mjs.
  *
  * They give the expression cases values that the project's own types can't
  * hold: a uint32 above 2^31, an int64, the narrow integer types, a float with

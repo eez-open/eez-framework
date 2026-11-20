@@ -1,7 +1,7 @@
 /*
  * eez-framework tests: helpers of the flow tests (tests/flow).
  *
- * The flows are pages and actions of projects/parts/flow.py. A test creates the
+ * The flows are pages and actions of projects/parts/flow.mjs. A test creates the
  * flow state of a page (pageFlowState, runPage) or shows the page, runs frames
  * (harness::frame ticks the flow) and checks what the Log components wrote
  * (harness::logMessages()), the flow errors and the flow states.
@@ -66,7 +66,7 @@ uint32_t numFlows();
 // have only one component of that type.
 int findComponent(FlowState *flowState, uint16_t type, int nth = 0);
 
-// global variable of flow.py (flow_g_*), through the flow_vars page
+// global variable of flow.mjs (flow_g_*), through the flow_vars page
 Value *globalVar(const char *name);
 
 // widget of a page asset, by type (the first one)

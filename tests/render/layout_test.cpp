@@ -1,6 +1,6 @@
 /*
  * eez-framework tests: rows and columns (gui/layout.h, projects/parts/
- * layout.py): justify content, grow, align items and align self, a hidden
+ * layout.mjs): justify content, grow, align items and align self, a hidden
  * child, sizes from the content, the baseline of two fonts, a column of rows,
  * right to left. The children have their own background color; a child box is
  * the box of the pixels of its color in the area of its container.
@@ -124,7 +124,7 @@ Box find(uint32_t color, int x, int y, int w, int h) {
         } \
     } while (0)
 
-// the rows of the page layout_rows (parts/layout.py): 400 x 50 at x = 20,
+// the rows of the page layout_rows (parts/layout.mjs): 400 x 50 at x = 20,
 // y = 10 + 56 * k, the content box 5 px inside
 int rowY(int k) {
     return 10 + 56 * k;

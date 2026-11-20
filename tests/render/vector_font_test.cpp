@@ -2,7 +2,7 @@
  * eez-framework tests: vector fonts (EEZ_OPTION_GUI_VECTOR_FONTS), drawn from
  * fonts/Roboto-Regular.ttf at runtime with HarfBuzz and FreeType. VRoboto and
  * VRobotoTnum (tnum, letter spacing 1 px) are made from the same file (parts/
- * render.py), the page render_vector shows them.
+ * render.mjs), the page render_vector shows them.
  */
 
 #include <stdlib.h>

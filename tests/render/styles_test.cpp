@@ -1,6 +1,6 @@
 /*
  * eez-framework tests: the style properties of EEZ-GUI v3 (projects/parts/
- * styles.py): states (state styles, Style::stateStyles), focus
+ * styles.mjs): states (state styles, Style::stateStyles), focus
  * ring, shadow, borders with a radius and a different width on each side,
  * children clipped to the rounded corners of a container, padding of centered
  * text, letter spacing, line height and ellipsis.
@@ -76,7 +76,7 @@ const uint32_t YELLOW = rgb(0xF8, 0xFC, 0);
 const uint32_t ORANGE = rgb(0xF8, 0x80, 0);
 const uint32_t PURPLE = rgb(0x80, 0, 0xF8);
 
-// the boxes of the pages (parts/styles.py)
+// the boxes of the pages (parts/styles.mjs)
 const int BTN[] = { 20, 20, 160, 50 };
 const int DISABLED[] = { 200, 20, 160, 50 };
 const int TOGGLE[] = { 380, 20, 160, 50 };

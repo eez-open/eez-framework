@@ -1,7 +1,7 @@
 /*
  * eez-framework tests: expression evaluation (flow/expression, flow/operations).
  *
- * The cases are in projects/expression_cases.py. make_fwtest.py puts every case
+ * The cases are in projects/expression_cases.mjs. make_fwtest.mjs puts every case
  * into the "expressions" page of projects/fwtest as a SetVariable component
  * (entry 0: the label "case:<n>", entry 1: the case expression) and writes the
  * expected results to generated/expression_cases.inc. One test per case.

@@ -1,5 +1,5 @@
 /*
- * eez-framework tests: the rows of a settings group (projects/parts/rows.py):
+ * eez-framework tests: the rows of a settings group (projects/parts/rows.mjs):
  * the icon and the trailing icon of the Text widget (Text, DisplayData,
  * Button) and of the Input, the label of the DropDownList.
  */
@@ -57,7 +57,7 @@ uint32_t px(int x, int y) {
     return harness::pixel(x, y) | 0xFF000000u;
 }
 
-// the colors of the part (parts/rows.py)
+// the colors of the part (parts/rows.mjs)
 const uint32_t BG = rgb(0x20, 0x20, 0x20);
 const uint32_t PAGE_BG = rgb(0x40, 0x60, 0x80);
 const uint32_t WHITE = rgb(0xF8, 0xFC, 0xF8);
@@ -67,7 +67,7 @@ const uint32_t BLUE = rgb(0, 0, 0xF8);
 const uint32_t YELLOW = rgb(0xF8, 0xFC, 0);
 const uint32_t PRESSED = rgb(0x80, 0x40, 0);
 
-// the rows of the page (parts/rows.py): at x = 20, 400 x 40, the horizontal
+// the rows of the page (parts/rows.mjs): at x = 20, 400 x 40, the horizontal
 // padding of the row style 16, of the icon styles 12 at the side of the text
 const int X = 20;
 const int W = 400;

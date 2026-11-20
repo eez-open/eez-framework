@@ -1,7 +1,7 @@
 /*
  * eez-framework tests: helpers of the GUI runtime tests (tests/gui).
  *
- * The pages, actions and variables are in projects/parts/gui.py. The native
+ * The pages, actions and variables are in projects/parts/gui.mjs. The native
  * actions and variables of that part are implemented in gui_app.cpp.
  */
 

@@ -9,18 +9,21 @@ test thread.
 ## Running
 
 ```sh
-tests/run.sh                      # build and run everything
-tests/run.sh expressions          # only tests whose name contains "expressions"
-tests/run.sh --verbose "core/"    # also print the output of passed tests
-tests/run.sh --list               # list the tests
-tests/run.sh --no-sanitize        # plain build
-tests/run.sh --tsan tsan          # data race tests (ThreadSanitizer)
+node tests/run.mjs                      # build and run everything
+node tests/run.mjs expressions          # only tests whose name contains "expressions"
+node tests/run.mjs --verbose "core/"    # also print the output of passed tests
+node tests/run.mjs --list               # list the tests
+node tests/run.mjs --no-sanitize        # plain build
+node tests/run.mjs --tsan tsan          # data race tests (ThreadSanitizer)
+node tests/run.mjs --rebuild            # build from scratch
 ```
 
+The tests build and run on Linux. On Windows `run.mjs` runs itself in WSL,
+with the `node` of the WSL login shell (Node.js 18 or newer).
 Needs `cmake`, `g++` and `libsdl2-dev`. FreeType and
 HarfBuzz (`../third_party`) are built with the tests: the configuration has the
 vector fonts (`EEZ_OPTION_GUI_VECTOR_FONTS`, tests in `render/vector_font_test.cpp`). The build goes to
-`~/.cache/eez-framework-tests`. `EEZ_FW_SRC=<path to eez-framework/src>` tests
+`~/.cache/eez-framework-tests` (`EEZ_TESTS_BUILD_DIR`). `EEZ_FW_SRC=<path to eez-framework/src>` tests
 another framework copy.
 
 Every test runs in its own forked process, started from the state after
@@ -38,11 +41,12 @@ report fails only that test. Results:
 
 | Folder | |
 |---|---|
+| `run.mjs` | builds and runs the tests |
 | `harness/` | test runner (`test.h`), the application around the framework (`harness.h`, `app.cpp`), fake clock |
 | `conf/` | `eez-framework-conf.h` of the tests |
 | `projects/` | test project generator and the generated assets (see below) |
 | `core/` | core/: Value, util, unit, assets, alloc |
-| `expressions/` | expressions and built-in functions (cases in `projects/expression_cases.py`) |
+| `expressions/` | expressions and built-in functions (cases in `projects/expression_cases.mjs`) |
 | `flow/` | flow engine and components |
 | `gui/` | pages, events, touch, keypad, toasts, the GUI thread |
 | `widgets/` | widgets |
@@ -88,7 +92,7 @@ TEST_BUG("area/file: what should happen", "G1") {
 
 `CHECK_GOLDEN(name, image)` (`render/render_util.h`) compares an image with
 `render/golden/<name>.png` (R, G, B may differ by 3, up to 8 pixels).
-`EEZ_TESTS_UPDATE_GOLDEN=1 tests/run.sh render/` writes the baselines instead;
+`EEZ_TESTS_UPDATE_GOLDEN=1 node tests/run.mjs render/` writes the baselines instead;
 a missing baseline is a failure. On a mismatch the actual, expected and diff
 images are written to `<build dir>/render-failures/<name>/`. The baselines pin
 today's output, including visible known bugs: when such a bug is fixed, update
@@ -96,20 +100,20 @@ the baseline after looking at the new image.
 
 ## The test project
 
-`projects/make_fwtest.py` writes `projects/fwtest/fwtest.eez-project` from the
-parts in `projects/parts/` (`base.py`: what the framework needs and the main page;
-`expressions.py`: the expression cases; one part per test area). Names of pages,
+`projects/make_fwtest.mjs` writes `projects/fwtest/fwtest.eez-project` from the
+parts in `projects/parts/` (`base.mjs`: what the framework needs and the main page;
+`expressions.mjs`: the expression cases; one part per test area). Names of pages,
 actions, variables, styles and colors are global in the project, so a part
 prefixes them with its area (`flow_`, `gui_`, `w_`, `render_`). Every item gets
 Studio tags (`fwlib.tags`): the area and topics found in its name (`errors`,
 `keypad`, `popups`, ...), so `tag:flow` in Studio's search finds the flow items.
 
-```powershell
-pwsh tests/projects/build_projects.ps1
+```sh
+node tests/projects/build_projects.mjs [--studio PATH]
 ```
 
-runs `make_fwtest.py` and builds the project with EEZ Studio (headless, from
-`C:\Work\eez\studio`), which writes `projects/fwtest/generated/document.h` and
+runs `make_fwtest.mjs` and builds the project with EEZ Studio (headless, from
+`C:\Work\eez\studio`, or `--studio`, or `EEZ_STUDIO`), which writes `projects/fwtest/generated/document.h` and
 `document.cpp`. These generated files are committed, so the tests build without
 Studio. The tests use the generated ids (`PAGE_ID_*`, `ACTION_ID_*`, ...).
 
@@ -119,11 +123,11 @@ not in file order: find a component by a property (see
 
 ### The external project
 
-`projects/make_fwtest_ext.py` writes `projects/fwtest_ext/fwtest_ext.eez-project`,
+`projects/make_fwtest_ext.mjs` writes `projects/fwtest_ext/fwtest_ext.eez-project`,
 a module project with `fwtest` as its master project (like a BB3+ module project):
 its own pages, styles, fonts, bitmaps and colors get negative indexes in its
-assets, the master styles it uses (with an `id`, `parts/external.py`) keep their
-ids. `build_projects.ps1` builds it after `fwtest` into
+assets, the master styles it uses (with an `id`, `parts/external.mjs`) keep their
+ids. `build_projects.mjs` builds it after `fwtest` into
 `projects/fwtest_ext/generated/ext_assets.h` and `ext_assets.cpp` (namespace
 `fwtest_ext`), which `flow/external/ext_assets_data.cpp` compiles. The tests in
 `flow/external/` load these assets like the BB3+ loads module assets

@@ -1,6 +1,6 @@
 /*
  * eez-framework tests: expressions that need more than a case of
- * expression_cases.py: the evaluation stack across evaluations, iterators,
+ * expression_cases.mjs: the evaluation stack across evaluations, iterators,
  * hooks, the fake clock, shown pages, and instructions Studio only emits for
  * other project types.
  */

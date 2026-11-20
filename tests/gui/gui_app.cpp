@@ -1,6 +1,6 @@
 /*
  * eez-framework tests: the native actions and variables of the gui part
- * (projects/parts/gui.py) and the helpers of gui_test.h.
+ * (projects/parts/gui.mjs) and the helpers of gui_test.h.
  */
 
 #include "gui_test.h"
@@ -79,7 +79,7 @@ struct KeyPosition {
     int y;
 };
 
-// centers of the keys, see projects/parts/gui.py
+// centers of the keys, see projects/parts/gui.mjs
 static const KeyPosition g_numericKeys[] = {
     { "7", 49, 119 }, { "8", 149, 119 }, { "9", 249, 119 },
     { "4", 49, 199 }, { "5", 149, 199 }, { "6", 249, 199 },

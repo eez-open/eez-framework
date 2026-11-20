@@ -44,5 +44,5 @@ The credit lines and the license texts are in `../THIRD-PARTY-LICENSES.TXT`.
 
 Unpack the new archives, copy the same files over (keep `freetype-config/`,
 compare `ftoption.h` with the new default one), update the table above, build
-and run the framework tests (`tests/run.sh`), the vector font tests are
+and run the framework tests (`node tests/run.mjs`), the vector font tests are
 `render/vector_font_test.cpp`.
