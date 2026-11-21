@@ -131,3 +131,29 @@ TEST("gui/switch rows: a switch that isn't enabled is drawn disabled and doesn't
     tap(200, ROW2_Y + 35);
     CHECK(g_switch2);
 }
+
+TEST("gui/switch rows: a pressed row is drawn in the pressed state style") {
+    showRows();
+    // the left padding of the row: the background of the group when not pressed
+    CHECK_EQ(rgb(105, ROW1_Y + 35), BLACK);
+    press(200, ROW1_Y + 35);
+    harness::frame();
+    CHECK_EQ(rgb(105, ROW1_Y + 35), BOOKMARK);
+    // the track keeps its colors
+    CHECK_EQ(rgb(TRACK_X + 55, ROW1_Y + 35), BACKDROP);
+    // the finger outside: not pressed
+    moveTo(400, 400);
+    harness::frame();
+    CHECK_EQ(rgb(105, ROW1_Y + 35), BLACK);
+    releaseTouch();
+    CHECK(!g_switch);
+}
+
+TEST("gui/switch rows: a switch that isn't enabled is not drawn pressed") {
+    g_enabled = false;
+    showRows();
+    press(200, ROW2_Y + 35);
+    harness::frame();
+    CHECK_EQ(rgb(105, ROW2_Y + 35), BLACK);
+    releaseTouch();
+}

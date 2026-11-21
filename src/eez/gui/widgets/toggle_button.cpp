@@ -58,6 +58,10 @@ bool ToggleButtonWidgetState::hasOnTouch() {
     return true;
 }
 
+WidgetTouchKind ToggleButtonWidgetState::getTouchKind() {
+    return WIDGET_TOUCH_KIND_CLICK;
+}
+
 void ToggleButtonWidgetState::onTouch(const WidgetCursor &widgetCursor, Event &touchEvent) {
 	if (touchEvent.type == EVENT_TYPE_TOUCH_UP) {
         set(widgetCursor, widgetCursor.widget->data, get(widgetCursor, widgetCursor.widget->data).getInt() ? 0 : 1);

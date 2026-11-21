@@ -185,6 +185,10 @@ static void onSet(uint16_t value) {
     executeAction(g_dropDownListWidgetCursor, widget->action, &intValue);
 }
 
+WidgetTouchKind DropDownListWidgetState::getTouchKind() {
+    return WIDGET_TOUCH_KIND_CLICK;
+}
+
 void DropDownListWidgetState::onTouch(const WidgetCursor &widgetCursor, Event &touchEvent) {
 	if (touchEvent.type == EVENT_TYPE_TOUCH_UP) {
 		g_dropDownListWidgetCursor = widgetCursor;

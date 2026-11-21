@@ -122,6 +122,10 @@ bool UpDownWidgetState::hasOnTouch() {
     return true;
 }
 
+WidgetTouchKind UpDownWidgetState::getTouchKind() {
+    return WIDGET_TOUCH_KIND_PRESS;
+}
+
 void UpDownWidgetState::onTouch(const WidgetCursor &widgetCursor, Event &touchEvent) {
     if (touchEvent.type == EVENT_TYPE_TOUCH_DOWN || touchEvent.type == EVENT_TYPE_AUTO_REPEAT) {
         if (touchEvent.x < widgetCursor.x + widgetCursor.w / 2) {

@@ -40,6 +40,8 @@ bool g_enabled = true;
 bool g_switch;
 bool g_switchReadOnly;
 bool g_switch2;
+int g_choice;
+bool g_check;
 std::function<void(DataOperationEnum operation, Value &value)> g_nameData;
 Overlay g_overlay;
 bool g_overlayEnabled;
@@ -246,6 +248,22 @@ void data_gui_switch2(DataOperationEnum operation, const WidgetCursor &, Value &
         value = g_switch2;
     } else if (operation == DATA_OPERATION_SET) {
         g_switch2 = value.getInt() != 0;
+    }
+}
+
+void data_gui_choice(DataOperationEnum operation, const WidgetCursor &, Value &value) {
+    if (operation == DATA_OPERATION_GET) {
+        value = g_choice;
+    } else if (operation == DATA_OPERATION_SET) {
+        g_choice = value.getInt();
+    }
+}
+
+void data_gui_check(DataOperationEnum operation, const WidgetCursor &, Value &value) {
+    if (operation == DATA_OPERATION_GET) {
+        value = g_check;
+    } else if (operation == DATA_OPERATION_SET) {
+        g_check = value.toBool();
     }
 }
 

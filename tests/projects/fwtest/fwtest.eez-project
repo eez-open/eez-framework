@@ -400,6 +400,20 @@
         "native": true
       },
       {
+        "objID": "d71b35e9-349c-5c9d-b976-356ea5bdd96e",
+        "name": "gui_choice",
+        "tags": "gui",
+        "type": "integer",
+        "native": true
+      },
+      {
+        "objID": "42a71813-856e-59aa-b6c0-492653ba1e40",
+        "name": "gui_check",
+        "tags": "gui",
+        "type": "boolean",
+        "native": true
+      },
+      {
         "objID": "13f1ad16-792f-52ac-83c5-9ae7051a7c11",
         "name": "layout_visible",
         "tags": "layout",
@@ -30734,6 +30748,169 @@
       "componentGroups": []
     },
     {
+      "objID": "f494c596-0788-5503-aa6f-e3a3cd4ef27f",
+      "name": "gui_scroll_widgets",
+      "tags": "gui",
+      "left": 0,
+      "top": 0,
+      "width": 800,
+      "height": 480,
+      "components": [
+        {
+          "type": "ContainerWidget",
+          "objID": "6167f991-784d-57a4-a21e-f6762e4d958d",
+          "left": 0,
+          "top": 0,
+          "width": 400,
+          "height": 300,
+          "style": {
+            "useStyle": "gui_list"
+          },
+          "layout": "static",
+          "scroll": "vertical",
+          "widgets": [
+            {
+              "type": "SwitchWidget",
+              "objID": "2207794f-8c01-540e-9265-d265ad513dbf",
+              "left": 0,
+              "top": 0,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_button"
+              },
+              "data": "gui_switch"
+            },
+            {
+              "type": "DropDownListWidget",
+              "objID": "f30c43ad-2ab3-5133-9b07-f4a85ee1b959",
+              "left": 0,
+              "top": 60,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_button"
+              },
+              "data": "gui_choice",
+              "options": "[\"zero\", \"one\", \"two\"]"
+            },
+            {
+              "type": "CheckboxWidget",
+              "objID": "22e1c2e2-74d3-5f3a-93a5-04b5b0a13d22",
+              "left": 0,
+              "top": 120,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_button"
+              },
+              "data": "gui_check",
+              "text": "\"Check\""
+            },
+            {
+              "type": "ButtonGroupWidget",
+              "objID": "4fd5bc0f-19f1-5e49-ba56-20c76d013624",
+              "left": 0,
+              "top": 180,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_button"
+              },
+              "data": "[\"x\", \"y\", \"z\"]",
+              "selectedButton": "gui_choice",
+              "selectedStyle": {
+                "useStyle": "gui_button"
+              }
+            },
+            {
+              "type": "UpDownWidget",
+              "objID": "7595ba89-66b0-5c2b-857c-85818c95daec",
+              "left": 0,
+              "top": 240,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_item"
+              },
+              "data": "gui_choice",
+              "min": "0",
+              "max": "9",
+              "downButtonText": "\"<\"",
+              "upButtonText": "\">\"",
+              "buttonsStyle": {
+                "useStyle": "gui_button"
+              }
+            },
+            {
+              "type": "TextWidget",
+              "objID": "22e1c40f-9aef-5fe0-a8fb-9ff0a1262120",
+              "left": 0,
+              "top": 300,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_item"
+              },
+              "data": "\"Row 0\""
+            },
+            {
+              "type": "TextWidget",
+              "objID": "41df7fd7-390a-5068-b5ce-015c73edaeac",
+              "left": 0,
+              "top": 360,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_item"
+              },
+              "data": "\"Row 1\""
+            },
+            {
+              "type": "TextWidget",
+              "objID": "477b520f-c7de-5707-9ca0-547a32592e77",
+              "left": 0,
+              "top": 420,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_item"
+              },
+              "data": "\"Row 2\""
+            },
+            {
+              "type": "TextWidget",
+              "objID": "e1b05bfe-db01-566e-81ab-0ae741a633a4",
+              "left": 0,
+              "top": 480,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_item"
+              },
+              "data": "\"Row 3\""
+            },
+            {
+              "type": "TextWidget",
+              "objID": "0be7032f-6fae-505d-a225-c6fb2209380d",
+              "left": 0,
+              "top": 540,
+              "width": 400,
+              "height": 60,
+              "style": {
+                "useStyle": "gui_item"
+              },
+              "data": "\"Row 4\""
+            }
+          ]
+        }
+      ],
+      "connectionLines": [],
+      "localVariables": [],
+      "userProperties": [],
+      "componentGroups": []
+    },
+    {
       "objID": "5fbe3a42-78af-5c6b-95f0-a2f985436365",
       "name": "gui_rounded_popup",
       "tags": "gui, popups",
@@ -38802,6 +38979,16 @@
           "useStyle": "gui_switch_row",
           "state": "disabled",
           "backgroundColor": "error",
+          "childStyles": []
+        },
+        {
+          "objID": "d6266c7b-a6ee-56c6-ae31-756fcf1f9802",
+          "name": "gui_switch_row_pressed",
+          "tags": "gui",
+          "alwaysBuild": true,
+          "useStyle": "gui_switch_row",
+          "state": "pressed",
+          "backgroundColor": "bookmark",
           "childStyles": []
         },
         {

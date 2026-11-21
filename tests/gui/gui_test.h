@@ -48,6 +48,8 @@ extern bool g_enabled;        // gui_enabled (enabled of page_a's "Off" button)
 extern bool g_switch;         // gui_switch (page_a's switch)
 extern bool g_switchReadOnly; // gui_switch refuses DATA_OPERATION_SET
 extern bool g_switch2;        // gui_switch2 (gui_switch_rows' second row)
+extern int g_choice;          // gui_choice (gui_scroll_widgets)
+extern bool g_check;          // gui_check (gui_scroll_widgets)
 extern std::function<void(DataOperationEnum operation, Value &value)> g_nameData; // gui_name
 extern Overlay g_overlay;     // gui_overlay
 extern bool g_overlayEnabled; // gui_overlay returns the overlay (else undefined)

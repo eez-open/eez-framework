@@ -33,11 +33,13 @@ export const STYLES = [
     style("gui_dot_selected", { useStyle: "gui_dot", state: "selected", backgroundColor: "accent" }),
     // a group of switch rows (gui/switch_rows_test.cpp): accent dividers; the
     // track 64x32 (backdrop, accent when on, error when disabled), the label
-    // white (backdrop disabled), "Off" error and "On" bookmark
+    // white (backdrop disabled), "Off" error and "On" bookmark, the row
+    // bookmark while pressed
     style("gui_group", { borderSize: "1", borderColor: "accent" }),
     style("gui_switch_row", { backgroundColor: "backdrop", color: "text", padding: "19 16 19 16" }),
     style("gui_switch_row_checked", { useStyle: "gui_switch_row", state: "checked", backgroundColor: "accent" }),
     style("gui_switch_row_disabled", { useStyle: "gui_switch_row", state: "disabled", backgroundColor: "error" }),
+    style("gui_switch_row_pressed", { useStyle: "gui_switch_row", state: "pressed", backgroundColor: "bookmark" }),
     style("gui_switch_label", { alignHorizontal: "left" }),
     style("gui_switch_label_disabled", { useStyle: "gui_switch_label", state: "disabled", color: "backdrop" }),
     style("gui_switch_state", { color: "error", alignHorizontal: "right", padding: "0 12 0 0" }),
@@ -61,6 +63,8 @@ export const GLOBALS = [
     variable("gui_overlay", "any", null, { native: true }),
     variable("gui_keypad_ok_enabled", "boolean", null, { native: true }),
     variable("gui_keypad_option1_text", "string", null, { native: true }),
+    variable("gui_choice", "integer", null, { native: true }),
+    variable("gui_check", "boolean", null, { native: true }),
 ];
 
 export const ACTIONS = [
@@ -225,6 +229,36 @@ const SCROLL = page("gui_scroll", [
     }),
 ]);
 
+// widgets with their own touch handling in a container that scrolls
+// vertically (gui/touch_widgets_test.cpp): rows of 60 px (static layout) in
+// 300 px at 0, 0, 400x300: a switch, a drop down list, a checkbox, a button
+// group (3 buttons), an up/down (left half down, right half up), text rows
+const SCROLL_WIDGETS = page("gui_scroll_widgets", [
+    widget("ContainerWidget", "gui/scroll_widgets/container", 0, 0, 400, 300, "gui_list", {
+        layout: "static", scroll: "vertical",
+        widgets: [
+            widget("SwitchWidget", "gui/scroll_widgets/switch", 0, 0, 400, 60, "gui_button", { data: "gui_switch" }),
+            widget("DropDownListWidget", "gui/scroll_widgets/dropdown", 0, 60, 400, 60, "gui_button", {
+                data: "gui_choice", options: '["zero", "one", "two"]',
+            }),
+            widget("CheckboxWidget", "gui/scroll_widgets/check", 0, 120, 400, 60, "gui_button", {
+                data: "gui_check", text: '"Check"',
+            }),
+            widget("ButtonGroupWidget", "gui/scroll_widgets/group", 0, 180, 400, 60, "gui_button", {
+                data: '["x", "y", "z"]', selectedButton: "gui_choice",
+                selectedStyle: { useStyle: "gui_button" },
+            }),
+            widget("UpDownWidget", "gui/scroll_widgets/updown", 0, 240, 400, 60, "gui_item", {
+                data: "gui_choice", min: "0", max: "9",
+                downButtonText: '"<"', upButtonText: '">"', buttonsStyle: { useStyle: "gui_button" },
+            }),
+            ...range(5).map(i => widget("TextWidget", `gui/scroll_widgets/row_${i}`, 0, 300 + 60 * i, 400, 60, "gui_item", {
+                data: `"Row ${i}"`,
+            })),
+        ],
+    }),
+]);
+
 // a popup with rounded corners where gui_popup2 is
 const ROUNDED = page("gui_rounded_popup", [
     text("gui/rounded/title", 50, 20, 100, 40, "Round", "gui_rounded"),
@@ -285,6 +319,6 @@ const RESIZE = page("gui_resize", [
 ]);
 
 export const PAGES = [PAGE_A, PAGE_B, POPUP, POPUP2, DIALOG, TRANSPARENT, YES_NO, numericKeypad(), textKeypad(), LISTS, OVERLAY,
-    SCROLL, ROUNDED, LIGHT, SWITCH_ROWS, RESIZE];
+    SCROLL, SCROLL_WIDGETS, ROUNDED, LIGHT, SWITCH_ROWS, RESIZE];
 
 export const USER_WIDGETS = [RESIZE_VIEW];

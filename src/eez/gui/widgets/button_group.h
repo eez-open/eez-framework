@@ -26,6 +26,7 @@ struct ButtonGroupWidgetState : public WidgetState {
     void render() override;
 
 	bool hasOnTouch() override;
+	WidgetTouchKind getTouchKind() override;
 	void onTouch(const WidgetCursor &widgetCursor, Event &touchEvent) override;
 };
 
