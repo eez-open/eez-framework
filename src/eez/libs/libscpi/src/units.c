@@ -452,6 +452,13 @@ scpi_bool_t SCPI_ParamNumber(scpi_t * context, const scpi_choice_def_t * special
             result = transformNumber(context, token.ptr, token.len, value);
             break;
         case SCPI_TOKEN_PROGRAM_MNEMONIC:
+            if (!special) {
+                /* no special values: a mnemonic is not a number */
+                SCPI_ErrorPush(context, SCPI_ERROR_DATA_TYPE_ERROR);
+                result = FALSE;
+                break;
+            }
+
             scpiLex_WhiteSpace(&state, &token);
             scpiLex_CharacterProgramData(&state, &token);
 

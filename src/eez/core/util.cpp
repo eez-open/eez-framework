@@ -542,6 +542,10 @@ bool parseTimeZone(const char *timeZoneStr, size_t timeZoneLength, int16_t &time
         return false;
     }
 
+    if (fractionPart > 59) {
+        return false;
+    }
+
     int value = sign * (integerPart * 100 + fractionPart);
 
     if (value < -1200 || value > 1400) {
