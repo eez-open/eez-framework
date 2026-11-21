@@ -61,8 +61,12 @@ struct ScrollableWidgetState : public WidgetState {
     int renderedPixelOffset = 0;
     bool touchScrollable;
     // widget data doesn't support DATA_OPERATION_YT_DATA_GET_SIZE, ..., so
-    // startPosition is not taken from the data but kept here (set by touch scroll)
+    // startPosition is not taken from the data but kept here (set by touch
+    // scroll). Touch scroll also keeps it in the page on the stack (see
+    // PageOnStack::scrollPositions), from where a new state takes it.
     bool localPosition;
+    // the page stack index of the page with the widget
+    int pageStackIndex = -1;
     bool isVertical;
     int pitch;          // distance between two lines in px
     int lineExtent;     // line size along the scroll direction in px (without gap)

@@ -18,13 +18,41 @@
 namespace eez {
 namespace gui {
 
+// The number of scroll positions kept for each page on the stack (see
+// PageOnStack::scrollPositions), 0: none are kept.
+#ifndef CONF_GUI_PAGE_SCROLL_POSITIONS
+#define CONF_GUI_PAGE_SCROLL_POSITIONS 16
+#endif
+
 class Page;
+
+// The scroll position of a List, a Grid or a scrolling Container that keeps
+// its position in its widget state (ScrollableWidgetState::localPosition):
+// the widget is the one WidgetCursor::operator== compares (the widget, the
+// cursor and the iterators).
+struct PageScrollPosition {
+    const Widget *widget;
+    Assets *assets;
+    Cursor cursor;
+    int32_t iterators[MAX_ITERATORS];
+    int position;
+};
 
 struct PageOnStack {
     int pageId = EEZ_PAGE_ID_NONE;
     Page *page = nullptr;
     int displayBufferIndex = -1;
     float timelinePosition;
+
+#if CONF_GUI_PAGE_SCROLL_POSITIONS > 0
+    // The widget states are freed when the page is covered by another page
+    // and by refreshScreen (also on every page change), so the scroll
+    // positions set by touch scroll are kept here while the page is on the
+    // stack. Only the positions other than 0, the least recently set position
+    // is dropped when there is no room for another one.
+    PageScrollPosition scrollPositions[CONF_GUI_PAGE_SCROLL_POSITIONS];
+    int numScrollPositions = 0;
+#endif
 };
 
 class ToastMessagePage;
@@ -81,6 +109,15 @@ public:
     int getNumPagesOnStack() {
         return m_pageNavigationStackPointer + 1;
     }
+
+    // The scroll position kept for the widget (see PageOnStack::scrollPositions)
+    // of the page at the stack index: false if none is kept (the position is 0).
+    bool getScrollPosition(int pageStackIndex, const WidgetCursor &widgetCursor, int &position);
+    void setScrollPosition(int pageStackIndex, const WidgetCursor &widgetCursor, int position);
+
+    // forgets the scroll positions of the widgets of the assets (before the
+    // assets are freed)
+    void forgetScrollPositions(const Assets *assets);
 
     virtual bool isFocusWidget(const WidgetCursor &widgetCursor);
 

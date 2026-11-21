@@ -394,3 +394,102 @@ TEST("gui/scrolling: a tap near the edge of a row is a tap of the row, not of th
     settle();
     CHECK_EQ(rowAt(200, 141), 5);
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// the scroll position of a widget that keeps it in its state is kept in the
+// page on the stack (PageOnStack::scrollPositions), so it is not lost when the
+// widget states are freed
+
+// scrolls the list to item 3 and the grid to row 2 (item 8 at the top left)
+static void scrollLists() {
+    showLists();
+    drag(200, 250, 70);
+    settle();
+    drag(465, 250, 130);
+    settle();
+    REQUIRE(listTop() == 3);
+    REQUIRE(gridTopLeft() == 8);
+}
+
+static void pushAndPop() {
+    app()->pushPage(PAGE_ID_GUI_PAGE_A);
+    harness::frame(5);
+    app()->popPage();
+    harness::frame(5);
+}
+
+TEST("gui/scrolling: the list and the grid keep their position while another page is on top of them") {
+    scrollLists();
+    pushAndPop();
+    CHECK_EQ(listTop(), 3);
+    CHECK_EQ(gridTopLeft(), 8);
+}
+
+TEST("gui/scrolling: the scrolling container keeps its position while another page is on top of it") {
+    showScroll();
+    drag(200, 250, 130);
+    settle();
+    REQUIRE(rowAt(200, 19) == 1);
+    pushAndPop();
+    CHECK_EQ(rowAt(200, 19), 1);
+    CHECK_EQ(rowAt(200, 20), 2);
+}
+
+TEST("gui/scrolling: the list keeps its position under a toast and after it") {
+    scrollLists();
+    app()->infoMessage("info");
+    harness::frame(5);
+    REQUIRE(activePageId() == (int)INTERNAL_PAGE_ID_TOAST_MESSAGE);
+    CHECK_EQ(listTop(), 3);
+    harness::frame(70);
+    REQUIRE(activePageId() == (int)PAGE_ID_GUI_LISTS);
+    CHECK_EQ(listTop(), 3);
+}
+
+TEST("gui/scrolling: the list keeps its position after refreshScreen") {
+    scrollLists();
+    refreshScreen();
+    harness::frame(2);
+    CHECK_EQ(listTop(), 3);
+    CHECK_EQ(gridTopLeft(), 8);
+}
+
+TEST("gui/scrolling: the same page pushed again starts at the top, the page below keeps its position") {
+    scrollLists();
+    app()->pushPage(PAGE_ID_GUI_LISTS);
+    harness::frame(5);
+    CHECK_EQ(listTop(), 0);
+    drag(200, 250, 130);
+    settle();
+    REQUIRE(listTop() == 2);
+    app()->popPage();
+    harness::frame(5);
+    CHECK_EQ(listTop(), 3);
+}
+
+TEST("gui/scrolling: the list scrolled back to the top stays at the top after another page") {
+    scrollLists();
+    drag(200, 10, 290);
+    settle();
+    REQUIRE(listTop() == 0);
+    pushAndPop();
+    CHECK_EQ(listTop(), 0);
+    CHECK_EQ(gridTopLeft(), 8);
+}
+
+TEST("gui/scrolling: the page shown again with showPage starts at the top") {
+    scrollLists();
+    app()->showPage(PAGE_ID_GUI_PAGE_A);
+    harness::frame(5);
+    showLists();
+    CHECK_EQ(listTop(), 0);
+    CHECK_EQ(gridTopLeft(), 0);
+}
+
+TEST("gui/scrolling: the positions of the widgets of freed assets are forgotten") {
+    scrollLists();
+    app()->forgetScrollPositions(g_mainAssets);
+    pushAndPop();
+    CHECK_EQ(listTop(), 0);
+    CHECK_EQ(gridTopLeft(), 0);
+}

@@ -82,11 +82,24 @@ bool ScrollableWidgetState::updateScrollState(const WidgetCursor &widgetCursor, 
         size = (int)sizeValue.getUInt32();
     }
 
+    pageStackIndex = widgetCursor.appContext->getActivePageStackPointer();
+
     int newStartPosition;
     if (localPosition) {
         int lines = (count + itemsPerLine - 1) / itemsPerLine;
         maxPosition = lines > visibleLines ? lines - visibleLines : 0;
-        newStartPosition = getTouchScrollLocalPosition(widgetCursor, startPosition);
+        newStartPosition = startPosition;
+        if (!hasPreviousState) {
+            // A new state (e.g. after the page was covered by another page or
+            // after refreshScreen) or something is changed (e.g. the count):
+            // the position kept in the page, not clamped there, so it is
+            // restored also when the content was shorter for a while.
+            int position;
+            if (widgetCursor.appContext->getScrollPosition(pageStackIndex, widgetCursor, position)) {
+                newStartPosition = position;
+            }
+        }
+        newStartPosition = getTouchScrollLocalPosition(widgetCursor, newStartPosition);
         if (g_editorScrollPositionHook) {
             int line = g_editorScrollPositionHook(widgetCursor);
             if (line >= 0) {
@@ -417,6 +430,7 @@ struct TouchScrollList {
     bool isPager;       // item is as big as the list, flick moves by one item only
     int extent;         // list height (or width)
     bool localPosition; // position is kept in the widget state, not in the list data
+    int pageStackIndex; // the page with the list (where a local position is kept)
     int itemsPerLine;   // 1 for the List, items in one row (or column) for the Grid
     int maxPosition;    // in lines
     int dataPosition;   // in lines
@@ -437,6 +451,7 @@ struct TouchScroll {
     int pagerStartPosition; // item at touch start (in pager mode)
     int extent;         // list height (or width)
     bool localPosition; // position is kept in the widget state, not in the list data
+    int pageStackIndex; // the page with the list (where a local position is kept)
     int itemsPerLine;   // 1 for the List, items in one row (or column) for the Grid
     int maxPosition;    // in lines
     float maxScroll;    // in px
@@ -527,6 +542,7 @@ static void setTouchScroll(float scroll) {
         if (ts.localPosition) {
             g_localPositionList = ts.list;
             g_localPosition = position * ts.itemsPerLine;
+            ts.list.appContext->setScrollPosition(ts.pageStackIndex, ts.list, g_localPosition);
         } else {
             ytDataSetPosition(ts.list, ts.list.widget->data, position * ts.itemsPerLine);
         }
@@ -751,6 +767,7 @@ static bool initTouchScrollList(const WidgetCursor &listWidgetCursor, TouchScrol
     }
 
     c.localPosition = state->localPosition;
+    c.pageStackIndex = state->pageStackIndex;
     c.itemsPerLine = state->itemsPerLine;
     c.maxPosition = state->maxPosition;
     c.dataPosition = state->startPosition / state->itemsPerLine;
@@ -767,6 +784,7 @@ static void selectTouchScrollList(const TouchScrollList &c) {
     ts.isPager = c.isPager;
     ts.extent = c.extent;
     ts.localPosition = c.localPosition;
+    ts.pageStackIndex = c.pageStackIndex;
     ts.itemsPerLine = c.itemsPerLine;
     ts.maxPosition = c.maxPosition;
     ts.maxScroll = 1.0f * ts.maxPosition * ts.pitch;
