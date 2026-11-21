@@ -25,10 +25,12 @@ extern int g_debuggerMode;
 
 bool canExecuteStep(FlowState *&flowState, unsigned &componentIndex);
 
+void setDebuggedAssets(Assets *assets);
+
 void onStarted(Assets *assets);
 void onStopped();
 
-void onAddToQueue(FlowState *flowState, int sourceComponentIndex, int sourceOutputIndex, unsigned targetComponentIndex, int targetInputIndex);
+bool onAddToQueue(FlowState *flowState, int sourceComponentIndex, int sourceOutputIndex, unsigned targetComponentIndex, int targetInputIndex);
 void onRemoveFromQueue();
 
 void onValueChanged(const Value *pValue);

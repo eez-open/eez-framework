@@ -25,6 +25,9 @@ static EXTRAM_DATA struct {
 	FlowState *flowState;
 	unsigned componentIndex;
     bool continuousTask;
+    // the debugger was told about the task (onAddToQueue), it is told when the
+    // task is removed (the flow state can be gone by then)
+    bool inDebugger;
 } g_queue[QUEUE_SIZE];
 static unsigned g_queueHead;
 static unsigned g_queueTail;
@@ -65,9 +68,11 @@ bool addToQueue(FlowState *flowState, unsigned componentIndex, int sourceCompone
 		return false;
 	}
 
-	g_queue[g_queueTail].flowState = flowState;
-	g_queue[g_queueTail].componentIndex = componentIndex;
-    g_queue[g_queueTail].continuousTask = continuousTask;
+    auto &task = g_queue[g_queueTail];
+	task.flowState = flowState;
+	task.componentIndex = componentIndex;
+    task.continuousTask = continuousTask;
+    task.inDebugger = false;
 
 	g_queueTail = (g_queueTail + 1) % QUEUE_SIZE;
 
@@ -80,7 +85,7 @@ bool addToQueue(FlowState *flowState, unsigned componentIndex, int sourceCompone
 
     if (!continuousTask) {
         ++g_numNonContinuousTaskInQueue;
-	    onAddToQueue(flowState, sourceComponentIndex, sourceOutputIndex, componentIndex, targetInputIndex);
+	    task.inDebugger = onAddToQueue(flowState, sourceComponentIndex, sourceOutputIndex, componentIndex, targetInputIndex);
     }
 
     incRefCounterForFlowState(flowState);
@@ -104,6 +109,8 @@ void removeNextTaskFromQueue() {
 	auto flowState = g_queue[g_queueHead].flowState;
     decRefCounterForFlowState(flowState);
 
+    auto inDebugger = g_queue[g_queueHead].inDebugger;
+
     auto continuousTask = g_queue[g_queueHead].continuousTask;
 
 	g_queueHead = (g_queueHead + 1) % QUEUE_SIZE;
@@ -111,7 +118,9 @@ void removeNextTaskFromQueue() {
 
     if (!continuousTask) {
         --g_numNonContinuousTaskInQueue;
-	    onRemoveFromQueue();
+        if (inDebugger) {
+	        onRemoveFromQueue();
+        }
     }
 }
 
