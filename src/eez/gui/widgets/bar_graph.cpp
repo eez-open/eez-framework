@@ -620,10 +620,10 @@ void BarGraphWidgetState::renderTrack(const BarGraphWidget *widget, const Style 
 
     BlinkOpacity blinkOpacityScope(blinkOpacity);
 
-    // pressed: the color and the background swapped
+    // the colors stay when pressed: a track is a gauge, inside a pressed
+    // container (e.g. a tap to turn the output on/off) it must not invert
     uint16_t fg = color;
     uint16_t bg = backgroundColor;
-    swapColorsIfActive(flags.active, fg, bg);
 
     Track t;
     t.orientation = widget->orientation & BAR_GRAPH_ORIENTATION_MASK;
