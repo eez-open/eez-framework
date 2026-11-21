@@ -23,7 +23,22 @@ struct BarGraphWidget : public Widget {
     int16_t max;
     int16_t refreshRate;
     uint8_t orientation; // BAR_GRAPH_ORIENTATION_...
+    uint8_t flags; // BAR_GRAPH_FLAG_...
+    // ticks and their numbers beside the bar (left of a vertical bar, below a
+    // horizontal one) in this style, 0: no scale
+    int16_t scaleStyle;
+    // the width of a vertical bar, the height of a horizontal one, 0: all the
+    // room left by the scale and the marker
+    int16_t thickness;
+    // text beside the marker of line 1 (flow expression, 0: none)
+    int16_t line1Label;
 };
+
+// The bar is drawn as a track with rounded corners (the radius of the widget
+// style, inside its padding), when the widget has a scale, a thickness or one
+// of these flags; else it fills the whole widget as before.
+#define BAR_GRAPH_FLAG_LINE1_MARKER (1 << 0) // a triangle beside the bar points at line 1
+#define BAR_GRAPH_FLAG_ZONE (1 << 1) // the part between the bar and line 1 in the bar color, dimmed
 
 struct BarGraphWidgetState : public WidgetState {
 	WidgetStateFlags flags;
@@ -40,11 +55,15 @@ struct BarGraphWidgetState : public WidgetState {
     Value min;
     Value max;
     Value refreshRate;
+    Value line1Label;
 
     uint32_t textDataRefreshLastTime;
 
     bool updateState() override;
     void render() override;
+
+private:
+    void renderTrack(const BarGraphWidget *widget, const Style *style, float min, float max);
 };
 
 } // namespace gui

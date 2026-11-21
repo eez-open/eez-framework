@@ -2539,6 +2539,22 @@ int measureStr(const char *text, int textLength, gui::font::Font &font, int max_
     return width;
 }
 
+int measureStrInkAbove(const char *text, int textLength, gui::font::Font &font) {
+    int inkAbove = 0;
+
+    layoutText(text, textLength, font, 0, true,
+        [](int, int) { return false; },
+        [&](const TextGlyph &glyph) {
+            if (glyph.pixels && glyph.top > inkAbove) {
+                inkAbove = glyph.top;
+            }
+            return false;
+        }
+    );
+
+    return inkAbove;
+}
+
 void drawStr(const char *text, int textLength, int x, int y, int clip_x1, int clip_y1, int clip_x2, int clip_y2, gui::font::Font &font, int cursorPosition, int startFontIndex) {
     drawStrInit();
 

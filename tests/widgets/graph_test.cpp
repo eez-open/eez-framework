@@ -129,6 +129,135 @@ TEST("widgets/bargraph: NaN value is not redrawn in every frame") {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// BarGraph as a track (thickness, scale, marker, zone set in the assets)
+
+namespace {
+
+BarGraphWidget *barWidget(int index) {
+    return (BarGraphWidget *)pageWidget(PAGE_ID_W_BAR, index);
+}
+
+} // namespace
+
+TEST("widgets/bargraph: a thickness makes a centered track, the rest is not drawn") {
+    barWidget(0)->thickness = 10;
+    set(V_A, intValue(50));
+    noLines();
+    show(PAGE_ID_W_BAR);
+    uint32_t page = rgb(5, 5);
+    // 30 px high widget: the track in the rows 10 .. 19
+    CHECK_EQ(countOther(BAR_LR[0], BAR_LR[1] + 10, 100, 10, GREEN), 0);
+    CHECK_EQ(countOther(BAR_LR[0] + 100, BAR_LR[1] + 10, 100, 10, BLUE), 0);
+    CHECK_EQ(countOther(BAR_LR[0], BAR_LR[1], BAR_LR[2], 10, page), 0);
+    CHECK_EQ(countOther(BAR_LR[0], BAR_LR[1] + 20, BAR_LR[2], 10, page), 0);
+}
+
+TEST("widgets/bargraph: the zone between the bar and line 1 is the dimmed bar color") {
+    barWidget(0)->flags = BAR_GRAPH_FLAG_ZONE;
+    set(V_A, intValue(25));
+    set(V_B, intValue(75));
+    set(V_C, intValue(-1));
+    show(PAGE_ID_W_BAR);
+    int y = BAR_LR[1] + 15;
+    CHECK_EQ(rgb(BAR_LR[0] + 25, y), GREEN);
+    uint32_t zone = rgb(BAR_LR[0] + 100, y);
+    CHECK(zone != GREEN && zone != BLUE);
+    CHECK((zone & 0x00FF00) != 0); // some of the green
+    CHECK_EQ(rgb(BAR_LR[0] + 175, y), BLUE);
+    // no zone when the bar is past line 1
+    set(V_A, intValue(90));
+    harness::frame();
+    CHECK_EQ(countOther(BAR_LR[0] + 151, BAR_LR[1], 29, BAR_LR[3], GREEN), 0);
+}
+
+TEST("widgets/bargraph: the marker of line 1 is a triangle above a horizontal track") {
+    barWidget(0)->flags = BAR_GRAPH_FLAG_LINE1_MARKER;
+    barWidget(0)->thickness = 10;
+    set(V_A, intValue(10));
+    set(V_B, intValue(50));
+    set(V_C, intValue(-1));
+    show(PAGE_ID_W_BAR);
+    // the track (no scale) is in the rows 15 .. 24, the marker (4 px gap + 7 + 1 px)
+    // above it, 2 px below it for line 1 (two pixels wide at 100, 2 px longer
+    // on each side)
+    int trackTop = BAR_LR[1] + (BAR_LR[3] - 24) / 2 + 12;
+    CHECK_EQ(rgb(BAR_LR[0] + 99, trackTop + 5), RED);
+    CHECK_EQ(rgb(BAR_LR[0] + 100, trackTop + 5), RED);
+    CHECK_EQ(rgb(BAR_LR[0] + 100, trackTop - 7), RED);
+    CHECK_EQ(rgb(BAR_LR[0] + 100, trackTop - 1), RED); // line 1 past the track
+    CHECK_EQ(rgb(BAR_LR[0] + 100, trackTop + 11), RED);
+    CHECK(rgb(BAR_LR[0] + 100, trackTop - 3) != RED); // the gap
+    CHECK_EQ(count(BAR_LR[0], BAR_LR[1], BAR_LR[2], trackTop - BAR_LR[1], RED) > 10, true);
+    // nothing of the marker far from it
+    CHECK_EQ(count(BAR_LR[0] + 120, BAR_LR[1], 80, trackTop - BAR_LR[1], RED), 0);
+}
+
+TEST("widgets/bargraph: the marker of a vertical track is right of it") {
+    barWidget(1)->flags = BAR_GRAPH_FLAG_LINE1_MARKER;
+    barWidget(1)->line1Data = barWidget(0)->line1Data; // w_b
+    set(V_A, intValue(10));
+    set(V_B, intValue(50));
+    set(V_C, intValue(-1));
+    show(PAGE_ID_W_BAR);
+    // 40 px wide: 2 px for line 1 left, the track 26 px, the marker (4 px gap
+    // + 7 + 1 px) right of it
+    CHECK_EQ(rgb(BAR_BT[0] + 10, BAR_BT[1] + 100), RED);
+    CHECK_EQ(rgb(BAR_BT[0] + 36, BAR_BT[1] + 100), RED);
+    CHECK_EQ(rgb(BAR_BT[0], BAR_BT[1] + 100), RED); // line 1 past the track
+    CHECK_EQ(rgb(BAR_BT[0] + 29, BAR_BT[1] + 100), RED);
+    CHECK(rgb(BAR_BT[0] + 31, BAR_BT[1] + 100) != RED); // the gap
+    CHECK_EQ(count(BAR_BT[0] + 30, BAR_BT[1], 10, 90, RED), 0);
+}
+
+TEST("widgets/bargraph: a scale has ticks and numbers below a horizontal track") {
+    barWidget(0)->scaleStyle = STYLE_ID_W_BAR_TEXT;
+    barWidget(0)->thickness = 6;
+    set(V_A, intValue(50));
+    noLines();
+    show(PAGE_ID_W_BAR);
+    // ticks at 0, 50 and 100 (step 50 for 0 .. 100 in 200 px)
+    int trackBottom = -1;
+    for (int y = BAR_LR[1]; y < BAR_LR[1] + BAR_LR[3]; y++) {
+        if (rgb(BAR_LR[0] + 150, y) == BLUE) {
+            trackBottom = y;
+        }
+    }
+    CHECK(trackBottom > 0);
+    CHECK_EQ(rgb(BAR_LR[0], trackBottom + 5), WHITE);
+    CHECK_EQ(rgb(BAR_LR[0] + 100, trackBottom + 5), WHITE);
+    CHECK_EQ(rgb(BAR_LR[0] + 199, trackBottom + 5), WHITE);
+    CHECK_EQ(rgb(BAR_LR[0] + 150, trackBottom + 5) == WHITE, false);
+    // numbers below the ticks
+    CHECK(count(BAR_LR[0], trackBottom + 8, BAR_LR[2], BAR_LR[1] + BAR_LR[3] + 20 - trackBottom - 8, TEXT) +
+          count(BAR_LR[0], trackBottom + 8, BAR_LR[2], BAR_LR[1] + BAR_LR[3] + 20 - trackBottom - 8, WHITE) > 0);
+}
+
+TEST("widgets/bargraph: a value far above max fills the whole track") {
+    barWidget(0)->flags = BAR_GRAPH_FLAG_ZONE;
+    set(V_A, Value(1e10f, VALUE_TYPE_FLOAT));
+    noLines();
+    show(PAGE_ID_W_BAR);
+    CHECK_EQ(countOther(RECT(BAR_LR), GREEN), 0);
+    set(V_A, Value(NAN, VALUE_TYPE_FLOAT));
+    harness::frame();
+    CHECK_EQ(countOther(RECT(BAR_LR), BLUE), 0);
+}
+
+TEST("widgets/bargraph: a track is redrawn when the value changes, as a full redraw") {
+    barWidget(0)->flags = BAR_GRAPH_FLAG_ZONE | BAR_GRAPH_FLAG_LINE1_MARKER;
+    barWidget(0)->scaleStyle = STYLE_ID_W_BAR_TEXT;
+    set(V_A, intValue(50));
+    set(V_B, intValue(75));
+    set(V_C, intValue(90));
+    show(PAGE_ID_W_BAR);
+    set(V_A, intValue(20));
+    harness::frame();
+    CHECK(drawn());
+    CHECK_EQ(diffWithFullRedraw(), 0);
+    CHECK_EQ(framesWithDrawing(3), 0);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // YTGraph (native YT data provider w_yt)
 
 namespace {

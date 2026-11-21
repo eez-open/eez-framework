@@ -278,6 +278,9 @@ int getCharIndexAtPosition(int xPos, const char *text, int textLength, int x, in
 int getCursorXPosition(int cursorPosition, const char *text, int textLength, int x, int y, int clip_x1, int clip_y1, int clip_x2,int clip_y2, gui::font::Font &font);
 int8_t measureGlyph(int32_t encoding, gui::font::Font &font);
 int measureStr(const char *text, int textLength, gui::font::Font &font, int max_width = 0, int startFontIndex = 0);
+// the height of the glyphs of the text above the baseline (of the highest one),
+// 0 if no glyph has pixels
+int measureStrInkAbove(const char *text, int textLength, gui::font::Font &font);
 int getFontIndexAtEnd(const char *text, int textLength, int fontIndex);
 
 // The gap between the groups of digits of a number ("0.123 45"): one character
