@@ -229,6 +229,13 @@ bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *ins
 
 	evalExpression(flowState, instructions, numInstructionBytes, savedSp);
 
+    // the value is taken while g_stack.flowState is still the flow of the
+    // expression, a native variable reads it (Value::getValue)
+    bool hasResult = g_stack.sp == savedSp + 1;
+    if (hasResult) {
+        result = g_stack.pop().getValue();
+    }
+
     // why the evaluation failed, nullptr if not known
     const char *evalErrorMessage = g_stack.errorMessage;
 
@@ -237,11 +244,8 @@ bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *ins
 	g_stack.iterators = savedIterators;
     g_stack.errorMessage = savedErrorMessage;
 
-    if (g_stack.sp == savedSp + 1) {
-        result = g_stack.pop().getValue();
-        if (!result.isError()) {
-            return true;
-        }
+    if (hasResult && !result.isError()) {
+        return true;
     }
 
     restoreStack(savedSp);

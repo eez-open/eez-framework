@@ -78,6 +78,10 @@ struct EvalStack {
     }
 };
 
+// flowState is the flow of the expression being evaluated, nullptr outside
+// an evaluation
+extern EvalStack g_stack;
+
 #if EEZ_OPTION_GUI
 bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *instructions, Value &result, const FlowError &errorMessage, int *numInstructionBytes = nullptr, const int32_t *iterators = nullptr, eez::gui::DataOperationEnum operation = eez::gui::DATA_OPERATION_GET);
 #else

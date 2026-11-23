@@ -1012,9 +1012,17 @@ Value Value::getValue() const {
 #if EEZ_OPTION_GUI
         using namespace gui;
         Assets *temp = g_widgetCursor.assets;
+        flow::FlowState *tempFlowState = g_widgetCursor.flowState;
         g_widgetCursor.assets = g_mainAssets;
+        // in an expression, the flow of the expression: g_widgetCursor is
+        // the last drawn widget while an action runs, the variable can depend
+        // on the flow (e.g. on the module of its assets)
+        if (flow::g_stack.flowState) {
+            g_widgetCursor.flowState = flow::g_stack.flowState;
+        }
         auto result = get(g_widgetCursor, int32Value);
         g_widgetCursor.assets = temp;
+        g_widgetCursor.flowState = tempFlowState;
         return result;
 #else
         return getVar(int32Value);
