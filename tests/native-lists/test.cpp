@@ -8,6 +8,7 @@
 #include <eez/flow/hooks.h>
 #include <eez/libs/lz4/lz4.h>
 #include <cassert>
+#include <cstdint>
 #include <cstring>
 #include <cstdio>
 #include <vector>
@@ -190,7 +191,9 @@ int main() {
     alignas(8) uint8_t expanded[512]{};
     auto external = new (expanded) Assets;
     assert(decompressAssetsData(compressed, sizeof(Header) + compressedSize, external, sizeof(expanded), nullptr));
-    assert(getAssetsDataSize(external) == offsetof(Assets, settings) + sizeof(plain));
+    const auto payloadOffset = reinterpret_cast<std::uintptr_t>(&external->settings) -
+                               reinterpret_cast<std::uintptr_t>(expanded);
+    assert(getAssetsDataSize(external) == payloadOffset + sizeof(plain));
     assert(getAssetsRemainingSize(external, expanded + getAssetsDataSize(external)) == 0);
     ++checks;
     std::printf("PASS: %u native reference/bounds checks (real framework)\n", checks);
