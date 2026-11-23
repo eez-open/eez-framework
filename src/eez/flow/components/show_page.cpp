@@ -14,18 +14,21 @@
 #include <eez/flow/components.h>
 #include <eez/flow/debugger.h>
 #include <eez/flow/hooks.h>
+#include <eez/flow/components/show_page.h>
 
 namespace eez {
 namespace flow {
 
-struct ShowPageActionComponent : public Component {
-	int16_t page;
-};
-
 void executeShowPageComponent(FlowState *flowState, unsigned componentIndex) {
 	auto component = (ShowPageActionComponent *)flowState->flow->components[componentIndex];
 
-	replacePageHook(component->page, 0, 0, 0);
+	if (component->mode == SHOW_PAGE_MODE_PUSH) {
+		pushPageHook(component->page);
+	} else if (component->mode == SHOW_PAGE_MODE_SET) {
+		setPageHook(component->page);
+	} else {
+		replacePageHook(component->page, 0, 0, 0);
+	}
 
 	propagateValueThroughSeqout(flowState, componentIndex);
 }

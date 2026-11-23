@@ -915,6 +915,20 @@ f.log("log", '"showpage done"');
 f.chain("start", "show", "log");
 addPage(f);
 
+f = new Flow("showpage_push");
+f.start();
+f.add("ShowPageActionComponent", "show", [], [], { page: "flow_target", mode: "push" });
+f.log("log", '"showpage push done"');
+f.chain("start", "show", "log");
+addPage(f);
+
+f = new Flow("showpage_set");
+f.start();
+f.add("ShowPageActionComponent", "show", [], [], { page: "flow_target", mode: "set" });
+f.log("log", '"showpage set done"');
+f.chain("start", "show", "log");
+addPage(f);
+
 f = new Flow("target");
 f.add("OnEventActionComponent", "open", [], [], { event: "page_open" });
 f.log("log", '"target open"');
