@@ -26,6 +26,7 @@ struct SelectWidget : public Widget {
 };
 
 struct SelectWidgetState : public WidgetState {
+	WidgetStateFlags flags;
     int widgetIndex;
 	bool repainted = false;
 

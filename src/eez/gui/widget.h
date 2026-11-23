@@ -208,6 +208,20 @@ struct WidgetStateFlags {
     unsigned enabled : 1;
 };
 
+// How a widget with its own touch handling (hasOnTouch) uses the touch.
+enum WidgetTouchKind {
+    // follows the finger (slider, scroll bar, roller, ...): the widget keeps
+    // the whole touch, a list doesn't take it over
+    WIDGET_TOUCH_KIND_DRAG,
+    // acts at touch up, as a button: only if the finger is still on the widget
+    // (press cancel), and a list can take over the touch until then
+    WIDGET_TOUCH_KIND_CLICK,
+    // acts at touch down and repeats while pressed (up/down): a list can take
+    // over the touch until the widget gets touch down, no repeat while the
+    // finger is outside of the widget
+    WIDGET_TOUCH_KIND_PRESS
+};
+
 struct WidgetState {
 	uint16_t type;
     // state is moved to the new frame states (used for previous frame states only)
@@ -232,6 +246,7 @@ struct WidgetState {
 
 	virtual bool hasOnTouch();
 	virtual void onTouch(const WidgetCursor &widgetCursor, Event &touchEvent);
+	virtual WidgetTouchKind getTouchKind();
 
 	virtual bool hasOnKeyboard();
 	virtual bool onKeyboard(const WidgetCursor &widgetCursor, uint8_t key, uint8_t mod);

@@ -60,6 +60,10 @@ bool CheckboxWidgetState::hasOnTouch() {
     return widget->data || widget->action != EEZ_ACTION_ID_NONE;
 }
 
+WidgetTouchKind CheckboxWidgetState::getTouchKind() {
+    return WIDGET_TOUCH_KIND_CLICK;
+}
+
 void CheckboxWidgetState::onTouch(const WidgetCursor &widgetCursor, Event &touchEvent) {
     if (touchEvent.type == EVENT_TYPE_TOUCH_UP) {
         auto widget = widgetCursor.widget;

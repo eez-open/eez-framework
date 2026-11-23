@@ -25,6 +25,10 @@
 #include <eez/flow/debugger.h>
 #include <eez/flow/hooks.h>
 
+#if EEZ_OPTION_GUI
+#include <eez/gui/hooks.h>
+#endif
+
 namespace eez {
 namespace flow {
 
@@ -96,6 +100,19 @@ static unsigned g_inputFromDebuggerPosition;
 
 int g_debuggerMode = DEBUGGER_MODE_RUN;
 
+// The assets of the flows the debugger sees (setDebuggedAssets). Without the
+// filter the debugger sees all flows.
+static bool g_debuggedAssetsFilter;
+static Assets *g_debuggedAssets;
+
+static bool isDebugged(Assets *assets) {
+    return !g_debuggedAssetsFilter || assets == g_debuggedAssets;
+}
+
+static bool isDebugged(FlowState *flowState) {
+    return isDebugged(flowState->assets);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void setDebuggerMessageSubsciptionFilter(uint32_t filter) {
@@ -128,6 +145,18 @@ static void setDebuggerState(DebuggerState newState) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+// The debugger sees only the flows of these assets, e.g. the app that runs in a
+// firmware whose own GUI and modules run flows too. nullptr: no flow. The
+// debugger is told the debugged flows stopped when the assets go.
+void setDebuggedAssets(Assets *assets) {
+    if (g_debuggedAssetsFilter && g_debuggedAssets && assets != g_debuggedAssets) {
+        setDebuggerState(DEBUGGER_STATE_STOPPED);
+    }
+
+    g_debuggedAssetsFilter = true;
+    g_debuggedAssets = assets;
+}
 
 void onDebuggerClientConnected() {
     g_debuggerIsConnected = true;
@@ -164,7 +193,11 @@ void processDebuggerInput(char *buffer, uint32_t length) {
 				auto flowIndex = (uint32_t)strtol(g_inputFromDebugger + 2, &p, 10);
 				auto componentIndex = (uint32_t)strtol(p + 1, nullptr, 10);
 
-				auto assets = g_firstFlowState->assets;
+				auto assets = g_debuggedAssetsFilter ? g_debuggedAssets : (g_firstFlowState ? g_firstFlowState->assets : nullptr);
+				if (!assets) {
+					g_inputFromDebuggerPosition = 0;
+					continue;
+				}
 				auto flowDefinition = static_cast<FlowDefinition *>(assets->flowDefinition);
 				if (flowIndex < flowDefinition->flows.count) {
 					auto flow = flowDefinition->flows[flowIndex];
@@ -201,6 +234,10 @@ void processDebuggerInput(char *buffer, uint32_t length) {
 
 bool canExecuteStep(FlowState *&flowState, unsigned &componentIndex) {
     if (!g_debuggerIsConnected) {
+        return true;
+    }
+
+    if (!isDebugged(flowState)) {
         return true;
     }
 
@@ -475,7 +512,10 @@ static void writeValue(const Value &value) {
 ////////////////////////////////////////////////////////////////////////////////
 
 void onStarted(Assets *assets) {
-    if (!assets->external && isSubscribedTo(MESSAGE_TO_DEBUGGER_GLOBAL_VARIABLE_INIT)) {
+    // without the filter: only the main assets, the external assets are e.g.
+    // the GUI of a module that runs next to the main flows
+    bool debugged = g_debuggedAssetsFilter ? assets == g_debuggedAssets : !assets->external;
+    if (debugged && isSubscribedTo(MESSAGE_TO_DEBUGGER_GLOBAL_VARIABLE_INIT)) {
 		auto flowDefinition = static_cast<FlowDefinition *>(assets->flowDefinition);
 
         if (g_globalVariables) {
@@ -511,11 +551,14 @@ void onStarted(Assets *assets) {
 }
 
 void onStopped() {
-    setDebuggerState(DEBUGGER_STATE_STOPPED);
+    if (!g_debuggedAssetsFilter || g_debuggedAssets) {
+        setDebuggerState(DEBUGGER_STATE_STOPPED);
+    }
 }
 
-void onAddToQueue(FlowState *flowState, int sourceComponentIndex, int sourceOutputIndex, unsigned targetComponentIndex, int targetInputIndex) {
-    if (isSubscribedTo(MESSAGE_TO_DEBUGGER_ADD_TO_QUEUE)) {
+// true if the debugger was told about the task
+bool onAddToQueue(FlowState *flowState, int sourceComponentIndex, int sourceOutputIndex, unsigned targetComponentIndex, int targetInputIndex) {
+    if (isDebugged(flowState) && isSubscribedTo(MESSAGE_TO_DEBUGGER_ADD_TO_QUEUE)) {
         uint32_t free;
         uint32_t alloc;
         getAllocInfo(free, alloc);
@@ -532,7 +575,9 @@ void onAddToQueue(FlowState *flowState, int sourceComponentIndex, int sourceOutp
             (unsigned int)alloc
 		);
         writeDebuggerBufferHook(buffer, (uint32_t)strlen(buffer));
+        return true;
     }
+    return false;
 }
 
 void onRemoveFromQueue() {
@@ -545,8 +590,10 @@ void onRemoveFromQueue() {
     }
 }
 
+// The value has no flow state: with the filter, the changes are sent while
+// there are debugged assets.
 void onValueChanged(const Value *pValue) {
-    if (isSubscribedTo(MESSAGE_TO_DEBUGGER_VALUE_CHANGED)) {
+    if ((!g_debuggedAssetsFilter || g_debuggedAssets) && isSubscribedTo(MESSAGE_TO_DEBUGGER_VALUE_CHANGED)) {
         char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%p\t",
 			MESSAGE_TO_DEBUGGER_VALUE_CHANGED,
@@ -559,6 +606,10 @@ void onValueChanged(const Value *pValue) {
 }
 
 void onFlowStateCreated(FlowState *flowState) {
+    if (!isDebugged(flowState)) {
+        return;
+    }
+
     if (isSubscribedTo(MESSAGE_TO_DEBUGGER_FLOW_STATE_CREATED)) {
         char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%d\t%d\n",
@@ -614,7 +665,7 @@ void onFlowStateCreated(FlowState *flowState) {
 }
 
 void onFlowStateDestroyed(FlowState *flowState) {
-	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_FLOW_STATE_DESTROYED)) {
+	if (isDebugged(flowState) && isSubscribedTo(MESSAGE_TO_DEBUGGER_FLOW_STATE_DESTROYED)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\n",
 			MESSAGE_TO_DEBUGGER_FLOW_STATE_DESTROYED,
@@ -625,7 +676,7 @@ void onFlowStateDestroyed(FlowState *flowState) {
 }
 
 void onFlowStateTimelineChanged(FlowState *flowState) {
-	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_FLOW_STATE_TIMELINE_CHANGED)) {
+	if (isDebugged(flowState) && isSubscribedTo(MESSAGE_TO_DEBUGGER_FLOW_STATE_TIMELINE_CHANGED)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\t%g\n",
 			MESSAGE_TO_DEBUGGER_FLOW_STATE_TIMELINE_CHANGED,
@@ -637,7 +688,7 @@ void onFlowStateTimelineChanged(FlowState *flowState) {
 }
 
 void onFlowError(FlowState *flowState, int componentIndex, const char *errorMessage) {
-	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_FLOW_STATE_ERROR)) {
+	if (isDebugged(flowState) && isSubscribedTo(MESSAGE_TO_DEBUGGER_FLOW_STATE_ERROR)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t",
 			MESSAGE_TO_DEBUGGER_FLOW_STATE_ERROR,
@@ -654,7 +705,7 @@ void onFlowError(FlowState *flowState, int componentIndex, const char *errorMess
 }
 
 void onComponentExecutionStateChanged(FlowState *flowState, int componentIndex) {
-	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_COMPONENT_EXECUTION_STATE_CHANGED)) {
+	if (isDebugged(flowState) && isSubscribedTo(MESSAGE_TO_DEBUGGER_COMPONENT_EXECUTION_STATE_CHANGED)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%p\n",
 			MESSAGE_TO_DEBUGGER_COMPONENT_EXECUTION_STATE_CHANGED,
@@ -668,7 +719,7 @@ void onComponentExecutionStateChanged(FlowState *flowState, int componentIndex) 
 }
 
 void onComponentAsyncStateChanged(FlowState *flowState, int componentIndex) {
-	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_COMPONENT_ASYNC_STATE_CHANGED)) {
+	if (isDebugged(flowState) && isSubscribedTo(MESSAGE_TO_DEBUGGER_COMPONENT_ASYNC_STATE_CHANGED)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%d\n",
 			MESSAGE_TO_DEBUGGER_COMPONENT_ASYNC_STATE_CHANGED,
@@ -720,7 +771,7 @@ void logInfo(FlowState *flowState, unsigned componentIndex, const char *message)
     LV_LOG_USER("EEZ-FLOW: %s", message);
 #endif
 
-	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_LOG)) {
+	if (isDebugged(flowState) && isSubscribedTo(MESSAGE_TO_DEBUGGER_LOG)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%d\t",
 			MESSAGE_TO_DEBUGGER_LOG,
@@ -738,7 +789,7 @@ void logInfo(FlowState *flowState, unsigned componentIndex, const char *message)
 }
 
 void logScpiCommand(FlowState *flowState, unsigned componentIndex, const char *cmd) {
-	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_LOG)) {
+	if (isDebugged(flowState) && isSubscribedTo(MESSAGE_TO_DEBUGGER_LOG)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%d\tSCPI COMMAND: ",
 			MESSAGE_TO_DEBUGGER_LOG,
@@ -752,7 +803,7 @@ void logScpiCommand(FlowState *flowState, unsigned componentIndex, const char *c
 }
 
 void logScpiQuery(FlowState *flowState, unsigned componentIndex, const char *query) {
-	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_LOG)) {
+	if (isDebugged(flowState) && isSubscribedTo(MESSAGE_TO_DEBUGGER_LOG)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer), "%d\t%d\t%d\t%d\tSCPI QUERY: ",
 			MESSAGE_TO_DEBUGGER_LOG,
@@ -766,7 +817,7 @@ void logScpiQuery(FlowState *flowState, unsigned componentIndex, const char *que
 }
 
 void logScpiQueryResult(FlowState *flowState, unsigned componentIndex, const char *resultText, size_t resultTextLen) {
-	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_LOG)) {
+	if (isDebugged(flowState) && isSubscribedTo(MESSAGE_TO_DEBUGGER_LOG)) {
 		char buffer[256];
 		snprintf(buffer, sizeof(buffer) - 1, "%d\t%d\t%d\t%d\tSCPI QUERY RESULT: ",
 			MESSAGE_TO_DEBUGGER_LOG,
@@ -803,6 +854,21 @@ void onPageChanged(int previousPageId, int activePageId, bool activePageIsFromSt
 		if (widgetCursor.flowState) {
 			onEvent(widgetCursor.flowState, FLOW_EVENT_OPEN_PAGE, Value());
 		}
+    }
+
+    if (g_debuggedAssetsFilter && g_debuggedAssets) {
+        // the page id in the debugged assets, e.g. an external page id
+        Assets *assets = nullptr;
+        int pageId = activePageId;
+        if (pageId < 0) {
+            pageId = gui::g_hooks.resolveExternalPage(pageId, &assets);
+        }
+        if (assets != g_debuggedAssets) {
+            return;
+        }
+        activePageId = pageId;
+    } else if (g_debuggedAssetsFilter) {
+        return;
     }
 
 	if (isSubscribedTo(MESSAGE_TO_DEBUGGER_PAGE_CHANGED)) {

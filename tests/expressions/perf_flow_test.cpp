@@ -10,7 +10,7 @@
  *   jumps, which the evaluator still runs);
  * - the allocations of String.format and of a string +.
  *
- * Some native variables of parts/expr_extra.py are replaced (in
+ * Some native variables of parts/expr_extra.mjs are replaced (in
  * g_dataOperationsFunctions) by counting ones, to see which operands are read.
  *
  * The allocations are counted with the malloc hook of the sanitizers

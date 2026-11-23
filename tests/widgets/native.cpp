@@ -1,5 +1,5 @@
 /*
- * eez-framework tests: the native variables and actions of widgets.py
+ * eez-framework tests: the native variables and actions of widgets.mjs
  * (data_w_* and action_w_*), their state is wt::g_native.
  */
 

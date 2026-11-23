@@ -1,5 +1,5 @@
 /*
- * eez-framework tests: the expression cases (projects/expression_cases.py) for
+ * eez-framework tests: the expression cases (projects/expression_cases.mjs) for
  * the tests of this folder.
  */
 
@@ -61,7 +61,7 @@ bool eval(int caseIndex, eez::Value &result, const int32_t *iterators = nullptr)
 bool evalInstructions(int caseIndex, const uint8_t *instructions, eez::Value &result, const int32_t *iterators = nullptr);
 
 // the text of a value as the array check of the cases writes it
-// (make_fwtest.py encode_value)
+// (make_fwtest.mjs encodeValue)
 std::string encode(const eez::Value &value);
 
 } // namespace expr

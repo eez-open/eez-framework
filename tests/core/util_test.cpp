@@ -427,7 +427,7 @@ TEST("core/util: parseTimeZone rejects bad input") {
     CHECK_EQ((int)tz, 77);
 }
 
-TEST_BUG("core/util: parseTimeZone rejects minutes over 59", "CK3") {
+TEST("core/util: parseTimeZone rejects minutes over 59") {
     int16_t tz = 0;
     CHECK(!parseTimeZone("+01:75", 6, tz));
 }

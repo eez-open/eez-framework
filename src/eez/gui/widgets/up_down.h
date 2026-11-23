@@ -41,6 +41,7 @@ struct UpDownWidgetState : public WidgetState {
     void render() override;
 
 	bool hasOnTouch() override;
+	WidgetTouchKind getTouchKind() override;
 	void onTouch(const WidgetCursor &widgetCursor, Event &touchEvent) override;
 	bool hasOnKeyboard() override;
 	bool onKeyboard(const WidgetCursor &widgetCursor, uint8_t key, uint8_t mod) override;

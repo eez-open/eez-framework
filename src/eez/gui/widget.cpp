@@ -136,6 +136,10 @@ bool WidgetState::hasOnTouch() {
 void WidgetState::onTouch(const WidgetCursor &widgetCursor, Event &touchEvent) {
 }
 
+WidgetTouchKind WidgetState::getTouchKind() {
+    return WIDGET_TOUCH_KIND_DRAG;
+}
+
 bool WidgetState::hasOnKeyboard() {
     return false;
 }

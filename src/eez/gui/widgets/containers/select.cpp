@@ -41,6 +41,10 @@ bool SelectWidgetState::updateState() {
 		WIDGET_STATE(widgetIndex, -1);
 	}
 
+	// a Select with an action draws its pressed state (as a Container does),
+	// the children with a transparent background show it
+	WIDGET_STATE(flags.active, g_isActiveWidget);
+
     WIDGET_STATE_END()
 }
 
@@ -48,9 +52,10 @@ void SelectWidgetState::render() {
     const WidgetCursor &widgetCursor = g_widgetCursor;
 	auto widget = (const SelectWidget *)widgetCursor.widget;
 
+	auto stateStyle = getWidgetStateStyle(getStyle(widget->style), flags.active);
 	drawRectangle(
 		widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h,
-		getStyle(widget->style), false
+		stateStyle.style, stateStyle.active
 	);
 
 	repainted = true;
@@ -68,8 +73,8 @@ void SelectWidgetState::enumChildren() {
 		}
 
 		if (!widgetCursor.refreshed) {
-			const Style* style = getStyle(widgetCursor.widget->style);
-			widgetCursor.pushBackground(widgetCursor.x, widgetCursor.y, style, false);
+			auto stateStyle = getWidgetStateStyle(getStyle(widgetCursor.widget->style), flags.active);
+			widgetCursor.pushBackground(widgetCursor.x, widgetCursor.y, stateStyle.style, stateStyle.active);
 		}
 	}
 

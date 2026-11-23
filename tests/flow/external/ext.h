@@ -8,7 +8,7 @@
  * loadExternalAssets), the external page ids (getExternalAssetsPageId) and the
  * resolveExternalPage hook, setExternalFlowError and stopExternalFlow.
  *
- * The external assets are projects/fwtest_ext (make_fwtest_ext.py), a module
+ * The external assets are projects/fwtest_ext (make_fwtest_ext.mjs), a module
  * project with projects/fwtest as its master project. Every test starts from
  * the main-only state of the harness, so a test calls setup() first.
  */
@@ -95,7 +95,7 @@ int countFlowStates(Assets *assets, bool wholeTree);
 void collectFlowStates(Assets *assets, std::vector<FlowState *> &result);
 
 // evaluates the expression of the probe "probe:<name>" (a SetVariable
-// component, see projects/parts/external.py) in the flow state
+// component, see projects/parts/external.mjs) in the flow state
 bool probe(FlowState *flowState, const char *name, Value &result);
 
 // assigns the value to the variable of entry 1 of the probe (an assignable

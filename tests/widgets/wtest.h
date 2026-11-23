@@ -1,7 +1,7 @@
 /*
  * eez-framework tests: helpers of the widget tests (tests/widgets/).
  *
- * The pages, styles and variables are in projects/parts/widgets.py (prefix w_).
+ * The pages, styles and variables are in projects/parts/widgets.mjs (prefix w_).
  * Colors are 0xRRGGBB values of the presented frame (harness::pixel), the
  * project colors (the assets have 32-bit colors).
  */
@@ -33,7 +33,7 @@ namespace wt {
 
 using eez::Value;
 
-// colors of the project (widgets.py COLORS and base.py)
+// colors of the project (widgets.mjs COLORS and base.mjs)
 static const uint32_t BLACK = 0x000000;
 static const uint32_t WHITE = 0xF8FCF8;     // w_white #f8fcf8
 static const uint32_t RED = 0xF80000;
@@ -82,7 +82,7 @@ void tap(int x, int y);
 void press(int x, int y);
 void release();
 
-// global variables of widgets.py (GLOBALS), in the same order, found after w_marker
+// global variables of widgets.mjs (GLOBALS), in the same order, found after w_marker
 enum Var {
     V_MARKER,
     V_A,
@@ -115,7 +115,7 @@ Value stringArray(std::initializer_list<const char *> items);
 // array of ARRAY_TYPE_ANY with the given elements
 Value anyArray(std::initializer_list<Value> items);
 
-// widget asset: index-th widget of the page (in the order of widgets.py)
+// widget asset: index-th widget of the page (in the order of widgets.mjs)
 eez::gui::Widget *pageWidget(int pageId, int index);
 eez::flow::FlowState *pageFlowState(int pageId);
 

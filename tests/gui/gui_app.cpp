@@ -1,6 +1,6 @@
 /*
  * eez-framework tests: the native actions and variables of the gui part
- * (projects/parts/gui.py) and the helpers of gui_test.h.
+ * (projects/parts/gui.mjs) and the helpers of gui_test.h.
  */
 
 #include "gui_test.h"
@@ -40,6 +40,8 @@ bool g_enabled = true;
 bool g_switch;
 bool g_switchReadOnly;
 bool g_switch2;
+int g_choice;
+bool g_check;
 std::function<void(DataOperationEnum operation, Value &value)> g_nameData;
 Overlay g_overlay;
 bool g_overlayEnabled;
@@ -79,7 +81,7 @@ struct KeyPosition {
     int y;
 };
 
-// centers of the keys, see projects/parts/gui.py
+// centers of the keys, see projects/parts/gui.mjs
 static const KeyPosition g_numericKeys[] = {
     { "7", 49, 119 }, { "8", 149, 119 }, { "9", 249, 119 },
     { "4", 49, 199 }, { "5", 149, 199 }, { "6", 249, 199 },
@@ -246,6 +248,22 @@ void data_gui_switch2(DataOperationEnum operation, const WidgetCursor &, Value &
         value = g_switch2;
     } else if (operation == DATA_OPERATION_SET) {
         g_switch2 = value.getInt() != 0;
+    }
+}
+
+void data_gui_choice(DataOperationEnum operation, const WidgetCursor &, Value &value) {
+    if (operation == DATA_OPERATION_GET) {
+        value = g_choice;
+    } else if (operation == DATA_OPERATION_SET) {
+        g_choice = value.getInt();
+    }
+}
+
+void data_gui_check(DataOperationEnum operation, const WidgetCursor &, Value &value) {
+    if (operation == DATA_OPERATION_GET) {
+        value = g_check;
+    } else if (operation == DATA_OPERATION_SET) {
+        g_check = value.toBool();
     }
 }
 

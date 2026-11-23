@@ -1,5 +1,5 @@
 /*
- * eez-framework tests: the native actions of projects/parts/flow.py.
+ * eez-framework tests: the native actions of projects/parts/flow.mjs.
  */
 
 #include "flow_helpers.h"

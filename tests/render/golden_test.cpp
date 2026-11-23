@@ -1,5 +1,5 @@
 /*
- * eez-framework tests: golden images of the render pages (projects/parts/render.py)
+ * eez-framework tests: golden images of the render pages (projects/parts/render.mjs)
  * and pixel checks on them.
  *
  * The presented frame is compared with render/golden/<name>.png (see

@@ -139,6 +139,20 @@ TEST("gui/event: a switch is toggled at release") {
     CHECK(!g_switch);
 }
 
+TEST("gui/event: a pressed switch draws its track in the pressed state style") {
+    // the off part of the track (at x 376): accent, error while pressed (the
+    // data refuses the value: the switch stays off)
+    g_switchReadOnly = true;
+    showPageA();
+    CHECK_EQ(rgb(376, A_SWITCH_Y), ACCENT);
+    press(A_SWITCH_X, A_SWITCH_Y);
+    harness::frame();
+    CHECK_EQ(rgb(376, A_SWITCH_Y), ERROR);
+    releaseTouch();
+    CHECK(!g_switch);
+    CHECK_EQ(rgb(376, A_SWITCH_Y), ACCENT);
+}
+
 TEST("gui/event: a switch whose data refuses the value doesn't move") {
     // the knob of the switch (300, 120, 100x50, border 1): 44 px, at x 302 when
     // off, at x 354 when on; during the 150 ms animation it moves between them

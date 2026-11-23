@@ -1,6 +1,6 @@
 /*
  * eez-framework tests: helpers of the drawing tests (render_util.h) and the
- * native variables of the render part (projects/parts/render.py).
+ * native variables of the render part (projects/parts/render.mjs).
  */
 
 #include "render_util.h"

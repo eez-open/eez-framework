@@ -4,7 +4,7 @@
  * LabelIn/LabelOut, Noop, TestAndSet, SortArray, Constant, EvalExpr, Animate
  * and the LineChart widget component.
  *
- * The flows are the pages of projects/parts/flow.py.
+ * The flows are the pages of projects/parts/flow.mjs.
  */
 
 #include "flow_helpers.h"

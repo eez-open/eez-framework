@@ -1,5 +1,5 @@
 /*
- * eez-framework tests: the style variants (projects/parts/variants.py): the
+ * eez-framework tests: the style variants (projects/parts/variants.mjs): the
  * variant styles of a style (getVariantStyles), the variant of a widget
  * (fixed, by data, of its container, none), the states of a variant.
  */
@@ -56,12 +56,12 @@ const uint32_t GREEN = rgb(0, 0xFC, 0);
 const uint32_t BLUE = rgb(0, 0, 0xF8);
 const uint32_t ORANGE = rgb(0xF8, 0x80, 0);
 
-// the ids of the variants (parts/variants.py)
+// the ids of the variants (parts/variants.mjs)
 const int WARN = 1;
 const int VOLT = 2;
 const int UNUSED = 3;
 
-// the boxes of the page (parts/variants.py), 160 x 50
+// the boxes of the page (parts/variants.mjs), 160 x 50
 const int FIXED[] = { 20, 20 };
 const int BASE[] = { 200, 20 };
 const int VOLT_BOX[] = { 380, 20 };

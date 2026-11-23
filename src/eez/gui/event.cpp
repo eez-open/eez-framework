@@ -269,7 +269,25 @@ static bool canTouchScrollCapture(bool atTouchDown) {
         return getWidgetAction(g_foundWidgetAtDown) != EEZ_ACTION_ID_DRAG_OVERLAY;
     }
 
-    // widgets with their own touch handling (slider, scroll bar, ...) keep the touch
+    if (g_onTouchFunction == onWidgetTouch) {
+        if (!g_foundWidgetAtDown) {
+            return false;
+        }
+
+        auto touchKind = g_foundWidgetAtDown.currentState->getTouchKind();
+
+        // acts only at touch up (switch, drop down list, checkbox, ...)
+        if (touchKind == WIDGET_TOUCH_KIND_CLICK) {
+            return true;
+        }
+
+        // acts at touch down (up/down): until it has got touch down
+        if (touchKind == WIDGET_TOUCH_KIND_PRESS) {
+            return atTouchDown || g_touchDownPending;
+        }
+    }
+
+    // widgets that follow the finger (slider, scroll bar, ...) keep the touch
     return false;
 }
 
@@ -526,12 +544,40 @@ static void onWidgetDefaultTouch(const WidgetCursor &widgetCursor, Event &touchE
 }
 
 static void onWidgetTouch(const WidgetCursor &widgetCursor, Event &touchEvent) {
-	if (widgetCursor) {
-        if (touchEvent.type == EVENT_TYPE_TOUCH_DOWN) {
-			g_activeWidget = g_foundWidgetAtDown;
+	if (!widgetCursor) {
+        return;
+    }
+
+    if (widgetCursor.currentState->getTouchKind() != WIDGET_TOUCH_KIND_DRAG) {
+        // press cancel, as for the buttons: outside, the widget isn't pressed
+        // and gets no touch up, auto repeat or long touch
+        if (touchEvent.type == EVENT_TYPE_TOUCH_MOVE || touchEvent.type == EVENT_TYPE_TOUCH_UP) {
+            bool inside = isInsidePressRect(touchEvent);
+            if (inside != g_pressInside) {
+                g_pressInside = inside;
+                if (touchEvent.type == EVENT_TYPE_TOUCH_MOVE) {
+                    g_activeWidget = inside ? widgetCursor : WidgetCursor();
+                }
+            }
         }
-		widgetCursor.currentState->onTouch(widgetCursor, touchEvent);
-	}
+
+        if (
+            !g_pressInside &&
+            (
+                touchEvent.type == EVENT_TYPE_TOUCH_UP ||
+                touchEvent.type == EVENT_TYPE_AUTO_REPEAT ||
+                touchEvent.type == EVENT_TYPE_LONG_TOUCH
+            )
+        ) {
+            return;
+        }
+    }
+
+    if (touchEvent.type == EVENT_TYPE_TOUCH_DOWN) {
+        g_activeWidget = g_foundWidgetAtDown;
+    }
+
+    widgetCursor.currentState->onTouch(widgetCursor, touchEvent);
 }
 
 

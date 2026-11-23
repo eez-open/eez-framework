@@ -34,6 +34,7 @@ bool SwitchWidgetState::updateState() {
 		hasPreviousState = false;
 	}
 
+    WIDGET_STATE(flags.active, g_isActiveWidget);
     WIDGET_STATE(data, widget->data ? get(widgetCursor, widget->data) : 0);
 
     auto enabled = widget->enabled ? get(widgetCursor, widget->enabled) : Value();
@@ -49,10 +50,20 @@ void SwitchWidgetState::render() {
     auto widget = (const SwitchWidget *)widgetCursor.widget;
 
     unsigned disabledState = getDisabledStateFlag(!flags.enabled);
+    // pressed only while it can be changed
+    unsigned pressedState = flags.active && flags.enabled ? STYLE_STATE_FLAG(STYLE_STATE_PRESSED) : 0;
+    bool isRow = widget->label || (widget->flags & SWITCH_WIDGET_FLAG_STATE_TEXT);
     const Style *widgetStyle = getStyle(widget->style);
-    const Style *style = getStateStyle(widgetStyle, disabledState);
 
-	drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, nullptr);
+    // pressed: a row is drawn in the pressed state style of the widget style
+    // (the track keeps its colors), a switch without a row its track and knob
+    const Style *style = getStateStyle(widgetStyle, (isRow ? 0 : pressedState) | disabledState);
+
+    if (isRow && pressedState && styleHasStateStyle(widgetStyle, STYLE_STATE_PRESSED)) {
+        drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, getStateStyle(widgetStyle, pressedState));
+    } else {
+        drawRectangle(widgetCursor.x, widgetCursor.y, widgetCursor.w, widgetCursor.h, nullptr);
+    }
 
     auto on = data.getInt() ? true : false;
 
@@ -81,7 +92,7 @@ void SwitchWidgetState::render() {
         style->paddingBottom;
 
     // a row: the label, the state text, then the track at the right
-    if (widget->label || (widget->flags & SWITCH_WIDGET_FLAG_STATE_TEXT)) {
+    if (isRow) {
         int trackW = MIN(2 * h, w);
         int textLeft = x;
         int textRight = x + w - trackW;
@@ -92,7 +103,7 @@ void SwitchWidgetState::render() {
         // move when the state changes)
         if (widget->flags & SWITCH_WIDGET_FLAG_STATE_TEXT) {
             const Style *base = widget->stateTextStyle ? getStyle(widget->stateTextStyle) : widgetStyle;
-            const Style *stateTextStyle = getStateStyle(base, (on ? STYLE_STATE_FLAG(STYLE_STATE_CHECKED) : 0) | disabledState);
+            const Style *stateTextStyle = getStateStyle(base, (on ? STYLE_STATE_FLAG(STYLE_STATE_CHECKED) : 0) | pressedState | disabledState);
             font::Font font = styleGetFont(base);
             int textW = 0;
             if (font) {
@@ -118,7 +129,7 @@ void SwitchWidgetState::render() {
             drawText(
                 text, -1,
                 textLeft, widgetCursor.y, textRight - textLeft, widgetCursor.h,
-                getStateStyle(base, disabledState),
+                getStateStyle(base, pressedState | disabledState),
                 false, nullptr, nullptr, false, -1, 0, true
             );
         }
@@ -165,6 +176,10 @@ void SwitchWidgetState::render() {
 
 bool SwitchWidgetState::hasOnTouch() {
     return true;
+}
+
+WidgetTouchKind SwitchWidgetState::getTouchKind() {
+    return WIDGET_TOUCH_KIND_CLICK;
 }
 
 void SwitchWidgetState::onTouch(const WidgetCursor &widgetCursor, Event &touchEvent) {

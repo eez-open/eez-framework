@@ -138,8 +138,13 @@ bool ButtonGroupWidgetState::hasOnTouch() {
     return true;
 }
 
+WidgetTouchKind ButtonGroupWidgetState::getTouchKind() {
+    return WIDGET_TOUCH_KIND_CLICK;
+}
+
 void ButtonGroupWidgetState::onTouch(const WidgetCursor &widgetCursor, Event &touchEvent) {
-    if (touchEvent.type == EVENT_TYPE_TOUCH_DOWN) {
+    // at touch up, as a button (a list can take over the touch until then)
+    if (touchEvent.type == EVENT_TYPE_TOUCH_UP) {
         auto widget = (const ButtonGroupWidget *)widgetCursor.widget;
 
         int count_;
@@ -170,10 +175,16 @@ void ButtonGroupWidgetState::onTouch(const WidgetCursor &widgetCursor, Event &to
             selectedButton = (touchEvent.y - y) / h;
         }
 
-        if (selectedButton >= 0 && selectedButton < count_) {
-            set(widgetCursor, data.isArray() ? widget->selectedButton : widget->data, selectedButton);
-            sound::playClick();
+        // the release can be just outside of the widget (press cancel
+        // margin): the nearest button
+        if (selectedButton < 0) {
+            selectedButton = 0;
+        } else if (selectedButton >= count_) {
+            selectedButton = count_ - 1;
         }
+
+        set(widgetCursor, data.isArray() ? widget->selectedButton : widget->data, selectedButton);
+        sound::playClick();
     }
 }
 
