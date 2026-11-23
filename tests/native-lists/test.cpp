@@ -7,12 +7,20 @@
 #include <eez/flow/expression.h>
 #include <eez/flow/hooks.h>
 #include <eez/libs/lz4/lz4.h>
-#include <cassert>
+#include <cstdlib>
 #include <cstdint>
 #include <cstring>
 #include <cstdio>
 #include <vector>
 #include <string>
+
+#define CHECK(expression) \
+    do { \
+        if (!(expression)) { \
+            std::fprintf(stderr, "%s:%d: check failed: %s\n", __FILE__, __LINE__, #expression); \
+            std::abort(); \
+        } \
+    } while (false)
 
 using namespace eez;
 using namespace eez::flow;
@@ -73,14 +81,59 @@ static unsigned checks;
 static unsigned errors;
 static void onError(FlowState *, int, const char *) { ++errors; }
 static void onStop() {}
+
+struct PropertyFixture : Fixture {
+    Component component{};
+    AssetsPtr<Component> components[1];
+    AssetsPtr<Property> properties[1];
+    uint8_t instructions[32]{};
+
+    PropertyFixture() {
+        assets.reserved = sizeof(*this);
+        setList(flow.components, components, 1);
+        components[0] = &component;
+        setList(component.properties, properties, 1);
+        properties[0] = reinterpret_cast<Property *>(instructions);
+        globals[1] = IntegerValue(42);
+    }
+
+    void setInstructions(const std::vector<uint8_t> &bytes) {
+        CHECK(bytes.size() <= sizeof(instructions));
+        std::memcpy(instructions, bytes.data(), bytes.size());
+    }
+};
+
+static void checkPropertyDispatch(PropertyFixture &fixture, bool hasAssetSize) {
+    const auto error = FlowError::Plain("property dispatch");
+    const uint16_t global = EXPR_EVAL_INSTRUCTION_TYPE_PUSH_GLOBAL_VAR | 1;
+    const auto end = EXPR_EVAL_INSTRUCTION_TYPE_END;
+    std::vector<uint8_t> expression;
+    word(expression, global);
+    word(expression, end);
+    fixture.setInstructions(expression);
+    Value result;
+    CHECK(evalProperty(&fixture.state, 0, 0, result, error));
+    CHECK(result.isInt32() && result.getInt() == 42);
+
+    fixture.setInstructions(list({ { global, end } }));
+    CHECK(evalProperty(&fixture.state, 0, 0, result, error) == hasAssetSize);
+    if (hasAssetSize) {
+        CHECK(result.isArray() && result.getArray()->arraySize == 1);
+        CHECK(result.getArray()->values[0].getValue().getInt() == 42);
+    } else {
+        CHECK(result.getType() == VALUE_TYPE_UNDEFINED);
+    }
+    ++checks;
+}
+
 static void rejected(Fixture &fixture, std::vector<uint8_t> bytes) {
     // Allocate exactly this many bytes: ASan must see reads beyond the supplied
     // span, rather than reads hidden inside a vector's spare capacity.
     auto input = bytes.empty() ? nullptr : new uint8_t[bytes.size()];
     if (input) std::memcpy(input, bytes.data(), bytes.size());
     Value result(123);
-    assert(!evalAssignableListExpression(&fixture.state, -1, input, bytes.size(), result, FlowError::Plain("malformed")));
-    assert(result.getType() == VALUE_TYPE_UNDEFINED);
+    CHECK(!evalAssignableListExpression(&fixture.state, -1, input, bytes.size(), result, FlowError::Plain("malformed")));
+    CHECK(result.getType() == VALUE_TYPE_UNDEFINED);
     delete[] input;
     ++checks;
 }
@@ -95,59 +148,59 @@ int main() {
     const uint16_t global = EXPR_EVAL_INSTRUCTION_TYPE_PUSH_GLOBAL_VAR;
     const uint16_t end = EXPR_EVAL_INSTRUCTION_TYPE_END;
     const uint16_t typedEnd = EXPR_EVAL_INSTRUCTION_TYPE_END_WITH_DST_VALUE_TYPE;
-    const uint16_t jump = (7 << 13) | (1 << 11);
+    const uint16_t jump = EXPR_EVAL_INSTRUCTION_JUMP;
     Value result;
     auto valid = list({ { (uint16_t)(global | 1), typedEnd, 7, 0 }, { (uint16_t)(global | 3), typedEnd, 13, 0 } });
-    assert(evaluate(fixture, valid, result));
-    assert(result.getArray()->arraySize == 2);
-    assert(result.getArray()->values[0].getType() == VALUE_TYPE_VALUE_PTR);
+    CHECK(evaluate(fixture, valid, result));
+    CHECK(result.getArray()->arraySize == 2);
+    CHECK(result.getArray()->values[0].getType() == VALUE_TYPE_VALUE_PTR);
     g_executeActionFlowState = &fixture.state; g_executeActionComponentIndex = -1;
     setUserPropertyReference(result.getArray()->values[0], IntegerValue(31));
     setUserPropertyReference(result.getArray()->values[1], StringValue("changed"));
-    assert(fixture.globals[1].getInt() == 31);
-    assert(std::string(fixture.globals[3].getString()) == "changed");
+    CHECK(fixture.globals[1].getInt() == 31);
+    CHECK(std::string(fixture.globals[3].getString()) == "changed");
     ++checks;
     Value native(1, VALUE_TYPE_NATIVE_VARIABLE);
     setUserPropertyReference(native, IntegerValue(51));
-    assert(nativeInteger == 51);
+    CHECK(nativeInteger == 51);
     Value arrayElement = Value::makeArrayElementRef(fixture.globals[5], 0, 0x1c349556);
     setUserPropertyReference(arrayElement, IntegerValue(61));
-    assert(fixture.globals[5].getArray()->values[0].getInt() == 61);
+    CHECK(fixture.globals[5].getArray()->values[0].getInt() == 61);
     Value local(&fixture.locals[0], VALUE_TYPE_VALUE_PTR);
     setUserPropertyReference(local, IntegerValue(71));
-    assert(fixture.locals[0].getInt() == 71);
+    CHECK(fixture.locals[0].getInt() == 71);
     ++checks;
 
 #ifdef EEZ_HAS_COMPILER_FIXTURE
     for (bool flag : { false, true }) {
         fixture.globals[0] = BooleanValue(flag);
-        assert(evaluate(fixture, compiledCase(1), result));
+        CHECK(evaluate(fixture, compiledCase(1), result));
         auto &integerReference = result.getArray()->values[0];
-        assert(integerReference.getValue().isInt32());
+        CHECK(integerReference.getValue().isInt32());
         setUserPropertyReference(integerReference, IntegerValue(flag ? 101 : 202));
-        assert(fixture.globals[flag ? 1 : 2].getInt() == (flag ? 101 : 202));
-        assert(evaluate(fixture, compiledCase(2), result));
+        CHECK(fixture.globals[flag ? 1 : 2].getInt() == (flag ? 101 : 202));
+        CHECK(evaluate(fixture, compiledCase(2), result));
         setUserPropertyReference(result.getArray()->values[0], StringValue(flag ? "true branch" : "false branch"));
-        assert(std::string(fixture.globals[flag ? 3 : 4].getString()) == (flag ? "true branch" : "false branch"));
+        CHECK(std::string(fixture.globals[flag ? 3 : 4].getString()) == (flag ? "true branch" : "false branch"));
         ++checks;
     }
 #endif
     // Public API invalid-target behavior and out-of-native-call no-op.
     setUserPropertyReference(IntegerValue(123), IntegerValue(999));
-    assert(fixture.locals[0].getInt() == 71);
+    CHECK(fixture.locals[0].getInt() == 71);
     onFlowErrorHook = onError;
     stopScriptHook = onStop;
     enableThrowError(true);
     g_executeActionFlowState = &fixture.state;
     setUserPropertyReference(IntegerValue(1), IntegerValue(2));
-    assert(errors == 1);
+    CHECK(errors == 1);
     auto invalidElement = Value::makeArrayElementRef(fixture.globals[5], 99, 0x18257e56);
     setUserPropertyReference(invalidElement, IntegerValue(99));
-    assert(errors == 2 && fixture.globals[1].isInt32());
+    CHECK(errors == 2 && fixture.globals[1].isInt32());
     enableThrowError(false);
     g_executeActionFlowState = nullptr;
     setUserPropertyReference(local, IntegerValue(999));
-    assert(fixture.locals[0].getInt() == 71);
+    CHECK(fixture.locals[0].getInt() == 71);
     ++checks;
 
     // Every shorter prefix, forged lengths, truncated typed END, missing END,
@@ -166,19 +219,43 @@ int main() {
     rejected(fixture, list({ { jump, 1, typedEnd, 7, 0 } }));
     rejected(fixture, list({ { (uint16_t)(jump | 1), 0xffff, end } }));
     rejected(fixture, list({ { (uint16_t)(jump | 1), 0, (uint16_t)(global | 1), end } }));
-    assert(evaluate(fixture, valid, result)); // No stack contamination after failures.
+    CHECK(evaluate(fixture, valid, result)); // No stack contamination after failures.
     ++checks;
 
-    // The uncompressed main assets use their loader's byte count; the reserved
-    // word from untrusted bytes cannot enlarge it.
-    alignas(8) uint8_t bytes[512]{};
-    *(uint32_t *)bytes = HEADER_TAG;
-    auto assets = new (bytes + 4) Assets;
-    assets->reserved = UINT32_MAX;
-    loadMainAssets(bytes, sizeof(bytes));
-    assert(getAssetsDataSize(assets) == sizeof(bytes) - 4);
-    assert(getAssetsRemainingSize(assets, bytes + sizeof(bytes) - 1) == 1);
-    assert(getAssetsRemainingSize(assets, bytes + sizeof(bytes)) == 0);
+    // A branch in an item longer than the inline boundary map still uses the
+    // same validation and skips the unused instructions.
+    constexpr uint16_t skippedWords = 128;
+    std::vector<uint16_t> longItem{jump, skippedWords};
+    longItem.insert(longItem.end(), skippedWords, global | 2);
+    longItem.push_back(global | 1);
+    longItem.push_back(end);
+    CHECK(evaluate(fixture, list({longItem}), result));
+    CHECK(result.getArray()->values[0].getValue().getInt() == fixture.globals[1].getInt());
+    ++checks;
+    longItem[1] += 2;
+    rejected(fixture, list({longItem}));
+
+    // Legacy external assets may have no registered length. The new list
+    // requires a bounded span even when an ordinary property is readable.
+    PropertyFixture externalProperties;
+    checkPropertyDispatch(externalProperties, true);
+    externalProperties.assets.reserved = 0;
+    checkPropertyDispatch(externalProperties, false);
+
+    // ROM assets get their length from the loader, ignoring the stored field.
+    alignas(PropertyFixture) uint8_t rom[sizeof(PropertyFixture) + alignof(PropertyFixture)]{};
+    auto romFixture = new (rom + alignof(PropertyFixture)) PropertyFixture;
+    auto romData = reinterpret_cast<uint8_t *>(romFixture) - sizeof(uint32_t);
+    const uint32_t tag = HEADER_TAG;
+    std::memcpy(romData, &tag, sizeof(tag));
+    romFixture->assets.reserved = UINT32_MAX;
+    loadMainAssets(romData, sizeof(PropertyFixture) + sizeof(tag));
+    CHECK(getAssetsDataSize(&romFixture->assets) == sizeof(PropertyFixture));
+    CHECK(getAssetsRemainingSize(&romFixture->assets, rom + sizeof(rom) - 1) == 1);
+    CHECK(getAssetsRemainingSize(&romFixture->assets, rom + sizeof(rom)) == 0);
+    checkPropertyDispatch(*romFixture, true);
+    g_mainAssets = nullptr;
+    romFixture->~PropertyFixture();
     ++checks;
 
     // External compressed assets record actual decompressed bytes only on a
@@ -188,13 +265,26 @@ int main() {
     auto header = (Header *)compressed;
     header->tag = HEADER_TAG_COMPRESSED; header->decompressedSize = sizeof(plain);
     int compressedSize = LZ4_compress_default((const char *)plain, (char *)compressed + sizeof(Header), sizeof(plain), sizeof(compressed) - sizeof(Header));
+    CHECK(compressedSize > 0);
     alignas(8) uint8_t expanded[512]{};
     auto external = new (expanded) Assets;
-    assert(decompressAssetsData(compressed, sizeof(Header) + compressedSize, external, sizeof(expanded), nullptr));
+    CHECK(decompressAssetsData(compressed, sizeof(Header) + compressedSize, external, sizeof(expanded), nullptr));
     const auto payloadOffset = reinterpret_cast<std::uintptr_t>(&external->settings) -
                                reinterpret_cast<std::uintptr_t>(expanded);
-    assert(getAssetsDataSize(external) == payloadOffset + sizeof(plain));
-    assert(getAssetsRemainingSize(external, expanded + getAssetsDataSize(external)) == 0);
+    CHECK(getAssetsDataSize(external) == payloadOffset + sizeof(plain));
+    CHECK(getAssetsRemainingSize(external, expanded + getAssetsDataSize(external)) == 0);
+    ++checks;
+
+    // A failed reload invalidates the old size, and an undersized destination
+    // must not be written at all.
+    CHECK(!decompressAssetsData(compressed, sizeof(Header) - 1, external, sizeof(expanded), nullptr));
+    CHECK(getAssetsDataSize(external) == 0);
+    CHECK(decompressAssetsData(compressed, sizeof(Header) + compressedSize, external, sizeof(expanded), nullptr));
+    CHECK(getAssetsDataSize(external) == payloadOffset + sizeof(plain));
+    alignas(Assets) uint8_t undersized[1]{0xa5};
+    CHECK(!decompressAssetsData(compressed, sizeof(Header) + compressedSize,
+        reinterpret_cast<Assets *>(undersized), sizeof(undersized), nullptr));
+    CHECK(undersized[0] == 0xa5);
     ++checks;
     std::printf("PASS: %u native reference/bounds checks (real framework)\n", checks);
 }

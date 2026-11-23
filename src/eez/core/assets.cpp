@@ -11,6 +11,7 @@
 #include <eez/conf-internal.h>
 
 #include <assert.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -65,23 +66,6 @@ void fixOffsets(Assets *assets);
 
 bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, Assets *decompressedAssets, uint32_t maxDecompressedAssetsSize, int *err) {
 #if EEZ_FOR_LVGL_LZ4_OPTION
-	if (assetsDataSize < sizeof(Header)) {
-        if (err) *err = SCPI_ERROR_INVALID_BLOCK_DATA;
-        return false;
-    }
-	decompressedAssets->reserved = 0;
-	uint32_t compressedDataOffset;
-	uint32_t decompressedSize;
-
-	auto header = (Header *)assetsData;
-
-	decompressedAssets->projectMajorVersion = header->projectMajorVersion;
-	decompressedAssets->projectMinorVersion = header->projectMinorVersion;
-	decompressedAssets->assetsType = header->assetsType;
-
-	compressedDataOffset = sizeof(Header);
-	decompressedSize = header->decompressedSize;
-
 // disable warning: offsetof within non-standard-layout type ... is conditionally-supported [-Winvalid-offsetof]
 #ifdef __GNUC__
 #pragma GCC diagnostic push
@@ -94,36 +78,50 @@ bool decompressAssetsData(const uint8_t *assetsData, uint32_t assetsDataSize, As
 #pragma GCC diagnostic pop
 #endif
 
-	if (maxDecompressedAssetsSize < decompressedDataOffset || decompressedSize > maxDecompressedAssetsSize - decompressedDataOffset) {
-		if (err) {
-			*err = SCPI_ERROR_OUT_OF_DEVICE_MEMORY;
-		}
-		return false;
-	}
+    if (!decompressedAssets || maxDecompressedAssetsSize < decompressedDataOffset) {
+        if (err) *err = SCPI_ERROR_OUT_OF_DEVICE_MEMORY;
+        return false;
+    }
+    decompressedAssets->reserved = 0;
+    if (!assetsData || assetsDataSize < sizeof(Header)) {
+        if (err) *err = SCPI_ERROR_INVALID_BLOCK_DATA;
+        return false;
+    }
 
-	int compressedSize = assetsDataSize - compressedDataOffset;
+    const auto *header = reinterpret_cast<const Header *>(assetsData);
+    const auto decompressedSize = header->decompressedSize;
+    if (decompressedSize > maxDecompressedAssetsSize - decompressedDataOffset) {
+        if (err) *err = SCPI_ERROR_OUT_OF_DEVICE_MEMORY;
+        return false;
+    }
 
-    int decompressResult = LZ4_decompress_safe(
-		(const char *)(assetsData + compressedDataOffset),
-		(char *)decompressedAssets + decompressedDataOffset,
-		compressedSize,
-		decompressedSize
-	);
+    const auto compressedSize = assetsDataSize - sizeof(Header);
+    if (compressedSize > INT_MAX || decompressedSize > INT_MAX) {
+        if (err) *err = SCPI_ERROR_INVALID_BLOCK_DATA;
+        return false;
+    }
+    const int result = LZ4_decompress_safe(
+        reinterpret_cast<const char *>(assetsData + sizeof(Header)),
+        reinterpret_cast<char *>(decompressedAssets) + decompressedDataOffset,
+        static_cast<int>(compressedSize),
+        static_cast<int>(decompressedSize)
+    );
+    if (result != static_cast<int>(decompressedSize)) {
+        if (err) *err = SCPI_ERROR_INVALID_BLOCK_DATA;
+        return false;
+    }
 
-	if (decompressResult != (int)decompressedSize) {
-		if (err) {
-			*err = SCPI_ERROR_INVALID_BLOCK_DATA;
-		}
-		return false;
-	}
-    decompressedAssets->reserved = (uint32_t)(decompressedDataOffset + decompressedSize);
-	return true;
+    decompressedAssets->projectMajorVersion = header->projectMajorVersion;
+    decompressedAssets->projectMinorVersion = header->projectMinorVersion;
+    decompressedAssets->assetsType = header->assetsType;
+    decompressedAssets->reserved = static_cast<uint32_t>(decompressedDataOffset + decompressedSize);
+    return true;
 #else
     EEZ_UNUSED(assetsData);
     EEZ_UNUSED(assetsDataSize);
     EEZ_UNUSED(decompressedAssets);
     EEZ_UNUSED(maxDecompressedAssetsSize);
-    *err = -1;
+    if (err) *err = -1;
     return false;
 #endif
 }

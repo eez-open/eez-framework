@@ -306,9 +306,17 @@ static bool validateListItem(FlowState *flowState, const uint8_t *instructions, 
     if (size < 2 || size % 2) return false;
     const size_t words = size / 2;
     const size_t mapSize = (words + 7) / 8;
-    auto boundaries = (uint8_t *)alloc(mapSize, 0x481c5331);
-    if (!boundaries) return false;
-    struct FreeMap { uint8_t *p; ~FreeMap() { free(p); } } freeMap { boundaries };
+    uint8_t localBoundaries[16];
+    auto boundaries = localBoundaries;
+    struct FreeMap {
+        uint8_t *allocated = nullptr;
+        ~FreeMap() { if (allocated) free(allocated); }
+    } freeMap;
+    if (mapSize > sizeof(localBoundaries)) {
+        freeMap.allocated = (uint8_t *)alloc(mapSize, 0x481c5331);
+        if (!freeMap.allocated) return false;
+        boundaries = freeMap.allocated;
+    }
     memset(boundaries, 0, mapSize);
     auto isBoundary = [&](size_t offset) { return offset < size && (boundaries[(offset / 2) / 8] & (1 << ((offset / 2) % 8))); };
     for (size_t offset = 0; offset < size;) {
@@ -327,7 +335,7 @@ static bool validateListItem(FlowState *flowState, const uint8_t *instructions, 
             } else if (instruction == EXPR_EVAL_INSTRUCTION_TYPE_END_WITH_DST_VALUE_TYPE) {
                 if (size - offset != 6) return false;
                 offset += 6;
-            } else if (instruction >= ((7 << 13) | (1 << 11)) && instruction <= ((7 << 13) | (1 << 11) | 3)) {
+            } else if (instruction >= EXPR_EVAL_INSTRUCTION_JUMP && instruction <= EXPR_EVAL_INSTRUCTION_JUMP_OR) {
                 if (size - offset < 4) return false;
                 offset += 4;
             } else return false;
@@ -339,11 +347,11 @@ static bool validateListItem(FlowState *flowState, const uint8_t *instructions, 
     // Check destinations only after all instruction boundaries are known.
     for (size_t offset = 0; offset < size;) {
         const auto instruction = readListWord(instructions + offset);
-        if (instruction >= ((7 << 13) | (1 << 11)) && instruction <= ((7 << 13) | (1 << 11) | 3)) {
+        if (instruction >= EXPR_EVAL_INSTRUCTION_JUMP && instruction <= EXPR_EVAL_INSTRUCTION_JUMP_OR) {
             const size_t target = offset + 4 + 2U * readListWord(instructions + offset + 2);
             if (!isBoundary(target)) return false;
-            if (instruction == ((7 << 13) | (1 << 11) | 1) &&
-                (readListWord(instructions + target) != ((7 << 13) | (1 << 11)) || !isBoundary(target + 4))) return false;
+            if (instruction == EXPR_EVAL_INSTRUCTION_JUMP_IF_FALSE &&
+                (readListWord(instructions + target) != EXPR_EVAL_INSTRUCTION_JUMP || !isBoundary(target + 4))) return false;
             offset += 4;
         } else if (instruction == EXPR_EVAL_INSTRUCTION_TYPE_END_WITH_DST_VALUE_TYPE) offset += 6;
         else offset += 2;
@@ -418,17 +426,19 @@ bool evalProperty(FlowState *flowState, int componentIndex, int propertyIndex, V
     }
     const auto *instructions = component->properties[propertyIndex]->evalInstructions;
     const auto available = getAssetsRemainingSize(flowState->assets, instructions);
-    if (available < 2) {
+    // Alternate loaders may not supply a size for ordinary Flow assets.
+    // A reference-list container always needs a known enclosing span.
+    if (getAssetsDataSize(flowState->assets) != 0 && available < 2) {
         throwError(flowState, componentIndex, errorMessage.setDescription("Property is outside loaded assets"));
         return false;
     }
-    if ((instructions[0] | (instructions[1] << 8)) == EXPR_EVAL_ASSIGNABLE_LIST) {
+    if (readListWord(instructions) == EXPR_EVAL_ASSIGNABLE_LIST) {
         return evalAssignableListExpression(flowState, componentIndex, instructions, available, result, errorMessage, numInstructionBytes, iterators);
     }
 #if EEZ_OPTION_GUI
     return evalExpression(flowState, componentIndex, instructions, result, errorMessage, numInstructionBytes, iterators, operation);
 #else
-    return evalExpression(flowState, componentIndex, component->properties[propertyIndex]->evalInstructions, result, errorMessage, numInstructionBytes, iterators);
+    return evalExpression(flowState, componentIndex, instructions, result, errorMessage, numInstructionBytes, iterators);
 #endif
 }
 
