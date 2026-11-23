@@ -428,7 +428,7 @@ bool evalProperty(FlowState *flowState, int componentIndex, int propertyIndex, V
     const auto available = getAssetsRemainingSize(flowState->assets, instructions);
     // Alternate loaders may not supply a size for ordinary Flow assets.
     // A reference-list container always needs a known enclosing span.
-    if (getAssetsDataSize(flowState->assets) != 0 && available < 2) {
+    if (available < 2 && (flowState->assets == g_mainAssets || getAssetsDataSize(flowState->assets) != 0)) {
         throwError(flowState, componentIndex, errorMessage.setDescription("Property is outside loaded assets"));
         return false;
     }

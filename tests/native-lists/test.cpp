@@ -254,6 +254,16 @@ int main() {
     CHECK(getAssetsRemainingSize(&romFixture->assets, rom + sizeof(rom) - 1) == 1);
     CHECK(getAssetsRemainingSize(&romFixture->assets, rom + sizeof(rom)) == 0);
     checkPropertyDispatch(*romFixture, true);
+
+    // A zero byte count in the built-in loader is an empty span, even if an
+    // older property is still present in the buffer.
+    std::vector<uint8_t> oldProperty;
+    word(oldProperty, global | 1);
+    word(oldProperty, end);
+    romFixture->setInstructions(oldProperty);
+    loadMainAssets(romData, sizeof(tag));
+    CHECK(!evalProperty(&romFixture->state, 0, 0, result, FlowError::Plain("empty ROM span")));
+    ++checks;
     g_mainAssets = nullptr;
     romFixture->~PropertyFixture();
     ++checks;
