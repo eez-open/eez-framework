@@ -18,6 +18,7 @@ namespace flow {
 typedef void (*EvalOperation)(EvalStack &);
 
 extern EvalOperation g_evalOperations[];
+extern const size_t g_numEvalOperations;
 
 Value op_add(const Value& a1, const Value& b1);
 Value op_sub(const Value& a1, const Value& b1);

@@ -10,7 +10,9 @@
 
 #include <eez/conf-internal.h>
 
-#if defined(EEZ_DASHBOARD_API)
+#if defined(EEZ_DASHBOARD_API) || defined(EEZ_STUDIO_FLOW_RUNTIME)
+
+#include <emscripten.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -30,7 +32,9 @@ using namespace eez::flow;
 namespace eez {
 namespace flow {
 
+#if defined(EEZ_DASHBOARD_API)
 bool g_dashboardValueFree = false;
+#endif
 
 int getFlowStateIndex(FlowState *flowState) {
     return (int)((uint8_t *)flowState - ALLOC_BUFFER);
@@ -40,6 +44,7 @@ FlowState *getFlowStateFromFlowStateIndex(int flowStateIndex) {
     return (FlowState *)(ALLOC_BUFFER + flowStateIndex);
 }
 
+#if defined(EEZ_DASHBOARD_API)
 struct DashboardComponentExecutionState : public ComponenentExecutionState {
     ~DashboardComponentExecutionState() {
 		EM_ASM({
@@ -257,6 +262,7 @@ void setDashboardColorTheme(const char *themeName) {
         return setDashboardColorTheme($0, UTF8ToString($1));
     }, g_wasmModuleId, themeName);
 }
+#endif // EEZ_DASHBOARD_API
 
 } // flow
 } // eez
@@ -318,12 +324,14 @@ EM_PORT_API(Value *) createArrayValue(int arraySize, int arrayType) {
     return pValue;
 }
 
+#if defined(EEZ_DASHBOARD_API)
 EM_PORT_API(Value *) createStreamValue(int value) {
     dashboardObjectValueIncRef(value);
     auto pValue = ObjectAllocator<Value>::allocate(0x53a2e660);
     *pValue = Value(value, VALUE_TYPE_STREAM);
     return pValue;
 }
+#endif
 
 EM_PORT_API(Value *) createDateValue(double value) {
     auto pValue = ObjectAllocator<Value>::allocate(0x90b7ce70);
@@ -337,12 +345,14 @@ EM_PORT_API(Value *) createBlobValue(const uint8_t *buffer, uint32_t bufferLen) 
     return pValue;
 }
 
+#if defined(EEZ_DASHBOARD_API)
 EM_PORT_API(Value *) createJsonValue(int value) {
     dashboardObjectValueIncRef(value);
     auto pValue = ObjectAllocator<Value>::allocate(0x734f514c);
     *pValue = Value(value, VALUE_TYPE_JSON);
     return pValue;
 }
+#endif
 
 EM_PORT_API(Value *) createErrorValue() {
     auto pValue = ObjectAllocator<Value>::allocate(0x5ad2f119);
@@ -356,9 +366,21 @@ EM_PORT_API(void) arrayValueSetElementValue(Value *arrayValuePtr, int elementInd
 }
 
 EM_PORT_API(void) valueFree(Value *valuePtr) {
+#if defined(EEZ_DASHBOARD_API)
     eez::flow::g_dashboardValueFree = true;
+#endif
     ObjectAllocator<Value>::deallocate(valuePtr);
+#if defined(EEZ_DASHBOARD_API)
     eez::flow::g_dashboardValueFree = false;
+#endif
+}
+
+// Return an owned, dereferenced Value for the Studio inspector. Never expose
+// internal pointers to JavaScript or retain them after the Flow state is freed.
+EM_PORT_API(Value *) getValueForInspection(const Value *valuePtr) {
+    auto result = ObjectAllocator<Value>::allocate(0x43ac915a);
+    if (result) *result = valuePtr->getValue();
+    return result;
 }
 
 EM_PORT_API(Value *) getGlobalVariable(int globalVariableIndex) {
@@ -394,13 +416,14 @@ EM_PORT_API(int) getFlowIndex(int flowStateIndex) {
 EM_PORT_API(void *) getComponentExecutionState(int flowStateIndex, int componentIndex) {
     auto flowState = getFlowStateFromFlowStateIndex(flowStateIndex);
     auto component = flowState->flow->components[componentIndex];
-    auto executionState = (DashboardComponentExecutionState *)flowState->componenentExecutionStates[componentIndex];
+    auto executionState = flowState->componenentExecutionStates[componentIndex];
     if (executionState) {
         return executionState;
     }
     return nullptr;
 }
 
+#if defined(EEZ_DASHBOARD_API)
 EM_PORT_API(void *) allocateDashboardComponentExecutionState(int flowStateIndex, int componentIndex) {
     auto flowState = getFlowStateFromFlowStateIndex(flowStateIndex);
     auto component = flowState->flow->components[componentIndex];
@@ -419,6 +442,7 @@ EM_PORT_API(void) deallocateDashboardComponentExecutionState(int flowStateIndex,
         deallocateComponentExecutionState(flowState, componentIndex);
     }
 }
+#endif
 
 EM_PORT_API(uint32_t) getUint8Param(int flowStateIndex, int componentIndex, int offset) {
     auto flowState = getFlowStateFromFlowStateIndex(flowStateIndex);
@@ -688,4 +712,4 @@ EM_PORT_API(bool) isRTL() {
 }
 #endif
 
-#endif // EEZ_DASHBOARD_API
+#endif // EEZ_DASHBOARD_API || EEZ_STUDIO_FLOW_RUNTIME

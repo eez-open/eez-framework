@@ -84,6 +84,9 @@ bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *ins
 bool evalExpression(FlowState *flowState, int componentIndex, const uint8_t *instructions, Value &result, const FlowError &errorMessage, int *numInstructionBytes = nullptr, const int32_t *iterators = nullptr);
 #endif
 bool evalAssignableExpression(FlowState *flowState, int componentIndex, const uint8_t *instructions, Value &result, const FlowError &errorMessage, int *numInstructionBytes = nullptr, const int32_t *iterators = nullptr);
+// The returned array contains references, valid only during the current native
+// action call. Evaluate/validate all targets before performing any assignments.
+bool evalAssignableListExpression(FlowState *flowState, int componentIndex, const uint8_t *instructions, size_t instructionsSize, Value &result, const FlowError &errorMessage, int *numInstructionBytes = nullptr, const int32_t *iterators = nullptr);
 
 #if EEZ_OPTION_GUI
 bool evalProperty(FlowState *flowState, int componentIndex, int propertyIndex, Value &result, const FlowError &errorMessage, int *numInstructionBytes = nullptr, const int32_t *iterators = nullptr, eez::gui::DataOperationEnum operation = eez::gui::DATA_OPERATION_GET);
