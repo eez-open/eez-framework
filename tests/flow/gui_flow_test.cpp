@@ -184,6 +184,33 @@ TEST("flow/show_page: replaces the active page and continues") {
     CHECK_EQ(harness::appContext()->getActivePageId(), (int)PAGE_ID_FLOW_TARGET);
     CHECK_LOGGED("showpage done");
     CHECK_LOGGED("target open");
+    CHECK_EQ(harness::appContext()->getActivePageStackPointer(), 0);
+}
+
+TEST("flow/show_page: mode push puts the page on the stack") {
+    showPage(PAGE_ID_FLOW_SHOWPAGE_PUSH);
+    CHECK_EQ(harness::appContext()->getActivePageId(), (int)PAGE_ID_FLOW_TARGET);
+    CHECK_EQ(harness::appContext()->getActivePageStackPointer(), 1);
+    CHECK_EQ(harness::appContext()->getPreviousPageId(), (int)PAGE_ID_FLOW_SHOWPAGE_PUSH);
+    CHECK_LOGGED("showpage push done");
+    CHECK_LOGGED("target open");
+
+    // back to the page with the ShowPage
+    harness::appContext()->popPage();
+    harness::frame();
+    CHECK_EQ(harness::appContext()->getActivePageId(), (int)PAGE_ID_FLOW_SHOWPAGE_PUSH);
+}
+
+TEST("flow/show_page: mode set clears the page stack") {
+    showPage(PAGE_ID_MAIN);
+    harness::appContext()->pushPage(PAGE_ID_FLOW_SHOWPAGE_SET);
+    harness::frame();
+    harness::frame();
+    harness::frame();
+    CHECK_EQ(harness::appContext()->getActivePageId(), (int)PAGE_ID_FLOW_TARGET);
+    CHECK_EQ(harness::appContext()->getActivePageStackPointer(), 0);
+    CHECK_LOGGED("showpage set done");
+    CHECK_LOGGED("target open");
 }
 
 ////////////////////////////////////////////////////////////////////////////////

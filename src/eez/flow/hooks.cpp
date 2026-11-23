@@ -40,6 +40,22 @@ static void replacePage(int16_t pageId, uint32_t animType, uint32_t speed, uint3
 #endif
 }
 
+static void pushPage(int16_t pageId) {
+#if EEZ_OPTION_GUI
+	eez::gui::getAppContextFromId(APP_CONTEXT_ID_DEVICE)->pushPage(pageId);
+#else
+    EEZ_UNUSED(pageId);
+#endif
+}
+
+static void setPage(int16_t pageId) {
+#if EEZ_OPTION_GUI
+	eez::gui::getAppContextFromId(APP_CONTEXT_ID_DEVICE)->showPage(pageId);
+#else
+    EEZ_UNUSED(pageId);
+#endif
+}
+
 static void showKeyboard(Value label, Value initialText, Value minChars, Value maxChars, bool isPassword, void(*onOk)(char *), void(*onCancel)()) {
     EEZ_UNUSED(label);
     EEZ_UNUSED(initialText);
@@ -83,6 +99,8 @@ static void onDebuggerInputAvailable() {
 }
 
 void (*replacePageHook)(int16_t pageId, uint32_t animType, uint32_t speed, uint32_t delay) = replacePage;
+void (*pushPageHook)(int16_t pageId) = pushPage;
+void (*setPageHook)(int16_t pageId) = setPage;
 void (*showKeyboardHook)(Value label, Value initialText, Value minChars, Value maxChars, bool isPassword, void(*onOk)(char *), void(*onCancel)()) = showKeyboard;
 void (*showKeypadHook)(Value label, Value initialValue, Value min, Value max, Unit unit, float precision, void(*onOk)(float), void(*onCancel)()) = showKeypad;
 void (*stopScriptHook)() = stopScript;

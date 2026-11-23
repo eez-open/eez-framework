@@ -27,6 +27,10 @@ namespace eez {
 namespace flow {
 
 extern void (*replacePageHook)(int16_t pageId, uint32_t animType, uint32_t speed, uint32_t delay);
+// ShowPage with the mode "Push": the page goes on the page stack
+extern void (*pushPageHook)(int16_t pageId);
+// ShowPage with the mode "Set": the page stack is cleared, the page is the only one
+extern void (*setPageHook)(int16_t pageId);
 extern void (*showKeyboardHook)(Value label, Value initialText, Value minChars, Value maxChars, bool isPassword, void(*onOk)(char *), void(*onCancel)());
 extern void (*showKeypadHook)(Value label, Value initialValue, Value min, Value max, Unit unit, float precision, void(*onOk)(float), void(*onCancel)());
 extern void (*stopScriptHook)();
