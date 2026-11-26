@@ -310,6 +310,12 @@ const Style *ytDataGetStyle(const WidgetCursor &widgetCursor, int16_t id, uint8_
     return getStyle(value.getUInt16());
 }
 
+uint16_t ytDataGetColor(const WidgetCursor &widgetCursor, int16_t id, uint8_t valueIndex, const Style *style) {
+    Value value(valueIndex, VALUE_TYPE_UINT8);
+    DATA_OPERATION_FUNCTION(id, DATA_OPERATION_YT_DATA_GET_COLOR, widgetCursor, value);
+    return value.getType() == VALUE_TYPE_UINT16 ? value.getUInt16() : style->color;
+}
+
 Value ytDataGetMin(const WidgetCursor &widgetCursor, int16_t id, uint8_t valueIndex) {
     Value value(valueIndex, VALUE_TYPE_UINT8);
     DATA_OPERATION_FUNCTION(id, DATA_OPERATION_YT_DATA_GET_MIN, widgetCursor, value);

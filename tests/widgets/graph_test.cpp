@@ -273,6 +273,7 @@ void ytStatic(float value) {
     yt.offset = 0;
     yt.vertDivisions = 4;
     yt.horzDivisions = 4;
+    yt.color = -1;
 }
 
 void ytScroll(std::initializer_list<std::pair<int, float>> ranges, uint32_t position) {
@@ -288,7 +289,13 @@ void ytScroll(std::initializer_list<std::pair<int, float>> ranges, uint32_t posi
     yt.position = position;
     yt.min = 0;
     yt.max = 100;
+    yt.color = -1;
 }
+
+// a color the display keeps as it is (RGB565 too), and the same as 0x00BBGGRR
+// for the data (a runtime color)
+const uint32_t DATA_COLOR = 0x40C080;
+const int64_t DATA_COLOR_RGBA = 0x80C040;
 
 } // namespace
 
@@ -301,6 +308,14 @@ TEST("widgets/ytgraph: static graph draws the grid and the values") {
     // grid: 4 divisions in both directions
     CHECK_EQ(rgb(YT[0] + 100, YT[1] + 20), GRAY);
     CHECK_EQ(rgb(YT[0] + 30, YT[1] + 50), GRAY);
+}
+
+TEST("widgets/ytgraph: a static trace has the color the data gives") {
+    ytStatic(30.0f);
+    g_native.yt.color = DATA_COLOR_RGBA;
+    show(PAGE_ID_W_YT);
+    CHECK_EQ(rgb(YT[0] + 30, YT[1] + 40), DATA_COLOR);
+    CHECK_EQ(count(YT[0], YT[1], 400, 200, RED), 0);
 }
 
 TEST("widgets/ytgraph: static graph is redrawn when the position changes") {
@@ -376,6 +391,14 @@ TEST("widgets/ytgraph: scrolling graph draws the newest value on the right") {
     CHECK_EQ(rgb(YT[0] + 399, YT[1] + 99), RED);
     CHECK_EQ(rgb(YT[0] + 390, YT[1] + 99), RED);
     CHECK_EQ(rgb(YT[0] + 390, YT[1] + 120), BLACK);
+}
+
+TEST("widgets/ytgraph: a scrolling trace has the color the data gives") {
+    ytScroll({ { 0, 50.0f } }, 30);
+    g_native.yt.color = DATA_COLOR_RGBA;
+    show(PAGE_ID_W_YT);
+    CHECK_EQ(rgb(YT[0] + 399, YT[1] + 99), DATA_COLOR);
+    CHECK_EQ(count(YT[0], YT[1], 400, 200, RED), 0);
 }
 
 TEST("widgets/ytgraph: scrolling graph moves when a new value comes") {

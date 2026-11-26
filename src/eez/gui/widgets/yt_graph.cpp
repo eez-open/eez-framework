@@ -25,6 +25,12 @@
 namespace eez {
 namespace gui {
 
+// The color of the value: the color the data gives, else the color of its
+// style.
+static display::Color getValueColor(const WidgetCursor &widgetCursor, uint8_t valueIndex, const Style *style) {
+    return display::getColorFromIndex(ytDataGetColor(widgetCursor, widgetCursor.widget->data, valueIndex, style));
+}
+
 // Pixels of the graph drawn with YT_GRAPH_UPDATE_METHOD_SCROLL and
 // YT_GRAPH_UPDATE_METHOD_SCAN_LINE. Graph is drawn incrementally (only the new
 // values) into this buffer and then the whole buffer is copied to the display,
@@ -106,8 +112,8 @@ struct YTGraphDrawHelper {
 
         const Style* y1Style = ytDataGetStyle(widgetCursor, widget->data, 0);
         const Style* y2Style = ytDataGetStyle(widgetCursor, widget->data, 1);
-        dataColor[0] = display::getColorFromIndex(y1Style->color);
-        dataColor[1] = display::getColorFromIndex(y2Style->color);
+        dataColor[0] = getValueColor(widgetCursor, 0, y1Style);
+        dataColor[1] = getValueColor(widgetCursor, 1, y2Style);
 
         ytDataGetValue = ytDataGetGetValueFunc(widgetCursor, widget->data);
     }
@@ -390,7 +396,7 @@ struct YTGraphStaticDrawHelper {
             offset = widgetState->valueOffset[m_valueIndex];
 
             const Style* style = ytDataGetStyle(widgetCursor, widget->data, m_valueIndex);
-            dataColor = display::getColorFromIndex(style->color);
+            dataColor = getValueColor(widgetCursor, m_valueIndex, style);
 
             getYValue(position > 0 ? position - 1 : 0, yPrevMin, yPrevMax);
 
@@ -430,7 +436,7 @@ struct YTGraphStaticDrawHelper {
                 display::fillRect(xLabel, yLabels[m_valueIndex], xLabel + labelWidth - 1, yLabels[m_valueIndex] + font.getHeight() - 1);
             }
 
-            display::setColor(labelStyle->color);
+            display::setColor(ytDataGetColor(widgetCursor, widget->data, m_valueIndex, labelStyle));
             display::drawStr(labelText, -1, xLabel, yLabels[m_valueIndex], widgetCursor.x, widgetCursor.y, widgetCursor.x + widgetCursor.w - 1, widgetCursor.y + widgetCursor.h - 1, font, -1);
         }
     }

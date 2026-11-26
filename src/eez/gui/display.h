@@ -165,6 +165,16 @@ void setColor(uint16_t colorIndex);
 void setColor(uint8_t r, uint8_t g, uint8_t b);
 void setColorByValue(Color color);
 
+// Runtime colors: color indexes RUNTIME_COLOR_INDEX_FIRST ..
+// RUNTIME_COLOR_INDEX_FIRST + NUM_RUNTIME_COLORS - 1 with the opaque colors
+// the application sets (transparent until set), e.g. the colors of the traces
+// read from a file. An index works everywhere a color index of the main
+// assets does (the transformColor hook doesn't change it).
+static const uint16_t RUNTIME_COLOR_INDEX_FIRST = 0x7000;
+static const int NUM_RUNTIME_COLORS = 64;
+// the color index of runtime color i (0 .. NUM_RUNTIME_COLORS - 1)
+uint16_t setRuntimeColor(int i, uint8_t r, uint8_t g, uint8_t b);
+
 Color getBackColor();
 
 // set background color by index

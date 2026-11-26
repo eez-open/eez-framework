@@ -1540,6 +1540,8 @@ static Color colorFromAssets(const void *colors, uint32_t i, bool colors32) {
 #endif
 }
 
+static Color g_runtimeColors[NUM_RUNTIME_COLORS];
+
 // A color index below -1 (as int16_t) is a color of external (i.e. not main)
 // assets: first the colors defined in the external assets, their values are in
 // the themes (one theme for each main assets theme, in the same order), then
@@ -1582,6 +1584,10 @@ Color getColorFromIndex(uint16_t colorIndex) {
             return 0;
         }
         return colorFromAssets(colors, index, assets->projectMinorVersion == 1);
+    }
+
+    if (colorIndex >= RUNTIME_COLOR_INDEX_FIRST && colorIndex < RUNTIME_COLOR_INDEX_FIRST + NUM_RUNTIME_COLORS) {
+        return g_runtimeColors[colorIndex - RUNTIME_COLOR_INDEX_FIRST];
     }
 
     colorIndex = g_hooks.transformColor(colorIndex);
@@ -1672,6 +1678,14 @@ void setColor(uint16_t colorIndex) {
 // set foreground color by RGB value
 void setColor(uint8_t r, uint8_t g, uint8_t b) {
     g_fc = RGB_TO_COLOR(r, g, b);
+}
+
+uint16_t setRuntimeColor(int i, uint8_t r, uint8_t g, uint8_t b) {
+    if (i < 0 || i >= NUM_RUNTIME_COLORS) {
+        return TRANSPARENT_COLOR_INDEX;
+    }
+    g_runtimeColors[i] = RGB_TO_COLOR(r, g, b);
+    return RUNTIME_COLOR_INDEX_FIRST + i;
 }
 
 // set foreground color by value

@@ -98,6 +98,12 @@ void data_w_yt(DataOperationEnum operation, const WidgetCursor &, Value &value) 
     case DATA_OPERATION_YT_DATA_GET_STYLE:
         value = Value(STYLE_ID_W_TRACE, VALUE_TYPE_UINT16);
         break;
+    case DATA_OPERATION_YT_DATA_GET_COLOR:
+        if (yt.color >= 0 && value.getUInt8() == 0) {
+            uint32_t c = (uint32_t)yt.color;
+            value = Value(display::setRuntimeColor(0, c & 0xFF, (c >> 8) & 0xFF, (c >> 16) & 0xFF), VALUE_TYPE_UINT16);
+        }
+        break;
     case DATA_OPERATION_YT_DATA_GET_MIN:
         value = Value(yt.min, VALUE_TYPE_FLOAT);
         break;

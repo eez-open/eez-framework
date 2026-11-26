@@ -135,6 +135,9 @@ struct YtData {
     int horzDivisions = 4;
     uint32_t refreshCounter = 0;
     int touchDrags = 0;
+    // DATA_OPERATION_YT_DATA_GET_COLOR of the value index 0, as the runtime
+    // color 0: 0x00BBGGRR, -1 none
+    int64_t color = -1;
 };
 
 struct Native {

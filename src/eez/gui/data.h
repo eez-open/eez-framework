@@ -119,7 +119,8 @@ enum DataOperationEnum {
     DATA_OPERATION_YT_DATA_TOUCH_DRAG,
     DATA_OPERATION_GET_CANVAS_REFRESH_STATE,
     DATA_OPERATION_GET_TEXT_CURSOR_POSITION,
-    DATA_OPERATION_GET_X_SCROLL
+    DATA_OPERATION_GET_X_SCROLL,
+    DATA_OPERATION_YT_DATA_GET_COLOR
 };
 
 int count(const WidgetCursor &widgetCursor, int16_t id);
@@ -173,6 +174,11 @@ void ytDataSetPosition(const WidgetCursor &widgetCursor, int16_t id, uint32_t ne
 uint32_t ytDataGetPositionIncrement(const WidgetCursor &widgetCursor, int16_t id);
 uint32_t ytDataGetPageSize(const WidgetCursor &widgetCursor, int16_t id);
 const Style *ytDataGetStyle(const WidgetCursor &widgetCursor, int16_t id, uint8_t valueIndex);
+// The color index of the value: the one the data gives
+// (DATA_OPERATION_YT_DATA_GET_COLOR, a VALUE_TYPE_UINT16, e.g. a runtime
+// color, see display::setRuntimeColor), else the color of the style of the
+// value (ytDataGetStyle).
+uint16_t ytDataGetColor(const WidgetCursor &widgetCursor, int16_t id, uint8_t valueIndex, const Style *style);
 Value ytDataGetMin(const WidgetCursor &widgetCursor, int16_t id, uint8_t valueIndex);
 Value ytDataGetMax(const WidgetCursor &widgetCursor, int16_t id, uint8_t valueIndex);
 int ytDataGetVertDivisions(const WidgetCursor &widgetCursor, int16_t id);
