@@ -161,6 +161,63 @@ TEST("external/draw: a master color index with external assets in the cursor") {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// getThemeColorRGBA: the colors of the given assets in a theme, without the
+// cursor and the selected theme
+
+namespace {
+
+// R in the low byte, alpha in the high byte (as the ext:: colors), 0 if there
+// is no color
+uint32_t themeColor(Assets *assets, uint16_t colorIndex, int themeIndex) {
+    display::ColorRGBA rgba;
+    if (!display::getThemeColorRGBA(assets, colorIndex, themeIndex, &rgba)) {
+        return 0;
+    }
+    return ((uint32_t)rgba.a << 24) | ((uint32_t)rgba.b << 16) | ((uint32_t)rgba.g << 8) | rgba.r;
+}
+
+uint32_t opaque(uint32_t rgb) {
+    return 0xFF000000u | rgb;
+}
+
+} // namespace
+
+TEST("external/draw: getThemeColorRGBA of a module color, a custom color and a master color") {
+    Assets *assets = ext::load();
+    g_widgetCursor.assets = nullptr;
+    CHECK_EQ(themeColor(assets, ext::MOD_FILL_INDEX, 0), opaque(ext::MOD_FILL));
+    CHECK_EQ(themeColor(assets, ext::MOD_LINE_INDEX, 0), opaque(ext::MOD_LINE));
+    uint16_t customIndex = ext::customColorIndex(assets, ext::MOD_CUSTOM_COLOR32);
+    REQUIRE(customIndex != 0);
+    CHECK_EQ(themeColor(assets, customIndex, 0), opaque(ext::MOD_CUSTOM));
+    CHECK_EQ(themeColor(assets, COLOR_ID_ACCENT, 0), opaque(ext::ACCENT));
+    CHECK_EQ(themeColor(nullptr, COLOR_ID_ACCENT, 0), opaque(ext::ACCENT));
+}
+
+TEST("external/draw: getThemeColorRGBA keeps the alpha") {
+    Assets *assets = ext::load();
+    CHECK_EQ(themeColor(assets, ext::MOD_FILL_A128_INDEX, 0), 0x8080C040u);
+}
+
+TEST("external/draw: getThemeColorRGBA with a theme past the themes uses the first one") {
+    Assets *assets = ext::load();
+    g_selectedThemeIndex = 0;
+    CHECK_EQ(themeColor(assets, ext::MOD_FILL_INDEX, 7), opaque(ext::MOD_FILL));
+    CHECK_EQ(themeColor(assets, COLOR_ID_ACCENT, 7), opaque(ext::ACCENT));
+    CHECK_EQ(themeColor(assets, COLOR_ID_ACCENT, -1), opaque(ext::ACCENT));
+}
+
+TEST("external/draw: getThemeColorRGBA has no color for transparent and out of range indexes") {
+    Assets *assets = ext::load();
+    display::ColorRGBA rgba;
+    CHECK(!display::getThemeColorRGBA(assets, TRANSPARENT_COLOR_INDEX, 0, &rgba));
+    uint32_t numColors = assets->colorsDefinition->themes[0]->colors.count + assets->colorsDefinition->colors.count;
+    CHECK(!display::getThemeColorRGBA(assets, (uint16_t)(65534 - numColors), 0, &rgba));
+    CHECK(!display::getThemeColorRGBA(nullptr, ext::MOD_FILL_INDEX, 0, &rgba));
+    CHECK(!display::getThemeColorRGBA(assets, 30000, 0, &rgba));
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // font tags
 
 TEST("external/draw: a U+E002 font tag selects a font of the cursor assets") {

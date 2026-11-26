@@ -1540,45 +1540,48 @@ static Color colorFromAssets(const void *colors, uint32_t i, bool colors32) {
 #endif
 }
 
+// A color index below -1 (as int16_t) is a color of external (i.e. not main)
+// assets: first the colors defined in the external assets, their values are in
+// the themes (one theme for each main assets theme, in the same order), then
+// the custom colors. The color list and the index in it, in the theme
+// themeIndex of the main assets, false if there is no such color.
+static bool findExternalColor(Assets *assets, uint16_t colorIndex, uint32_t themeIndex, const void *&colors, uint32_t &index) {
+    index = -((int16_t)colorIndex) - 2;
+
+    auto &themes = assets->colorsDefinition->themes;
+    if (themes.count > 0) {
+        if (themeIndex >= themes.count) {
+            themeIndex = 0;
+        }
+        auto &themeColors = themes[themeIndex]->colors;
+        if (index < themeColors.count) {
+            colors = themeColors.items;
+            return true;
+        }
+        index -= themeColors.count;
+    }
+
+    auto &customColors = assets->colorsDefinition->colors;
+    if (index >= customColors.count) {
+        return false;
+    }
+    colors = customColors.items;
+    return true;
+}
+
 Color getColorFromIndex(uint16_t colorIndex) {
     if (colorIndex == TRANSPARENT_COLOR_INDEX) {
         return 0;
     }
 
     if ((int16_t)colorIndex < -1) {
-        // color is from external (i.e. not main) assets data: first the
-        // colors defined in the external assets, their values are in the
-        // themes (one theme for each main assets theme, in the same order),
-        // then the custom colors
         Assets *assets = g_widgetCursor.assets;
-
-        uint32_t externalColorIndex = -((int16_t)colorIndex) - 2;
-
-        const void *colors = nullptr;
-
-        auto &themes = assets->colorsDefinition->themes;
-        if (themes.count > 0) {
-            uint32_t themeIndex = g_hooks.getSelectedThemeIndex();
-            if (themeIndex >= themes.count) {
-                themeIndex = 0;
-            }
-            auto &themeColors = themes[themeIndex]->colors;
-            if (externalColorIndex < themeColors.count) {
-                colors = themeColors.items;
-            } else {
-                externalColorIndex -= themeColors.count;
-            }
+        const void *colors;
+        uint32_t index;
+        if (!findExternalColor(assets, colorIndex, g_hooks.getSelectedThemeIndex(), colors, index)) {
+            return 0;
         }
-
-        if (!colors) {
-            auto &customColors = assets->colorsDefinition->colors;
-            if (externalColorIndex >= customColors.count) {
-                return 0;
-            }
-            colors = customColors.items;
-        }
-
-        return colorFromAssets(colors, externalColorIndex, assets->projectMinorVersion == 1);
+        return colorFromAssets(colors, index, assets->projectMinorVersion == 1);
     }
 
     colorIndex = g_hooks.transformColor(colorIndex);
@@ -1608,6 +1611,52 @@ void getColorRGBAFromIndex(uint16_t colorIndex, ColorRGBA *colorRGBA) {
     colorRGBA->g = COLOR_TO_G(color);
     colorRGBA->b = COLOR_TO_B(color);
     colorRGBA->a = COLOR_TO_A(color);
+}
+
+bool getThemeColorRGBA(Assets *assets, uint16_t colorIndex, int themeIndex, ColorRGBA *colorRGBA) {
+    if (colorIndex == TRANSPARENT_COLOR_INDEX) {
+        return false;
+    }
+
+    const void *colors;
+    uint32_t index;
+    bool colors32;
+    if ((int16_t)colorIndex < -1) {
+        if (!assets || !findExternalColor(assets, colorIndex, themeIndex < 0 ? 0 : (uint32_t)themeIndex, colors, index)) {
+            return false;
+        }
+        colors32 = assets->projectMinorVersion == 1;
+    } else {
+        if (themeIndex < 0 || themeIndex >= getThemesCount()) {
+            themeIndex = 0;
+        }
+        uint32_t themeColorsCount = getThemeColorsCount(themeIndex);
+        if (colorIndex < themeColorsCount) {
+            colors = getThemeColors(themeIndex);
+            index = colorIndex;
+        } else if (colorIndex - themeColorsCount < g_mainAssets->colorsDefinition->colors.count) {
+            colors = getColors();
+            index = colorIndex - themeColorsCount;
+        } else {
+            return false;
+        }
+        colors32 = g_mainAssets->projectMinorVersion == 1;
+    }
+
+    if (colors32) {
+        uint32_t color = ((const uint32_t *)colors)[index];
+        colorRGBA->r = color & 0xFF;
+        colorRGBA->g = (color >> 8) & 0xFF;
+        colorRGBA->b = (color >> 16) & 0xFF;
+        colorRGBA->a = color >> 24;
+    } else {
+        uint16_t color = ((const uint16_t *)colors)[index];
+        colorRGBA->r = RGB565_COLOR_TO_R(color);
+        colorRGBA->g = RGB565_COLOR_TO_G(color);
+        colorRGBA->b = RGB565_COLOR_TO_B(color);
+        colorRGBA->a = 255;
+    }
+    return true;
 }
 
 // get foreground color

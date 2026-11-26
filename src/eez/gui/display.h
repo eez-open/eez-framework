@@ -147,6 +147,14 @@ struct ColorRGBA {
 };
 void getColorRGBAFromIndex(uint16_t color, ColorRGBA *colorRGBA);
 
+// The color with the index as the widgets of the assets have it (an index of
+// external colors is one of these assets, e.g. of a module), in the theme
+// themeIndex of the main assets (the first theme if there is no such theme),
+// as stored, without the transformColor hook: for the colors shown outside
+// the display, e.g. in a file. False if the index has no color
+// (TRANSPARENT_COLOR_INDEX, out of range).
+bool getThemeColorRGBA(Assets *assets, uint16_t colorIndex, int themeIndex, ColorRGBA *colorRGBA);
+
 // get foreground color
 Color getColor();
 
