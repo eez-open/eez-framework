@@ -101,14 +101,22 @@ const STYLES = [
     style("mod_icons_text", { font: "mod_icons" }),
     // the style of the dynamic user widget of mod_host
     style("mod_uw_frame", { backgroundColor: "mod_line" }),
-    // a module style with looks for variants of the master project
+    // a module style with variant styles for variants of the master project
     // (variants_warn, variants_volt of parts/variants.mjs)
     style("mod_variant_box", { backgroundColor: "mod_fill" }),
     variantStyle("mod_variant_box__warn", "mod_variant_box", "variants_warn", { backgroundColor: "mod_line" }),
     variantStyle("mod_variant_box__volt", "mod_variant_box", "variants_volt", { backgroundColor: CUSTOM_COLOR }),
+    // the variant styles for the variant of the module (MODULE_VARIANTS): of a
+    // module style and of a master style (ext_m_var_box of parts/external.mjs)
+    variantStyle("mod_variant_box__mod_var", "mod_variant_box", "mod_var", { backgroundColor: "bookmark" }),
+    variantStyle("ext_m_var_box__mod_var", "ext_m_var_box", "mod_var", { backgroundColor: "mod_line" }),
 ];
 
-// A variant style: the properties of a look of the base style in a variant.
+// the variants the module adds to the variants of the master project (ids
+// from 128)
+const MODULE_VARIANTS = [[128, "mod_var"]];
+
+// A variant style: the properties of the base style in a variant.
 function variantStyle(name, base, variant, props) {
     const s = style(name, { useStyle: base, variant, ...props });
     delete s.alwaysBuild;
@@ -405,15 +413,30 @@ function modVariants() {
         rectangle("mod_variants/base", 10, 10, 100, 50, "mod_variant_box"),
         rectangle("mod_variants/warn", 120, 10, 100, 50, "mod_variant_box", { variant: "variants_warn" }),
         rectangle("mod_variants/volt", 230, 10, 100, 50, "mod_variant_box", { variant: "variants_volt" }),
-        // the style has no look for this variant
+        // the style has no variant style for this variant
         rectangle("mod_variants/unused", 340, 10, 100, 50, "mod_variant_box", { variant: "variants_unused" }),
         // the children of a container with a variant
+        // the variant of the module: a module style, a master style the module
+        // adds a variant style to, the same master style without a variant
+        rectangle("mod_variants/module_var", 450, 10, 100, 50, "mod_variant_box", { variant: "mod_var" }),
+        rectangle("mod_variants/master_var", 560, 10, 100, 50, "ext_m_var_box", { variant: "mod_var" }),
+        rectangle("mod_variants/master_plain", 670, 10, 100, 50, "ext_m_var_box"),
+        // the children of a container with the variant of the module
+        widget("ContainerWidget", "mod_variants/container_mod", 10, 160, 450, 70, "default", {
+            variant: "mod_var",
+            widgets: [
+                rectangle("mod_variants/mod_inherit", 0, 10, 100, 50, "mod_variant_box"),
+                rectangle("mod_variants/mod_master", 110, 10, 100, 50, "ext_m_var_box"),
+                // a master variant inside: the master variant styles of the copy
+                rectangle("mod_variants/mod_warn", 220, 10, 100, 50, "mod_variant_box", { variant: "variants_warn" }),
+            ],
+        }),
         widget("ContainerWidget", "mod_variants/container", 10, 80, 450, 70, "default", {
             variant: "variants_volt",
             widgets: [
                 rectangle("mod_variants/inherit", 0, 10, 100, 50, "mod_variant_box"),
                 rectangle("mod_variants/none", 110, 10, 100, 50, "mod_variant_box", { variant: "none" }),
-                // a master style without a look for the variant
+                // a master style without a variant style for the variant
                 rectangle("mod_variants/master", 220, 10, 100, 50, "ext_m_box"),
             ],
         }),
@@ -441,6 +464,10 @@ function project() {
                 displayHeight: DISPLAY_HEIGHT,
                 colorBpp: "32",
                 bitmapColorFormat: "RGB",
+            },
+            eezGui: {
+                objID: oid("ext", "settings", "eezGui"),
+                styleVariants: MODULE_VARIANTS.map(([id, name]) => ({ objID: oid("ext", "style variant", name), id, name })),
             },
             build: {
                 objID: oid("ext", "settings", "build"),

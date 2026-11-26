@@ -142,6 +142,17 @@ void UserWidgetWidgetState::enumChildren() {
 	ChildrenRoundedClip roundedClip;
 	roundedClip.begin(widgetCursor, stateStyle.style);
 
+    // A layout of other assets (a module layout in a page of the main assets,
+    // a main user widget in a module page) gets only a variant of the main
+    // assets: the id of an external variant means something else there. The
+    // variant of the container is restored after this widget (enumWidget).
+    if (
+        getStyleVariant() >= STYLE_VARIANT_EXTERNAL_FIRST &&
+        savedFlowState && flowState && savedFlowState->assets != flowState->assets
+    ) {
+        setStyleVariant(0);
+    }
+
     if (layout) {
 		auto savedWidget = widgetCursor.widget;
 

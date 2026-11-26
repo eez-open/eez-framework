@@ -129,6 +129,64 @@ TEST("render/variants: a style with variant styles has the list of their style i
     CHECK(getVariantStyles(warn) == nullptr);
 }
 
+namespace {
+
+// A style with a variant list after it, as Studio writes them: list holds the
+// numbers of the list (see getVariantStyles).
+struct StyleWithList {
+    Style style;
+    int16_t list[16];
+
+    explicit StyleWithList(std::initializer_list<int16_t> values) {
+        memset((void *)this, 0, sizeof(*this));
+        int i = 0;
+        for (int16_t value : values) {
+            list[i++] = value;
+        }
+        style.variantStylesOffset = (int32_t)((uint8_t *)list - (uint8_t *)&style.variantStylesOffset);
+    }
+};
+
+const int16_t EXTERNAL = (int16_t)VARIANT_STYLES_FLAG_EXTERNAL;
+
+} // namespace
+
+TEST("render/variants: getVariantStyleId of a variant of the main assets") {
+    StyleWithList s({ 3, 11, 0, 13 });
+    CHECK_EQ(getVariantStyleId(&s.style, 1), 11);
+    CHECK_EQ(getVariantStyleId(&s.style, 2), 0);
+    CHECK_EQ(getVariantStyleId(&s.style, 3), 13);
+    // past the variants of the list, and no variant
+    CHECK_EQ(getVariantStyleId(&s.style, 4), 0);
+    CHECK_EQ(getVariantStyleId(&s.style, 0), 0);
+    // an external variant without the second part
+    CHECK_EQ(getVariantStyleId(&s.style, STYLE_VARIANT_EXTERNAL_FIRST), 0);
+}
+
+TEST("render/variants: getVariantStyleId of an external variant") {
+    // two variants of the main assets, then two external variants
+    StyleWithList s({ (int16_t)(2 | EXTERNAL), 11, 12, 2, -21, -22 });
+    CHECK_EQ(getVariantStyleId(&s.style, 1), 11);
+    CHECK_EQ(getVariantStyleId(&s.style, 2), 12);
+    CHECK_EQ(getVariantStyleId(&s.style, 3), 0);
+    CHECK_EQ(getVariantStyleId(&s.style, STYLE_VARIANT_EXTERNAL_FIRST), -21);
+    CHECK_EQ(getVariantStyleId(&s.style, STYLE_VARIANT_EXTERNAL_FIRST + 1), -22);
+    CHECK_EQ(getVariantStyleId(&s.style, STYLE_VARIANT_EXTERNAL_FIRST + 2), 0);
+}
+
+TEST("render/variants: getVariantStyleId of a style with only external variants") {
+    StyleWithList s({ EXTERNAL, 1, -31 });
+    CHECK_EQ(getVariantStyleId(&s.style, 1), 0);
+    CHECK_EQ(getVariantStyleId(&s.style, STYLE_VARIANT_EXTERNAL_FIRST), -31);
+}
+
+TEST("render/variants: getVariantStyleId of a style without a list") {
+    StyleWithList s({});
+    s.style.variantStylesOffset = 0;
+    CHECK_EQ(getVariantStyleId(&s.style, 1), 0);
+    CHECK_EQ(getVariantStyleId(&s.style, STYLE_VARIANT_EXTERNAL_FIRST), 0);
+}
+
 TEST("render/variants: a style without variant styles has no list") {
     CHECK(getVariantStyles(getStyleNoVariant(STYLE_ID_VARIANTS_PLAIN)) == nullptr);
     // a state style

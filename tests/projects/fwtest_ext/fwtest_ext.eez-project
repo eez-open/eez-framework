@@ -13,6 +13,16 @@
       "colorBpp": "32",
       "bitmapColorFormat": "RGB"
     },
+    "eezGui": {
+      "objID": "9a2c9f5f-1bda-53a8-accb-f7edc304b96e",
+      "styleVariants": [
+        {
+          "objID": "21433630-ca7a-5cc6-81df-b4bf2c4802ee",
+          "id": 128,
+          "name": "mod_var"
+        }
+      ]
+    },
     "build": {
       "objID": "e0140159-b030-50ab-b8c9-e51e113c77b4",
       "configurations": [
@@ -817,6 +827,89 @@
           "variant": "variants_unused"
         },
         {
+          "type": "RectangleWidget",
+          "objID": "3f16d0de-754b-58e5-8685-4d42bfc334d9",
+          "left": 450,
+          "top": 10,
+          "width": 100,
+          "height": 50,
+          "style": {
+            "useStyle": "mod_variant_box"
+          },
+          "variant": "mod_var"
+        },
+        {
+          "type": "RectangleWidget",
+          "objID": "bd8ff55d-8f87-5e48-978b-b7efbd8ca2c5",
+          "left": 560,
+          "top": 10,
+          "width": 100,
+          "height": 50,
+          "style": {
+            "useStyle": "ext_m_var_box"
+          },
+          "variant": "mod_var"
+        },
+        {
+          "type": "RectangleWidget",
+          "objID": "4baffd66-e68a-5589-bded-30a7f0bf28db",
+          "left": 670,
+          "top": 10,
+          "width": 100,
+          "height": 50,
+          "style": {
+            "useStyle": "ext_m_var_box"
+          }
+        },
+        {
+          "type": "ContainerWidget",
+          "objID": "da8e5fe8-1727-53a1-889e-9a86b285c5a9",
+          "left": 10,
+          "top": 160,
+          "width": 450,
+          "height": 70,
+          "style": {
+            "useStyle": "default"
+          },
+          "variant": "mod_var",
+          "widgets": [
+            {
+              "type": "RectangleWidget",
+              "objID": "41d05e12-fc77-53f6-8644-f58de8485bbd",
+              "left": 0,
+              "top": 10,
+              "width": 100,
+              "height": 50,
+              "style": {
+                "useStyle": "mod_variant_box"
+              }
+            },
+            {
+              "type": "RectangleWidget",
+              "objID": "557ab41a-0077-51d5-a529-85e59673879f",
+              "left": 110,
+              "top": 10,
+              "width": 100,
+              "height": 50,
+              "style": {
+                "useStyle": "ext_m_var_box"
+              }
+            },
+            {
+              "type": "RectangleWidget",
+              "objID": "2269029e-f061-5b84-a68c-4dcedd084913",
+              "left": 220,
+              "top": 10,
+              "width": 100,
+              "height": 50,
+              "style": {
+                "useStyle": "mod_variant_box"
+              },
+              "variant": "variants_warn"
+            }
+          ]
+        },
+        {
           "type": "ContainerWidget",
           "objID": "fff44ca8-0b2e-5ffa-8c4f-7ef7c1845ffe",
           "left": 10,
@@ -1125,6 +1218,24 @@
           "useStyle": "mod_variant_box",
           "variant": "variants_volt",
           "backgroundColor": "#8040c0",
+          "childStyles": []
+        },
+        {
+          "objID": "85915982-293a-5da5-a354-485e9c38de45",
+          "name": "mod_variant_box__mod_var",
+          "tags": "external",
+          "useStyle": "mod_variant_box",
+          "variant": "mod_var",
+          "backgroundColor": "bookmark",
+          "childStyles": []
+        },
+        {
+          "objID": "dacb1118-a2ad-58bc-80e9-14f65ed8573e",
+          "name": "ext_m_var_box__mod_var",
+          "tags": "external",
+          "useStyle": "ext_m_var_box",
+          "variant": "mod_var",
+          "backgroundColor": "mod_line",
           "childStyles": []
         }
       ]

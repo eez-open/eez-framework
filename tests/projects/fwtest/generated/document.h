@@ -205,6 +205,7 @@ enum StylesEnum {
     STYLE_ID_NONE = 0,
     STYLE_ID_EXT_M_BOX= 1,
     STYLE_ID_EXT_M_TEXT= 2,
+    STYLE_ID_EXT_M_VAR_BOX= 3,
     STYLE_ID_DEFAULT,
     STYLE_ID_TEXT_LEFT,
     STYLE_ID_ACCENT_BOX,
@@ -713,7 +714,7 @@ enum flow_itemFlowStructureFields {
     FLOW_STRUCTURE_FLOW_ITEM_NUM_FIELDS
 };
 
-extern const uint8_t assets[192260];
+extern const uint8_t assets[192295];
 
 } // namespace gui
 } // namespace eez

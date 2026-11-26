@@ -17,6 +17,8 @@
 //   project can use only the master styles that have an id, and the id is the
 //   index of the style in the main assets, so these two take the ids 1 and 2
 //   (every other style of the main project comes after them).
+// - ext_m_var_box (id 3): a master style the external project adds a variant
+//   style to, for a variant of its own.
 // - ext_host: a main page with a dynamic user widget (data ext_layout) that shows
 //   an external layout, like the BB3+ slot views show the module layouts.
 // - ext_uw_main: a main user widget that external pages show through a dynamic
@@ -32,6 +34,7 @@ import { component, line, oid, page, rectangle, style, variable, widget } from "
 export const STYLES = [
     style("ext_m_box", { id: 1, backgroundColor: "accent" }),
     style("ext_m_text", { id: 2, color: "bookmark", alignHorizontal: "left" }),
+    style("ext_m_var_box", { id: 3, backgroundColor: "accent" }),
 ];
 
 export const GLOBALS = [

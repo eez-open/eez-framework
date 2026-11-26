@@ -225,12 +225,9 @@ int getStyleVariant() {
 const gui::Style *getStyle(int styleID) {
     const gui::Style *style = getStyleNoVariant(styleID);
     if (g_styleVariant > 0) {
-        const int16_t *variantStyles = gui::getVariantStyles(style);
-        if (variantStyles && g_styleVariant <= variantStyles[0]) {
-            int variantStyleID = variantStyles[g_styleVariant];
-            if (variantStyleID != 0) {
-                return getStyleNoVariant(variantStyleID);
-            }
+        int variantStyleID = gui::getVariantStyleId(style, g_styleVariant);
+        if (variantStyleID != 0) {
+            return getStyleNoVariant(variantStyleID);
         }
     }
     return style;

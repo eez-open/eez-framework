@@ -38954,6 +38954,15 @@
           "childStyles": []
         },
         {
+          "objID": "3294d6fe-bedd-5d63-8f30-3f174fafa644",
+          "name": "ext_m_var_box",
+          "tags": "external",
+          "alwaysBuild": true,
+          "id": 3,
+          "backgroundColor": "accent",
+          "childStyles": []
+        },
+        {
           "objID": "cccee5cd-4c97-53f0-96a8-33dcf2387b42",
           "name": "gui_button",
           "tags": "gui",

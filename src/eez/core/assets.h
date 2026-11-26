@@ -367,16 +367,49 @@ struct Style {
     int32_t variantStylesOffset;
 };
 
+// The variants 1 - 127 are the variants of the main assets (in a BB3+ module
+// project: of its master project), the same in all the assets. The variants
+// from STYLE_VARIANT_EXTERNAL_FIRST are the variants an external assets adds
+// (a module project to the variants of its master project): their ids mean
+// something else in other assets.
+static const int STYLE_VARIANT_EXTERNAL_FIRST = 128;
+
+// In the first number of a variant list: the list has the second part, the
+// styles of the variants from STYLE_VARIANT_EXTERNAL_FIRST.
+static const uint16_t VARIANT_STYLES_FLAG_EXTERNAL = 0x4000;
+
 // The styles of the style (a style in the assets, not a copy) in the variants
 // of the project, null if it has none: the number of variants, then the style
 // of each variant (at its id), a style id as in stateStyles, 0 if the style
-// has no style for that variant. Studio writes the style with the variant
-// properties over the style, with its own stateStyles (a variant style and a
-// state style have no list).
+// has no style for that variant. With VARIANT_STYLES_FLAG_EXTERNAL in the
+// number, a second part follows: the number of the external variants, then the
+// style of each (the first at STYLE_VARIANT_EXTERNAL_FIRST). Studio writes the
+// style with the variant properties over the style, with its own stateStyles
+// (a variant style and a state style have no list).
 inline const int16_t *getVariantStyles(const Style *style) {
     return style->variantStylesOffset
         ? (const int16_t *)((const uint8_t *)&style->variantStylesOffset + style->variantStylesOffset)
         : nullptr;
+}
+
+// The style id of the style in the variant (see getVariantStyles), 0 if it has
+// no style for the variant.
+inline int getVariantStyleId(const Style *style, int variant) {
+    const int16_t *list = getVariantStyles(style);
+    if (!list || variant <= 0) {
+        return 0;
+    }
+    uint16_t first = (uint16_t)list[0];
+    int count = first & ~VARIANT_STYLES_FLAG_EXTERNAL;
+    if (variant < STYLE_VARIANT_EXTERNAL_FIRST) {
+        return variant <= count ? list[variant] : 0;
+    }
+    if (!(first & VARIANT_STYLES_FLAG_EXTERNAL)) {
+        return 0;
+    }
+    const int16_t *external = list + 1 + count;
+    int index = variant - STYLE_VARIANT_EXTERNAL_FIRST + 1;
+    return index <= external[0] ? external[index] : 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
