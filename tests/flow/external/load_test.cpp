@@ -73,7 +73,8 @@ TEST("external/load: valid data loads as external assets") {
 TEST("external/load: the items of the external project") {
     Assets *assets = ext::load();
     CHECK_EQ((int)assets->pages.count, (int)fwtest_ext::PAGE_ID_MOD_UW);
-    CHECK_EQ((int)assets->styles.count, (int)fwtest_ext::STYLE_ID_MOD_UW_FRAME);
+    // the styles with an id, then the two variant styles of mod_variant_box
+    CHECK_EQ((int)assets->styles.count, (int)fwtest_ext::STYLE_ID_MOD_VARIANT_BOX + 2);
     CHECK_EQ((int)assets->fonts.count, (int)fwtest_ext::FONT_ID_MOD_ICONS);
     CHECK_EQ((int)assets->bitmaps.count, (int)fwtest_ext::BITMAP_ID_MOD_BITMAP);
     REQUIRE(assets->flowDefinition != nullptr);

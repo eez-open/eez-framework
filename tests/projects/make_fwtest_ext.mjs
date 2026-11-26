@@ -101,7 +101,19 @@ const STYLES = [
     style("mod_icons_text", { font: "mod_icons" }),
     // the style of the dynamic user widget of mod_host
     style("mod_uw_frame", { backgroundColor: "mod_line" }),
+    // a module style with looks for variants of the master project
+    // (variants_warn, variants_volt of parts/variants.mjs)
+    style("mod_variant_box", { backgroundColor: "mod_fill" }),
+    variantStyle("mod_variant_box__warn", "mod_variant_box", "variants_warn", { backgroundColor: "mod_line" }),
+    variantStyle("mod_variant_box__volt", "mod_variant_box", "variants_volt", { backgroundColor: CUSTOM_COLOR }),
 ];
+
+// A variant style: the properties of a look of the base style in a variant.
+function variantStyle(name, base, variant, props) {
+    const s = style(name, { useStyle: base, variant, ...props });
+    delete s.alwaysBuild;
+    return s;
+}
 
 const GLOBALS = [
     variable("mod_counter", "integer", "0"),
@@ -388,7 +400,27 @@ function modUw() {
     );
 }
 
-const PAGES = [modHost(), modMain(), modCatch(), modEnd(), modErrPage()];
+function modVariants() {
+    return page("mod_variants", [
+        rectangle("mod_variants/base", 10, 10, 100, 50, "mod_variant_box"),
+        rectangle("mod_variants/warn", 120, 10, 100, 50, "mod_variant_box", { variant: "variants_warn" }),
+        rectangle("mod_variants/volt", 230, 10, 100, 50, "mod_variant_box", { variant: "variants_volt" }),
+        // the style has no look for this variant
+        rectangle("mod_variants/unused", 340, 10, 100, 50, "mod_variant_box", { variant: "variants_unused" }),
+        // the children of a container with a variant
+        widget("ContainerWidget", "mod_variants/container", 10, 80, 450, 70, "default", {
+            variant: "variants_volt",
+            widgets: [
+                rectangle("mod_variants/inherit", 0, 10, 100, 50, "mod_variant_box"),
+                rectangle("mod_variants/none", 110, 10, 100, 50, "mod_variant_box", { variant: "none" }),
+                // a master style without a look for the variant
+                rectangle("mod_variants/master", 220, 10, 100, 50, "ext_m_box"),
+            ],
+        }),
+    ]);
+}
+
+const PAGES = [modHost(), modMain(), modCatch(), modEnd(), modErrPage(), modVariants()];
 
 const USER_WIDGETS = [modUw()];
 

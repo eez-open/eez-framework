@@ -17,7 +17,8 @@ enum PagesEnum {
     PAGE_ID_MOD_CATCH = 3,
     PAGE_ID_MOD_END = 4,
     PAGE_ID_MOD_ERR_PAGE = 5,
-    PAGE_ID_MOD_UW = 6
+    PAGE_ID_MOD_VARIANTS = 6,
+    PAGE_ID_MOD_UW = 7
 };
 
 enum StylesEnum {
@@ -29,7 +30,8 @@ enum StylesEnum {
     STYLE_ID_MOD_ALPHA_BOX,
     STYLE_ID_MOD_MASTER_COLOR_BOX,
     STYLE_ID_MOD_ICONS_TEXT,
-    STYLE_ID_MOD_UW_FRAME
+    STYLE_ID_MOD_UW_FRAME,
+    STYLE_ID_MOD_VARIANT_BOX
 };
 
 enum FontsEnum {
@@ -53,6 +55,6 @@ enum FlowGlobalVariables {
     FLOW_GLOBAL_VARIABLE_MOD_CAUGHT = 6
 };
 
-extern const uint8_t assets[11567];
+extern const uint8_t assets[11724];
 
 } // namespace fwtest_ext

@@ -759,6 +759,116 @@
       "localVariables": [],
       "userProperties": [],
       "componentGroups": []
+    },
+    {
+      "objID": "af42c6f7-d323-5dbc-9989-22ba219d871d",
+      "name": "mod_variants",
+      "tags": "external",
+      "left": 0,
+      "top": 0,
+      "width": 800,
+      "height": 480,
+      "components": [
+        {
+          "type": "RectangleWidget",
+          "objID": "9d786801-d108-54fd-8445-68963f042d23",
+          "left": 10,
+          "top": 10,
+          "width": 100,
+          "height": 50,
+          "style": {
+            "useStyle": "mod_variant_box"
+          }
+        },
+        {
+          "type": "RectangleWidget",
+          "objID": "8d030d0f-fb0c-5b9f-9e4a-ab6eb15dac97",
+          "left": 120,
+          "top": 10,
+          "width": 100,
+          "height": 50,
+          "style": {
+            "useStyle": "mod_variant_box"
+          },
+          "variant": "variants_warn"
+        },
+        {
+          "type": "RectangleWidget",
+          "objID": "de73955c-c190-5c89-a6a4-009e88b55636",
+          "left": 230,
+          "top": 10,
+          "width": 100,
+          "height": 50,
+          "style": {
+            "useStyle": "mod_variant_box"
+          },
+          "variant": "variants_volt"
+        },
+        {
+          "type": "RectangleWidget",
+          "objID": "2aa341bd-0bba-5039-b94b-8810681c0732",
+          "left": 340,
+          "top": 10,
+          "width": 100,
+          "height": 50,
+          "style": {
+            "useStyle": "mod_variant_box"
+          },
+          "variant": "variants_unused"
+        },
+        {
+          "type": "ContainerWidget",
+          "objID": "fff44ca8-0b2e-5ffa-8c4f-7ef7c1845ffe",
+          "left": 10,
+          "top": 80,
+          "width": 450,
+          "height": 70,
+          "style": {
+            "useStyle": "default"
+          },
+          "variant": "variants_volt",
+          "widgets": [
+            {
+              "type": "RectangleWidget",
+              "objID": "32145e10-0933-53a2-9704-78ba2710637f",
+              "left": 0,
+              "top": 10,
+              "width": 100,
+              "height": 50,
+              "style": {
+                "useStyle": "mod_variant_box"
+              }
+            },
+            {
+              "type": "RectangleWidget",
+              "objID": "98496ee3-f023-5b62-922f-11001b02ded8",
+              "left": 110,
+              "top": 10,
+              "width": 100,
+              "height": 50,
+              "style": {
+                "useStyle": "mod_variant_box"
+              },
+              "variant": "none"
+            },
+            {
+              "type": "RectangleWidget",
+              "objID": "57b150d9-9dc0-5f81-98ad-6d1d140bcf77",
+              "left": 220,
+              "top": 10,
+              "width": 100,
+              "height": 50,
+              "style": {
+                "useStyle": "ext_m_box"
+              }
+            }
+          ]
+        }
+      ],
+      "connectionLines": [],
+      "localVariables": [],
+      "userProperties": [],
+      "componentGroups": []
     }
   ],
   "userWidgets": [
@@ -989,6 +1099,32 @@
           "tags": "external, user-widget",
           "alwaysBuild": true,
           "backgroundColor": "mod_line",
+          "childStyles": []
+        },
+        {
+          "objID": "7ef471ca-dd7a-5e47-b3b3-d5408b148b24",
+          "name": "mod_variant_box",
+          "tags": "external",
+          "alwaysBuild": true,
+          "backgroundColor": "mod_fill",
+          "childStyles": []
+        },
+        {
+          "objID": "2e6bb9fb-dc59-53d9-8df6-8b3b6bc37df3",
+          "name": "mod_variant_box__warn",
+          "tags": "external",
+          "useStyle": "mod_variant_box",
+          "variant": "variants_warn",
+          "backgroundColor": "mod_line",
+          "childStyles": []
+        },
+        {
+          "objID": "7cb0ef16-f9d1-523a-8774-aad276050472",
+          "name": "mod_variant_box__volt",
+          "tags": "external",
+          "useStyle": "mod_variant_box",
+          "variant": "variants_volt",
+          "backgroundColor": "#8040c0",
           "childStyles": []
         }
       ]
