@@ -1030,7 +1030,9 @@ Value Value::getValue() const {
     }
     if (type == VALUE_TYPE_MODULE_FIELD) {
         using namespace flow;
-        return getModuleFieldHook(uint32Value);
+        // undefined where nothing reads the module fields (no hook, e.g. the
+        // EEZ Studio page editor)
+        return getModuleFieldHook ? getModuleFieldHook(uint32Value) : Value();
     }
     if (type == VALUE_TYPE_ARRAY_ELEMENT_VALUE) {
         auto arrayElementValue = (ArrayElementValue *)refValue;

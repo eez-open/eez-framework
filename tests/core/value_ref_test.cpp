@@ -8,6 +8,7 @@
 #include <eez/conf-internal.h>
 #include <eez/core/value.h>
 #include <eez/flow/hooks.h>
+#include <eez/flow/private.h>
 #include <eez/flow/flow_defs_v3.h>
 
 #include "test.h"
@@ -411,6 +412,21 @@ TEST("core/value refs: module field reads through getModuleFieldHook") {
     CHECK_EQ(field.getValue().getType(), VALUE_TYPE_INT32);
     Value s = Value(1, VALUE_TYPE_MODULE_FIELD).toString(0);
     CHECK_STR(s.getString(), "module field");
+}
+
+TEST("core/value refs: a module field without getModuleFieldHook is undefined") {
+    // e.g. in the EEZ Studio page editor (it called a null function)
+    flow::getModuleFieldHook = nullptr;
+    Value field(1, VALUE_TYPE_MODULE_FIELD);
+    CHECK_EQ(field.getValue().getType(), VALUE_TYPE_UNDEFINED);
+    CHECK_EQ(field.toInt32(), 0);
+}
+
+TEST("core/value refs: assigning a module field without setModuleFieldHook does nothing") {
+    flow::setModuleFieldHook = nullptr;
+    Value field(1, VALUE_TYPE_MODULE_FIELD);
+    flow::assignValue(nullptr, -1, field, Value(5));
+    CHECK_EQ(field.getType(), VALUE_TYPE_MODULE_FIELD);
 }
 
 TEST("core/value refs: getString of a module field string after getValue") {

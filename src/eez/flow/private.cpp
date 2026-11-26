@@ -571,7 +571,11 @@ void assignValue(FlowState *flowState, int componentIndex, Value &dstValue, cons
 		setVar(dstValue.getInt(), srcValue);
 #endif
 	}  else if (dstValue.getType() == VALUE_TYPE_MODULE_FIELD) {
-		flow::setModuleFieldHook(dstValue.getUInt32(), srcValue);
+		// nothing is set where there are no module fields (no hook, e.g. the
+		// EEZ Studio page editor)
+		if (flow::setModuleFieldHook) {
+			flow::setModuleFieldHook(dstValue.getUInt32(), srcValue);
+		}
 	} else {
 		Value *pDstValue;
         uint32_t dstValueType = VALUE_TYPE_UNDEFINED;
