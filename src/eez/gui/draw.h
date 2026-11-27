@@ -150,7 +150,10 @@ struct ValueParts {
     // a line above the value line in labelStyle: its font and color, its
     // padding around the label and its horizontal alignment in the content box
     // of the widget; the font, color and alignment of the widget style if
-    // labelStyle is not set
+    // labelStyle is not set. The value line is placed by the top of the digits
+    // of the value font, right under the label: the bottom padding of the
+    // label is the gap to the digits, the room of the font above the digits
+    // is not.
     const char *label = nullptr;
     const Style *labelStyle = nullptr;
     // the label is left of the value line instead of above it: at the left of

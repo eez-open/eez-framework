@@ -151,6 +151,12 @@ int measure(int styleId, const char *text) {
     return display::measureStr(text, -1, font, 0);
 }
 
+// the height of the digits of the font of the style above the baseline
+int digitsTop(int styleId) {
+    font::Font font = styleGetFont(getStyle(styleId));
+    return display::measureStrInkAbove("0123456789", -1, font);
+}
+
 } // namespace
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -316,7 +322,10 @@ int partsWidth() {
 TEST("render/layout: the label is above the value, the unit after the value on its baseline") {
     showParts();
     // the widget at (20, 20): the label line from y = 24 (26 + the padding 2),
-    // the value line from y = 52 (height 52, the baseline at 94)
+    // the top of the digits right under it at y = 52, the baseline at 52 + the
+    // height of the digits
+    int baseline = 52 + digitsTop(STYLE_ID_LAYOUT_PV);
+    CHECK(baseline < 52 + 42);
     Box label = find(GREEN, 20, 20, 360, 110);
     Box value = find(WHITE, 20, 20, 360, 110);
     Box unit = find(YELLOW, 20, 20, 360, 110);
@@ -324,11 +333,12 @@ TEST("render/layout: the label is above the value, the unit after the value on i
     CHECK(label.x >= 24 && label.x <= 27);
     CHECK(label.y >= 24 && label.y + label.h <= 50);
     CHECK(value.x >= 24 && value.x <= 28);
-    CHECK(value.y >= 52 && value.y + value.h <= 104);
+    // "12.345" is as high as the highest digit or 1 px lower
+    CHECK(value.y >= 52 && value.y <= 53);
     // digits and "mA" end on the baseline
     int valueBottom = value.y + value.h;
     int unitBottom = unit.y + unit.h;
-    CHECK(valueBottom >= 93 && valueBottom <= 95);
+    CHECK(valueBottom >= baseline - 1 && valueBottom <= baseline + 1);
     CHECK(unitBottom >= valueBottom - 1 && unitBottom <= valueBottom + 1);
     // the unit drawn 6 px after the advance of the value (its glyph starts
     // after its left side bearing)
@@ -340,10 +350,13 @@ TEST("render/layout: a value with a label is as big as its content and on the ba
     showParts();
     int small = measure(STYLE_ID_LAYOUT_TEXT_SMALL, "Ag");
     CHECK_EQ(getTextBaseline(getStyle(STYLE_ID_LAYOUT_TEXT_SMALL), 26), 21);
-    // 4 + 28 (the label) + 52 (the value line) + 4 high, the baseline at
-    // 4 + 28 + 42 = 74: the text at 74 - 21 = 53
-    CHECK_BOX(find(BLUE, 20, 150, 420, 110), 25 + small + 10, 155, partsWidth(), 88);
-    CHECK_BOX(find(ORANGE, 20, 150, 420, 110), 25, 155 + 53, small, 26);
+    // the value line (52 high, the baseline at 42) starts the room above the
+    // digits (42 - digitsTop) before the end of the label: 4 + 28 (the label)
+    // + 52 - (42 - digitsTop) + 4 high, the baseline at 4 + 28 + digitsTop,
+    // the text 21 above it
+    int top = digitsTop(STYLE_ID_LAYOUT_PV);
+    CHECK_BOX(find(BLUE, 20, 150, 420, 110), 25 + small + 10, 155, partsWidth(), 4 + 28 + 52 - (42 - top) + 4);
+    CHECK_BOX(find(ORANGE, 20, 150, 420, 110), 25, 155 + 4 + 28 + top - 21, small, 26);
 }
 
 TEST("render/layout: an Input with a label and a quantity line, on the baseline in a row") {
@@ -352,16 +365,18 @@ TEST("render/layout: an Input with a label and a quantity line, on the baseline 
     int x = 25 + small + 10;
     // inside the borders (1 px, the bottom 2 px)
     CHECK_BOX(find(BLUE, 20, 280, 420, 120), x + 1, 286, 198, 97);
-    // the baseline at 1 + 4 + 28 (the label) + 42 = 75: the text at 75 - 21
-    CHECK_BOX(find(ORANGE, 20, 280, 420, 120), 25, 285 + 54, small, 26);
+    // the baseline at 1 + 4 + 28 (the label) + the height of the digits: the
+    // text 21 above it
+    CHECK_BOX(find(ORANGE, 20, 280, 420, 120), 25, 285 + 1 + 4 + 28 + digitsTop(STYLE_ID_LAYOUT_PV) - 21, small, 26);
     // the quantity line: the bottom border across the box, the top border in
     // the color of the other sides
     CHECK_BOX(find(RED, x, 285, 200, 100), x, 285 + 98, 200, 2);
     CHECK_BOX(find(PURPLE, x, 285, 200, 98), x, 285, 200, 98);
     Box label = find(GREEN, x, 285, 200, 100);
     CHECK(label.w > 0 && label.y >= 290 && label.y + label.h <= 290 + 26);
+    // the top of the digits right under the label
     Box value = find(WHITE, x, 285, 200, 100);
-    CHECK(value.w > 0 && value.y >= 290 + 28 && value.y + value.h <= 290 + 28 + 52);
+    CHECK(value.w > 0 && value.y >= 290 + 28 && value.y <= 290 + 28 + 1);
 }
 
 TEST("render/layout: the label left of the value, centered on the value line") {

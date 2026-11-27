@@ -879,8 +879,21 @@ static bool getValuePartsGeometry(const ValueParts &parts, const Style *style, V
         g.lineTop = (g.blockHeight - g.lineHeight) / 2;
     } else {
         g.blockWidth = MAX(g.labelBlockWidth, lineBlockWidth);
-        g.blockHeight = g.labelHeight + g.lineHeight;
         g.lineTop = g.labelHeight;
+        if (parts.label) {
+            // The top of the digits right under the label (the bottom padding
+            // of the label style is the gap): a font has room above its digits
+            // for taller glyphs, which would be an empty band between the
+            // label and the value. Measured on the digits, not on the value,
+            // so the value line doesn't move with the text it shows.
+            int digitsTop = display::measureStrInkAbove("0123456789", -1, g.valueFont);
+            if (digitsTop > 0) {
+                g.lineTop -= g.lineAscent - digitsTop;
+            }
+        }
+        // (the line starts above the block when the label is lower than the
+        // room above the digits)
+        g.blockHeight = MAX(g.labelHeight, g.lineTop + g.lineHeight);
     }
 
     getIconGeometry(parts.icon, parts.iconStyle, g.valueFont, g.iconFont, g.iconX, g.iconBlockWidth, g.iconsHeight);
