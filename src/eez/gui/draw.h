@@ -163,6 +163,15 @@ struct ValueParts {
     // doesn't fit is cut and ends with an ellipsis if the style says so, and
     // is never drawn over the label or an icon.
     bool labelLeft = false;
+    // An icon right before the label, on its line (the focus icon, see
+    // AppContext::getFocusIcon): a text in the font and the color of its style
+    // (of the label if not set), centered in a square of the height of the
+    // font, the square centered on the line of the label. The left and right
+    // padding of its style is the room around the square. The label moves
+    // right by it; drawn only with a label. The widgets set it only to draw,
+    // their size doesn't change with it.
+    const char *labelIcon = nullptr;
+    const Style *labelIconStyle = nullptr;
     const char *value = nullptr;
     int valueLength = -1;
     // after the value, on its baseline, in unitStyle: its font and color, its

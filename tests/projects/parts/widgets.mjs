@@ -480,6 +480,11 @@ PAGES.push(addPage("w_input", [
         data: "w_e", inputType: "number",
         min: "0", max: "10", precision: "0.00001", unit: '"A"', info: '""', defaultValue: "0",
     }),
+    // a number of native data (it has no min, max, ...: those of the Input)
+    w("InputEmbeddedWidget", "input/native", 10, 310, 200, 40, "w_txt", {
+        data: "w_rol", inputType: "number",
+        min: "2", max: "7", precision: "1", unit: '""', info: '""', defaultValue: "3",
+    }),
 ]));
 
 // Roller: native data (counted writes) and flow data

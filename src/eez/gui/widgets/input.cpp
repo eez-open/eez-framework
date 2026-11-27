@@ -294,6 +294,10 @@ void InputWidgetState::render() {
 			parts.trailingIconStyle = getWidgetStateStyle(parts.trailingIconStyle, flags.active, flags.focused, otherStates).style;
 		}
 
+		if (flags.focused && parts.label) {
+			parts.labelIcon = widgetCursor.appContext->getFocusIcon(widgetCursor, parts.labelIconStyle);
+		}
+
 		if (isRow) {
 			parts.blinkOpacity = blinkOpacity;
 		}

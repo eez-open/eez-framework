@@ -307,6 +307,60 @@ TEST("widgets/input: text input with a number shows the number") {
     CHECK(count(RECT(IN_TEXT), YELLOW) > 0);
 }
 
+namespace {
+
+// the widget cursor of the widget as the last frame drew it
+const Widget *g_cursorOf;
+WidgetCursor g_cursor;
+
+void cursorStep() {
+    if (g_widgetCursor.widget == g_cursorOf) {
+        g_cursor = g_widgetCursor;
+    }
+}
+
+WidgetCursor cursorOf(const Widget *widget) {
+    g_cursorOf = widget;
+    g_cursor = WidgetCursor();
+    forEachWidget(cursorStep);
+    return g_cursor;
+}
+
+} // namespace
+
+TEST("widgets/input: native data gives the min, max, precision and default of its number Input") {
+    g_native.rol = 4;
+    show(PAGE_ID_W_INPUT);
+    // input/native: w_rol (native, only GET and SET), min 2, max 7, precision
+    // 1, default 3
+    auto input = pageWidget(PAGE_ID_W_INPUT, 7);
+    REQUIRE(input->type == WIDGET_TYPE_INPUT);
+    auto cursor = cursorOf(input);
+    REQUIRE(cursor.widget == input);
+    CHECK_EQ(getMin(cursor, input->data).toFloat(), 2.0f);
+    CHECK_EQ(getMax(cursor, input->data).toFloat(), 7.0f);
+    CHECK_EQ(getPrecision(cursor, input->data).toFloat(), 1.0f);
+    CHECK_EQ(getDef(cursor, input->data).toFloat(), 3.0f);
+
+    // the encoder steps of the data: the range and the precision of the Input
+    StepValues stepValues;
+    getEncoderStepValues(cursor, input->data, stepValues);
+    CHECK_EQ(stepValues.encoderSettings.range, 5.0f);
+    CHECK_EQ(stepValues.encoderSettings.step, 1.0f);
+}
+
+TEST("widgets/input: native data has no min and max in a widget that isn't an Input") {
+    g_native.rol = 4;
+    show(PAGE_ID_W_ROLLER);
+    // the Roller of w_rol (min 0, max 9 are the Roller's, not of the data)
+    auto roller = pageWidget(PAGE_ID_W_ROLLER, 0);
+    REQUIRE(roller->type == WIDGET_TYPE_ROLLER);
+    auto cursor = cursorOf(roller);
+    REQUIRE(cursor.widget == roller);
+    CHECK_EQ((int)getMin(cursor, roller->data).getType(), (int)VALUE_TYPE_UNDEFINED);
+    CHECK_EQ((int)getMax(cursor, roller->data).getType(), (int)VALUE_TYPE_UNDEFINED);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Roller
 

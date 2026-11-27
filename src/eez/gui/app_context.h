@@ -128,6 +128,13 @@ public:
     // show it instead of the data. false: there is no such value.
     virtual bool getFocusEditValue(const WidgetCursor &widgetCursor, int16_t id, Value &value);
 
+    // The icon drawn before the label of the focused widget (an Input or a
+    // DisplayData with a label, see ValueParts::labelIcon): its text, and its
+    // style for the font, the color and the padding. nullptr: no icon (the
+    // default). The widget is drawn again when its focus changes, not when
+    // the icon does.
+    virtual const char *getFocusIcon(const WidgetCursor &widgetCursor, const Style *&iconStyle);
+
     virtual void onPageTouch(const WidgetCursor &foundWidget, Event &touchEvent);
 
     virtual bool testExecuteActionOnTouchDown(int action);

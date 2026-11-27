@@ -493,3 +493,79 @@ TEST("gui/scrolling: the positions of the widgets of freed assets are forgotten"
     CHECK_EQ(listTop(), 0);
     CHECK_EQ(gridTopLeft(), 0);
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// scrollIntoView: the lists that enclose a widget scroll to show all of it
+// (e.g. the field that got the encoder focus)
+
+// the widget scrollIntoView is called for: a row of the gui_scroll container
+// (its design y / 60) or an item of the gui_lists list (400 px wide)
+static int g_intoViewRow;
+static bool g_intoViewList;
+
+static void intoViewStep() {
+    const WidgetCursor &widgetCursor = g_widgetCursor;
+    if (widgetCursor.widget->type != WIDGET_TYPE_TEXT) {
+        return;
+    }
+    bool match = g_intoViewList
+        ? widgetCursor.widget->width == 400 && widgetCursor.iterators[0] == g_intoViewRow
+        : widgetCursor.widget->y / 60 == g_intoViewRow;
+    if (match) {
+        scrollIntoView(widgetCursor);
+    }
+}
+
+static void intoView(int row, bool list = false) {
+    g_intoViewRow = row;
+    g_intoViewList = list;
+    g_findEnclosingScrollLists.count = 0;
+    g_findClipRect = Rect();
+    forEachWidget(intoViewStep);
+    harness::frame(2);
+}
+
+TEST("gui/scrolling: scrollIntoView scrolls the container down to the end of a row below the view") {
+    showScroll();
+    // row 7 is 420 .. 479 in the content: scrolled by 180 px
+    intoView(7);
+    CHECK_EQ(rowAt(200, 299), 7);
+    CHECK_EQ(rowAt(200, 0), 3);
+}
+
+TEST("gui/scrolling: scrollIntoView scrolls the container up to the start of a row above the view") {
+    showScroll();
+    intoView(7);
+    // row 1 is 60 .. 119 in the content: scrolled by 60 px
+    intoView(1);
+    CHECK_EQ(rowAt(200, 0), 1);
+    CHECK_EQ(rowAt(200, 299), 5);
+}
+
+TEST("gui/scrolling: scrollIntoView doesn't move the container for a row in view") {
+    showScroll();
+    intoView(4);
+    CHECK_EQ(rowAt(200, 0), 0);
+    CHECK_EQ(rowAt(200, 299), 4);
+}
+
+TEST("gui/scrolling: scrollIntoView scrolls the list by whole items") {
+    // gui_scroll_list: items of 70 px in 300 px, item 4 is 280 .. 349 (a
+    // List draws, and visits, only the items in view)
+    app()->showPage(PAGE_ID_GUI_SCROLL_LIST);
+    harness::frame(2);
+    harness::advance(400);
+    REQUIRE(itemAt(200, 5) == 0);
+    // 50 px are missing: one item down, item 4 at 210 .. 279
+    intoView(4, true);
+    CHECK_EQ(itemAt(200, 5), 1);
+    CHECK_EQ(itemAt(200, 275), 4);
+}
+
+TEST("gui/scrolling: the container keeps the position of scrollIntoView while another page is on top of it") {
+    showScroll();
+    intoView(7);
+    pushAndPop();
+    CHECK_EQ(rowAt(200, 299), 7);
+    CHECK_EQ(rowAt(200, 0), 3);
+}

@@ -25,6 +25,7 @@
 #include <eez/core/util.h>
 
 #include <eez/gui/gui.h>
+#include <eez/gui/widgets/input.h>
 #include <eez/flow/flow.h>
 
 namespace eez {
@@ -112,27 +113,48 @@ bool getAllowZero(const WidgetCursor &widgetCursor, int16_t id) {
     return value.getInt() != 0;
 }
 
+// The widget is a number Input of the data id: its Min, Max, Default and
+// Precision are those of the data when the data doesn't give them (native
+// data; the data of a flow Input gives them, see flow::dataOperation).
+static bool isNumberInputOfData(const WidgetCursor &widgetCursor, int16_t id) {
+    auto widget = widgetCursor.widget;
+    return widget && widget->type == WIDGET_TYPE_INPUT && widget->data == id &&
+        (((const InputWidget *)widget)->flags & INPUT_WIDGET_TYPE_NUMBER) != 0;
+}
+
 Value getMin(const WidgetCursor &widgetCursor, int16_t id) {
     Value value;
     DATA_OPERATION_FUNCTION(id, DATA_OPERATION_GET_MIN, widgetCursor, value);
+    if (value.getType() == VALUE_TYPE_UNDEFINED && isNumberInputOfData(widgetCursor, id)) {
+        value = getInputWidgetMin(widgetCursor);
+    }
     return value;
 }
 
 Value getMax(const WidgetCursor &widgetCursor, int16_t id) {
     Value value;
     DATA_OPERATION_FUNCTION(id, DATA_OPERATION_GET_MAX, widgetCursor, value);
+    if (value.getType() == VALUE_TYPE_UNDEFINED && isNumberInputOfData(widgetCursor, id)) {
+        value = getInputWidgetMax(widgetCursor);
+    }
     return value;
 }
 
 Value getDef(const WidgetCursor &widgetCursor, int16_t id) {
     Value value;
     DATA_OPERATION_FUNCTION(id, DATA_OPERATION_GET_DEF, widgetCursor, value);
+    if (value.getType() == VALUE_TYPE_UNDEFINED && isNumberInputOfData(widgetCursor, id)) {
+        value = getInputWidgetDefaultValue(widgetCursor);
+    }
     return value;
 }
 
 Value getPrecision(const WidgetCursor &widgetCursor, int16_t id) {
     Value value;
     DATA_OPERATION_FUNCTION(id, DATA_OPERATION_GET_PRECISION, widgetCursor, value);
+    if (value.getType() == VALUE_TYPE_UNDEFINED && isNumberInputOfData(widgetCursor, id)) {
+        value = getInputWidgetPrecision(widgetCursor);
+    }
     return value;
 }
 

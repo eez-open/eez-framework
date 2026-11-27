@@ -127,6 +127,11 @@ public:
         return f ? f(widgetCursor, id, value) : AppContext::getFocusEditValue(widgetCursor, id, value);
     }
 
+    const char *getFocusIcon(const WidgetCursor &widgetCursor, const Style *&iconStyle) override {
+        auto f = harness::g_appContextOverrides.getFocusIcon;
+        return f ? f(widgetCursor, iconStyle) : AppContext::getFocusIcon(widgetCursor, iconStyle);
+    }
+
 protected:
     bool canExecuteActionWhenTouchedOutsideOfActivePage(int pageId, int action) override {
         auto f = harness::g_appContextOverrides.canExecuteActionWhenTouchedOutsideOfActivePage;

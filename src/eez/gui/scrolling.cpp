@@ -66,6 +66,26 @@ int (*g_editorScrollPositionHook)(const WidgetCursor &widgetCursor) = nullptr;
 static int getTouchScrollPixelOffset(const WidgetCursor &widgetCursor, int startPosition);
 static int getTouchScrollLocalPosition(const WidgetCursor &widgetCursor, int startPosition);
 
+// The positions (in items) scrollIntoView set to the lists with a local
+// position, picked up by ScrollableWidgetState::updateScrollState.
+struct ScrollIntoViewRequest {
+    WidgetCursor list;
+    int position;
+};
+static ScrollIntoViewRequest g_scrollIntoViewRequests[MAX_NESTED_SCROLL_LISTS];
+static int g_numScrollIntoViewRequests;
+
+static bool takeScrollIntoViewRequest(const WidgetCursor &widgetCursor, int &position) {
+    for (int i = 0; i < g_numScrollIntoViewRequests; i++) {
+        if (g_scrollIntoViewRequests[i].list == widgetCursor) {
+            position = g_scrollIntoViewRequests[i].position;
+            g_scrollIntoViewRequests[i] = g_scrollIntoViewRequests[--g_numScrollIntoViewRequests];
+            return true;
+        }
+    }
+    return false;
+}
+
 bool ScrollableWidgetState::updateScrollState(const WidgetCursor &widgetCursor, int16_t data, int visibleLines, bool hasPreviousState) {
     bool changed = false;
 
@@ -100,6 +120,10 @@ bool ScrollableWidgetState::updateScrollState(const WidgetCursor &widgetCursor, 
             }
         }
         newStartPosition = getTouchScrollLocalPosition(widgetCursor, newStartPosition);
+        int requestedPosition;
+        if (takeScrollIntoViewRequest(widgetCursor, requestedPosition)) {
+            newStartPosition = requestedPosition;
+        }
         if (g_editorScrollPositionHook) {
             int line = g_editorScrollPositionHook(widgetCursor);
             if (line >= 0) {
@@ -750,6 +774,77 @@ bool isTouchScrollableList(const WidgetCursor &widgetCursor) {
     }
     auto state = (ScrollableWidgetState *)widgetCursor.currentState;
     return state->touchScrollable && widgetCursor.appContext->isTouchScrollEnabled(widgetCursor);
+}
+
+void scrollIntoView(const WidgetCursor &widgetCursor) {
+    g_numScrollIntoViewRequests = 0;
+
+    // the box of the widget as it is drawn, moved with the lists inside of
+    // a list as they scroll
+    int x = widgetCursor.x;
+    int y = widgetCursor.y;
+
+    // the innermost list first (g_findEnclosingScrollLists is from the outermost)
+    for (int i = g_findEnclosingScrollLists.count - 1; i >= 0; i--) {
+        const WidgetCursor &list = g_findEnclosingScrollLists.lists[i];
+        auto state = (ScrollableWidgetState *)list.currentState;
+        if (state->pitch <= 0 || state->itemsPerLine <= 0) {
+            continue;
+        }
+        if (g_touchScroll.phase != TOUCH_SCROLL_IDLE && list == g_touchScroll.list) {
+            continue;
+        }
+
+        bool vertical = state->isVertical;
+        int viewStart = vertical ? list.y : list.x;
+        int viewEnd = viewStart + (vertical ? list.h : list.w);
+        if (list.widget->type == WIDGET_TYPE_CONTAINER) {
+            const Style *style = getStyle(list.widget->style);
+            viewStart += vertical ? style->borderSizeTop + style->paddingTop : style->borderSizeLeft + style->paddingLeft;
+            viewEnd -= vertical ? style->borderSizeBottom + style->paddingBottom : style->borderSizeRight + style->paddingRight;
+        }
+
+        int start = vertical ? y : x;
+        int end = start + (vertical ? widgetCursor.h : widgetCursor.w);
+        int delta = 0;
+        if (end > viewEnd) {
+            delta = end - viewEnd;
+        }
+        if (start - delta < viewStart) {
+            delta = start - viewStart;
+        }
+        if (delta == 0) {
+            continue;
+        }
+
+        // in whole lines: far enough to show the widget
+        int line = state->startPosition / state->itemsPerLine;
+        int scroll = line * state->pitch + delta;
+        int newLine = scroll <= 0 ? 0 : delta > 0 ? (scroll + state->pitch - 1) / state->pitch : scroll / state->pitch;
+        if (newLine > state->maxPosition) {
+            newLine = state->maxPosition;
+        }
+        if (newLine == line) {
+            continue;
+        }
+
+        int moved = (newLine - line) * state->pitch;
+        if (vertical) {
+            y -= moved;
+        } else {
+            x -= moved;
+        }
+
+        int position = newLine * state->itemsPerLine;
+        if (state->localPosition) {
+            auto &request = g_scrollIntoViewRequests[g_numScrollIntoViewRequests++];
+            request.list = list;
+            request.position = position;
+            list.appContext->setScrollPosition(state->pageStackIndex, list, position);
+        } else {
+            ytDataSetPosition(list, list.widget->data, position);
+        }
+    }
 }
 
 static bool initTouchScrollList(const WidgetCursor &listWidgetCursor, TouchScrollList &c) {

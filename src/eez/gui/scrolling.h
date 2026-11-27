@@ -133,6 +133,16 @@ extern ScrollLists g_findEnclosingScrollLists;
 
 bool isTouchScrollableList(const WidgetCursor &widgetCursor);
 
+// Scrolls the Lists, Grids and scrolling Containers that enclose the widget
+// (g_findEnclosingScrollLists) so that all of the widget is in view, as far as
+// each of them can scroll: in a Container the view is its content box (inside
+// of the border and the padding), a widget higher than the view shows its
+// start. Called in the callback of forEachWidget, at the widget (e.g. at the
+// widget that got the encoder focus). The lists move in the next frame and
+// keep the new positions for the page, as after a touch scroll. A list that
+// the finger is scrolling is not moved.
+void scrollIntoView(const WidgetCursor &widgetCursor);
+
 // The Studio page editor scrolls a widget that keeps its position in its
 // state (a List, a Grid or a scrolling Container whose data has no position):
 // its position in lines (px for a Container), -1 for none. Clamped as a

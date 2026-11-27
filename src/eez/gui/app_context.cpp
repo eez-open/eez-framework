@@ -392,6 +392,11 @@ bool AppContext::getFocusEditValue(const WidgetCursor &widgetCursor, int16_t id,
     return false;
 }
 
+const char *AppContext::getFocusIcon(const WidgetCursor &widgetCursor, const Style *&iconStyle) {
+    iconStyle = nullptr;
+    return nullptr;
+}
+
 bool AppContext::canExecuteActionWhenTouchedOutsideOfActivePage(int pageId, int action) {
     return false;
 }

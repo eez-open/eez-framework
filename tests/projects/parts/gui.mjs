@@ -229,6 +229,18 @@ const SCROLL = page("gui_scroll", [
     }),
 ]);
 
+// a list of 20 items of 70 px in 300 px at 0, 0, 400x300: item 4 is only
+// partly in view (280 .. 349), gui/scrolling_test.cpp scrollIntoView
+const SCROLL_LIST = page("gui_scroll_list", [
+    widget("ListWidget", "gui/scroll_list/list", 0, 0, 400, 300, "gui_list", {
+        data: "gui_list_items", listType: "vertical", gap: 0,
+        itemWidget: widget("TextWidget", "gui/scroll_list/item", 0, 0, 400, 70, "gui_item", {
+            data: '"Item " + $index',
+            eventHandlers: [eventHandler("gui/scroll_list/item", "CLICKED", "gui_list_item")],
+        }),
+    }),
+]);
+
 // widgets with their own touch handling in a container that scrolls
 // vertically (gui/touch_widgets_test.cpp): rows of 60 px (static layout) in
 // 300 px at 0, 0, 400x300: a switch, a drop down list, a checkbox, a button
@@ -319,6 +331,6 @@ const RESIZE = page("gui_resize", [
 ]);
 
 export const PAGES = [PAGE_A, PAGE_B, POPUP, POPUP2, DIALOG, TRANSPARENT, YES_NO, numericKeypad(), textKeypad(), LISTS, OVERLAY,
-    SCROLL, SCROLL_WIDGETS, ROUNDED, LIGHT, SWITCH_ROWS, RESIZE];
+    SCROLL, SCROLL_WIDGETS, ROUNDED, LIGHT, SWITCH_ROWS, RESIZE, SCROLL_LIST];
 
 export const USER_WIDGETS = [RESIZE_VIEW];

@@ -670,6 +670,10 @@ void TextWidgetState::renderParts(const TextWidget *widget, const Style *style, 
         parts.trailingIconStyle = getWidgetStateStyle(parts.trailingIconStyle, flags.active, flags.focused, otherStates).style;
     }
 
+    if (flags.focused && parts.label) {
+        parts.labelIcon = widgetCursor.appContext->getFocusIcon(widgetCursor, parts.labelIconStyle);
+    }
+
     if (isValuePartsRow(widget->label && (widget->flags & TEXT_WIDGET_LABEL_LEFT_FLAG), widget->icon != 0, widget->trailingIcon != 0)) {
         parts.blinkOpacity = blinkOpacity;
     }

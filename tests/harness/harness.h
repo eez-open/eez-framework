@@ -21,6 +21,7 @@ struct Value;
 namespace gui {
 class AppContext;
 struct WidgetCursor;
+struct Style;
 }
 namespace flow {
 struct FlowState;
@@ -64,6 +65,7 @@ struct AppContextOverrides {
     bool (*isFocusWidget)(const eez::gui::WidgetCursor &widgetCursor);
     bool (*isBlinking)(const eez::gui::WidgetCursor &widgetCursor, int16_t id);
     bool (*getFocusEditValue)(const eez::gui::WidgetCursor &widgetCursor, int16_t id, eez::Value &value);
+    const char *(*getFocusIcon)(const eez::gui::WidgetCursor &widgetCursor, const eez::gui::Style *&iconStyle);
 };
 extern AppContextOverrides g_appContextOverrides;
 

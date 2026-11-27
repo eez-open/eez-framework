@@ -747,8 +747,13 @@ struct ValuePartsGeometry {
     int labelPaddingRight = 0;
     int labelPaddingBottom = 0;
     int labelWidth = 0;
-    // with the padding, 0 without a label
+    // with the padding and the label icon, 0 without a label
     int labelBlockWidth = 0;
+    // the label icon: the width of its square with the padding of its style
+    // (0 without the icon), the x of its text in it
+    font::Font labelIconFont;
+    int labelIconX = 0;
+    int labelIconBlockWidth = 0;
     int labelHeight = 0;
     // the tops of the label (with its padding) and of the value line in the block
     int labelTop = 0;
@@ -844,6 +849,10 @@ static bool getValuePartsGeometry(const ValueParts &parts, const Style *style, V
         }
         g.labelWidth = display::measureStr(parts.label, -1, g.labelFont, 0);
         g.labelHeight = g.labelPaddingTop + g.labelFont.getHeight() + g.labelPaddingBottom;
+
+        // (on the line of the label: it doesn't change the heights)
+        int labelIconHeight = 0;
+        getIconGeometry(parts.labelIcon, parts.labelIconStyle, g.labelFont, g.labelIconFont, g.labelIconX, g.labelIconBlockWidth, labelIconHeight);
     }
 
     // the value and the unit on one baseline
@@ -865,7 +874,7 @@ static bool getValuePartsGeometry(const ValueParts &parts, const Style *style, V
     g.lineHeight = g.lineAscent + lineDescent;
 
     if (parts.label) {
-        g.labelBlockWidth = g.labelPaddingLeft + g.labelWidth + g.labelPaddingRight;
+        g.labelBlockWidth = g.labelPaddingLeft + g.labelIconBlockWidth + g.labelWidth + g.labelPaddingRight;
     }
     int lineBlockWidth = g.valueWidth + g.unitGap + g.unitWidth;
     if (isUnitInRightPadding(parts, style)) {
@@ -952,12 +961,19 @@ void drawValueParts(
     if (parts.label) {
         const Style *labelStyle = parts.labelStyle ? parts.labelStyle : style;
         uint16_t labelColor = parts.labelStyle && !active ? parts.labelStyle->color : color;
+        // the label icon and the label are placed together
+        int labelX = parts.labelLeft
+            ? contentX1 + g.labelPaddingLeft
+            : alignContentX(labelStyle, contentX1 + g.labelPaddingLeft, contentX2 - g.labelPaddingRight, g.labelIconBlockWidth + g.labelWidth);
+        int labelY = blockY + g.labelTop + g.labelPaddingTop;
+        if (g.labelIconBlockWidth) {
+            // in the color of the label if its style doesn't set one
+            drawIcon(parts.labelIcon, parts.labelIconStyle, g.labelIconFont, labelX + g.labelIconX, labelY, labelY + g.labelFont.getHeight() - 1, x1, y1, x2, y2, labelColor, active);
+            labelX += g.labelIconBlockWidth;
+        }
         if (labelColor != TRANSPARENT_COLOR_INDEX) {
-            int labelX = parts.labelLeft
-                ? contentX1 + g.labelPaddingLeft
-                : alignContentX(labelStyle, contentX1 + g.labelPaddingLeft, contentX2 - g.labelPaddingRight, g.labelWidth);
             display::setColor(labelColor);
-            display::drawStr(parts.label, -1, labelX, blockY + g.labelTop + g.labelPaddingTop, x1, y1, x2, y2, g.labelFont, -1);
+            display::drawStr(parts.label, -1, labelX, labelY, x1, y1, x2, y2, g.labelFont, -1);
         }
     }
 

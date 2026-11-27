@@ -31188,6 +31188,55 @@
       "componentGroups": []
     },
     {
+      "objID": "47972f99-ce83-54f2-b425-3195b38df9bb",
+      "name": "gui_scroll_list",
+      "tags": "gui",
+      "left": 0,
+      "top": 0,
+      "width": 800,
+      "height": 480,
+      "components": [
+        {
+          "type": "ListWidget",
+          "objID": "4f8d1c7b-4418-5aba-814d-1e9b59d7e52d",
+          "left": 0,
+          "top": 0,
+          "width": 400,
+          "height": 300,
+          "style": {
+            "useStyle": "gui_list"
+          },
+          "data": "gui_list_items",
+          "listType": "vertical",
+          "gap": 0,
+          "itemWidget": {
+            "type": "TextWidget",
+            "objID": "7c4081b6-a966-5036-a8f6-139c58fd922e",
+            "left": 0,
+            "top": 0,
+            "width": 400,
+            "height": 70,
+            "style": {
+              "useStyle": "gui_item"
+            },
+            "data": "\"Item \" + $index",
+            "eventHandlers": [
+              {
+                "objID": "6b951d86-6b82-52fc-b4f3-94c8164253c7",
+                "eventName": "CLICKED",
+                "handlerType": "action",
+                "action": "gui_list_item"
+              }
+            ]
+          }
+        }
+      ],
+      "connectionLines": [],
+      "localVariables": [],
+      "userProperties": [],
+      "componentGroups": []
+    },
+    {
       "objID": "b457650c-dd43-5862-906b-403fa6d63936",
       "name": "layout_rows",
       "tags": "layout",
@@ -36646,6 +36695,25 @@
           "unit": "\"A\"",
           "info": "\"\"",
           "defaultValue": "0"
+        },
+        {
+          "type": "InputEmbeddedWidget",
+          "objID": "11b91aed-5d3f-549e-9d6a-10b887553e51",
+          "left": 10,
+          "top": 310,
+          "width": 200,
+          "height": 40,
+          "style": {
+            "useStyle": "w_txt"
+          },
+          "data": "w_rol",
+          "inputType": "number",
+          "min": "2",
+          "max": "7",
+          "precision": "1",
+          "unit": "\"\"",
+          "info": "\"\"",
+          "defaultValue": "3"
         }
       ],
       "connectionLines": [],
