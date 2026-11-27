@@ -18,24 +18,44 @@
 namespace eez {
 namespace gui {
 
-// The number of scroll positions kept for each page on the stack (see
-// PageOnStack::scrollPositions), 0: none are kept.
-#ifndef CONF_GUI_PAGE_SCROLL_POSITIONS
-#define CONF_GUI_PAGE_SCROLL_POSITIONS 16
+// The number of values kept for the widgets of an app context (see
+// AppContext::getWidgetMemory), 0: none are kept.
+#ifndef CONF_GUI_WIDGET_MEMORY_SIZE
+#define CONF_GUI_WIDGET_MEMORY_SIZE 64
 #endif
 
 class Page;
 
-// The scroll position of a List, a Grid or a scrolling Container that keeps
-// its position in its widget state (ScrollableWidgetState::localPosition):
-// the widget is the one WidgetCursor::operator== compares (the widget, the
-// cursor and the iterators).
-struct PageScrollPosition {
+// What is kept for a widget: the kinds of the framework, then the ones of the
+// application from WIDGET_MEMORY_FIRST_APP_KIND.
+enum WidgetMemoryKind {
+    // The scroll position of a List, a Grid or a scrolling Container that
+    // keeps its position in its widget state
+    // (ScrollableWidgetState::localPosition), for the page on the stack.
+    WIDGET_MEMORY_SCROLL_POSITION,
+
+    WIDGET_MEMORY_FIRST_APP_KIND = 32
+};
+
+// a value kept for the app context, not for a page on the stack
+static const int WIDGET_MEMORY_APP = -1;
+
+union WidgetMemoryValue {
+    int32_t intValue;
+    float floatValue;
+};
+
+struct WidgetMemoryEntry {
+    uint8_t kind;
+    // WIDGET_MEMORY_APP or the index of the page on the stack
+    int16_t pageStackIndex;
+    int16_t dataId;
+    // the widget WidgetCursor::operator== compares and its assets
     const Widget *widget;
-    Assets *assets;
+    const Assets *assets;
     Cursor cursor;
     int32_t iterators[MAX_ITERATORS];
-    int position;
+    WidgetMemoryValue value;
 };
 
 struct PageOnStack {
@@ -43,16 +63,6 @@ struct PageOnStack {
     Page *page = nullptr;
     int displayBufferIndex = -1;
     float timelinePosition;
-
-#if CONF_GUI_PAGE_SCROLL_POSITIONS > 0
-    // The widget states are freed when the page is covered by another page
-    // and by refreshScreen (also on every page change), so the scroll
-    // positions set by touch scroll are kept here while the page is on the
-    // stack. Only the positions other than 0, the least recently set position
-    // is dropped when there is no room for another one.
-    PageScrollPosition scrollPositions[CONF_GUI_PAGE_SCROLL_POSITIONS];
-    int numScrollPositions = 0;
-#endif
 };
 
 class ToastMessagePage;
@@ -110,14 +120,25 @@ public:
         return m_pageNavigationStackPointer + 1;
     }
 
-    // The scroll position kept for the widget (see PageOnStack::scrollPositions)
+    // The values kept for widgets in memory (not saved): the widget states
+    // are freed when the page is covered by another page and by refreshScreen
+    // (also on every page change). A value is kept for a kind, a widget, a
+    // data id and either the page at pageStackIndex (dropped when the page
+    // leaves the stack or another page takes its place) or the app context
+    // (WIDGET_MEMORY_APP, until forgetWidgetMemory of its assets). The least
+    // recently set value is dropped when there is no room for another one.
+    bool getWidgetMemory(int kind, int pageStackIndex, const WidgetCursor &widgetCursor, int16_t dataId, WidgetMemoryValue &value);
+    void setWidgetMemory(int kind, int pageStackIndex, const WidgetCursor &widgetCursor, int16_t dataId, WidgetMemoryValue value);
+    void removeWidgetMemory(int kind, int pageStackIndex, const WidgetCursor &widgetCursor, int16_t dataId);
+
+    // forgets the values kept for the widgets of the assets (before the
+    // assets are freed)
+    void forgetWidgetMemory(const Assets *assets);
+
+    // The scroll position kept for the widget (WIDGET_MEMORY_SCROLL_POSITION)
     // of the page at the stack index: false if none is kept (the position is 0).
     bool getScrollPosition(int pageStackIndex, const WidgetCursor &widgetCursor, int &position);
     void setScrollPosition(int pageStackIndex, const WidgetCursor &widgetCursor, int position);
-
-    // forgets the scroll positions of the widgets of the assets (before the
-    // assets are freed)
-    void forgetScrollPositions(const Assets *assets);
 
     virtual bool isFocusWidget(const WidgetCursor &widgetCursor);
 
@@ -221,6 +242,21 @@ protected:
     virtual bool canExecuteActionWhenTouchedOutsideOfActivePage(int pageId, int action);
 
     void pushToastMessage(ToastMessagePage *toastMessage);
+
+private:
+#if CONF_GUI_WIDGET_MEMORY_SIZE > 0
+    // the least recently set value first
+    WidgetMemoryEntry m_widgetMemory[CONF_GUI_WIDGET_MEMORY_SIZE];
+    int m_widgetMemorySize = 0;
+
+    int findWidgetMemory(int kind, int pageStackIndex, const WidgetCursor &widgetCursor, int16_t dataId);
+    void removeWidgetMemoryEntry(int index);
+#endif
+    // the page values of the pages from the stack index up
+    void forgetPageWidgetMemory(int fromPageStackIndex);
+    // the page at the stack index is removed from the stack, the pages above
+    // it go one down
+    void removePageWidgetMemory(int pageStackIndex);
 };
 
 AppContext *getRootAppContext();

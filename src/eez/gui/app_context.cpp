@@ -134,12 +134,9 @@ void AppContext::doShowPage(int pageId, Page *page, int previousPageId, bool act
     m_pageNavigationStack[m_pageNavigationStackPointer].pageId = pageId;
     m_pageNavigationStack[m_pageNavigationStackPointer].displayBufferIndex = -1;
     m_pageNavigationStack[m_pageNavigationStackPointer].timelinePosition = 0;
-#if CONF_GUI_PAGE_SCROLL_POSITIONS > 0
-    if (!activePageIsFromStack) {
-        // a new page, not the page uncovered by popPage
-        m_pageNavigationStack[m_pageNavigationStackPointer].numScrollPositions = 0;
-    }
-#endif
+    // the values of the pages that left the stack, and of the page replaced by
+    // a new one (not the page uncovered by popPage)
+    forgetPageWidgetMemory(activePageIsFromStack ? m_pageNavigationStackPointer + 1 : m_pageNavigationStackPointer);
 
     if (page) {
         page->m_pageAppContext = this;
@@ -244,6 +241,7 @@ void AppContext::removePageFromStack(int pageId) {
                 for (int j = i + 1; j <= m_pageNavigationStackPointer; j++) {
                     memcpy(m_pageNavigationStack + j - 1, m_pageNavigationStack + j, sizeof(PageOnStack));
                 }
+                removePageWidgetMemory(i);
 
                 m_pageNavigationStack[m_pageNavigationStackPointer].page = nullptr;
 
@@ -273,88 +271,133 @@ bool AppContext::isPageOnStack(int pageId) {
     return false;
 }
 
-#if CONF_GUI_PAGE_SCROLL_POSITIONS > 0
-static bool isScrollPositionOf(const PageScrollPosition &scrollPosition, const WidgetCursor &widgetCursor) {
-    if (scrollPosition.widget != widgetCursor.widget || scrollPosition.cursor != widgetCursor.cursor) {
-        return false;
-    }
-    for (size_t i = 0; i < MAX_ITERATORS; i++) {
-        if (scrollPosition.iterators[i] != widgetCursor.iterators[i]) {
-            return false;
+#if CONF_GUI_WIDGET_MEMORY_SIZE > 0
+int AppContext::findWidgetMemory(int kind, int pageStackIndex, const WidgetCursor &widgetCursor, int16_t dataId) {
+    for (int i = 0; i < m_widgetMemorySize; i++) {
+        const WidgetMemoryEntry &entry = m_widgetMemory[i];
+        if (entry.kind == kind && entry.pageStackIndex == pageStackIndex && entry.dataId == dataId &&
+            entry.widget == widgetCursor.widget && entry.assets == widgetCursor.assets && entry.cursor == widgetCursor.cursor &&
+            memcmp(entry.iterators, widgetCursor.iterators, sizeof(entry.iterators)) == 0) {
+            return i;
         }
     }
-    return true;
+    return -1;
 }
 
-static void removeScrollPosition(PageOnStack &pageOnStack, int index) {
-    for (int i = index + 1; i < pageOnStack.numScrollPositions; i++) {
-        pageOnStack.scrollPositions[i - 1] = pageOnStack.scrollPositions[i];
-    }
-    pageOnStack.numScrollPositions--;
+void AppContext::removeWidgetMemoryEntry(int index) {
+    memmove(m_widgetMemory + index, m_widgetMemory + index + 1, (m_widgetMemorySize - index - 1) * sizeof(WidgetMemoryEntry));
+    m_widgetMemorySize--;
+}
+
+static bool isValidWidgetMemoryScope(int pageStackIndex, int pageNavigationStackPointer) {
+    return pageStackIndex == WIDGET_MEMORY_APP || (pageStackIndex >= 0 && pageStackIndex <= pageNavigationStackPointer);
 }
 #endif
 
-bool AppContext::getScrollPosition(int pageStackIndex, const WidgetCursor &widgetCursor, int &position) {
-#if CONF_GUI_PAGE_SCROLL_POSITIONS > 0
-    if (pageStackIndex < 0 || pageStackIndex > m_pageNavigationStackPointer) {
+bool AppContext::getWidgetMemory(int kind, int pageStackIndex, const WidgetCursor &widgetCursor, int16_t dataId, WidgetMemoryValue &value) {
+#if CONF_GUI_WIDGET_MEMORY_SIZE > 0
+    if (!isValidWidgetMemoryScope(pageStackIndex, m_pageNavigationStackPointer)) {
         return false;
     }
-    auto &pageOnStack = m_pageNavigationStack[pageStackIndex];
-    for (int i = 0; i < pageOnStack.numScrollPositions; i++) {
-        if (isScrollPositionOf(pageOnStack.scrollPositions[i], widgetCursor)) {
-            position = pageOnStack.scrollPositions[i].position;
-            return true;
-        }
+    int i = findWidgetMemory(kind, pageStackIndex, widgetCursor, dataId);
+    if (i != -1) {
+        value = m_widgetMemory[i].value;
+        return true;
     }
 #endif
     return false;
 }
 
-void AppContext::setScrollPosition(int pageStackIndex, const WidgetCursor &widgetCursor, int position) {
-#if CONF_GUI_PAGE_SCROLL_POSITIONS > 0
-    if (pageStackIndex < 0 || pageStackIndex > m_pageNavigationStackPointer) {
-        return;
-    }
-    auto &pageOnStack = m_pageNavigationStack[pageStackIndex];
-
-    // the most recently set position is the last one
-    for (int i = 0; i < pageOnStack.numScrollPositions; i++) {
-        if (isScrollPositionOf(pageOnStack.scrollPositions[i], widgetCursor)) {
-            removeScrollPosition(pageOnStack, i);
-            break;
-        }
-    }
-
-    if (position == 0) {
+void AppContext::setWidgetMemory(int kind, int pageStackIndex, const WidgetCursor &widgetCursor, int16_t dataId, WidgetMemoryValue value) {
+#if CONF_GUI_WIDGET_MEMORY_SIZE > 0
+    if (!isValidWidgetMemoryScope(pageStackIndex, m_pageNavigationStackPointer)) {
         return;
     }
 
-    if (pageOnStack.numScrollPositions == CONF_GUI_PAGE_SCROLL_POSITIONS) {
-        removeScrollPosition(pageOnStack, 0);
+    // the most recently set value is the last one
+    int i = findWidgetMemory(kind, pageStackIndex, widgetCursor, dataId);
+    if (i != -1) {
+        removeWidgetMemoryEntry(i);
+    } else if (m_widgetMemorySize == CONF_GUI_WIDGET_MEMORY_SIZE) {
+        removeWidgetMemoryEntry(0);
     }
 
-    auto &scrollPosition = pageOnStack.scrollPositions[pageOnStack.numScrollPositions++];
-    scrollPosition.widget = widgetCursor.widget;
-    scrollPosition.assets = widgetCursor.assets;
-    scrollPosition.cursor = widgetCursor.cursor;
-    for (size_t i = 0; i < MAX_ITERATORS; i++) {
-        scrollPosition.iterators[i] = widgetCursor.iterators[i];
-    }
-    scrollPosition.position = position;
+    WidgetMemoryEntry &entry = m_widgetMemory[m_widgetMemorySize++];
+    entry.kind = (uint8_t)kind;
+    entry.pageStackIndex = (int16_t)pageStackIndex;
+    entry.dataId = dataId;
+    entry.widget = widgetCursor.widget;
+    entry.assets = widgetCursor.assets;
+    entry.cursor = widgetCursor.cursor;
+    memcpy(entry.iterators, widgetCursor.iterators, sizeof(entry.iterators));
+    entry.value = value;
 #endif
 }
 
-void AppContext::forgetScrollPositions(const Assets *assets) {
-#if CONF_GUI_PAGE_SCROLL_POSITIONS > 0
-    for (int pageStackIndex = 0; pageStackIndex < CONF_GUI_PAGE_NAVIGATION_STACK_SIZE; pageStackIndex++) {
-        auto &pageOnStack = m_pageNavigationStack[pageStackIndex];
-        for (int i = pageOnStack.numScrollPositions - 1; i >= 0; i--) {
-            if (pageOnStack.scrollPositions[i].assets == assets) {
-                removeScrollPosition(pageOnStack, i);
-            }
+void AppContext::removeWidgetMemory(int kind, int pageStackIndex, const WidgetCursor &widgetCursor, int16_t dataId) {
+#if CONF_GUI_WIDGET_MEMORY_SIZE > 0
+    int i = findWidgetMemory(kind, pageStackIndex, widgetCursor, dataId);
+    if (i != -1) {
+        removeWidgetMemoryEntry(i);
+    }
+#endif
+}
+
+void AppContext::forgetWidgetMemory(const Assets *assets) {
+#if CONF_GUI_WIDGET_MEMORY_SIZE > 0
+    for (int i = m_widgetMemorySize - 1; i >= 0; i--) {
+        if (m_widgetMemory[i].assets == assets) {
+            removeWidgetMemoryEntry(i);
         }
     }
 #endif
+}
+
+void AppContext::forgetPageWidgetMemory(int fromPageStackIndex) {
+#if CONF_GUI_WIDGET_MEMORY_SIZE > 0
+    for (int i = m_widgetMemorySize - 1; i >= 0; i--) {
+        if (m_widgetMemory[i].pageStackIndex >= fromPageStackIndex) {
+            removeWidgetMemoryEntry(i);
+        }
+    }
+#endif
+}
+
+void AppContext::removePageWidgetMemory(int pageStackIndex) {
+#if CONF_GUI_WIDGET_MEMORY_SIZE > 0
+    for (int i = m_widgetMemorySize - 1; i >= 0; i--) {
+        if (m_widgetMemory[i].pageStackIndex == pageStackIndex) {
+            removeWidgetMemoryEntry(i);
+        } else if (m_widgetMemory[i].pageStackIndex > pageStackIndex) {
+            m_widgetMemory[i].pageStackIndex--;
+        }
+    }
+#endif
+}
+
+bool AppContext::getScrollPosition(int pageStackIndex, const WidgetCursor &widgetCursor, int &position) {
+    if (pageStackIndex < 0) {
+        return false;
+    }
+    WidgetMemoryValue value;
+    if (!getWidgetMemory(WIDGET_MEMORY_SCROLL_POSITION, pageStackIndex, widgetCursor, EEZ_DATA_ID_NONE, value)) {
+        return false;
+    }
+    position = value.intValue;
+    return true;
+}
+
+void AppContext::setScrollPosition(int pageStackIndex, const WidgetCursor &widgetCursor, int position) {
+    if (pageStackIndex < 0) {
+        return;
+    }
+    if (position == 0) {
+        removeWidgetMemory(WIDGET_MEMORY_SCROLL_POSITION, pageStackIndex, widgetCursor, EEZ_DATA_ID_NONE);
+        return;
+    }
+    WidgetMemoryValue value;
+    value.intValue = position;
+    setWidgetMemory(WIDGET_MEMORY_SCROLL_POSITION, pageStackIndex, widgetCursor, EEZ_DATA_ID_NONE, value);
 }
 
 bool AppContext::isPageObjectOnStack(const Page *page, int exceptIndex) {

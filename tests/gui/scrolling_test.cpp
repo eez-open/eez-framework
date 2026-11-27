@@ -396,9 +396,9 @@ TEST("gui/scrolling: a tap near the edge of a row is a tap of the row, not of th
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// the scroll position of a widget that keeps it in its state is kept in the
-// page on the stack (PageOnStack::scrollPositions), so it is not lost when the
-// widget states are freed
+// the scroll position of a widget that keeps it in its state is kept for the
+// page on the stack (WIDGET_MEMORY_SCROLL_POSITION), so it is not lost when
+// the widget states are freed
 
 // scrolls the list to item 3 and the grid to row 2 (item 8 at the top left)
 static void scrollLists() {
@@ -488,7 +488,7 @@ TEST("gui/scrolling: the page shown again with showPage starts at the top") {
 
 TEST("gui/scrolling: the positions of the widgets of freed assets are forgotten") {
     scrollLists();
-    app()->forgetScrollPositions(g_mainAssets);
+    app()->forgetWidgetMemory(g_mainAssets);
     pushAndPop();
     CHECK_EQ(listTop(), 0);
     CHECK_EQ(gridTopLeft(), 0);
