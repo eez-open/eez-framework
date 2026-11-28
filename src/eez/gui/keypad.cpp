@@ -719,6 +719,13 @@ bool NumericKeypad::isOkEnabled() {
     return true;
 }
 
+// A limit can be a few float steps from the decimal value it stands for (a max
+// of 50 mA computed as 0.049999997): a typed value that close is the limit.
+// 1E-6 of the limit is about 8 float steps, far below any resolution.
+static float getLimitTolerance(float limit) {
+    return fmaxf(fabsf(limit) * 1E-6f, 1E-9f);
+}
+
 void NumericKeypad::showLessThanMinErrorMessage() {
 	m_appContext->errorMessageWithAction("Less than min. allowed value", nullptr, "Close");
 }
@@ -761,16 +768,14 @@ void NumericKeypad::ok() {
                 return;
             }
 
-            float EPSILON = 1E-9f;
-
             if (!isNaN(m_options.min) && value < m_options.min && !(value == 0 && m_options.allowZero)) {
-                if (value < m_options.min - EPSILON) {
+                if (value < m_options.min - getLimitTolerance(m_options.min)) {
 					showLessThanMinErrorMessage();
                     return;
                 }
                 value = m_options.min;
             } else if (!isNaN(m_options.max) && value > m_options.max) {
-                if (value > m_options.max + EPSILON) {
+                if (value > m_options.max + getLimitTolerance(m_options.max)) {
 					showGreaterThanMaxErrorMessage();
 					return;
                 }

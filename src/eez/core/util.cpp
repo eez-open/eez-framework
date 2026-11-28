@@ -14,6 +14,7 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <float.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
@@ -229,19 +230,46 @@ uint8_t fromBCD(uint8_t bcd) {
     return ((bcd >> 4) & 0xF) * 10 + (bcd & 0xF);
 }
 
+// The multiple of prec that toInteger (roundf, floorf, ceilf) gives for a, as
+// the float nearest to it. A decimal prec (0.001, 0.0005, 5E-6) is not exact in
+// float and neither is 1 / prec (1 / 0.001f is 999.99994), so a reciprocal
+// close to an integer is that integer and the multiple is the number of steps
+// divided by it (the steps times prec are often a float step off). The steps
+// of a multiple are a float step or two from an integer: they are taken as that
+// integer, so floorf and ceilf keep a multiple.
+static float toPrec(float a, float prec, float (*toInteger)(float)) {
+    float r = 0;
+    float steps;
+    if (prec >= 1) {
+        steps = a / prec;
+    } else {
+        r = 1 / prec;
+        float n = roundf(r);
+        if (fabsf(r - n) <= n * 1E-5f) {
+            r = n;
+        }
+        steps = a * r;
+    }
+
+    float n = roundf(steps);
+    if (fabsf(steps - n) <= fabsf(n) * 2 * FLT_EPSILON) {
+        steps = n;
+    }
+    steps = toInteger(steps);
+
+    return prec >= 1 ? steps * prec : steps / r;
+}
+
 float roundPrec(float a, float prec) {
-    float r = 1 / prec;
-    return roundf(a * r) / r;
+    return toPrec(a, prec, roundf);
 }
 
 float floorPrec(float a, float prec) {
-    float r = 1 / prec;
-    return floorf(a * r) / r;
+    return toPrec(a, prec, floorf);
 }
 
 float ceilPrec(float a, float prec) {
-    float r = 1 / prec;
-    return ceilf(a * r) / r;
+    return toPrec(a, prec, ceilf);
 }
 
 bool isNaN(float x) {

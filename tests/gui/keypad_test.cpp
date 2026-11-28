@@ -285,6 +285,40 @@ TEST("gui/keypad: min and max themselves are returned") {
     CHECK_EQ(g_okValue, 40.0f);
 }
 
+TEST("gui/keypad: a value a float step above max is returned as max") {
+    // a max of 50 mA computed as 0.049999997
+    NumericKeypadOptions options;
+    options.min = 0;
+    options.max = nextafterf(0.05f, 0.0f);
+    options.editValueUnit = UNIT_MILLI_AMPER;
+    startNumeric(Value(0.01f, UNIT_AMPER), options);
+    typeNumeric("50");
+    CHECK_EQ(keypadText(), std::string("50 mA"));
+    tapNumericKey("ok");
+    CHECK_EQ(g_okCount, 1);
+    CHECK_EQ(g_okValue, options.max);
+}
+
+TEST("gui/keypad: a value a float step below min is returned as min") {
+    auto options = voltOptions();
+    options.min = nextafterf(5.0f, 6.0f);
+    startNumeric(Value(10.0f, UNIT_VOLT), options);
+    typeNumeric("5");
+    tapNumericKey("ok");
+    CHECK_EQ(g_okCount, 1);
+    CHECK_EQ(g_okValue, options.min);
+}
+
+TEST("gui/keypad: a value above max by a resolution step shows an error") {
+    auto options = voltOptions();
+    options.flags.dotButtonEnabled = true;
+    startNumeric(Value(5.0f, UNIT_VOLT), options);
+    typeNumeric("40.001");
+    tapNumericKey("ok");
+    CHECK_EQ(g_okCount, 0);
+    CHECK(isErrorToastShown("Greater than max. allowed value"));
+}
+
 TEST("gui/keypad: at most 16 characters are typed in the numeric keypad") {
     NumericKeypadOptions options;
     startNumeric(Value(5.0f, UNIT_VOLT), options);

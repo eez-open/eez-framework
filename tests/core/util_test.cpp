@@ -263,6 +263,43 @@ TEST("core/util: roundPrec, floorPrec, ceilPrec") {
     CHECK_NEAR(roundPrec(1234.0f, 100.0f), 1200.0, 1e-3);
 }
 
+TEST("core/util: roundPrec, floorPrec, ceilPrec give the float of the decimal multiple") {
+    // the reciprocal of a decimal prec is the integer it stands for (1 / 0.001f
+    // is 999.99994: the multiples were a float step off) and the steps of a
+    // multiple are that integer (floorPrec and ceilPrec moved some multiples
+    // by a whole step)
+    static const struct { float prec; int scale; int count; } cases[] = {
+        { 0.1f, 10, 10001 }, { 0.01f, 100, 100001 }, { 0.005f, 200, 8001 },
+        { 0.001f, 1000, 155001 }, { 0.0005f, 2000, 10001 }, { 0.00001f, 100000, 500001 },
+        { 0.000005f, 200000, 10001 }, { 0.0000001f, 10000000, 500001 },
+    };
+    for (auto &c : cases) {
+        int wrong = 0;
+        for (int k = 0; k < c.count; k++) {
+            float multiple = (float)((double)k / c.scale);
+            float next = (float)((double)(k + 1) / c.scale);
+            float between = (float)((k + 0.25) / c.scale);
+            if (roundPrec(multiple, c.prec) != multiple || floorPrec(multiple, c.prec) != multiple ||
+                ceilPrec(multiple, c.prec) != multiple || roundPrec(-multiple, c.prec) != -multiple ||
+                roundPrec(between, c.prec) != multiple || floorPrec(between, c.prec) != multiple ||
+                ceilPrec(between, c.prec) != next) {
+                wrong++;
+            }
+        }
+        CHECK_EQ(wrong, 0);
+    }
+
+    CHECK_EQ(roundPrec(0.05f, 0.000005f), 0.05f);
+    CHECK_EQ(roundPrec(3.0f, 0.0005f), 3.0f);
+    // a prec of 1 or more
+    CHECK_EQ(roundPrec(25.0f, 10.0f), 30.0f);
+    CHECK_EQ(floorPrec(19.0f, 10.0f), 10.0f);
+    CHECK_EQ(ceilPrec(10.0f, 10.0f), 10.0f);
+    CHECK_EQ(roundPrec(7.4f, 2.5f), 7.5f);
+    // a prec whose reciprocal is not an integer
+    CHECK_NEAR(roundPrec(1.0f, 0.3f), 0.9, 1e-6);
+}
+
 TEST("core/util: isNaN") {
     CHECK(isNaN(NAN));
     CHECK(isNaN((double)NAN));
